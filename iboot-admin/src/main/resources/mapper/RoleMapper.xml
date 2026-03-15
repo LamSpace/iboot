@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.RoleMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="RoleResultMap" type="com.iboot.admin.infrastructure.persistence.po.RolePO">
+        <id property="id" column="id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleCode" column="role_code"/>
+        <result property="roleSort" column="role_sort"/>
+        <result property="dataScope" column="data_scope"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <!-- 插入角色记录 -->
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.RolePO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_role (
+            role_name, role_code, role_sort, data_scope, status,
+            create_by, create_time, update_by, update_time, deleted, remark
+        ) VALUES (
+            #{roleName}, #{roleCode}, #{roleSort}, #{dataScope}, #{status},
+            #{createBy}, NOW(), #{updateBy}, #{updateTime}, #{deleted}, #{remark}
+        )
+    </insert>
+
+    <!-- 更新角色记录 -->
+    <update id="update" parameterType="com.iboot.admin.infrastructure.persistence.po.RolePO">
+        UPDATE sys_role
+        <set>
+            <if test="roleName != null and roleName != ''">role_name = #{roleName},</if>
+            <if test="roleCode != null and roleCode != ''">role_code = #{roleCode},</if>
+            <if test="roleSort != null">role_sort = #{roleSort},</if>
+            <if test="dataScope != null">data_scope = #{dataScope},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 根据ID删除角色记录 -->
+    <update id="deleteById">
+        UPDATE sys_role SET deleted = 1 WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 根据ID查询角色记录 -->
+    <select id="selectById" resultMap="RoleResultMap">
+        SELECT * FROM sys_role WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 根据角色编码查询角色记录 -->
+    <select id="selectByRoleCode" resultMap="RoleResultMap">
+        SELECT * FROM sys_role WHERE role_code = #{roleCode} AND deleted = 0
+    </select>
+
+    <!-- 查询所有角色记录 -->
+    <select id="selectAll" resultMap="RoleResultMap">
+        SELECT * FROM sys_role WHERE deleted = 0 ORDER BY role_sort ASC, create_time ASC
+    </select>
+
+    <!-- 分页查询角色记录 -->
+    <select id="selectPage" resultMap="RoleResultMap">
+        SELECT * FROM sys_role 
+        WHERE deleted = 0 
+        ORDER BY role_sort ASC, create_time ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计角色总数 -->
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM sys_role WHERE deleted = 0
+    </select>
+
+    <!-- 按条件分页查询角色记录 -->
+    <select id="selectPageByCondition" resultMap="RoleResultMap">
+        SELECT * FROM sys_role
+        <where>
+            deleted = 0
+            <if test="roleName != null and roleName != ''">
+                AND role_name LIKE CONCAT('%', #{roleName}, '%')
+            </if>
+            <if test="roleCode != null and roleCode != ''">
+                AND role_code LIKE CONCAT('%', #{roleCode}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY role_sort ASC, create_time ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 按条件查询所有角色记录（不分页，用于导出） -->
+    <select id="selectAllByCondition" resultMap="RoleResultMap">
+        SELECT * FROM sys_role
+        <where>
+            deleted = 0
+            <if test="roleName != null and roleName != ''">
+                AND role_name LIKE CONCAT('%', #{roleName}, '%')
+            </if>
+            <if test="roleCode != null and roleCode != ''">
+                AND role_code LIKE CONCAT('%', #{roleCode}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY role_sort ASC, create_time ASC
+    </select>
+
+    <!-- 按条件统计角色总数 -->
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM sys_role
+        <where>
+            deleted = 0
+            <if test="roleName != null and roleName != ''">
+                AND role_name LIKE CONCAT('%', #{roleName}, '%')
+            </if>
+            <if test="roleCode != null and roleCode != ''">
+                AND role_code LIKE CONCAT('%', #{roleCode}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 检查角色编码是否存在 -->
+    <select id="existsByRoleCode" resultType="int">
+        SELECT COUNT(*) FROM sys_role WHERE role_code = #{roleCode} AND deleted = 0
+    </select>
+
+    <!-- 检查角色名称是否存在 -->
+    <select id="existsByRoleName" resultType="int">
+        SELECT COUNT(*) FROM sys_role WHERE role_name = #{roleName} AND deleted = 0
+    </select>
+
+    <!-- 统计角色关联的用户数 -->
+    <select id="countUsersByRoleId" resultType="long">
+        SELECT COUNT(*) FROM sys_user_role WHERE role_id = #{roleId}
+    </select>
+
+    <!-- 根据用户ID查询角色列表 -->
+    <select id="selectByUserId" resultMap="RoleResultMap">
+        SELECT r.* FROM sys_role r
+        INNER JOIN sys_user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId} AND r.deleted = 0
+        ORDER BY r.role_sort ASC
+    </select>
+
+    <!-- 插入角色菜单关联记录 -->
+    <insert id="insertRoleMenu">
+        INSERT INTO sys_role_menu (role_id, menu_id) VALUES (#{roleId}, #{menuId})
+    </insert>
+
+    <!-- 根据角色ID删除角色菜单关联记录 -->
+    <delete id="deleteRoleMenuByRoleId">
+        DELETE FROM sys_role_menu WHERE role_id = #{roleId}
+    </delete>
+
+    <!-- 根据角色ID查询菜单ID列表 -->
+    <select id="selectMenuIdsByRoleId" resultType="long">
+        SELECT menu_id FROM sys_role_menu WHERE role_id = #{roleId}
+    </select>
+
+    <!-- 插入角色部门关联记录 -->
+    <insert id="insertRoleDept">
+        INSERT INTO sys_role_dept (role_id, dept_id) VALUES (#{roleId}, #{deptId})
+    </insert>
+
+    <!-- 根据角色ID删除角色部门关联记录 -->
+    <delete id="deleteRoleDeptByRoleId">
+        DELETE FROM sys_role_dept WHERE role_id = #{roleId}
+    </delete>
+
+    <!-- 根据角色ID查询部门ID列表 -->
+    <select id="selectDeptIdsByRoleId" resultType="long">
+        SELECT dept_id FROM sys_role_dept WHERE role_id = #{roleId}
+    </select>
+
+    <!-- 物理删除已逻辑删除的角色记录（根据角色编码） -->
+    <delete id="removeDeletedByRoleCode">
+        DELETE FROM sys_role WHERE role_code = #{roleCode} AND deleted = 1
+    </delete>
+
+</mapper>

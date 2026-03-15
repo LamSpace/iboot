@@ -1,0 +1,49 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# 操作系统相关
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE相关
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+.metadata/
+
+# 编辑器备份文件
+*~
+*.bak
+*.tmp
+*.temp
+
+# 日志文件
+*.log
+logs/
+log/
+
+# 临时文件
+temp/
+tmp/
+*.tmp
+
+# 其他
+.cache/

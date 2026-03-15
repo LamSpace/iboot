@@ -1,0 +1,52 @@
+groups:
+  - name: mysql-alerts
+    rules:
+      - alert: MySQLDown
+        expr: up{job="mysql-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL 服务不可用"
+          description: "MySQL Exporter 无法连接到数据库，服务可能已停止"
+
+      - alert: MySQLHighConnections
+        expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MySQL 连接数过高"
+          description: "MySQL 连接使用率超过80%，当前值为{{ $value | printf \"%.1f\" }}%"
+
+      - alert: MySQLSlowQueries
+        expr: rate(mysql_global_status_slow_queries[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MySQL 慢查询频繁"
+          description: "MySQL 慢查询速率超过 0.5/s，当前值为{{ $value | printf \"%.2f\" }}/s"
+
+      - alert: MySQLHighAbortedConnections
+        expr: rate(mysql_global_status_aborted_connects[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MySQL 连接中断频繁"
+          description: "MySQL 中断连接速率超过 5/s，当前值为{{ $value | printf \"%.2f\" }}/s，可能存在认证失败或网络问题"
+
+      - alert: MySQLInnoDBBufferPoolLowHitRate
+        expr: |
+          (
+            rate(mysql_global_status_innodb_buffer_pool_read_requests[5m])
+            /
+            (rate(mysql_global_status_innodb_buffer_pool_read_requests[5m]) + rate(mysql_global_status_innodb_buffer_pool_reads[5m]))
+          ) * 100 < 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "InnoDB 缓冲池命中率过低"
+          description: "InnoDB 缓冲池命中率低于90%，当前值为{{ $value | printf \"%.1f\" }}%，建议增大 innodb_buffer_pool_size"

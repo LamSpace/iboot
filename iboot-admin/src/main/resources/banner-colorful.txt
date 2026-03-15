@@ -1,0 +1,15 @@
+${AnsiColor.BRIGHT_CYAN}
+  _ _____           _
+ (_)_   _|         | |
+  _  | | ___   ___ | |_
+ | | | |/ _ \ / _ \| __|
+ | | | | (_) | (_) | |_
+ |_| |_|\___/ \___/ \__|
+                      
+${AnsiColor.BRIGHT_MAGENTA}=================================
+${AnsiColor.BRIGHT_GREEN}    iBoot Management System    
+${AnsiColor.BRIGHT_MAGENTA}=================================
+${AnsiColor.BRIGHT_YELLOW}  Powered by Spring Boot ${spring-boot.version}
+${AnsiColor.BRIGHT_BLUE}  DDD Architecture & Clean Code
+${AnsiColor.BRIGHT_MAGENTA}=================================
+${AnsiColor.DEFAULT}

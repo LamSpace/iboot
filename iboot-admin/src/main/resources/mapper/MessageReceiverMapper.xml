@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.MessageReceiverMapper">
+
+    <resultMap id="MessageReceiverResultMap" type="com.iboot.admin.infrastructure.persistence.po.MessageReceiverPO">
+        <id property="id" column="id"/>
+        <result property="messageId" column="message_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="isRead" column="is_read"/>
+        <result property="readTime" column="read_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT IGNORE INTO sys_message_receiver (message_id, user_id, is_read, read_time, is_deleted)
+        VALUES (#{messageId}, #{userId}, #{isRead}, #{readTime}, #{isDeleted})
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT IGNORE INTO sys_message_receiver (message_id, user_id, is_read, is_deleted)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.messageId}, #{item.userId}, 0, 0)
+        </foreach>
+    </insert>
+
+    <update id="updateRead">
+        UPDATE sys_message_receiver
+        SET is_read = 1, read_time = NOW()
+        WHERE message_id = #{messageId} AND user_id = #{userId} AND is_read = 0
+    </update>
+
+    <update id="updateAllRead">
+        UPDATE sys_message_receiver r
+        INNER JOIN sys_message m ON r.message_id = m.id
+        SET r.is_read = 1, r.read_time = NOW()
+        WHERE r.user_id = #{userId} AND r.is_read = 0 AND r.is_deleted = 0
+          AND m.status = '1' AND m.deleted = 0
+    </update>
+
+    <update id="updateDeleted">
+        UPDATE sys_message_receiver
+        SET is_deleted = 1
+        WHERE message_id = #{messageId} AND user_id = #{userId}
+    </update>
+
+    <select id="countByMessageIdAndUserId" resultType="int">
+        SELECT COUNT(*) FROM sys_message_receiver
+        WHERE message_id = #{messageId} AND user_id = #{userId}
+    </select>
+
+    <select id="countUnreadByUserId" resultType="long">
+        SELECT COUNT(*) FROM sys_message_receiver r
+        INNER JOIN sys_message m ON r.message_id = m.id
+        WHERE r.user_id = #{userId} AND r.is_read = 0 AND r.is_deleted = 0
+          AND m.status = '1' AND m.deleted = 0
+    </select>
+
+    <select id="selectPageByUserId" resultType="map">
+        SELECT m.id AS id, m.title AS title, m.content AS content,
+               m.message_type AS messageType, m.priority AS priority,
+               m.sender_type AS senderType, m.sender_id AS senderId,
+               m.create_by AS createBy, m.create_time AS createTime,
+               r.is_read AS isRead, r.read_time AS readTime
+        FROM sys_message_receiver r
+        INNER JOIN sys_message m ON r.message_id = m.id
+        WHERE r.user_id = #{userId} AND r.is_deleted = 0
+          AND m.status = '1' AND m.deleted = 0
+        <if test="messageType != null and messageType != ''">
+            AND m.message_type = #{messageType}
+        </if>
+        <if test="isRead != null">
+            AND r.is_read = #{isRead}
+        </if>
+        ORDER BY r.is_read ASC, m.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*) FROM sys_message_receiver r
+        INNER JOIN sys_message m ON r.message_id = m.id
+        WHERE r.user_id = #{userId} AND r.is_deleted = 0
+          AND m.status = '1' AND m.deleted = 0
+        <if test="messageType != null and messageType != ''">
+            AND m.message_type = #{messageType}
+        </if>
+        <if test="isRead != null">
+            AND r.is_read = #{isRead}
+        </if>
+    </select>
+
+    <delete id="deleteByMessageId">
+        DELETE FROM sys_message_receiver WHERE message_id = #{messageId}
+    </delete>
+
+    <select id="findByMessageId" resultType="map">
+        SELECT id, message_id, user_id, is_read, read_time, is_deleted
+        FROM sys_message_receiver
+        WHERE message_id = #{messageId}
+    </select>
+
+</mapper>

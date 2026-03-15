@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.UserMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="UserResultMap" type="com.iboot.admin.infrastructure.persistence.po.UserPO">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="nickname" column="nickname"/>
+        <result property="email" column="email"/>
+        <result property="phone" column="phone"/>
+        <result property="gender" column="gender"/>
+        <result property="avatar" column="avatar"/>
+        <result property="userType" column="user_type"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="status" column="status"/>
+        <result property="loginIp" column="login_ip"/>
+        <result property="loginTime" column="login_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <!-- 插入用户记录 -->
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.UserPO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user (
+            username, password, nickname, email, phone, gender, avatar,
+            user_type, dept_id, status, login_ip, login_time,
+            create_by, create_time, update_by, update_time, deleted, remark
+        ) VALUES (
+            #{username}, #{password}, #{nickname}, #{email}, #{phone}, #{gender}, #{avatar},
+            #{userType}, #{deptId}, #{status}, #{loginIp}, #{loginTime},
+            #{createBy}, NOW(), #{updateBy}, #{updateTime}, #{deleted}, #{remark}
+        )
+    </insert>
+
+    <!-- 更新用户记录 -->
+    <update id="update" parameterType="com.iboot.admin.infrastructure.persistence.po.UserPO">
+        UPDATE sys_user
+        <set>
+            <if test="username != null and username != ''">username = #{username},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="userType != null">user_type = #{userType},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="loginIp != null">login_ip = #{loginIp},</if>
+            <if test="loginTime != null">login_time = #{loginTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 根据ID删除用户记录 -->
+    <update id="deleteById">
+        UPDATE sys_user SET deleted = 1 WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 根据ID查询用户记录 -->
+    <select id="selectById" resultMap="UserResultMap">
+        SELECT * FROM sys_user WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 根据用户名查询用户记录 -->
+    <select id="selectByUsername" resultMap="UserResultMap">
+        SELECT * FROM sys_user WHERE username = #{username} AND deleted = 0
+    </select>
+
+    <!-- 根据邮箱查询用户记录 -->
+    <select id="selectByEmail" resultMap="UserResultMap">
+        SELECT * FROM sys_user WHERE email = #{email} AND deleted = 0
+    </select>
+
+    <!-- 根据手机号查询用户记录 -->
+    <select id="selectByPhone" resultMap="UserResultMap">
+        SELECT * FROM sys_user WHERE phone = #{phone} AND deleted = 0
+    </select>
+
+    <!-- 查询所有用户记录 -->
+    <select id="selectAll" resultMap="UserResultMap">
+        SELECT * FROM sys_user WHERE deleted = 0 ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页查询用户记录 -->
+    <select id="selectPage" resultMap="UserResultMap">
+        SELECT * FROM sys_user 
+        WHERE deleted = 0 
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计用户总数 -->
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM sys_user WHERE deleted = 0
+    </select>
+
+    <!-- 按条件分页查询用户记录 -->
+    <select id="selectPageByCondition" resultMap="UserResultMap">
+        SELECT * FROM sys_user
+        <where>
+            deleted = 0
+            <if test="username != null and username != ''">
+                AND username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone LIKE CONCAT('%', #{phone}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 按条件查询所有用户记录（不分页，用于导出） -->
+    <select id="selectAllByCondition" resultMap="UserResultMap">
+        SELECT * FROM sys_user
+        <where>
+            deleted = 0
+            <if test="username != null and username != ''">
+                AND username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone LIKE CONCAT('%', #{phone}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 按条件统计用户总数 -->
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM sys_user
+        <where>
+            deleted = 0
+            <if test="username != null and username != ''">
+                AND username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone LIKE CONCAT('%', #{phone}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 检查用户名是否存在 -->
+    <select id="existsByUsername" resultType="int">
+        SELECT COUNT(*) FROM sys_user WHERE username = #{username} AND deleted = 0
+    </select>
+
+    <!-- 检查邮箱是否存在 -->
+    <select id="existsByEmail" resultType="int">
+        SELECT COUNT(*) FROM sys_user WHERE email = #{email} AND deleted = 0
+    </select>
+
+    <!-- 检查手机号是否存在 -->
+    <select id="existsByPhone" resultType="int">
+        SELECT COUNT(*) FROM sys_user WHERE phone = #{phone} AND deleted = 0
+    </select>
+
+    <!-- 根据部门ID查询用户列表 -->
+    <select id="selectByDeptId" resultMap="UserResultMap">
+        SELECT * FROM sys_user WHERE dept_id = #{deptId} AND deleted = 0 ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据角色ID查询用户列表 -->
+    <select id="selectByRoleId" resultMap="UserResultMap">
+        SELECT u.* FROM sys_user u
+        INNER JOIN sys_user_role ur ON u.id = ur.user_id
+        WHERE ur.role_id = #{roleId} AND u.deleted = 0
+        ORDER BY u.create_time DESC
+    </select>
+
+    <!-- 插入用户角色关联记录 -->
+    <insert id="insertUserRole">
+        INSERT INTO sys_user_role (user_id, role_id) VALUES (#{userId}, #{roleId})
+    </insert>
+
+    <!-- 根据用户ID删除用户角色关联记录 -->
+    <delete id="deleteUserRoleByUserId">
+        DELETE FROM sys_user_role WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 根据用户ID查询角色ID列表 -->
+    <select id="selectRoleIdsByUserId" resultType="long">
+        SELECT role_id FROM sys_user_role WHERE user_id = #{userId}
+    </select>
+
+    <!-- 插入用户岗位关联记录 -->
+    <insert id="insertUserPost">
+        INSERT INTO sys_user_post (user_id, post_id) VALUES (#{userId}, #{postId})
+    </insert>
+
+    <!-- 根据用户ID删除用户岗位关联记录 -->
+    <delete id="deleteUserPostByUserId">
+        DELETE FROM sys_user_post WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 根据用户ID查询岗位ID列表 -->
+    <select id="selectPostIdsByUserId" resultType="long">
+        SELECT post_id FROM sys_user_post WHERE user_id = #{userId}
+    </select>
+
+    <!-- 物理删除已逻辑删除的用户记录（根据用户名） -->
+    <delete id="removeDeletedByUsername">
+        DELETE FROM sys_user WHERE username = #{username} AND deleted = 1
+    </delete>
+
+    <!-- 按创建时间统计用户数 -->
+    <select id="countByCreateTime" resultType="long">
+        SELECT COUNT(*) FROM sys_user
+        WHERE deleted = 0
+        AND create_time &gt;= #{startTime}
+        AND create_time &lt;= #{endTime}
+    </select>
+
+</mapper>

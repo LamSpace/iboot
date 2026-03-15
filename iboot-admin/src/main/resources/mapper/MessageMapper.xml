@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.MessageMapper">
+
+    <resultMap id="MessageResultMap" type="com.iboot.admin.infrastructure.persistence.po.MessagePO">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="messageType" column="message_type"/>
+        <result property="priority" column="priority"/>
+        <result property="senderType" column="sender_type"/>
+        <result property="senderId" column="sender_id"/>
+        <result property="receiverType" column="receiver_type"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_message (title, content, message_type, priority, sender_type, sender_id, receiver_type, status, create_by, create_time, deleted, remark)
+        VALUES (#{title}, #{content}, #{messageType}, #{priority}, #{senderType}, #{senderId}, #{receiverType}, #{status}, #{createBy}, #{createTime}, 0, #{remark})
+    </insert>
+
+    <update id="update">
+        UPDATE sys_message
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="messageType != null">message_type = #{messageType},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="senderType != null">sender_type = #{senderType},</if>
+            <if test="senderId != null">sender_id = #{senderId},</if>
+            <if test="receiverType != null">receiver_type = #{receiverType},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE sys_message SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <select id="selectById" resultMap="MessageResultMap">
+        SELECT * FROM sys_message WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectPageByCondition" resultMap="MessageResultMap">
+        SELECT * FROM sys_message
+        WHERE deleted = 0
+        <if test="title != null and title != ''">
+            AND title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="messageType != null and messageType != ''">
+            AND message_type = #{messageType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM sys_message
+        WHERE deleted = 0
+        <if test="title != null and title != ''">
+            AND title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="messageType != null and messageType != ''">
+            AND message_type = #{messageType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 按条件查询所有消息（导出用） -->
+    <select id="selectAllByCondition" resultMap="MessageResultMap">
+        SELECT * FROM sys_message
+        WHERE deleted = 0
+        <if test="title != null and title != ''">
+            AND title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="messageType != null and messageType != ''">
+            AND message_type = #{messageType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

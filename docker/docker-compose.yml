@@ -1,0 +1,446 @@
+version: '3.8'
+
+services:
+  # ==================== 应用服务 ====================
+  iboot-admin:
+    build:
+      context: ../iboot-admin
+      dockerfile: Dockerfile
+    container_name: iboot-admin
+    ports:
+      - "8080:8080"
+    environment:
+      - TZ=Asia/Shanghai
+      - SPRING_PROFILES_ACTIVE=docker
+      # 数据库配置（使用简单变量名，与 application.yml 占位符对应）
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=root
+      # Redis 配置
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # MinIO 配置
+      - MINIO_URL=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      # Elasticsearch 配置
+      - ELASTICSEARCH_URIS=http://elasticsearch:9200
+      # Logstash 配置
+      - LOGSTASH_HOST=logstash
+      # JVM 配置
+      - JAVA_MAX_MEM_RATIO=75
+      - JAVA_DIAGNOSTICS=true
+      # SSE 推送配置
+      - IBOOT_PUSH_SSE_HEARTBEAT_INTERVAL=30000
+    volumes:
+      - admin_logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q 'UP' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      logstash:
+        condition: service_healthy
+
+  iboot-portal:
+    build:
+      context: ../iboot-portal
+      dockerfile: Dockerfile
+    container_name: iboot-portal
+    ports:
+      - "80:80"
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - iboot-admin
+
+  mysql:
+    image: mysql:8.0.45
+    container_name: iboot-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: iboot_admin
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7.0.14
+    container_name: iboot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - iboot-network
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: iboot-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # 监控组件
+  prometheus:
+    image: prom/prometheus:v2.53.4
+    container_name: iboot-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./scripts/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./scripts/prometheus/alerts:/etc/prometheus/alerts
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=24h'
+      - '--storage.tsdb.max-block-duration=2h'
+      - '--web.enable-admin-api'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    # depends_on:
+    #   iboot-admin:
+    #     condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    container_name: iboot-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./scripts/grafana/provisioning:/etc/grafana/provisioning
+      - ./scripts/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - prometheus
+      - thanos-query
+
+  alertmanager:
+    image: prom/alertmanager:v0.29.0
+    container_name: iboot-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./scripts/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - prometheus
+
+  # MinIO 初始化 - 创建 thanos 存储桶
+  minio-init:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: minio-init
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb --ignore-existing myminio/thanos;
+      exit 0;
+      "
+    networks:
+      - iboot-network
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  # Thanos 组件
+  thanos-sidecar:
+    image: thanosio/thanos:v0.36.1
+    container_name: thanos-sidecar
+    ports:
+      - "19191:19191"
+    volumes:
+      - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - prometheus_data:/prometheus
+    user: "root"
+    command:
+      - sidecar
+      - '--tsdb.path=/prometheus'
+      - '--prometheus.url=http://prometheus:9090'
+      - '--objstore.config-file=/etc/thanos/bucket.yml'
+      - '--grpc-address=0.0.0.0:19191'
+      - '--http-address=0.0.0.0:19192'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      prometheus:
+        condition: service_started
+      minio:
+        condition: service_healthy
+
+  thanos-store:
+    image: thanosio/thanos:v0.36.1
+    container_name: thanos-store
+    ports:
+      - "19193:19192"
+    volumes:
+      - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - thanos_store_data:/var/thanos/store
+    user: "root"
+    command:
+      - store
+      - '--objstore.config-file=/etc/thanos/bucket.yml'
+      - '--data-dir=/var/thanos/store'
+      - '--grpc-address=0.0.0.0:19191'
+      - '--http-address=0.0.0.0:19192'
+      - '--index-cache-size=500MB'
+      - '--chunk-pool-size=2GB'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  thanos-query:
+    image: thanosio/thanos:v0.36.1
+    container_name: thanos-query
+    ports:
+      - "19192:19192"
+    command:
+      - query
+      - '--grpc-address=0.0.0.0:19191'
+      - '--http-address=0.0.0.0:19192'
+      - '--store=thanos-sidecar:19191'
+      - '--store=thanos-store:19191'
+      - '--query.replica-label=replica'
+      - '--query.timeout=5m'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - thanos-sidecar
+      - thanos-store
+
+  thanos-compact:
+    image: thanosio/thanos:v0.36.1
+    container_name: thanos-compact
+    ports:
+      - "19194:19192"
+    volumes:
+      - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - thanos_compact_data:/var/thanos/compact
+    user: "root"
+    command:
+      - compact
+      - '--objstore.config-file=/etc/thanos/bucket.yml'
+      - '--data-dir=/var/thanos/compact'
+      - '--http-address=0.0.0.0:19192'
+      - '--wait'
+      - '--retention.resolution-raw=30d'
+      - '--retention.resolution-5m=90d'
+      - '--retention.resolution-1h=1y'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  # 数据库与基础设施 Exporter
+  mysql-exporter:
+    image: prom/mysqld-exporter:v0.15.0
+    container_name: iboot-mysql-exporter
+    ports:
+      - "9104:9104"
+    environment:
+      MYSQLD_EXPORTER_PASSWORD: root
+    command:
+      - '--mysqld.address=mysql:3306'
+      - '--mysqld.username=root'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - mysql
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.69.0
+    container_name: iboot-redis-exporter
+    ports:
+      - "9121:9121"
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - redis
+
+  node-exporter:
+    image: prom/node-exporter:v1.10.2
+    container_name: iboot-node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+
+  # ELK 日志收集
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.7
+    container_name: iboot-elasticsearch
+    ports:
+      - "9200:9200"
+    environment:
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - discovery.type=single-node
+    volumes:
+      - ./scripts/elk/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.17.4
+    container_name: iboot-logstash
+    ports:
+      - "5044:5044"
+      - "5000:5000"
+    volumes:
+      - ./scripts/elk/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    environment:
+      - LS_JAVA_OPTS=-Xms256m -Xmx256m
+      - XPACK_MONITORING_ENABLED=false
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9600/_node/stats/pipelines?pretty | grep -q 'main' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.18.8
+    container_name: iboot-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  # Elasticsearch Exporter for Prometheus
+  elasticsearch-exporter:
+    image: prometheuscommunity/elasticsearch-exporter:v1.5.0
+    container_name: iboot-elasticsearch-exporter
+    ports:
+      - "9114:9114"
+    command:
+      - '--es.uri=http://elasticsearch:9200'
+      - '--es.all'
+      - '--es.indices'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+networks:
+  iboot-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+  minio_data:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
+  es_data:
+  thanos_store_data:
+  thanos_compact_data:
+  admin_logs:

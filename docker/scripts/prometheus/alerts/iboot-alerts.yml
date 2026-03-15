@@ -1,0 +1,79 @@
+groups:
+  - name: iboot-alerts
+    rules:
+      # 系统资源告警
+      - alert: HighCPUUsage
+        expr: sum(rate(process_cpu_seconds_total[1m])) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU使用率过高"
+          description: "CPU使用率超过80%，当前值为{{ $value }}%"
+
+      - alert: HighMemoryUsage
+        expr: (sum(jvm_memory_used_bytes) / sum(jvm_memory_max_bytes)) * 100 > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "内存使用率过高"
+          description: "内存使用率超过85%，当前值为{{ $value }}%"
+
+      # 应用健康告警
+      - alert: ApplicationDown
+        expr: up{job="iboot-admin"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "应用服务不可用"
+          description: "iBoot Admin应用服务停止响应"
+
+      # 性能告警
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le)) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "接口响应时间过长"
+          description: "95%的请求响应时间超过2秒，当前值为{{ $value }}秒"
+
+      - alert: HighErrorRate
+        expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / sum(rate(http_server_requests_seconds_count[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "错误率过高"
+          description: "5xx错误率超过5%，当前值为{{ $value }}%"
+
+      # 业务告警
+      - alert: LowCacheHitRate
+        expr: cache_hit_rate_percent < 70
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "缓存命中率过低"
+          description: "缓存命中率低于70%，当前值为{{ $value }}%"
+
+      - alert: DatabaseConnectionExhausted
+        expr: db_connection_active > 15
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "数据库连接池即将耗尽"
+          description: "活跃数据库连接数过多，当前值为{{ $value }}个"
+
+      # 登录异常告警
+      - alert: HighLoginFailureRate
+        expr: rate(user_login_failed_total[5m]) > rate(user_login_success_total[5m]) * 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "登录失败率异常"
+          description: "登录失败率超过成功登录的50%"

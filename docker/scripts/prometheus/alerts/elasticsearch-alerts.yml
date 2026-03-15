@@ -1,0 +1,174 @@
+groups:
+  - name: elasticsearch-alerts
+    interval: 30s
+    rules:
+      # ==================== 集群健康告警 ====================
+      - alert: ElasticsearchClusterStatusRed
+        expr: elasticsearch_cluster_health_status{color="red"} == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch 集群状态为红色"
+          description: "集群 '{{ $labels.cluster }}' 状态为红色，存在数据丢失风险"
+
+      - alert: ElasticsearchClusterStatusYellow
+        expr: elasticsearch_cluster_health_status{color="yellow"} == 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 集群状态为黄色"
+          description: "集群 '{{ $labels.cluster }}' 状态为黄色，副本分片未完全分配"
+
+      - alert: ElasticsearchClusterHasNoMaster
+        expr: elasticsearch_cluster_health_number_of_data_nodes == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch 集群没有主节点"
+          description: "集群失去主节点，无法正常工作"
+
+      # ==================== 节点健康告警 ====================
+      - alert: ElasticsearchNodeOffline
+        expr: elasticsearch_cluster_health_number_of_nodes < 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch 节点离线"
+          description: "集群中的节点数量减少，当前节点数：{{ $value }}"
+
+      - alert: ElasticsearchJVMHeapUsageHigh
+        expr: elasticsearch_jvm_memory_used_bytes / elasticsearch_jvm_memory_max_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch JVM 堆内存使用率过高"
+          description: "节点 {{ $labels.node }} 的 JVM 堆内存使用率超过 85%，当前值为 {{ $value }}%"
+
+      - alert: ElasticsearchJVMHeapUsageCritical
+        expr: elasticsearch_jvm_memory_used_bytes / elasticsearch_jvm_memory_max_bytes * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch JVM 堆内存即将耗尽"
+          description: "节点 {{ $labels.node }} 的 JVM 堆内存使用率超过 95%，当前值为 {{ $value }}%"
+
+      # ==================== 分片告警 ====================
+      - alert: ElasticsearchUnassignedShards
+        expr: elasticsearch_cluster_health_unassigned_shards > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 存在未分配的分片"
+          description: "集群中有 {{ $value }} 个未分配的分片"
+
+      - alert: ElasticsearchInitializingShards
+        expr: elasticsearch_cluster_health_initializing_shards > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 分片正在初始化"
+          description: "有 {{ $value }} 个分片正在初始化，可能影响性能"
+
+      # ==================== 磁盘空间告警 ====================
+      - alert: ElasticsearchDiskUsageHigh
+        expr: elasticsearch_fs_total_available_in_bytes / elasticsearch_fs_total_total_in_bytes * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 磁盘空间不足"
+          description: "节点 {{ $labels.node }} 的可用磁盘空间低于 20%，当前可用 {{ $value }}%"
+
+      - alert: ElasticsearchDiskUsageCritical
+        expr: elasticsearch_fs_total_available_in_bytes / elasticsearch_fs_total_total_in_bytes * 100 < 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch 磁盘空间严重不足"
+          description: "节点 {{ $labels.node }} 的可用磁盘空间低于 10%，当前可用 {{ $value }}%"
+
+      # ==================== 线程池告警 ====================
+      - alert: ElasticsearchThreadPoolRejectedRequests
+        expr: rate(elasticsearch_thread_pool_rejected_count[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 线程池拒绝请求过多"
+          description: "线程池 {{ $labels.type }} 在节点 {{ $labels.node }} 上拒绝请求，速率：{{ $value }}/秒"
+
+      - alert: ElasticsearchThreadPoolQueueFull
+        expr: elasticsearch_thread_pool_queue_count > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 线程池队列已满"
+          description: "线程池 {{ $labels.type }} 在节点 {{ $labels.node }} 上的队列积压：{{ $value }}"
+
+      # ==================== 索引性能告警 ====================
+      - alert: ElasticsearchIndexingLatencyHigh
+        expr: rate(elasticsearch_indices_indexing_time_seconds_total[5m]) / rate(elasticsearch_indices_indexing_index_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 索引延迟过高"
+          description: "平均索引延迟超过 1 秒，当前值为 {{ $value }}秒"
+
+      - alert: ElasticsearchSearchLatencyHigh
+        expr: rate(elasticsearch_indices_search_query_time_seconds_total[5m]) / rate(elasticsearch_indices_search_query_total[5m]) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 查询延迟过高"
+          description: "平均查询延迟超过 2 秒，当前值为 {{ $value }}秒"
+
+      # ==================== 文档操作告警 ====================
+      - alert: ElasticsearchDocumentDeleteFailure
+        expr: rate(elasticsearch_indices_docs_deleted_total[5m]) == 0 and rate(elasticsearch_indices_docs_deleted_total[5m] offset 5m) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 文档删除操作异常"
+          description: "文档删除操作停止，可能存在索引问题"
+
+      # ==================== 传输错误告警 ====================
+      - alert: ElasticsearchTransportErrors
+        expr: rate(elasticsearch_transport_server_open_count[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 传输层连接异常"
+          description: "传输层服务器打开的连接数过多：{{ $value }}"
+
+      # ==================== 垃圾回收告警 ====================
+      - alert: ElasticsearchGCTimeHigh
+        expr: rate(elasticsearch_jvm_gc_collection_seconds_sum[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch GC 时间过长"
+          description: "节点 {{ $labels.node }} 的 GC 时间占比过高，当前值为 {{ $value }}秒"
+
+      - alert: ElasticsearchFrequentGC
+        expr: rate(elasticsearch_jvm_gc_collection_seconds_count[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch 频繁进行垃圾回收"
+          description: "节点 {{ $labels.node }} 的 GC 频率过高，每分钟 {{ $value | humanize }} 次"

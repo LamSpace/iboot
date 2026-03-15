@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.DeptMapper">
+
+    <resultMap id="DeptResultMap" type="com.iboot.admin.infrastructure.persistence.po.DeptPO">
+        <id property="id" column="id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="deptCode" column="dept_code"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="leader" column="leader"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.DeptPO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_dept (parent_id, dept_name, dept_code, order_num, leader, phone, email, status, create_by, create_time, deleted)
+        VALUES (#{parentId}, #{deptName}, #{deptCode}, #{orderNum}, #{leader}, #{phone}, #{email}, #{status}, #{createBy}, #{createTime}, 0)
+    </insert>
+
+    <update id="update" parameterType="com.iboot.admin.infrastructure.persistence.po.DeptPO">
+        UPDATE sys_dept
+        <set>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="deptName != null">dept_name = #{deptName},</if>
+            <if test="deptCode != null">dept_code = #{deptCode},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="leader != null">leader = #{leader},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE sys_dept SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <select id="selectById" resultMap="DeptResultMap">
+        SELECT * FROM sys_dept WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectAll" resultMap="DeptResultMap">
+        SELECT * FROM sys_dept d WHERE d.deleted = 0 ORDER BY d.order_num ASC
+    </select>
+
+    <select id="selectByParentId" resultMap="DeptResultMap">
+        SELECT * FROM sys_dept WHERE parent_id = #{parentId} AND deleted = 0 ORDER BY order_num ASC
+    </select>
+
+    <select id="selectChildrenIds" resultType="java.lang.Long">
+        WITH RECURSIVE dept_tree AS (
+            SELECT id FROM sys_dept WHERE id = #{deptId} AND deleted = 0
+            UNION ALL
+            SELECT d.id FROM sys_dept d
+            INNER JOIN dept_tree dt ON d.parent_id = dt.id
+            WHERE d.deleted = 0
+        )
+        SELECT id FROM dept_tree
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM sys_dept WHERE deleted = 0
+    </select>
+
+    <select id="countByDeptCode" resultType="int">
+        SELECT COUNT(*) FROM sys_dept WHERE dept_code = #{deptCode} AND deleted = 0
+    </select>
+
+    <select id="countByDeptNameAndParentId" resultType="int">
+        SELECT COUNT(*) FROM sys_dept WHERE dept_name = #{deptName} AND parent_id = #{parentId} AND deleted = 0
+    </select>
+
+    <select id="countChildren" resultType="int">
+        SELECT COUNT(*) FROM sys_dept WHERE parent_id = #{deptId} AND deleted = 0
+    </select>
+
+    <select id="selectDeptUserCounts" resultType="com.iboot.admin.infrastructure.persistence.mapper.DeptMapper$DeptUserCountDTO">
+        SELECT dept_id AS deptId, COUNT(*) AS userCount 
+        FROM sys_user 
+        WHERE deleted = 0 AND dept_id IS NOT NULL 
+        GROUP BY dept_id
+    </select>
+
+</mapper>

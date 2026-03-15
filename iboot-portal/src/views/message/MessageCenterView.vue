@@ -1,0 +1,510 @@
+<template>
+  <div class="content-wrapper">
+    <div class="content-body">
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="消息管理" name="message">
+          <!-- 操作按钮 -->
+          <div class="action-bar">
+            <el-button type="primary" v-permission="'message:add'" @click="handleAdd">新增消息</el-button>
+            <el-button type="success" :loading="exportLoading" @click="handleExport">导出Excel</el-button>
+          </div>
+
+          <!-- 搜索表单 -->
+          <el-form :inline="true" :model="queryParams" class="search-form">
+            <el-form-item label="消息标题">
+              <el-input v-model="queryParams.title" placeholder="请输入消息标题" clearable />
+            </el-form-item>
+            <el-form-item label="消息类型">
+              <el-select v-model="queryParams.messageType" placeholder="请选择" clearable>
+                <el-option
+                  v-for="item in dictStore.getDict('sys_message_type')"
+                  :key="item.dictValue"
+                  :label="item.dictLabel"
+                  :value="item.dictValue"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select v-model="queryParams.status" placeholder="请选择" clearable>
+                <el-option
+                  v-for="item in dictStore.getDict('sys_message_status')"
+                  :key="item.dictValue"
+                  :label="item.dictLabel"
+                  :value="item.dictValue"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="handleSearch">搜索</el-button>
+              <el-button @click="handleReset">重置</el-button>
+            </el-form-item>
+          </el-form>
+
+          <!-- 数据表格 -->
+          <el-table :data="messageList" style="width: 100%" v-loading="loading">
+            <el-table-column prop="id" label="ID" width="80" align="center" />
+            <el-table-column prop="title" label="消息标题" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="messageType" label="消息类型" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="dictStore.getDictListClass('sys_message_type', row.messageType)">
+                  {{ dictStore.getDictLabel('sys_message_type', row.messageType) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="priority" label="优先级" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="dictStore.getDictListClass('sys_message_priority', row.priority)">
+                  {{ dictStore.getDictLabel('sys_message_priority', row.priority) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="receiverType" label="接收类型" width="100" align="center">
+              <template #default="{ row }">
+                {{ dictStore.getDictLabel('sys_message_receiver_type', row.receiverType) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="status" label="状态" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="dictStore.getDictListClass('sys_message_status', row.status)">
+                  {{ dictStore.getDictLabel('sys_message_status', row.status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="createBy" label="创建人" width="120" />
+            <el-table-column prop="createTime" label="创建时间" width="180" />
+            <el-table-column label="操作" width="280" fixed="right">
+              <template #default="{ row }">
+                <el-button
+                  v-permission="'message:edit'"
+                  type="primary"
+                  link
+                  @click="handleEdit(row)"
+                  :disabled="row.status !== '0'"
+                >编辑</el-button>
+                <el-button
+                  v-permission="'message:send'"
+                  type="success"
+                  link
+                  @click="handleSend(row)"
+                  v-if="row.status === '0'"
+                >发送</el-button>
+                <el-button
+                  v-permission="'message:send'"
+                  type="warning"
+                  link
+                  @click="handleRevoke(row)"
+                  v-if="row.status === '1'"
+                >撤回</el-button>
+                <el-button
+                  v-permission="'message:remove'"
+                  type="danger"
+                  link
+                  @click="handleDelete(row)"
+                  :disabled="row.status !== '0'"
+                >删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 分页 -->
+          <el-pagination
+            class="pagination"
+            v-model:current-page="queryParams.pageNum"
+            v-model:page-size="queryParams.pageSize"
+            :total="total"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="loadData"
+            @current-change="loadData"
+          />
+        </el-tab-pane>
+
+        <el-tab-pane label="消息模板" name="template">
+          <MessageTemplatePanel />
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+
+    <!-- 新增/编辑消息对话框 -->
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="消息标题" prop="title">
+          <el-input v-model="form.title" placeholder="请输入消息标题" maxlength="200" show-word-limit />
+        </el-form-item>
+        <el-form-item label="消息类型" prop="messageType">
+          <el-select v-model="form.messageType" placeholder="请选择消息类型">
+            <el-option
+              v-for="item in dictStore.getDict('sys_message_type')"
+              :key="item.dictValue"
+              :label="item.dictLabel"
+              :value="item.dictValue"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="优先级" prop="priority">
+          <el-radio-group v-model="form.priority">
+            <el-radio
+              v-for="item in dictStore.getDict('sys_message_priority')"
+              :key="item.dictValue"
+              :value="item.dictValue"
+            >{{ item.dictLabel }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="接收类型" prop="receiverType">
+          <el-select v-model="form.receiverType" placeholder="请选择接收类型" @change="handleReceiverTypeChange">
+            <el-option
+              v-for="item in dictStore.getDict('sys_message_receiver_type')"
+              :key="item.dictValue"
+              :label="item.dictLabel"
+              :value="item.dictValue"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="指定用户" prop="targetUserIds" v-if="form.receiverType === '1'">
+          <el-select
+            v-model="targetUserIds"
+            multiple
+            filterable
+            remote
+            :remote-method="searchUsers"
+            placeholder="请搜索并选择用户"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="user in userOptions"
+              :key="user.id"
+              :label="(user.nickname || user.username) + ' (' + user.username + ')'"
+              :value="user.id!"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="消息内容" prop="content">
+          <el-input
+            v-model="form.content"
+            type="textarea"
+            :rows="6"
+            placeholder="请输入消息内容"
+          />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="请输入备注" maxlength="500" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="handleSubmit(false)">保存草稿</el-button>
+        <el-button type="primary" @click="handleSubmit(true)">保存并发送</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 发送消息对话框 -->
+    <el-dialog v-model="sendDialogVisible" title="发送消息" width="500px">
+      <el-form :model="sendForm" label-width="100px">
+        <el-form-item label="消息标题">
+          <el-input :value="sendForm.title" disabled />
+        </el-form-item>
+        <el-form-item label="接收类型">
+          <el-input :value="dictStore.getDictLabel('sys_message_receiver_type', sendForm.receiverType)" disabled />
+        </el-form-item>
+        <el-form-item label="指定用户" v-if="sendForm.receiverType === '1'">
+          <el-select
+            v-model="sendForm.userIds"
+            multiple
+            filterable
+            remote
+            :remote-method="searchSendUsers"
+            placeholder="请搜索并选择用户"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="user in sendUserOptions"
+              :key="user.id"
+              :label="(user.nickname || user.username) + ' (' + user.username + ')'"
+              :value="user.id!"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="sendDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleConfirmSend">确认发送</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import {
+  getMessageList,
+  addMessage,
+  updateMessage,
+  deleteMessage,
+  sendMessage,
+  revokeMessage,
+  getUserList,
+  exportMessageList,
+  type Message,
+  type MessageQuery,
+  type User
+} from '@/api/system'
+import { useDictStore } from '@/stores/dict'
+import { useExport } from '@/composables/useExport'
+import MessageTemplatePanel from '@/components/MessageTemplatePanel.vue'
+
+const dictStore = useDictStore()
+const { exportLoading, handleExport: performExport } = useExport()
+
+const handleExport = () => {
+  performExport(
+    () => exportMessageList({
+      title: queryParams.title,
+      messageType: queryParams.messageType,
+      status: queryParams.status
+    }),
+    '消息列表'
+  )
+}
+
+const activeTab = ref('message')
+const loading = ref(false)
+const messageList = ref<Message[]>([])
+const total = ref(0)
+const dialogVisible = ref(false)
+const dialogTitle = ref('')
+const formRef = ref<FormInstance>()
+
+const queryParams = reactive<MessageQuery>({
+  pageNum: 1,
+  pageSize: 10,
+  title: undefined,
+  messageType: undefined,
+  status: undefined
+})
+
+const defaultForm: Message = {
+  title: '',
+  content: '',
+  messageType: '1',
+  priority: '0',
+  receiverType: '0',
+  remark: ''
+}
+
+const form = reactive<Message>({ ...defaultForm })
+
+// 新增消息时指定的接收用户
+const targetUserIds = ref<number[]>([])
+const userOptions = ref<User[]>([])
+
+const rules: FormRules = {
+  title: [{ required: true, message: '请输入消息标题', trigger: 'blur' }],
+  messageType: [{ required: true, message: '请选择消息类型', trigger: 'change' }],
+  receiverType: [{ required: true, message: '请选择接收类型', trigger: 'change' }],
+  content: [{ required: true, message: '请输入消息内容', trigger: 'blur' }]
+}
+
+// 发送对话框（仅用于列表中的"发送"按钮）
+const sendDialogVisible = ref(false)
+const sendForm = reactive({
+  messageId: 0,
+  title: '',
+  receiverType: '',
+  userIds: [] as number[]
+})
+const sendUserOptions = ref<User[]>([])
+
+const loadData = async () => {
+  loading.value = true
+  try {
+    const res = await getMessageList(queryParams)
+    if (res.code === 200) {
+      messageList.value = res.data.data
+      total.value = res.data.total
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSearch = () => {
+  queryParams.pageNum = 1
+  loadData()
+}
+
+const handleReset = () => {
+  queryParams.title = undefined
+  queryParams.messageType = undefined
+  queryParams.status = undefined
+  handleSearch()
+}
+
+const resetForm = () => {
+  Object.assign(form, defaultForm)
+  form.id = undefined
+  targetUserIds.value = []
+  userOptions.value = []
+}
+
+const handleAdd = () => {
+  resetForm()
+  dialogTitle.value = '新增消息'
+  dialogVisible.value = true
+}
+
+const handleEdit = (row: Message) => {
+  resetForm()
+  Object.assign(form, row)
+  dialogTitle.value = '编辑消息'
+  dialogVisible.value = true
+}
+
+const handleReceiverTypeChange = () => {
+  targetUserIds.value = []
+}
+
+const searchUsers = async (query: string) => {
+  if (query.length < 1) return
+  try {
+    const res = await getUserList({ pageNum: 1, pageSize: 20, username: query })
+    if (res.code === 200) {
+      userOptions.value = res.data.data
+    }
+  } catch {
+    // ignore
+  }
+}
+
+const searchSendUsers = async (query: string) => {
+  if (query.length < 1) return
+  try {
+    const res = await getUserList({ pageNum: 1, pageSize: 20, username: query })
+    if (res.code === 200) {
+      sendUserOptions.value = res.data.data
+    }
+  } catch {
+    // ignore
+  }
+}
+
+const handleSubmit = async (andSend: boolean) => {
+  await formRef.value?.validate()
+  if (andSend && form.receiverType === '1' && targetUserIds.value.length === 0) {
+    ElMessage.warning('请选择接收用户')
+    return
+  }
+  let messageId: number
+  if (form.id) {
+    await updateMessage(form)
+    messageId = form.id
+    ElMessage.success('修改成功')
+  } else {
+    const res = await addMessage(form)
+    messageId = res.data.id!
+    ElMessage.success('新增成功')
+  }
+  if (andSend) {
+    try {
+      await sendMessage({
+        messageId,
+        userIds: form.receiverType === '1' ? targetUserIds.value : undefined
+      })
+      ElMessage.success('发送成功')
+    } catch {
+      // 创建成功但发送失败，提示用户稍后手动发送
+      ElMessage.warning('消息已保存，但发送失败，请在列表中手动发送')
+    }
+  }
+  dialogVisible.value = false
+  loadData()
+}
+
+const handleDelete = (row: Message) => {
+  ElMessageBox.confirm('确认删除该消息吗？', '提示', { type: 'warning' })
+    .then(async () => {
+      await deleteMessage(row.id!)
+      ElMessage.success('删除成功')
+      loadData()
+    })
+    .catch(() => {})
+}
+
+const handleSend = (row: Message) => {
+  sendForm.messageId = row.id!
+  sendForm.title = row.title
+  sendForm.receiverType = row.receiverType
+  sendForm.userIds = []
+  sendUserOptions.value = []
+  sendDialogVisible.value = true
+}
+
+const handleConfirmSend = async () => {
+  if (sendForm.receiverType === '1' && sendForm.userIds.length === 0) {
+    ElMessage.warning('请选择接收用户')
+    return
+  }
+  try {
+    await sendMessage({
+      messageId: sendForm.messageId,
+      userIds: sendForm.receiverType === '1' ? sendForm.userIds : undefined
+    })
+    ElMessage.success('发送成功')
+    sendDialogVisible.value = false
+    loadData()
+  } catch {
+    // error handled by interceptor
+  }
+}
+
+const handleRevoke = (row: Message) => {
+  ElMessageBox.confirm('确认撤回该消息吗？撤回后未读用户将不再收到该消息。', '提示', { type: 'warning' })
+    .then(async () => {
+      await revokeMessage(row.id!)
+      ElMessage.success('撤回成功')
+      loadData()
+    })
+    .catch(() => {})
+}
+
+onMounted(() => {
+  dictStore.loadDicts(
+    'sys_message_type',
+    'sys_message_priority',
+    'sys_message_status',
+    'sys_message_sender_type',
+    'sys_message_receiver_type'
+  )
+  loadData()
+})
+</script>
+
+<style scoped>
+.content-wrapper {
+  padding: 20px;
+}
+
+.content-body {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.action-bar {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.search-form {
+  margin-bottom: 20px;
+}
+
+.pagination {
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+</style>

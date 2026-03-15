@@ -1,0 +1,15 @@
+cluster.name: iboot-cluster
+node.name: iboot-es-node
+
+# 单节点模式
+discovery.type: single-node
+
+# 开发环境关闭安全认证
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+
+# 数据存储路径
+path.data: /usr/share/elasticsearch/data
+
+# 监听所有网络接口
+network.host: 0.0.0.0

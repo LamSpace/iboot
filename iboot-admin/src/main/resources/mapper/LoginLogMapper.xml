@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.LoginLogMapper">
+
+    <resultMap id="LoginLogResultMap" type="com.iboot.admin.infrastructure.persistence.po.LoginLogPO">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="ipAddress" column="ip_address"/>
+        <result property="loginLocation" column="login_location"/>
+        <result property="browser" column="browser"/>
+        <result property="os" column="os"/>
+        <result property="status" column="status"/>
+        <result property="message" column="message"/>
+        <result property="loginTime" column="login_time"/>
+        <result property="deleted" column="deleted"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.LoginLogPO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_login_log (username, ip_address, login_location, browser, os, status, message, login_time)
+        VALUES (#{username}, #{ipAddress}, #{loginLocation}, #{browser}, #{os}, #{status}, #{message}, #{loginTime})
+    </insert>
+
+    <select id="selectById" resultMap="LoginLogResultMap">
+        SELECT * FROM sys_login_log WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultMap="LoginLogResultMap">
+        SELECT * FROM sys_login_log ll
+        WHERE ll.deleted = 0
+        ORDER BY ll.login_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectPageByCondition" resultMap="LoginLogResultMap">
+        SELECT * FROM sys_login_log ll
+        <where>
+            ll.deleted = 0
+            <if test="username != null and username != ''">
+                AND ll.username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="ipAddress != null and ipAddress != ''">
+                AND ll.ip_address LIKE CONCAT('%', #{ipAddress}, '%')
+            </if>
+            <if test="status != null">
+                AND ll.status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND ll.login_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND ll.login_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY ll.login_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 按条件查询所有登录日志（不分页，用于导出） -->
+    <select id="selectAllByCondition" resultMap="LoginLogResultMap">
+        SELECT * FROM sys_login_log ll
+        <where>
+            ll.deleted = 0
+            <if test="username != null and username != ''">
+                AND ll.username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="ipAddress != null and ipAddress != ''">
+                AND ll.ip_address LIKE CONCAT('%', #{ipAddress}, '%')
+            </if>
+            <if test="status != null">
+                AND ll.status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND ll.login_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND ll.login_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY ll.login_time DESC
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM sys_login_log WHERE deleted = 0
+    </select>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM sys_login_log ll
+        <where>
+            ll.deleted = 0
+            <if test="username != null and username != ''">
+                AND ll.username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="ipAddress != null and ipAddress != ''">
+                AND ll.ip_address LIKE CONCAT('%', #{ipAddress}, '%')
+            </if>
+            <if test="status != null">
+                AND ll.status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND ll.login_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND ll.login_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteBeforeDate">
+        DELETE FROM sys_login_log WHERE login_time &lt; #{beforeDate}
+    </delete>
+
+    <select id="countByDate" resultType="java.util.Map">
+        SELECT DATE(login_time) as date, COUNT(*) as count
+        FROM sys_login_log
+        WHERE login_time &gt;= #{startTime} AND login_time &lt;= #{endTime}
+        GROUP BY DATE(login_time)
+        ORDER BY date
+    </select>
+
+    <select id="countByStatus" resultType="java.util.Map">
+        SELECT
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as success,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as fail,
+            COUNT(*) as total
+        FROM sys_login_log
+        WHERE login_time &gt;= #{startTime} AND login_time &lt;= #{endTime}
+    </select>
+
+    <select id="countDistinctUsers" resultType="long">
+        SELECT COUNT(DISTINCT username)
+        FROM sys_login_log
+        WHERE login_time &gt;= #{startTime} AND login_time &lt;= #{endTime}
+        AND status = 1
+    </select>
+
+    <select id="countByHour" resultType="java.util.Map">
+        SELECT HOUR(login_time) as hour, COUNT(*) as count
+        FROM sys_login_log
+        WHERE login_time &gt;= #{startTime} AND login_time &lt;= #{endTime}
+        GROUP BY HOUR(login_time)
+        ORDER BY hour
+    </select>
+
+</mapper>

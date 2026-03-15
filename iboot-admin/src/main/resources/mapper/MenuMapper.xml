@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.MenuMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="MenuResultMap" type="com.iboot.admin.infrastructure.persistence.po.MenuPO">
+        <id property="id" column="id"/>
+        <result property="menuName" column="menu_name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="menuType" column="menu_type"/>
+        <result property="path" column="path"/>
+        <result property="component" column="component"/>
+        <result property="permission" column="permission"/>
+        <result property="icon" column="icon"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="isFrame" column="is_frame"/>
+        <result property="isCache" column="is_cache"/>
+        <result property="visible" column="visible"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <!-- 插入菜单记录 -->
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.MenuPO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_menu (
+            menu_name, parent_id, menu_type, path, component, permission, icon,
+            order_num, is_frame, is_cache, visible, status,
+            create_by, create_time, update_by, update_time, deleted, remark
+        ) VALUES (
+            #{menuName}, #{parentId}, #{menuType}, #{path}, #{component}, #{permission}, #{icon},
+            #{orderNum}, #{isFrame}, #{isCache}, #{visible}, #{status},
+            #{createBy}, NOW(), #{updateBy}, #{updateTime}, #{deleted}, #{remark}
+        )
+    </insert>
+
+    <!-- 更新菜单记录 -->
+    <update id="update" parameterType="com.iboot.admin.infrastructure.persistence.po.MenuPO">
+        UPDATE sys_menu
+        <set>
+            <if test="menuName != null and menuName != ''">menu_name = #{menuName},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="menuType != null and menuType != ''">menu_type = #{menuType},</if>
+            <if test="path != null">path = #{path},</if>
+            <if test="component != null">component = #{component},</if>
+            <if test="permission != null">permission = #{permission},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="isFrame != null">is_frame = #{isFrame},</if>
+            <if test="isCache != null">is_cache = #{isCache},</if>
+            <if test="visible != null">visible = #{visible},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 根据ID删除菜单记录 -->
+    <update id="deleteById">
+        UPDATE sys_menu SET deleted = 1 WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 根据ID查询菜单记录 -->
+    <select id="selectById" resultMap="MenuResultMap">
+        SELECT * FROM sys_menu WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 根据权限标识查询菜单记录 -->
+    <select id="selectByPermission" resultMap="MenuResultMap">
+        SELECT * FROM sys_menu WHERE permission = #{permission} AND deleted = 0
+    </select>
+
+    <!-- 查询所有菜单记录 -->
+    <select id="selectAll" resultMap="MenuResultMap">
+        SELECT * FROM sys_menu WHERE deleted = 0 ORDER BY order_num ASC, create_time ASC
+    </select>
+
+    <!-- 根据父菜单ID查询子菜单列表 -->
+    <select id="selectByParentId" resultMap="MenuResultMap">
+        SELECT * FROM sys_menu WHERE parent_id = #{parentId} AND deleted = 0 ORDER BY order_num ASC
+    </select>
+
+    <!-- 根据用户ID查询菜单列表 -->
+    <select id="selectByUserId" resultMap="MenuResultMap">
+        SELECT DISTINCT m.* FROM sys_menu m
+        INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
+        INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id
+        WHERE ur.user_id = #{userId} AND m.deleted = 0 AND m.status = 1
+        ORDER BY m.order_num ASC
+    </select>
+
+    <!-- 根据角色ID查询菜单列表 -->
+    <select id="selectByRoleId" resultMap="MenuResultMap">
+        SELECT m.* FROM sys_menu m
+        INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
+        WHERE rm.role_id = #{roleId} AND m.deleted = 0
+        ORDER BY m.order_num ASC
+    </select>
+
+    <!-- 检查同级菜单名称是否存在 -->
+    <select id="existsByMenuNameAndParentId" resultType="int">
+        SELECT COUNT(*) FROM sys_menu WHERE menu_name = #{menuName} AND parent_id = #{parentId} AND deleted = 0
+    </select>
+
+    <!-- 统计子菜单数量 -->
+    <select id="countByParentId" resultType="long">
+        SELECT COUNT(*) FROM sys_menu WHERE parent_id = #{parentId} AND deleted = 0
+    </select>
+
+    <!-- 统计菜单总数 -->
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM sys_menu WHERE deleted = 0
+    </select>
+
+</mapper>

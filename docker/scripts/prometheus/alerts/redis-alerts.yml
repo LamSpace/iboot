@@ -1,0 +1,47 @@
+groups:
+  - name: redis-alerts
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis 服务不可用"
+          description: "Redis Exporter 无法连接到 Redis，服务可能已停止"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 85 and redis_memory_max_bytes > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis 内存使用率过高"
+          description: "Redis 内存使用率超过85%，当前值为{{ $value | printf \"%.1f\" }}%"
+
+      - alert: RedisHighKeyEvictions
+        expr: rate(redis_evicted_keys_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis 键淘汰频繁"
+          description: "Redis 键淘汰速率超过 10/s，当前值为{{ $value | printf \"%.2f\" }}/s，建议增大 maxmemory 或优化键过期策略"
+
+      - alert: RedisHighConnectedClients
+        expr: redis_connected_clients > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis 连接客户端数过多"
+          description: "Redis 当前连接客户端数为{{ $value }}，超过100个"
+
+      - alert: RedisRejectedConnections
+        expr: rate(redis_rejected_connections_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis 正在拒绝连接"
+          description: "Redis 出现连接拒绝，速率为{{ $value | printf \"%.2f\" }}/s，已达到 maxclients 上限"

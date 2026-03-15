@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.FileMapper">
+
+    <resultMap id="FileResultMap" type="com.iboot.admin.infrastructure.persistence.po.FilePO">
+        <id property="id" column="id"/>
+        <result property="fileName" column="file_name"/>
+        <result property="filePath" column="file_path"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="fileType" column="file_type"/>
+        <result property="fileExt" column="file_ext"/>
+        <result property="fileCategory" column="file_category"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="uploadBy" column="upload_by"/>
+        <result property="uploadTime" column="upload_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.FilePO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_file (file_name, file_path, file_size, file_type, file_ext, file_category,
+                              upload_by, upload_time, create_by, create_time, deleted, remark)
+        VALUES (#{fileName}, #{filePath}, #{fileSize}, #{fileType}, #{fileExt}, #{fileCategory},
+                #{uploadBy}, #{uploadTime}, #{createBy}, #{createTime}, 0, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.iboot.admin.infrastructure.persistence.po.FilePO">
+        UPDATE sys_file
+        <set>
+            <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="fileCategory != null">file_category = #{fileCategory},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE sys_file SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <select id="selectById" resultMap="FileResultMap">
+        SELECT * FROM sys_file WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectAll" resultMap="FileResultMap">
+        SELECT * FROM sys_file f WHERE f.deleted = 0 ORDER BY f.upload_time DESC
+    </select>
+
+    <select id="selectPage" resultMap="FileResultMap">
+        SELECT * FROM sys_file f WHERE f.deleted = 0 ORDER BY f.upload_time DESC LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM sys_file f WHERE f.deleted = 0
+    </select>
+
+    <select id="selectPageByCondition" resultMap="FileResultMap">
+        SELECT * FROM sys_file f
+        <where>
+            f.deleted = 0
+            <if test="fileName != null and fileName != ''">
+                AND f.file_name LIKE CONCAT('%', #{fileName}, '%')
+            </if>
+            <if test="fileCategory != null and fileCategory != ''">
+                AND f.file_category = #{fileCategory}
+            </if>
+            <if test="fileExt != null and fileExt != ''">
+                AND f.file_ext = #{fileExt}
+            </if>
+        </where>
+        ORDER BY f.upload_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM sys_file f
+        <where>
+            f.deleted = 0
+            <if test="fileName != null and fileName != ''">
+                AND f.file_name LIKE CONCAT('%', #{fileName}, '%')
+            </if>
+            <if test="fileCategory != null and fileCategory != ''">
+                AND f.file_category = #{fileCategory}
+            </if>
+            <if test="fileExt != null and fileExt != ''">
+                AND f.file_ext = #{fileExt}
+            </if>
+        </where>
+    </select>
+
+    <!-- 按条件查询所有文件（导出用） -->
+    <select id="selectAllByCondition" resultMap="FileResultMap">
+        SELECT * FROM sys_file f
+        <where>
+            f.deleted = 0
+            <if test="fileName != null and fileName != ''">
+                AND f.file_name LIKE CONCAT('%', #{fileName}, '%')
+            </if>
+            <if test="fileCategory != null and fileCategory != ''">
+                AND f.file_category = #{fileCategory}
+            </if>
+        </where>
+        ORDER BY f.upload_time DESC
+    </select>
+
+</mapper>

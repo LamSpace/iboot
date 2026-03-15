@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.OperateLogMapper">
+
+    <resultMap id="OperateLogResultMap" type="com.iboot.admin.infrastructure.persistence.po.OperateLogPO">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="businessType" column="business_type"/>
+        <result property="method" column="method"/>
+        <result property="requestMethod" column="request_method"/>
+        <result property="operatorType" column="operator_type"/>
+        <result property="operatorName" column="operator_name"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="url" column="url"/>
+        <result property="ip" column="ip"/>
+        <result property="location" column="location"/>
+        <result property="param" column="param"/>
+        <result property="result" column="result"/>
+        <result property="status" column="status"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="operateTime" column="operate_time"/>
+        <result property="costTime" column="cost_time"/>
+        <result property="deleted" column="deleted"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.OperateLogPO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_operate_log (title, business_type, method, request_method, operator_type, operator_name, dept_name, url, ip, location, param, result, status, error_msg, operate_time, cost_time)
+        VALUES (#{title}, #{businessType}, #{method}, #{requestMethod}, #{operatorType}, #{operatorName}, #{deptName}, #{url}, #{ip}, #{location}, #{param}, #{result}, #{status}, #{errorMsg}, #{operateTime}, #{costTime})
+    </insert>
+
+    <select id="selectById" resultMap="OperateLogResultMap">
+        SELECT * FROM sys_operate_log WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultMap="OperateLogResultMap">
+        SELECT * FROM sys_operate_log ol
+        WHERE ol.deleted = 0
+        ORDER BY ol.operate_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectPageByCondition" resultMap="OperateLogResultMap">
+        SELECT * FROM sys_operate_log ol
+        <where>
+            ol.deleted = 0
+            <if test="title != null and title != ''">
+                AND ol.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="operatorName != null and operatorName != ''">
+                AND ol.operator_name LIKE CONCAT('%', #{operatorName}, '%')
+            </if>
+            <if test="businessType != null">
+                AND ol.business_type = #{businessType}
+            </if>
+            <if test="status != null">
+                AND ol.status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND ol.operate_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND ol.operate_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY ol.operate_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 按条件查询所有操作日志（不分页，用于导出） -->
+    <select id="selectAllByCondition" resultMap="OperateLogResultMap">
+        SELECT * FROM sys_operate_log ol
+        <where>
+            ol.deleted = 0
+            <if test="title != null and title != ''">
+                AND ol.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="operatorName != null and operatorName != ''">
+                AND ol.operator_name LIKE CONCAT('%', #{operatorName}, '%')
+            </if>
+            <if test="businessType != null">
+                AND ol.business_type = #{businessType}
+            </if>
+            <if test="status != null">
+                AND ol.status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND ol.operate_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND ol.operate_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY ol.operate_time DESC
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM sys_operate_log WHERE deleted = 0
+    </select>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM sys_operate_log ol
+        <where>
+            ol.deleted = 0
+            <if test="title != null and title != ''">
+                AND ol.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="operatorName != null and operatorName != ''">
+                AND ol.operator_name LIKE CONCAT('%', #{operatorName}, '%')
+            </if>
+            <if test="businessType != null">
+                AND ol.business_type = #{businessType}
+            </if>
+            <if test="status != null">
+                AND ol.status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND ol.operate_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND ol.operate_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteBeforeDate">
+        DELETE FROM sys_operate_log WHERE operate_time &lt; #{beforeDate}
+    </delete>
+
+    <select id="countByDate" resultType="java.util.Map">
+        SELECT DATE(operate_time) as date, COUNT(*) as count
+        FROM sys_operate_log
+        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
+        GROUP BY DATE(operate_time)
+        ORDER BY date
+    </select>
+
+    <select id="countByModule" resultType="java.util.Map">
+        SELECT title as module, COUNT(*) as count
+        FROM sys_operate_log
+        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
+        GROUP BY title
+        ORDER BY count DESC
+    </select>
+
+    <select id="countByStatus" resultType="java.util.Map">
+        SELECT
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as success,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as fail,
+            COUNT(*) as total
+        FROM sys_operate_log
+        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
+    </select>
+
+    <select id="countByHour" resultType="java.util.Map">
+        SELECT HOUR(operate_time) as hour, COUNT(*) as count
+        FROM sys_operate_log
+        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
+        GROUP BY HOUR(operate_time)
+        ORDER BY hour
+    </select>
+
+    <select id="topActiveUsers" resultType="java.util.Map">
+        SELECT operator_name as username, COUNT(*) as count
+        FROM sys_operate_log
+        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
+        AND operator_name IS NOT NULL AND operator_name != ''
+        GROUP BY operator_name
+        ORDER BY count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="countByRequestMethod" resultType="java.util.Map">
+        SELECT request_method as name, COUNT(*) as count
+        FROM sys_operate_log
+        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
+        AND request_method IS NOT NULL AND request_method != ''
+        GROUP BY request_method
+        ORDER BY count DESC
+    </select>
+
+</mapper>

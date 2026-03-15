@@ -1,0 +1,41 @@
+apiVersion: 1
+
+providers:
+  # Provider 1: 基础监控仪表板
+  - name: 'Basic Monitoring'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false
+      
+  # Provider 2: Spring Boot 应用监控仪表板
+  - name: 'Spring Boot Applications'
+    orgId: 1
+    folder: 'Spring Boot Applications'
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards/springboot
+      foldersFromFilesStructure: false
+
+  # Provider 3: iBoot 自定义业务监控仪表板
+  - name: 'iBoot Custom Metrics'
+    orgId: 1
+    folder: 'iBoot Custom'
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards/custom
+      foldersFromFilesStructure: false
