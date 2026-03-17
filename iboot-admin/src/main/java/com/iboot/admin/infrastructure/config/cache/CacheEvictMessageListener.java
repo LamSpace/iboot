@@ -16,7 +16,8 @@
 
 package com.iboot.admin.infrastructure.config.cache;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -28,13 +29,13 @@ import java.nio.charset.StandardCharsets;
 /**
  * 缓存失效消息监听器
  * <p>
- * 监听 Redis Pub/Sub 消息，当其他节点发布缓存失效消息时，
- * 清除本节点的 L1 本地缓存，保证分布式环境下的缓存一致性。
+ * 监听 Redis Pub/Sub 消息，当其他节点发布缓存失效消息时， 清除本节点的 L1 本地缓存，保证分布式环境下的缓存一致性。
  *
  * @author iBoot
  */
-@Slf4j
 public class CacheEvictMessageListener implements MessageListener {
+
+    private static final Logger log = LoggerFactory.getLogger(CacheEvictMessageListener.class);
 
     private final TwoLevelCacheManager cacheManager;
 
@@ -42,18 +43,27 @@ public class CacheEvictMessageListener implements MessageListener {
         this.cacheManager = cacheManager;
     }
 
+    /**
+     * 注册监听器到 Redis 消息监听容器
+     */
+    public static void register(RedisMessageListenerContainer container, TwoLevelCacheManager cacheManager) {
+        CacheEvictMessageListener listener = new CacheEvictMessageListener(cacheManager);
+        MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onMessage");
+        adapter.afterPropertiesSet();
+        container.addMessageListener(adapter, new ChannelTopic(TwoLevelCacheManager.CACHE_EVICT_CHANNEL));
+        log.info("Registered cache evict message listener on channel: {}", TwoLevelCacheManager.CACHE_EVICT_CHANNEL);
+    }
+
     @Override
     public void onMessage(Message message, byte[] pattern) {
         String messageBody = new String(message.getBody(), StandardCharsets.UTF_8);
         log.debug("Received cache evict message: {}", messageBody);
-
         try {
             // 消息格式: cacheName:key
             int separatorIndex = messageBody.indexOf(':');
             if (separatorIndex > 0) {
                 String cacheName = messageBody.substring(0, separatorIndex);
                 String key = messageBody.substring(separatorIndex + 1);
-
                 TwoLevelCache cache = cacheManager.getTwoLevelCache(cacheName);
                 if (cache != null) {
                     cache.evictLocal(key);
@@ -65,16 +75,4 @@ public class CacheEvictMessageListener implements MessageListener {
         }
     }
 
-    /**
-     * 注册监听器到 Redis 消息监听容器
-     */
-    public static void register(RedisMessageListenerContainer container,
-                                TwoLevelCacheManager cacheManager) {
-        CacheEvictMessageListener listener = new CacheEvictMessageListener(cacheManager);
-        MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onMessage");
-        adapter.afterPropertiesSet();
-        container.addMessageListener(adapter, new ChannelTopic(TwoLevelCacheManager.CACHE_EVICT_CHANNEL));
-        log.info("Registered cache evict message listener on channel: {}",
-                TwoLevelCacheManager.CACHE_EVICT_CHANNEL);
-    }
 }

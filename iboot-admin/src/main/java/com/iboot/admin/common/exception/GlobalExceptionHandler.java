@@ -20,8 +20,9 @@ import com.iboot.admin.common.result.Result;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -43,14 +44,16 @@ import java.util.stream.Collectors;
  *
  * @author iBoot
  */
-@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * 业务异常处理
      *
      * @param e 业务异常
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(BusinessException.class)
@@ -61,8 +64,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * SSE 客户端断开异常处理
-     * 当客户端(浏览器)关闭连接时触发,属于正常行为,不需要返回响应
+     * SSE 客户端断开异常处理 当客户端(浏览器)关闭连接时触发,属于正常行为,不需要返回响应
      *
      * @param e SSE 异步请求不可用异常
      */
@@ -73,8 +75,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 客户端中止异常处理
-     * 当客户端主动断开连接时触发(如刷新页面、关闭标签等)
+     * 客户端中止异常处理 当客户端主动断开连接时触发(如刷新页面、关闭标签等)
      *
      * @param e 客户端中止异常
      */
@@ -88,12 +89,15 @@ public class GlobalExceptionHandler {
      * 参数校验异常处理 - @Valid 注解校验失败
      *
      * @param e 方法参数校验异常
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        String message = e.getBindingResult().getFieldErrors().stream()
+        String message = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
         log.error("参数校验异常: {}", message);
@@ -104,12 +108,15 @@ public class GlobalExceptionHandler {
      * 参数绑定异常处理
      *
      * @param e 参数绑定异常
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(BindException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<Void> handleBindException(BindException e) {
-        String message = e.getBindingResult().getFieldErrors().stream()
+        String message = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
         log.error("参数绑定异常: {}", message);
@@ -120,15 +127,14 @@ public class GlobalExceptionHandler {
      * 约束违反异常处理 - @Validated 注解校验失败
      *
      * @param e 约束违反异常
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<Void> handleConstraintViolationException(ConstraintViolationException e) {
         Set<ConstraintViolation<?>> violations = e.getConstraintViolations();
-        String message = violations.stream()
-                .map(ConstraintViolation::getMessage)
-                .collect(Collectors.joining(", "));
+        String message = violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.joining(", "));
         log.error("约束违反异常: {}", message);
         return Result.error(400, message);
     }
@@ -137,6 +143,7 @@ public class GlobalExceptionHandler {
      * 非法参数异常处理
      *
      * @param e 非法参数异常
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(IllegalArgumentException.class)
@@ -150,6 +157,7 @@ public class GlobalExceptionHandler {
      * 数据库唯一键冲突异常处理
      *
      * @param e 唯一键冲突异常
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(DuplicateKeyException.class)
@@ -160,11 +168,11 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Spring Security 权限拒绝异常处理
-     * 当用户已认证但无权访问特定资源时触发（@PreAuthorize 校验失败等）
+     * Spring Security 权限拒绝异常处理 当用户已认证但无权访问特定资源时触发（@PreAuthorize 校验失败等）
      *
-     * @param e 权限拒绝异常
+     * @param e        权限拒绝异常
      * @param response HTTP响应对象
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(AccessDeniedException.class)
@@ -176,10 +184,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Spring Security 认证异常处理
-     * 当用户认证失败时触发
+     * Spring Security 认证异常处理 当用户认证失败时触发
      *
      * @param e 认证异常
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(AuthenticationException.class)
@@ -192,8 +200,9 @@ public class GlobalExceptionHandler {
     /**
      * 运行时异常处理
      *
-     * @param e 运行时异常
+     * @param e        运行时异常
      * @param response HTTP响应对象
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(RuntimeException.class)
@@ -207,8 +216,9 @@ public class GlobalExceptionHandler {
     /**
      * 通用异常处理
      *
-     * @param e 通用异常
+     * @param e        通用异常
      * @param response HTTP响应对象
+     *
      * @return 错误响应结果
      */
     @ExceptionHandler(Exception.class)
@@ -220,8 +230,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 重置响应的Content-Type为JSON格式
-     * 用于处理导出等操作中发生异常时，响应头已被设置为非JSON格式的情况
+     * 重置响应的Content-Type为JSON格式 用于处理导出等操作中发生异常时，响应头已被设置为非JSON格式的情况
      *
      * @param response HTTP响应对象
      */
@@ -230,4 +239,5 @@ public class GlobalExceptionHandler {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         }
     }
+
 }

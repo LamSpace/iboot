@@ -23,9 +23,6 @@ package com.iboot.admin.infrastructure.job;
  */
 public final class ScheduleConstants {
 
-    private ScheduleConstants() {
-    }
-
     /**
      * 任务调度参数 key
      */
@@ -50,4 +47,8 @@ public final class ScheduleConstants {
      * 系统任务组
      */
     public static final String SYSTEM_JOB_GROUP = "SYSTEM";
+
+    private ScheduleConstants() {
+    }
+
 }

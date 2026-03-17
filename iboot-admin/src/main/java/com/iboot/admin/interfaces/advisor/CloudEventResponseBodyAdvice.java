@@ -18,17 +18,16 @@ package com.iboot.admin.interfaces.advisor;
 
 import com.iboot.admin.common.cloudevent.CloudEventBody;
 import com.iboot.admin.common.result.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
 /**
@@ -52,9 +51,9 @@ public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> 
     }
 
     @Override
-    public Object beforeBodyWrite(Object body, MethodParameter returnType,
-                                  MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType,
-                                  ServerHttpRequest request, ServerHttpResponse response) {
+    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
+                                  Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request,
+                                  ServerHttpResponse response) {
         // 如果 body 为 null，直接返回
         if (body == null) {
             return null;
@@ -75,8 +74,7 @@ public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> 
         }
 
         // 如果 body 是 Result 类型，包装为 CloudEventBody
-        if (body instanceof Result) {
-            Result<?> result = (Result<?>) body;
+        if (body instanceof Result<?> result) {
 
             // 确定事件类型
             String eventType = determineEventType(result);
@@ -93,6 +91,7 @@ public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> 
      * 根据 Result 的状态码确定事件类型
      *
      * @param result 响应结果
+     *
      * @return 事件类型
      */
     private String determineEventType(Result<?> result) {
@@ -101,4 +100,5 @@ public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> 
         }
         return com.iboot.admin.common.cloudevent.CloudEventTypes.RESPONSE_ERROR;
     }
+
 }

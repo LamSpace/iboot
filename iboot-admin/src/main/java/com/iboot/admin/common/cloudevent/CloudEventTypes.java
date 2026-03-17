@@ -19,36 +19,31 @@ package com.iboot.admin.common.cloudevent;
 /**
  * CloudEvents 事件类型常量
  * <p>
- * 定义系统中所有业务事件类型，遵循 CloudEvents 规范
- * 命名格式：com.iboot.{domain}.{action}
+ * 定义系统中所有业务事件类型，遵循 CloudEvents 规范 命名格式：com.iboot.{domain}.{action}
  *
  * @author iBoot Team
  * @since 1.0.0
  */
 public final class CloudEventTypes {
 
-    private CloudEventTypes() {
-        // 防止实例化
-    }
-
-    // ==================== 通用响应事件 ====================
-
     /**
      * 通用成功响应
      */
     public static final String RESPONSE_SUCCESS = "com.iboot.response.success";
+
+    // ==================== 通用响应事件 ====================
 
     /**
      * 通用错误响应
      */
     public static final String RESPONSE_ERROR = "com.iboot.response.error";
 
-    // ==================== 认证授权事件 ====================
-
     /**
      * 用户登录成功
      */
     public static final String AUTH_LOGIN_SUCCESS = "com.iboot.auth.login.success";
+
+    // ==================== 认证授权事件 ====================
 
     /**
      * 用户登录失败
@@ -65,12 +60,12 @@ public final class CloudEventTypes {
      */
     public static final String AUTH_REGISTER_SUCCESS = "com.iboot.auth.register.success";
 
-    // ==================== 用户管理事件 ====================
-
     /**
      * 用户创建
      */
     public static final String USER_CREATED = "com.iboot.user.created";
+
+    // ==================== 用户管理事件 ====================
 
     /**
      * 用户更新
@@ -92,12 +87,12 @@ public final class CloudEventTypes {
      */
     public static final String USER_STATUS_CHANGED = "com.iboot.user.status.changed";
 
-    // ==================== 角色管理事件 ====================
-
     /**
      * 角色创建
      */
     public static final String ROLE_CREATED = "com.iboot.role.created";
+
+    // ==================== 角色管理事件 ====================
 
     /**
      * 角色更新
@@ -114,12 +109,12 @@ public final class CloudEventTypes {
      */
     public static final String ROLE_PERMISSION_ASSIGNED = "com.iboot.role.permission.assigned";
 
-    // ==================== 部门管理事件 ====================
-
     /**
      * 部门创建
      */
     public static final String DEPT_CREATED = "com.iboot.dept.created";
+
+    // ==================== 部门管理事件 ====================
 
     /**
      * 部门更新
@@ -131,12 +126,12 @@ public final class CloudEventTypes {
      */
     public static final String DEPT_DELETED = "com.iboot.dept.deleted";
 
-    // ==================== 岗位管理事件 ====================
-
     /**
      * 岗位创建
      */
     public static final String POST_CREATED = "com.iboot.post.created";
+
+    // ==================== 岗位管理事件 ====================
 
     /**
      * 岗位更新
@@ -148,12 +143,12 @@ public final class CloudEventTypes {
      */
     public static final String POST_DELETED = "com.iboot.post.deleted";
 
-    // ==================== 菜单管理事件 ====================
-
     /**
      * 菜单创建
      */
     public static final String MENU_CREATED = "com.iboot.menu.created";
+
+    // ==================== 菜单管理事件 ====================
 
     /**
      * 菜单更新
@@ -165,12 +160,12 @@ public final class CloudEventTypes {
      */
     public static final String MENU_DELETED = "com.iboot.menu.deleted";
 
-    // ==================== 字典管理事件 ====================
-
     /**
      * 字典类型创建
      */
     public static final String DICT_TYPE_CREATED = "com.iboot.dict.type.created";
+
+    // ==================== 字典管理事件 ====================
 
     /**
      * 字典类型更新
@@ -197,12 +192,12 @@ public final class CloudEventTypes {
      */
     public static final String DICT_DATA_DELETED = "com.iboot.dict.data.deleted";
 
-    // ==================== 参数配置事件 ====================
-
     /**
      * 参数创建
      */
     public static final String CONFIG_CREATED = "com.iboot.config.created";
+
+    // ==================== 参数配置事件 ====================
 
     /**
      * 参数更新
@@ -214,12 +209,12 @@ public final class CloudEventTypes {
      */
     public static final String CONFIG_DELETED = "com.iboot.config.deleted";
 
-    // ==================== 系统公告事件 ====================
-
     /**
      * 公告创建
      */
     public static final String NOTICE_CREATED = "com.iboot.notice.created";
+
+    // ==================== 系统公告事件 ====================
 
     /**
      * 公告更新
@@ -231,12 +226,12 @@ public final class CloudEventTypes {
      */
     public static final String NOTICE_DELETED = "com.iboot.notice.deleted";
 
-    // ==================== 消息中心事件 ====================
-
     /**
      * 消息发送
      */
     public static final String MESSAGE_SENT = "com.iboot.message.sent";
+
+    // ==================== 消息中心事件 ====================
 
     /**
      * 消息已读
@@ -263,12 +258,12 @@ public final class CloudEventTypes {
      */
     public static final String MESSAGE_TEMPLATE_DELETED = "com.iboot.message.template.deleted";
 
-    // ==================== 消息推送事件 ====================
-
     /**
      * 推送连接建立
      */
     public static final String PUSH_CONNECTION_ESTABLISHED = "com.iboot.push.connection.established";
+
+    // ==================== 消息推送事件 ====================
 
     /**
      * 推送连接断开
@@ -295,12 +290,12 @@ public final class CloudEventTypes {
      */
     public static final String PUSH_SYSTEM_NOTIFICATION = "com.iboot.push.system.notification";
 
-    // ==================== 定时任务事件 ====================
-
     /**
      * 任务创建
      */
     public static final String JOB_CREATED = "com.iboot.job.created";
+
+    // ==================== 定时任务事件 ====================
 
     /**
      * 任务更新
@@ -332,36 +327,36 @@ public final class CloudEventTypes {
      */
     public static final String JOB_RESUMED = "com.iboot.job.resumed";
 
-    // ==================== 文件管理事件 ====================
-
     /**
      * 文件上传
      */
     public static final String FILE_UPLOADED = "com.iboot.file.uploaded";
+
+    // ==================== 文件管理事件 ====================
 
     /**
      * 文件删除
      */
     public static final String FILE_DELETED = "com.iboot.file.deleted";
 
-    // ==================== 日志管理事件 ====================
-
     /**
      * 操作日志创建
      */
     public static final String LOG_OPERATION_CREATED = "com.iboot.log.operation.created";
+
+    // ==================== 日志管理事件 ====================
 
     /**
      * 登录日志创建
      */
     public static final String LOG_LOGIN_CREATED = "com.iboot.log.login.created";
 
-    // ==================== 系统监控事件 ====================
-
     /**
      * 服务器信息获取
      */
     public static final String MONITOR_SERVER_INFO = "com.iboot.monitor.server.info";
+
+    // ==================== 系统监控事件 ====================
 
     /**
      * Redis 信息获取
@@ -382,4 +377,9 @@ public final class CloudEventTypes {
      * Dashboard 信息获取
      */
     public static final String DASHBOARD_INFO = "com.iboot.dashboard.info";
+
+    private CloudEventTypes() {
+        // 防止实例化
+    }
+
 }

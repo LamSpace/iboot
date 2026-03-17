@@ -17,7 +17,8 @@
 package com.iboot.admin.infrastructure.config.cache;
 
 import com.iboot.admin.application.service.BusinessMetricsService;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -35,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author iBoot
  */
-@Slf4j
 public class TwoLevelCacheManager implements CacheManager {
 
     /**
@@ -43,15 +43,20 @@ public class TwoLevelCacheManager implements CacheManager {
      */
     public static final String CACHE_EVICT_CHANNEL = "cache:evict";
 
+    private static final Logger log = LoggerFactory.getLogger(TwoLevelCacheManager.class);
+
     private final CacheManager l1CacheManager;
+
     private final CacheManager l2CacheManager;
+
     private final RedisTemplate<String, Object> redisTemplate;
+
     private final BusinessMetricsService metricsService;
+
     private final Map<String, TwoLevelCache> cacheMap = new ConcurrentHashMap<>();
 
     public TwoLevelCacheManager(CacheManager l1CacheManager, CacheManager l2CacheManager,
-                                RedisTemplate<String, Object> redisTemplate,
-                                BusinessMetricsService metricsService) {
+                                RedisTemplate<String, Object> redisTemplate, BusinessMetricsService metricsService) {
         this.l1CacheManager = l1CacheManager;
         this.l2CacheManager = l2CacheManager;
         this.redisTemplate = redisTemplate;
@@ -88,4 +93,5 @@ public class TwoLevelCacheManager implements CacheManager {
     public TwoLevelCache getTwoLevelCache(String name) {
         return cacheMap.get(name);
     }
+
 }

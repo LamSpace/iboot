@@ -16,8 +16,8 @@
 
 package com.iboot.admin.common.cloudevent;
 
-import com.iboot.admin.common.result.Result;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.iboot.admin.common.result.Result;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.cloudevents.core.data.BytesCloudEventData;
@@ -55,6 +55,7 @@ public final class CloudEventFactory {
      * @param source 事件源
      * @param data   响应数据
      * @param <T>    数据类型
+     *
      * @return CloudEvent 实例
      */
     public static <T> CloudEvent createSuccessEvent(String type, String source, T data) {
@@ -69,6 +70,7 @@ public final class CloudEventFactory {
      * @param message 成功消息
      * @param data    响应数据
      * @param <T>     数据类型
+     *
      * @return CloudEvent 实例
      */
     public static <T> CloudEvent createSuccessEvent(String type, String source, String message, T data) {
@@ -81,6 +83,7 @@ public final class CloudEventFactory {
      * @param type    事件类型
      * @param source  事件源
      * @param message 错误消息
+     *
      * @return CloudEvent 实例
      */
     public static CloudEvent createErrorEvent(String type, String source, String message) {
@@ -94,6 +97,7 @@ public final class CloudEventFactory {
      * @param source  事件源
      * @param code    错误码
      * @param message 错误消息
+     *
      * @return CloudEvent 实例
      */
     public static CloudEvent createErrorEvent(String type, String source, Integer code, String message) {
@@ -106,6 +110,7 @@ public final class CloudEventFactory {
      * @param result 响应结果
      * @param type   事件类型
      * @param source 事件源
+     *
      * @return CloudEvent 实例
      */
     public static CloudEvent fromResult(Result<?> result, String type, String source) {
@@ -117,6 +122,7 @@ public final class CloudEventFactory {
      *
      * @param result 响应结果
      * @param source 事件源
+     *
      * @return CloudEvent 实例
      */
     public static CloudEvent fromResult(Result<?> result, String source) {
@@ -130,6 +136,7 @@ public final class CloudEventFactory {
      * @param source 事件源
      * @param data   响应数据
      * @param <T>    数据类型
+     *
      * @return CloudEvent 实例
      */
     public static <T> CloudEvent createSuccessResponse(String source, T data) {
@@ -141,6 +148,7 @@ public final class CloudEventFactory {
      *
      * @param source  事件源
      * @param message 错误消息
+     *
      * @return CloudEvent 实例
      */
     public static CloudEvent createErrorResponse(String source, String message) {
@@ -153,6 +161,7 @@ public final class CloudEventFactory {
      * @param source  事件源
      * @param code    错误码
      * @param message 错误消息
+     *
      * @return CloudEvent 实例
      */
     public static CloudEvent createErrorResponse(String source, Integer code, String message) {
@@ -163,6 +172,7 @@ public final class CloudEventFactory {
      * 根据 Result 的状态码确定事件类型
      *
      * @param result 响应结果
+     *
      * @return 事件类型
      */
     private static String determineEventType(Result<?> result) {
@@ -178,6 +188,7 @@ public final class CloudEventFactory {
      * @param type   事件类型
      * @param source 事件源
      * @param data   事件数据
+     *
      * @return CloudEvent 实例
      */
     private static CloudEvent createEvent(String type, String source, Object data) {
@@ -216,23 +227,22 @@ public final class CloudEventFactory {
      * 将 CloudEvent 序列化为 JSON 字节数组
      *
      * @param event CloudEvent 实例
+     *
      * @return JSON 字节数组
      */
     public static byte[] toJsonBytes(CloudEvent event) {
-        return EventFormatProvider.getInstance()
-                .resolveFormat(JsonFormat.CONTENT_TYPE)
-                .serialize(event);
+        return EventFormatProvider.getInstance().resolveFormat(JsonFormat.CONTENT_TYPE).serialize(event);
     }
 
     /**
      * 从 JSON 字节数组反序列化为 CloudEvent
      *
      * @param bytes JSON 字节数组
+     *
      * @return CloudEvent 实例
      */
     public static CloudEvent fromJsonBytes(byte[] bytes) {
-        return EventFormatProvider.getInstance()
-                .resolveFormat(JsonFormat.CONTENT_TYPE)
-                .deserialize(bytes);
+        return EventFormatProvider.getInstance().resolveFormat(JsonFormat.CONTENT_TYPE).deserialize(bytes);
     }
+
 }

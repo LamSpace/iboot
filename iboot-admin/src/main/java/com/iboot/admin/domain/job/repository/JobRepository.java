@@ -35,6 +35,7 @@ public interface JobRepository {
      * 保存定时任务
      *
      * @param job 定时任务实体
+     *
      * @return 保存后的定时任务
      */
     Job save(Job job);
@@ -43,6 +44,7 @@ public interface JobRepository {
      * 更新定时任务
      *
      * @param job 定时任务实体
+     *
      * @return 更新后的定时任务
      */
     Job update(Job job);
@@ -51,6 +53,7 @@ public interface JobRepository {
      * 根据 ID 查询定时任务
      *
      * @param id 定时任务 ID
+     *
      * @return 定时任务实体，不存在则返回空
      */
     Optional<Job> findById(Long id);
@@ -58,8 +61,9 @@ public interface JobRepository {
     /**
      * 根据任务名称和任务组查询
      *
-     * @param jobName 任务名称
+     * @param jobName  任务名称
      * @param jobGroup 任务组
+     *
      * @return 定时任务实体，不存在则返回空
      */
     Optional<Job> findByJobNameAndGroup(String jobName, String jobGroup);
@@ -74,8 +78,9 @@ public interface JobRepository {
     /**
      * 分页查询定时任务
      *
-     * @param pageNum 页码
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 定时任务列表
      */
     List<Job> findPage(int pageNum, int pageSize);
@@ -83,15 +88,15 @@ public interface JobRepository {
     /**
      * 根据条件分页查询定时任务
      *
-     * @param jobName 任务名称（可选）
+     * @param jobName  任务名称（可选）
      * @param jobGroup 任务组（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
+     * @param status   状态（可选）
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 定时任务列表
      */
-    List<Job> findPageByCondition(String jobName, String jobGroup, Integer status,
-                                   int pageNum, int pageSize);
+    List<Job> findPageByCondition(String jobName, String jobGroup, Integer status, int pageNum, int pageSize);
 
     /**
      * 统计定时任务总数
@@ -103,9 +108,10 @@ public interface JobRepository {
     /**
      * 根据条件统计定时任务总数
      *
-     * @param jobName 任务名称（可选）
+     * @param jobName  任务名称（可选）
      * @param jobGroup 任务组（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 定时任务总数
      */
     long countByCondition(String jobName, String jobGroup, Integer status);
@@ -113,9 +119,10 @@ public interface JobRepository {
     /**
      * 根据条件查询所有定时任务（导出用）
      *
-     * @param jobName 任务名称（可选）
+     * @param jobName  任务名称（可选）
      * @param jobGroup 任务组（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 定时任务列表
      */
     List<Job> findAllByCondition(String jobName, String jobGroup, Integer status);
@@ -124,6 +131,7 @@ public interface JobRepository {
      * 根据 ID 删除定时任务（逻辑删除）
      *
      * @param id 定时任务 ID
+     *
      * @return 删除的记录数
      */
     int deleteById(Long id);
@@ -131,9 +139,11 @@ public interface JobRepository {
     /**
      * 更新任务状态
      *
-     * @param id 定时任务 ID
+     * @param id     定时任务 ID
      * @param status 新状态
+     *
      * @return 更新的记录数
      */
     int updateStatus(Long id, Integer status);
+
 }

@@ -1,10 +1,14 @@
 -- 为定时任务表添加 dept_id 字段用于数据权限过滤
-ALTER TABLE sys_job ADD COLUMN `dept_id` BIGINT NULL COMMENT '创建人部门 ID' AFTER `job_group`;
-ALTER TABLE sys_job ADD INDEX `idx_job_dept_id` (`dept_id`);
+ALTER TABLE sys_job
+    ADD COLUMN `dept_id` BIGINT NULL COMMENT '创建人部门 ID' AFTER `job_group`;
+ALTER TABLE sys_job
+    ADD INDEX `idx_job_dept_id` (`dept_id`);
 
 -- 为文件表添加 dept_id 字段用于数据权限过滤
-ALTER TABLE sys_file ADD COLUMN `dept_id` BIGINT NULL COMMENT '上传人部门 ID' AFTER `file_category`;
-ALTER TABLE sys_file ADD INDEX `idx_file_dept_id` (`dept_id`);
+ALTER TABLE sys_file
+    ADD COLUMN `dept_id` BIGINT NULL COMMENT '上传人部门 ID' AFTER `file_category`;
+ALTER TABLE sys_file
+    ADD INDEX `idx_file_dept_id` (`dept_id`);
 
 -- 同步定时任务的部门 ID（根据创建人关联）
 UPDATE sys_job j

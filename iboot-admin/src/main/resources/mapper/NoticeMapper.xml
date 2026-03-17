@@ -18,8 +18,10 @@
     </resultMap>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_notice (notice_title, notice_type, notice_content, status, is_top, create_by, create_time, deleted, remark)
-        VALUES (#{noticeTitle}, #{noticeType}, #{noticeContent}, #{status}, #{isTop}, #{createBy}, #{createTime}, 0, #{remark})
+        INSERT INTO sys_notice (notice_title, notice_type, notice_content, status, is_top, create_by, create_time,
+                                deleted, remark)
+        VALUES (#{noticeTitle}, #{noticeType}, #{noticeContent}, #{status}, #{isTop}, #{createBy}, #{createTime}, 0,
+                #{remark})
     </insert>
 
     <update id="update">
@@ -38,11 +40,18 @@
     </update>
 
     <update id="deleteById">
-        UPDATE sys_notice SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+        UPDATE sys_notice
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
     <select id="selectById" resultMap="NoticeResultMap">
-        SELECT * FROM sys_notice WHERE id = #{id} AND deleted = 0
+        SELECT *
+        FROM sys_notice
+        WHERE id = #{id}
+          AND deleted = 0
     </select>
 
     <select id="selectPageByCondition" resultMap="NoticeResultMap">
@@ -92,15 +101,20 @@
     </select>
 
     <select id="selectPublishedNotices" resultMap="NoticeResultMap">
-        SELECT * FROM sys_notice
-        WHERE status = '1' AND deleted = 0
+        SELECT *
+        FROM sys_notice
+        WHERE status = '1'
+          AND deleted = 0
         ORDER BY is_top DESC, create_time DESC
-        LIMIT #{limit}
+            LIMIT #{limit}
     </select>
 
     <select id="countTopPublishedNotices" resultType="long">
-        SELECT COUNT(*) FROM sys_notice
-        WHERE status = '1' AND is_top = 1 AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_notice
+        WHERE status = '1'
+          AND is_top = 1
+          AND deleted = 0
     </select>
 
 </mapper>

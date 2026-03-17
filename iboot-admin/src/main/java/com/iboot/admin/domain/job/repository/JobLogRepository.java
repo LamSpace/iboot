@@ -36,6 +36,7 @@ public interface JobLogRepository {
      * 保存任务执行日志
      *
      * @param jobLog 任务日志实体
+     *
      * @return 保存后的任务日志
      */
     JobLog save(JobLog jobLog);
@@ -44,6 +45,7 @@ public interface JobLogRepository {
      * 根据 ID 查询任务日志
      *
      * @param id 任务日志 ID
+     *
      * @return 任务日志实体，不存在则返回空
      */
     Optional<JobLog> findById(Long id);
@@ -52,6 +54,7 @@ public interface JobLogRepository {
      * 根据任务 ID 查询执行日志
      *
      * @param jobId 定时任务 ID
+     *
      * @return 任务日志列表
      */
     List<JobLog> findByJobId(Long jobId);
@@ -59,8 +62,9 @@ public interface JobLogRepository {
     /**
      * 分页查询任务执行日志
      *
-     * @param pageNum 页码
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 任务日志列表
      */
     List<JobLog> findPage(int pageNum, int pageSize);
@@ -68,19 +72,19 @@ public interface JobLogRepository {
     /**
      * 根据条件分页查询任务执行日志
      *
-     * @param jobId 任务 ID（可选）
-     * @param jobName 任务名称（可选）
-     * @param jobGroup 任务组（可选）
-     * @param status 执行状态（可选）
+     * @param jobId     任务 ID（可选）
+     * @param jobName   任务名称（可选）
+     * @param jobGroup  任务组（可选）
+     * @param status    执行状态（可选）
      * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param endTime   结束时间（可选）
+     * @param pageNum   页码
+     * @param pageSize  每页数量
+     *
      * @return 任务日志列表
      */
     List<JobLog> findPageByCondition(Long jobId, String jobName, String jobGroup, Integer status,
-                                      LocalDateTime startTime, LocalDateTime endTime,
-                                      int pageNum, int pageSize);
+                                     LocalDateTime startTime, LocalDateTime endTime, int pageNum, int pageSize);
 
     /**
      * 统计任务执行日志总数
@@ -92,16 +96,17 @@ public interface JobLogRepository {
     /**
      * 根据条件统计任务执行日志总数
      *
-     * @param jobId 任务 ID（可选）
-     * @param jobName 任务名称（可选）
-     * @param jobGroup 任务组（可选）
-     * @param status 执行状态（可选）
+     * @param jobId     任务 ID（可选）
+     * @param jobName   任务名称（可选）
+     * @param jobGroup  任务组（可选）
+     * @param status    执行状态（可选）
      * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
+     * @param endTime   结束时间（可选）
+     *
      * @return 任务日志总数
      */
-    long countByCondition(Long jobId, String jobName, String jobGroup, Integer status,
-                          LocalDateTime startTime, LocalDateTime endTime);
+    long countByCondition(Long jobId, String jobName, String jobGroup, Integer status, LocalDateTime startTime,
+                          LocalDateTime endTime);
 
     /**
      * 清理指定日期之前的日志
@@ -110,6 +115,7 @@ public interface JobLogRepository {
      * </p>
      *
      * @param beforeDate 清理该日期之前的日志
+     *
      * @return 清理的日志数量
      */
     int cleanLogBeforeDate(LocalDateTime beforeDate);
@@ -121,7 +127,9 @@ public interface JobLogRepository {
      * </p>
      *
      * @param jobId 定时任务 ID
+     *
      * @return 清理的日志数量
      */
     int cleanLogByJobId(Long jobId);
+
 }

@@ -26,16 +26,14 @@
     </resultMap>
 
     <!-- 插入用户记录 -->
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.UserPO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_user (
-            username, password, nickname, email, phone, gender, avatar,
-            user_type, dept_id, status, login_ip, login_time,
-            create_by, create_time, update_by, update_time, deleted, remark
-        ) VALUES (
-            #{username}, #{password}, #{nickname}, #{email}, #{phone}, #{gender}, #{avatar},
-            #{userType}, #{deptId}, #{status}, #{loginIp}, #{loginTime},
-            #{createBy}, NOW(), #{updateBy}, #{updateTime}, #{deleted}, #{remark}
-        )
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.UserPO" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO sys_user (username, password, nickname, email, phone, gender, avatar,
+                              user_type, dept_id, status, login_ip, login_time,
+                              create_by, create_time, update_by, update_time, deleted, remark)
+        VALUES (#{username}, #{password}, #{nickname}, #{email}, #{phone}, #{gender}, #{avatar},
+                #{userType}, #{deptId}, #{status}, #{loginIp}, #{loginTime},
+                #{createBy}, NOW(), #{updateBy}, #{updateTime}, #{deleted}, #{remark})
     </insert>
 
     <!-- 更新用户记录 -->
@@ -65,45 +63,66 @@
 
     <!-- 根据ID删除用户记录 -->
     <update id="deleteById">
-        UPDATE sys_user SET deleted = 1 WHERE id = #{id} AND deleted = 0
+        UPDATE sys_user
+        SET deleted = 1
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
     <!-- 根据ID查询用户记录 -->
     <select id="selectById" resultMap="UserResultMap">
-        SELECT * FROM sys_user WHERE id = #{id} AND deleted = 0
+        SELECT *
+        FROM sys_user
+        WHERE id = #{id}
+          AND deleted = 0
     </select>
 
     <!-- 根据用户名查询用户记录 -->
     <select id="selectByUsername" resultMap="UserResultMap">
-        SELECT * FROM sys_user WHERE username = #{username} AND deleted = 0
+        SELECT *
+        FROM sys_user
+        WHERE username = #{username}
+          AND deleted = 0
     </select>
 
     <!-- 根据邮箱查询用户记录 -->
     <select id="selectByEmail" resultMap="UserResultMap">
-        SELECT * FROM sys_user WHERE email = #{email} AND deleted = 0
+        SELECT *
+        FROM sys_user
+        WHERE email = #{email}
+          AND deleted = 0
     </select>
 
     <!-- 根据手机号查询用户记录 -->
     <select id="selectByPhone" resultMap="UserResultMap">
-        SELECT * FROM sys_user WHERE phone = #{phone} AND deleted = 0
+        SELECT *
+        FROM sys_user
+        WHERE phone = #{phone}
+          AND deleted = 0
     </select>
 
     <!-- 查询所有用户记录 -->
     <select id="selectAll" resultMap="UserResultMap">
-        SELECT * FROM sys_user WHERE deleted = 0 ORDER BY create_time DESC
+        SELECT *
+        FROM sys_user
+        WHERE deleted = 0
+        ORDER BY create_time DESC
     </select>
 
     <!-- 分页查询用户记录 -->
     <select id="selectPage" resultMap="UserResultMap">
-        SELECT * FROM sys_user 
-        WHERE deleted = 0 
+        SELECT *
+        FROM sys_user
+        WHERE deleted = 0
         ORDER BY create_time DESC
-        LIMIT #{offset}, #{limit}
+            LIMIT #{offset}, #{limit}
     </select>
 
     <!-- 统计用户总数 -->
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_user WHERE deleted = 0
+        SELECT COUNT(*)
+        FROM sys_user
+        WHERE deleted = 0
     </select>
 
     <!-- 按条件分页查询用户记录 -->
@@ -162,73 +181,102 @@
 
     <!-- 检查用户名是否存在 -->
     <select id="existsByUsername" resultType="int">
-        SELECT COUNT(*) FROM sys_user WHERE username = #{username} AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_user
+        WHERE username = #{username}
+          AND deleted = 0
     </select>
 
     <!-- 检查邮箱是否存在 -->
     <select id="existsByEmail" resultType="int">
-        SELECT COUNT(*) FROM sys_user WHERE email = #{email} AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_user
+        WHERE email = #{email}
+          AND deleted = 0
     </select>
 
     <!-- 检查手机号是否存在 -->
     <select id="existsByPhone" resultType="int">
-        SELECT COUNT(*) FROM sys_user WHERE phone = #{phone} AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_user
+        WHERE phone = #{phone}
+          AND deleted = 0
     </select>
 
     <!-- 根据部门ID查询用户列表 -->
     <select id="selectByDeptId" resultMap="UserResultMap">
-        SELECT * FROM sys_user WHERE dept_id = #{deptId} AND deleted = 0 ORDER BY create_time DESC
+        SELECT *
+        FROM sys_user
+        WHERE dept_id = #{deptId}
+          AND deleted = 0
+        ORDER BY create_time DESC
     </select>
 
     <!-- 根据角色ID查询用户列表 -->
     <select id="selectByRoleId" resultMap="UserResultMap">
-        SELECT u.* FROM sys_user u
-        INNER JOIN sys_user_role ur ON u.id = ur.user_id
-        WHERE ur.role_id = #{roleId} AND u.deleted = 0
+        SELECT u.*
+        FROM sys_user u
+                 INNER JOIN sys_user_role ur ON u.id = ur.user_id
+        WHERE ur.role_id = #{roleId}
+          AND u.deleted = 0
         ORDER BY u.create_time DESC
     </select>
 
     <!-- 插入用户角色关联记录 -->
     <insert id="insertUserRole">
-        INSERT INTO sys_user_role (user_id, role_id) VALUES (#{userId}, #{roleId})
+        INSERT INTO sys_user_role (user_id, role_id)
+        VALUES (#{userId}, #{roleId})
     </insert>
 
     <!-- 根据用户ID删除用户角色关联记录 -->
     <delete id="deleteUserRoleByUserId">
-        DELETE FROM sys_user_role WHERE user_id = #{userId}
+        DELETE
+        FROM sys_user_role
+        WHERE user_id = #{userId}
     </delete>
 
     <!-- 根据用户ID查询角色ID列表 -->
     <select id="selectRoleIdsByUserId" resultType="long">
-        SELECT role_id FROM sys_user_role WHERE user_id = #{userId}
+        SELECT role_id
+        FROM sys_user_role
+        WHERE user_id = #{userId}
     </select>
 
     <!-- 插入用户岗位关联记录 -->
     <insert id="insertUserPost">
-        INSERT INTO sys_user_post (user_id, post_id) VALUES (#{userId}, #{postId})
+        INSERT INTO sys_user_post (user_id, post_id)
+        VALUES (#{userId}, #{postId})
     </insert>
 
     <!-- 根据用户ID删除用户岗位关联记录 -->
     <delete id="deleteUserPostByUserId">
-        DELETE FROM sys_user_post WHERE user_id = #{userId}
+        DELETE
+        FROM sys_user_post
+        WHERE user_id = #{userId}
     </delete>
 
     <!-- 根据用户ID查询岗位ID列表 -->
     <select id="selectPostIdsByUserId" resultType="long">
-        SELECT post_id FROM sys_user_post WHERE user_id = #{userId}
+        SELECT post_id
+        FROM sys_user_post
+        WHERE user_id = #{userId}
     </select>
 
     <!-- 物理删除已逻辑删除的用户记录（根据用户名） -->
     <delete id="removeDeletedByUsername">
-        DELETE FROM sys_user WHERE username = #{username} AND deleted = 1
+        DELETE
+        FROM sys_user
+        WHERE username = #{username}
+          AND deleted = 1
     </delete>
 
     <!-- 按创建时间统计用户数 -->
     <select id="countByCreateTime" resultType="long">
-        SELECT COUNT(*) FROM sys_user
+        SELECT COUNT(*)
+        FROM sys_user
         WHERE deleted = 0
-        AND create_time &gt;= #{startTime}
-        AND create_time &lt;= #{endTime}
+          AND create_time &gt;= #{startTime}
+          AND create_time &lt;= #{endTime}
     </select>
 
 </mapper>

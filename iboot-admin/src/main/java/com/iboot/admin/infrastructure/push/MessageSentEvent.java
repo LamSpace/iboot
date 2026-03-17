@@ -16,7 +16,6 @@
 
 package com.iboot.admin.infrastructure.push;
 
-import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
 /**
@@ -27,7 +26,6 @@ import org.springframework.context.ApplicationEvent;
  * @author iBoot Team
  * @since 1.0.0
  */
-@Getter
 public class MessageSentEvent extends ApplicationEvent {
 
     private static final long serialVersionUID = 1L;
@@ -70,16 +68,16 @@ public class MessageSentEvent extends ApplicationEvent {
     /**
      * 创建消息发送事件
      *
-     * @param source     事件源（通常是消息对象或服务）
-     * @param messageId  消息 ID
-     * @param title      消息标题
-     * @param content    消息内容
+     * @param source      事件源（通常是消息对象或服务）
+     * @param messageId   消息 ID
+     * @param title       消息标题
+     * @param content     消息内容
      * @param messageType 消息类型
-     * @param priority   优先级
-     * @param senderId   发送者 ID
+     * @param priority    优先级
+     * @param senderId    发送者 ID
      */
-    public MessageSentEvent(Object source, Long messageId, String title, String content,
-                            String messageType, String priority, Long senderId) {
+    public MessageSentEvent(Object source, Long messageId, String title, String content, String messageType,
+                            String priority, Long senderId) {
         super(source);
         this.messageId = messageId;
         this.title = title;
@@ -89,4 +87,61 @@ public class MessageSentEvent extends ApplicationEvent {
         this.senderId = senderId;
         this.eventId = "evt-msg-sent-" + java.util.UUID.randomUUID();
     }
+
+    /**
+     * 消息 ID
+     */
+    @SuppressWarnings("all")
+    public Long getMessageId() {
+        return this.messageId;
+    }
+
+    /**
+     * 消息标题
+     */
+    @SuppressWarnings("all")
+    public String getTitle() {
+        return this.title;
+    }
+
+    /**
+     * 消息内容
+     */
+    @SuppressWarnings("all")
+    public String getContent() {
+        return this.content;
+    }
+
+    /**
+     * 消息类型
+     */
+    @SuppressWarnings("all")
+    public String getMessageType() {
+        return this.messageType;
+    }
+
+    /**
+     * 优先级
+     */
+    @SuppressWarnings("all")
+    public String getPriority() {
+        return this.priority;
+    }
+
+    /**
+     * 发送者 ID
+     */
+    @SuppressWarnings("all")
+    public Long getSenderId() {
+        return this.senderId;
+    }
+
+    /**
+     * 事件 ID
+     */
+    @SuppressWarnings("all")
+    public String getEventId() {
+        return this.eventId;
+    }
+
 }

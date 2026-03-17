@@ -20,39 +20,64 @@ import com.iboot.admin.domain.system.model.Dept;
 import com.iboot.admin.infrastructure.persistence.mapper.LoginLogMapper;
 import com.iboot.admin.infrastructure.persistence.mapper.OperateLogMapper;
 import com.iboot.admin.interfaces.dto.response.StatisticsResponse.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.WeekFields;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * 统计分析应用服务
  * <p>
- * 提供系统数据统计分析功能，包括用户统计、日志统计、系统概览、
- * 活跃度分析、功能使用统计和时段分布统计等
+ * 提供系统数据统计分析功能，包括用户统计、日志统计、系统概览、 活跃度分析、功能使用统计和时段分布统计等
  * </p>
  *
  * @author iBoot
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class StatisticsApplicationService {
 
+    private static final Logger log = LoggerFactory.getLogger(StatisticsApplicationService.class);
+
     private final UserApplicationService userApplicationService;
+
     private final RoleApplicationService roleApplicationService;
+
     private final DeptApplicationService deptApplicationService;
+
     private final PostApplicationService postApplicationService;
+
     private final MenuApplicationService menuApplicationService;
+
     private final ConfigApplicationService configApplicationService;
+
     private final LoginLogMapper loginLogMapper;
+
     private final OperateLogMapper operateLogMapper;
+
+    @SuppressWarnings("all")
+    public StatisticsApplicationService(final UserApplicationService userApplicationService,
+                                        final RoleApplicationService roleApplicationService, final DeptApplicationService deptApplicationService,
+                                        final PostApplicationService postApplicationService, final MenuApplicationService menuApplicationService,
+                                        final ConfigApplicationService configApplicationService, final LoginLogMapper loginLogMapper,
+                                        final OperateLogMapper operateLogMapper) {
+        this.userApplicationService = userApplicationService;
+        this.roleApplicationService = roleApplicationService;
+        this.deptApplicationService = deptApplicationService;
+        this.postApplicationService = postApplicationService;
+        this.menuApplicationService = menuApplicationService;
+        this.configApplicationService = configApplicationService;
+        this.loginLogMapper = loginLogMapper;
+        this.operateLogMapper = operateLogMapper;
+    }
 
     /**
      * 获取数据统计报表
@@ -61,7 +86,8 @@ public class StatisticsApplicationService {
      * </p>
      *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
+     *
      * @return 数据统计报表响应对象
      */
     public ReportResponse getReportStatistics(LocalDateTime startTime, LocalDateTime endTime) {
@@ -79,7 +105,8 @@ public class StatisticsApplicationService {
      * </p>
      *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
+     *
      * @return 系统使用分析响应对象
      */
     public UsageResponse getUsageAnalysis(LocalDateTime startTime, LocalDateTime endTime) {
@@ -94,22 +121,19 @@ public class StatisticsApplicationService {
      * 获取用户统计
      *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
+     *
      * @return 用户统计对象
      */
     private UserStats getUserStats(LocalDateTime startTime, LocalDateTime endTime) {
         long totalUsers = userApplicationService.countUsers();
-
         // 今日开始时间
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
         LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
-
         // 今日活跃用户（今日成功登录的独立用户数）
         long activeUsersToday = loginLogMapper.countDistinctUsers(todayStart, todayEnd);
-
         // 部门分布统计
         List<ChartData> deptDistribution = getDeptDistribution();
-
         return UserStats.builder()
                 .totalUsers(totalUsers)
                 .newUsersToday(userApplicationService.countUsersByCreateTime(todayStart, todayEnd))
@@ -122,47 +146,45 @@ public class StatisticsApplicationService {
      * 获取日志统计
      *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
+     *
      * @return 日志统计对象
      */
     private LogStats getLogStats(LocalDateTime startTime, LocalDateTime endTime) {
         long loginLogCount = loginLogMapper.count();
         long operateLogCount = operateLogMapper.count();
-
         // 登录状态统计
         Map<String, Object> loginStatusMap = loginLogMapper.countByStatus(startTime, endTime);
         long loginSuccessCount = getMapLongValue(loginStatusMap, "success");
         long loginFailCount = getMapLongValue(loginStatusMap, "fail");
-
         // 操作状态统计
         Map<String, Object> operateStatusMap = operateLogMapper.countByStatus(startTime, endTime);
         long operateSuccessCount = getMapLongValue(operateStatusMap, "success");
         long operateFailCount = getMapLongValue(operateStatusMap, "fail");
-
         // 登录趋势
-        List<TrendData> loginTrend = loginLogMapper.countByDate(startTime, endTime).stream()
+        List<TrendData> loginTrend = loginLogMapper.countByDate(startTime, endTime)
+                .stream()
                 .map(m -> TrendData.builder()
                         .date(String.valueOf(m.get("date")))
                         .value(getMapLongValue(m, "count"))
                         .build())
                 .collect(Collectors.toList());
-
         // 操作趋势
-        List<TrendData> operateTrend = operateLogMapper.countByDate(startTime, endTime).stream()
+        List<TrendData> operateTrend = operateLogMapper.countByDate(startTime, endTime)
+                .stream()
                 .map(m -> TrendData.builder()
                         .date(String.valueOf(m.get("date")))
                         .value(getMapLongValue(m, "count"))
                         .build())
                 .collect(Collectors.toList());
-
         // 模块操作统计
-        List<ChartData> moduleStats = operateLogMapper.countByModule(startTime, endTime).stream()
+        List<ChartData> moduleStats = operateLogMapper.countByModule(startTime, endTime)
+                .stream()
                 .map(m -> ChartData.builder()
                         .name(String.valueOf(m.get("module")))
                         .value(getMapLongValue(m, "count"))
                         .build())
                 .collect(Collectors.toList());
-
         return LogStats.builder()
                 .loginLogCount(loginLogCount)
                 .operateLogCount(operateLogCount)
@@ -196,43 +218,40 @@ public class StatisticsApplicationService {
      * 获取活跃度统计
      *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
+     *
      * @return 活跃度统计对象
      */
     private ActivityStats getActivityStats(LocalDateTime startTime, LocalDateTime endTime) {
         // 今日
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
         LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
-
         // 本周
         LocalDate today = LocalDate.now();
         LocalDate weekStart = today.with(WeekFields.of(Locale.getDefault()).dayOfWeek(), 1);
         LocalDateTime weekStartTime = weekStart.atStartOfDay();
-
         // 本月
         LocalDate monthStart = today.withDayOfMonth(1);
         LocalDateTime monthStartTime = monthStart.atStartOfDay();
-
         long todayActiveUsers = loginLogMapper.countDistinctUsers(todayStart, todayEnd);
         long weekActiveUsers = loginLogMapper.countDistinctUsers(weekStartTime, todayEnd);
         long monthActiveUsers = loginLogMapper.countDistinctUsers(monthStartTime, todayEnd);
-
         // 活跃用户趋势（按日统计登录的独立用户数）
-        List<TrendData> activeUserTrend = loginLogMapper.countByDate(startTime, endTime).stream()
+        List<TrendData> activeUserTrend = loginLogMapper.countByDate(startTime, endTime)
+                .stream()
                 .map(m -> TrendData.builder()
                         .date(String.valueOf(m.get("date")))
                         .value(getMapLongValue(m, "count"))
                         .build())
                 .collect(Collectors.toList());
-
         // 活跃用户排行
-        List<RankData> topActiveUsers = operateLogMapper.topActiveUsers(startTime, endTime, 10).stream()
+        List<RankData> topActiveUsers = operateLogMapper.topActiveUsers(startTime, endTime, 10)
+                .stream()
                 .map(m -> RankData.builder()
                         .username(String.valueOf(m.get("username")))
                         .count(getMapLongValue(m, "count"))
                         .build())
                 .collect(Collectors.toList());
-
         return ActivityStats.builder()
                 .todayActiveUsers(todayActiveUsers)
                 .weekActiveUsers(weekActiveUsers)
@@ -246,38 +265,37 @@ public class StatisticsApplicationService {
      * 获取功能使用统计
      *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
+     *
      * @return 功能使用统计对象
      */
     private FeatureUsageStats getFeatureUsageStats(LocalDateTime startTime, LocalDateTime endTime) {
         // 模块访问排行
-        List<ChartData> moduleRanking = operateLogMapper.countByModule(startTime, endTime).stream()
+        List<ChartData> moduleRanking = operateLogMapper.countByModule(startTime, endTime)
+                .stream()
                 .limit(10)
                 .map(m -> ChartData.builder()
                         .name(String.valueOf(m.get("module")))
                         .value(getMapLongValue(m, "count"))
                         .build())
                 .collect(Collectors.toList());
-
         // API 调用统计（按请求方法分组）
-        List<ChartData> apiCallStats = operateLogMapper.countByRequestMethod(startTime, endTime).stream()
+        List<ChartData> apiCallStats = operateLogMapper.countByRequestMethod(startTime, endTime)
+                .stream()
                 .map(m -> ChartData.builder()
                         .name(String.valueOf(m.get("name")))
                         .value(getMapLongValue(m, "count"))
                         .build())
                 .collect(Collectors.toList());
-
-        return FeatureUsageStats.builder()
-                .moduleRanking(moduleRanking)
-                .apiCallStats(apiCallStats)
-                .build();
+        return FeatureUsageStats.builder().moduleRanking(moduleRanking).apiCallStats(apiCallStats).build();
     }
 
     /**
      * 获取时段分布统计
      *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
+     *
      * @return 时段分布统计对象
      */
     private TimeDistributionStats getTimeDistributionStats(LocalDateTime startTime, LocalDateTime endTime) {
@@ -285,7 +303,6 @@ public class StatisticsApplicationService {
         List<Map<String, Object>> loginHourData = loginLogMapper.countByHour(startTime, endTime);
         // 操作小时分布
         List<Map<String, Object>> operateHourData = operateLogMapper.countByHour(startTime, endTime);
-
         // 合并小时分布
         Map<Integer, Long> hourMap = new HashMap<>();
         for (int i = 0; i < 24; i++) {
@@ -301,22 +318,14 @@ public class StatisticsApplicationService {
             long count = getMapLongValue(m, "count");
             hourMap.merge(hour, count, Long::sum);
         }
-
-        List<HourData> hourlyDistribution = hourMap.entrySet().stream()
+        List<HourData> hourlyDistribution = hourMap.entrySet()
+                .stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(e -> HourData.builder()
-                        .hour(e.getKey())
-                        .value(e.getValue())
-                        .build())
+                .map(e -> HourData.builder().hour(e.getKey()).value(e.getValue()).build())
                 .collect(Collectors.toList());
-
         // 计算高峰时段
         String peakHours = calculatePeakHours(hourMap);
-
-        return TimeDistributionStats.builder()
-                .hourlyDistribution(hourlyDistribution)
-                .peakHours(peakHours)
-                .build();
+        return TimeDistributionStats.builder().hourlyDistribution(hourlyDistribution).peakHours(peakHours).build();
     }
 
     /**
@@ -327,7 +336,6 @@ public class StatisticsApplicationService {
     private List<ChartData> getDeptDistribution() {
         List<Dept> allDepts = deptApplicationService.getAllDepts();
         Map<Long, Integer> userCounts = deptApplicationService.getDeptUserCounts();
-
         return allDepts.stream()
                 .filter(dept -> userCounts.containsKey(dept.getId()))
                 .map(dept -> ChartData.builder()
@@ -345,15 +353,16 @@ public class StatisticsApplicationService {
      * </p>
      *
      * @param hourMap 小时访问量 Map
+     *
      * @return 高峰时段字符串
      */
     private String calculatePeakHours(Map<Integer, Long> hourMap) {
         if (hourMap.isEmpty()) {
             return "无数据";
         }
-
         // 找出访问量最高的 3 个小时
-        return hourMap.entrySet().stream()
+        return hourMap.entrySet()
+                .stream()
                 .sorted(Map.Entry.<Integer, Long>comparingByValue().reversed())
                 .limit(3)
                 .map(e -> String.format("%02d:00", e.getKey()))
@@ -365,6 +374,7 @@ public class StatisticsApplicationService {
      *
      * @param map 数据 Map
      * @param key 键名
+     *
      * @return Long 值，获取失败则返回 0
      */
     private long getMapLongValue(Map<String, Object> map, String key) {
@@ -384,4 +394,5 @@ public class StatisticsApplicationService {
             return 0L;
         }
     }
+
 }

@@ -19,8 +19,8 @@ package com.iboot.admin.application.service;
 import com.iboot.admin.common.exception.BusinessException;
 import com.iboot.admin.domain.system.model.Config;
 import com.iboot.admin.domain.system.repository.ConfigRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -37,9 +37,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class ConfigApplicationService {
 
     /**
@@ -47,17 +45,25 @@ public class ConfigApplicationService {
      */
     public static final String CACHE_NAME = "sys_config";
 
+    private static final Logger log = LoggerFactory.getLogger(ConfigApplicationService.class);
+
     private final ConfigRepository configRepository;
+
+    @SuppressWarnings("all")
+    public ConfigApplicationService(final ConfigRepository configRepository) {
+        this.configRepository = configRepository;
+    }
 
     /**
      * 创建系统配置
      * <p>
-     * 检查配置键是否已存在，清理同键名已删除的配置记录，保存新配置
-     * 保存成功后清除该配置键的缓存
+     * 检查配置键是否已存在，清理同键名已删除的配置记录，保存新配置 保存成功后清除该配置键的缓存
      * </p>
      *
      * @param config 系统配置实体
+     *
      * @return 创建后的系统配置
+     *
      * @throws BusinessException 当配置键已存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
@@ -66,10 +72,8 @@ public class ConfigApplicationService {
         if (configRepository.existsByConfigKey(config.getConfigKey())) {
             throw new BusinessException("配置键已存在");
         }
-
         // 清理同键名已删除配置记录（解决逻辑删除与唯一索引冲突问题）
         configRepository.removeDeletedByConfigKey(config.getConfigKey());
-
         config.setCreateTime(LocalDateTime.now());
         return configRepository.save(config);
     }
@@ -77,26 +81,24 @@ public class ConfigApplicationService {
     /**
      * 更新系统配置
      * <p>
-     * 检查配置是否存在，更新配置信息。如果配置键发生变化，清除旧键的缓存
-     * 保存成功后清除该配置键的缓存
+     * 检查配置是否存在，更新配置信息。如果配置键发生变化，清除旧键的缓存 保存成功后清除该配置键的缓存
      * </p>
      *
      * @param config 系统配置实体
+     *
      * @return 是否更新成功
+     *
      * @throws BusinessException 当配置不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = CACHE_NAME, key = "#config.configKey")
     public boolean updateConfig(Config config) {
-        Config existing = configRepository.findById(config.getId())
-                .orElseThrow(() -> new BusinessException("配置不存在"));
-
+        Config existing = configRepository.findById(config.getId()).orElseThrow(() -> new BusinessException("配置不存在"));
         // 如果配置键发生变化，需要清除旧键的缓存
         if (!existing.getConfigKey().equals(config.getConfigKey())) {
             // 旧键缓存将在方法完成后由 AOP 清除
             log.info("配置键变更：{} -> {}", existing.getConfigKey(), config.getConfigKey());
         }
-
         config.setUpdateTime(LocalDateTime.now());
         return configRepository.update(config);
     }
@@ -104,31 +106,27 @@ public class ConfigApplicationService {
     /**
      * 删除系统配置
      * <p>
-     * 检查配置是否存在，系统内置配置不允许删除
-     * 删除成功后手动清除对应配置键的缓存
+     * 检查配置是否存在，系统内置配置不允许删除 删除成功后手动清除对应配置键的缓存
      * </p>
      *
      * @param id 系统配置 ID
+     *
      * @return 是否删除成功
+     *
      * @throws BusinessException 当配置不存在或为系统内置配置时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteConfig(Long id) {
-        Config config = configRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("配置不存在"));
-
+        Config config = configRepository.findById(id).orElseThrow(() -> new BusinessException("配置不存在"));
         // 系统内置配置不允许删除
         if (config.isSystemConfig()) {
             throw new BusinessException("系统内置配置不允许删除");
         }
-
         boolean result = configRepository.deleteById(id);
-
         // 手动清除缓存（因为需要用到查询出的 configKey）
         if (result) {
             evictConfigCache(config.getConfigKey());
         }
-
         return result;
     }
 
@@ -149,29 +147,28 @@ public class ConfigApplicationService {
      * 根据 ID 获取系统配置
      *
      * @param id 系统配置 ID
+     *
      * @return 系统配置实体
+     *
      * @throws BusinessException 当配置不存在时抛出
      */
     public Config getConfigById(Long id) {
-        return configRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("配置不存在"));
+        return configRepository.findById(id).orElseThrow(() -> new BusinessException("配置不存在"));
     }
 
     /**
      * 根据配置键获取配置值
      * <p>
-     * 使用二级缓存：先查本地 Caffeine，再查 Redis，最后查数据库
-     * 配置值会被缓存，下次查询时直接返回
+     * 使用二级缓存：先查本地 Caffeine，再查 Redis，最后查数据库 配置值会被缓存，下次查询时直接返回
      * </p>
      *
      * @param configKey 配置键
+     *
      * @return 配置值，不存在则返回 null
      */
     @Cacheable(value = CACHE_NAME, key = "#configKey", unless = "#result == null")
     public String getConfigValue(String configKey) {
-        return configRepository.findByConfigKey(configKey)
-                .map(Config::getConfigValue)
-                .orElse(null);
+        return configRepository.findByConfigKey(configKey).map(Config::getConfigValue).orElse(null);
     }
 
     /**
@@ -186,8 +183,9 @@ public class ConfigApplicationService {
     /**
      * 分页获取系统配置
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 系统配置列表
      */
     public List<Config> getConfigPage(int pageNum, int pageSize) {
@@ -207,13 +205,15 @@ public class ConfigApplicationService {
      * 按条件分页获取系统配置
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
-     * @param pageNum 页码，从 1 开始
-     * @param pageSize 每页数量
+     * @param pageNum    页码，从 1 开始
+     * @param pageSize   每页数量
+     *
      * @return 系统配置列表
      */
-    public List<Config> getConfigPageByCondition(String configName, String configKey, Integer configType, int pageNum, int pageSize) {
+    public List<Config> getConfigPageByCondition(String configName, String configKey, Integer configType, int pageNum,
+                                                 int pageSize) {
         return configRepository.findPageByCondition(configName, configKey, configType, pageNum, pageSize);
     }
 
@@ -221,8 +221,9 @@ public class ConfigApplicationService {
      * 按条件统计系统配置总数
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
+     *
      * @return 系统配置总数
      */
     public long countConfigsByCondition(String configName, String configKey, Integer configType) {
@@ -233,8 +234,9 @@ public class ConfigApplicationService {
      * 按条件获取所有系统配置（不分页，用于导出）
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
+     *
      * @return 系统配置列表
      */
     public List<Config> getAllConfigsByCondition(String configName, String configKey, Integer configType) {
@@ -251,4 +253,5 @@ public class ConfigApplicationService {
     public void refreshCache() {
         log.info("配置缓存已清除，将在下次查询时重新加载");
     }
+
 }

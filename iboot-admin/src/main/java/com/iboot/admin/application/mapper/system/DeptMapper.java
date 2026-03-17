@@ -20,11 +20,7 @@ import com.iboot.admin.domain.system.model.Dept;
 import com.iboot.admin.interfaces.dto.export.DeptExportVO;
 import com.iboot.admin.interfaces.dto.request.DeptRequest;
 import com.iboot.admin.interfaces.dto.response.DeptResponse;
-import org.mapstruct.InjectionStrategy;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.Named;
+import org.mapstruct.*;
 
 import java.util.List;
 
@@ -33,10 +29,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface DeptMapper {
 
     // ==================== 查询映射 ====================
@@ -45,6 +38,7 @@ public interface DeptMapper {
      * 将部门实体转换为响应 DTO
      *
      * @param dept 部门实体
+     *
      * @return 部门响应 DTO
      */
     @Mapping(target = "children", ignore = true)
@@ -54,18 +48,18 @@ public interface DeptMapper {
      * 将部门实体列表转换为树形响应 DTO 列表
      *
      * @param depts 部门实体列表
+     *
      * @return 部门树形响应 DTO 列表
      */
     default List<DeptResponse> toTreeResponseList(List<Dept> depts) {
-        return depts.stream()
-                .map(this::toTreeResponse)
-                .toList();
+        return depts.stream().map(this::toTreeResponse).toList();
     }
 
     /**
      * 将部门实体转换为导出 VO
      *
      * @param dept 部门实体
+     *
      * @return 部门导出 VO
      */
     DeptExportVO toExportVO(Dept dept);
@@ -74,6 +68,7 @@ public interface DeptMapper {
      * 将部门实体列表转换为导出 VO 列表
      *
      * @param depts 部门实体列表
+     *
      * @return 部门导出 VO 列表
      */
     List<DeptExportVO> toExportVOList(List<Dept> depts);
@@ -84,6 +79,7 @@ public interface DeptMapper {
      * 将部门请求转换为实体
      *
      * @param request 部门请求
+     *
      * @return 部门实体
      */
     @Mapping(target = "id", ignore = true)
@@ -119,16 +115,16 @@ public interface DeptMapper {
      * 将部门实体转换为树形响应 DTO（递归处理子部门）
      *
      * @param dept 部门实体
+     *
      * @return 部门树形响应 DTO
      */
     @Named("toTreeResponse")
     default DeptResponse toTreeResponse(Dept dept) {
         DeptResponse response = toResponse(dept);
         if (dept.getChildren() != null && !dept.getChildren().isEmpty()) {
-            response.setChildren(dept.getChildren().stream()
-                    .map(this::toTreeResponse)
-                    .toList());
+            response.setChildren(dept.getChildren().stream().map(this::toTreeResponse).toList());
         }
         return response;
     }
+
 }

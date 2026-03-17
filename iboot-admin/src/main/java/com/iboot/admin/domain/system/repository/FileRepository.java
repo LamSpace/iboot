@@ -35,6 +35,7 @@ public interface FileRepository {
      * 保存文件信息
      *
      * @param fileInfo 文件信息实体
+     *
      * @return 保存后的文件信息
      */
     FileInfo save(FileInfo fileInfo);
@@ -43,6 +44,7 @@ public interface FileRepository {
      * 更新文件信息
      *
      * @param fileInfo 文件信息实体
+     *
      * @return 是否更新成功
      */
     boolean update(FileInfo fileInfo);
@@ -51,6 +53,7 @@ public interface FileRepository {
      * 根据 ID 删除文件信息（逻辑删除）
      *
      * @param id 文件 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteById(Long id);
@@ -59,6 +62,7 @@ public interface FileRepository {
      * 根据 ID 查询文件信息
      *
      * @param id 文件 ID
+     *
      * @return 文件信息实体，不存在则返回空
      */
     Optional<FileInfo> findById(Long id);
@@ -73,8 +77,9 @@ public interface FileRepository {
     /**
      * 分页查询文件信息
      *
-     * @param pageNum 页码
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 文件信息列表
      */
     List<FileInfo> findPage(int pageNum, int pageSize);
@@ -89,11 +94,12 @@ public interface FileRepository {
     /**
      * 按条件分页查询文件
      *
-     * @param fileName 文件名称（可选）
+     * @param fileName     文件名称（可选）
      * @param fileCategory 文件分类（可选）
-     * @param fileExt 文件扩展名（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param fileExt      文件扩展名（可选）
+     * @param pageNum      页码
+     * @param pageSize     每页数量
+     *
      * @return 文件信息列表
      */
     List<FileInfo> findPageByCondition(String fileName, String fileCategory, String fileExt, int pageNum, int pageSize);
@@ -101,9 +107,10 @@ public interface FileRepository {
     /**
      * 按条件统计文件总数
      *
-     * @param fileName 文件名称（可选）
+     * @param fileName     文件名称（可选）
      * @param fileCategory 文件分类（可选）
-     * @param fileExt 文件扩展名（可选）
+     * @param fileExt      文件扩展名（可选）
+     *
      * @return 文件总数
      */
     long countByCondition(String fileName, String fileCategory, String fileExt);
@@ -111,9 +118,11 @@ public interface FileRepository {
     /**
      * 按条件查询所有文件（导出用）
      *
-     * @param fileName 文件名称（可选）
+     * @param fileName     文件名称（可选）
      * @param fileCategory 文件分类（可选）
+     *
      * @return 文件信息列表
      */
     List<FileInfo> findAllByCondition(String fileName, String fileCategory);
+
 }

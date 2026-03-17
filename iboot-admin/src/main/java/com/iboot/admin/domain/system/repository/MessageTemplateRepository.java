@@ -35,6 +35,7 @@ public interface MessageTemplateRepository {
      * 保存消息模板
      *
      * @param template 消息模板实体
+     *
      * @return 保存后的消息模板
      */
     MessageTemplate save(MessageTemplate template);
@@ -43,6 +44,7 @@ public interface MessageTemplateRepository {
      * 更新消息模板
      *
      * @param template 消息模板实体
+     *
      * @return 是否更新成功
      */
     boolean update(MessageTemplate template);
@@ -51,6 +53,7 @@ public interface MessageTemplateRepository {
      * 根据 ID 删除消息模板（逻辑删除）
      *
      * @param id 消息模板 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteById(Long id);
@@ -59,6 +62,7 @@ public interface MessageTemplateRepository {
      * 根据 ID 查询消息模板
      *
      * @param id 消息模板 ID
+     *
      * @return 消息模板实体，不存在则返回空
      */
     Optional<MessageTemplate> findById(Long id);
@@ -67,6 +71,7 @@ public interface MessageTemplateRepository {
      * 根据模板编码查询消息模板
      *
      * @param templateCode 模板编码
+     *
      * @return 消息模板实体，不存在则返回空
      */
     Optional<MessageTemplate> findByTemplateCode(String templateCode);
@@ -75,20 +80,23 @@ public interface MessageTemplateRepository {
      * 按条件分页查询消息模板
      *
      * @param templateName 模板名称（可选）
-     * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param messageType  消息类型（可选）
+     * @param status       状态（可选）
+     * @param pageNum      页码
+     * @param pageSize     每页数量
+     *
      * @return 消息模板列表
      */
-    List<MessageTemplate> findPageByCondition(String templateName, String messageType, Integer status, int pageNum, int pageSize);
+    List<MessageTemplate> findPageByCondition(String templateName, String messageType, Integer status, int pageNum,
+                                              int pageSize);
 
     /**
      * 按条件统计消息模板数量
      *
      * @param templateName 模板名称（可选）
-     * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
+     * @param messageType  消息类型（可选）
+     * @param status       状态（可选）
+     *
      * @return 消息模板数量
      */
     long countByCondition(String templateName, String messageType, Integer status);
@@ -97,6 +105,7 @@ public interface MessageTemplateRepository {
      * 检查模板编码是否存在
      *
      * @param templateCode 模板编码
+     *
      * @return 是否存在
      */
     boolean existsByTemplateCode(String templateCode);
@@ -108,6 +117,7 @@ public interface MessageTemplateRepository {
      * </p>
      *
      * @param templateCode 模板编码
+     *
      * @return 是否删除成功
      */
     boolean removeDeletedByTemplateCode(String templateCode);
@@ -118,4 +128,5 @@ public interface MessageTemplateRepository {
      * @return 启用的消息模板列表
      */
     List<MessageTemplate> findAllEnabled();
+
 }

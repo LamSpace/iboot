@@ -30,7 +30,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -44,39 +43,39 @@ import java.util.stream.Collectors;
 
 /**
  * 菜单管理控制器
- * 
+ *
  * @author iBoot
  */
 @Tag(name = "菜单管理", description = "菜单管理相关接口")
 @RestController
 @RequestMapping("/api/menu")
-@RequiredArgsConstructor
 public class MenuController {
-    
+
     private final MenuApplicationService menuApplicationService;
-    
+
+    @SuppressWarnings("all")
+    public MenuController(final MenuApplicationService menuApplicationService) {
+        this.menuApplicationService = menuApplicationService;
+    }
+
     @Operation(summary = "查询菜单树形结构")
     @GetMapping("/tree")
     @PreAuthorize("hasAuthority('menu:list')")
     public Result<List<MenuResponse>> tree() {
         List<Menu> menus = menuApplicationService.getMenuTree();
-        List<MenuResponse> responses = menus.stream()
-                .map(this::convertToTreeResponse)
-                .collect(Collectors.toList());
+        List<MenuResponse> responses = menus.stream().map(this::convertToTreeResponse).collect(Collectors.toList());
         return Result.success(responses);
     }
-    
+
     @Operation(summary = "查询菜单列表")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('menu:list')")
     public Result<List<MenuResponse>> list() {
         List<Menu> menus = menuApplicationService.getAllMenus();
-        List<MenuResponse> responses = menus.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        List<MenuResponse> responses = menus.stream().map(this::convertToResponse).collect(Collectors.toList());
         return Result.success(responses);
     }
-    
+
     @Operation(summary = "查询菜单详情")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('menu:query')")
@@ -84,18 +83,16 @@ public class MenuController {
         Menu menu = menuApplicationService.getMenuById(id);
         return Result.success(convertToResponse(menu));
     }
-    
+
     @Operation(summary = "获取当前用户菜单树")
     @GetMapping("/user/tree")
     public Result<List<MenuResponse>> userMenuTree() {
         Long userId = getCurrentUserId();
         List<Menu> menus = menuApplicationService.getUserMenuTree(userId);
-        List<MenuResponse> responses = menus.stream()
-                .map(this::convertToTreeResponse)
-                .collect(Collectors.toList());
+        List<MenuResponse> responses = menus.stream().map(this::convertToTreeResponse).collect(Collectors.toList());
         return Result.success(responses);
     }
-    
+
     @Operation(summary = "获取当前用户权限列表")
     @GetMapping("/user/perms")
     public Result<Set<String>> userPermissions() {
@@ -104,7 +101,7 @@ public class MenuController {
         Set<String> perms = new java.util.HashSet<>(permsList);
         return Result.success(perms);
     }
-    
+
     @Operation(summary = "新增菜单")
     @PostMapping
     @PreAuthorize("hasAuthority('menu:add')")
@@ -114,7 +111,7 @@ public class MenuController {
         Menu createdMenu = menuApplicationService.createMenu(menu);
         return Result.success(convertToResponse(createdMenu));
     }
-    
+
     @Operation(summary = "修改菜单")
     @PutMapping
     @PreAuthorize("hasAuthority('menu:edit')")
@@ -125,7 +122,7 @@ public class MenuController {
         menuApplicationService.updateMenu(menu);
         return Result.success();
     }
-    
+
     @Operation(summary = "删除菜单")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('menu:remove')")
@@ -134,40 +131,37 @@ public class MenuController {
         menuApplicationService.deleteMenu(id);
         return Result.success();
     }
-    
+
     @Operation(summary = "导出菜单列表")
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('menu:export')")
     @Log(title = "菜单管理", businessType = BusinessTypeEnum.EXPORT)
-    public void export(HttpServletResponse response,
-                       @RequestParam(required = false) String menuName,
+    public void export(HttpServletResponse response, @RequestParam(required = false) String menuName,
                        @RequestParam(required = false) Integer status) throws IOException {
         List<Menu> menus = menuApplicationService.getMenuTree();
         List<MenuExportVO> exportList = new ArrayList<>();
         flattenMenuTree(menus, exportList, 1, menuName, status);
         ExcelExportUtil.exportExcel(response, exportList, MenuExportVO.class, "菜单列表", "菜单数据");
     }
-    
+
     /**
      * 递归展平菜单树并添加层级信息
      */
-    private void flattenMenuTree(List<Menu> menus, List<MenuExportVO> exportList, int level,
-                                  String menuName, Integer status) {
+    private void flattenMenuTree(List<Menu> menus, List<MenuExportVO> exportList, int level, String menuName,
+                                 Integer status) {
         for (Menu menu : menus) {
-            boolean nameMatch = menuName == null || menuName.isEmpty() || 
-                    (menu.getMenuName() != null && menu.getMenuName().contains(menuName));
+            boolean nameMatch = menuName == null || menuName.isEmpty()
+                    || (menu.getMenuName() != null && menu.getMenuName().contains(menuName));
             boolean statusMatch = status == null || status.equals(menu.getStatus());
-            
             if (nameMatch && statusMatch) {
                 exportList.add(convertToExportVO(menu, level));
             }
-            
             if (menu.getChildren() != null && !menu.getChildren().isEmpty()) {
                 flattenMenuTree(menu.getChildren(), exportList, level + 1, menuName, status);
             }
         }
     }
-    
+
     private MenuExportVO convertToExportVO(Menu menu, int level) {
         return MenuExportVO.builder()
                 .id(menu.getId())
@@ -186,7 +180,7 @@ public class MenuController {
                 .createTime(menu.getCreateTime())
                 .build();
     }
-    
+
     private Menu convertToEntity(MenuRequest request) {
         return Menu.builder()
                 .parentId(request.getParentId())
@@ -204,7 +198,7 @@ public class MenuController {
                 .remark(request.getRemark())
                 .build();
     }
-    
+
     private MenuResponse convertToResponse(Menu menu) {
         return MenuResponse.builder()
                 .id(menu.getId())
@@ -224,17 +218,16 @@ public class MenuController {
                 .createTime(menu.getCreateTime())
                 .build();
     }
-    
+
     private MenuResponse convertToTreeResponse(Menu menu) {
         MenuResponse response = convertToResponse(menu);
         if (menu.getChildren() != null && !menu.getChildren().isEmpty()) {
-            response.setChildren(menu.getChildren().stream()
-                    .map(this::convertToTreeResponse)
-                    .collect(Collectors.toList()));
+            response
+                    .setChildren(menu.getChildren().stream().map(this::convertToTreeResponse).collect(Collectors.toList()));
         }
         return response;
     }
-    
+
     @SuppressWarnings("unchecked")
     private Long getCurrentUserId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -250,4 +243,5 @@ public class MenuController {
         }
         throw new com.iboot.admin.common.exception.BusinessException("无法获取当前用户信息");
     }
+
 }

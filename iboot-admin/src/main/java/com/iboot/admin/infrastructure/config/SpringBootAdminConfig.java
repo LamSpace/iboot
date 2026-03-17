@@ -20,12 +20,12 @@ import de.codecentric.boot.admin.server.config.EnableAdminServer;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Spring Boot Admin Server 配置
- * 启用内嵌的 Spring Boot Admin Server，用于监控当前单体应用
+ * Spring Boot Admin Server 配置 启用内嵌的 Spring Boot Admin Server，用于监控当前单体应用
  *
  * @author iBoot
  */
 @Configuration
 @EnableAdminServer
 public class SpringBootAdminConfig {
+
 }

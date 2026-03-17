@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.Post;
 import com.iboot.admin.domain.system.repository.PostRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.PostMapper;
 import com.iboot.admin.infrastructure.persistence.po.PostPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class PostRepositoryImpl implements PostRepository {
 
     private final PostMapper postMapper;
+
+    @SuppressWarnings("all")
+    public PostRepositoryImpl(final PostMapper postMapper) {
+        this.postMapper = postMapper;
+    }
 
     /**
      * 保存岗位
@@ -48,6 +51,7 @@ public class PostRepositoryImpl implements PostRepository {
      * </p>
      *
      * @param post 岗位实体
+     *
      * @return 保存后的岗位
      */
     @Override
@@ -65,6 +69,7 @@ public class PostRepositoryImpl implements PostRepository {
      * 更新岗位
      *
      * @param post 岗位实体
+     *
      * @return 是否更新成功
      */
     @Override
@@ -77,6 +82,7 @@ public class PostRepositoryImpl implements PostRepository {
      * 根据 ID 删除岗位（逻辑删除）
      *
      * @param id 岗位 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -88,6 +94,7 @@ public class PostRepositoryImpl implements PostRepository {
      * 根据 ID 查询岗位
      *
      * @param id 岗位 ID
+     *
      * @return 岗位实体，不存在则返回空
      */
     @Override
@@ -100,6 +107,7 @@ public class PostRepositoryImpl implements PostRepository {
      * 根据岗位编码查询岗位
      *
      * @param postCode 岗位编码
+     *
      * @return 岗位实体，不存在则返回空
      */
     @Override
@@ -115,24 +123,21 @@ public class PostRepositoryImpl implements PostRepository {
      */
     @Override
     public List<Post> findAll() {
-        return postMapper.selectAll().stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return postMapper.selectAll().stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 分页查询岗位
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 岗位列表
      */
     @Override
     public List<Post> findPage(int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return postMapper.selectPage(offset, pageSize).stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return postMapper.selectPage(offset, pageSize).stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
@@ -150,15 +155,17 @@ public class PostRepositoryImpl implements PostRepository {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
+     * @param status   状态（可选）
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 岗位列表
      */
     @Override
     public List<Post> findPageByCondition(String postName, String postCode, Integer status, int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return postMapper.selectPageByCondition(postName, postCode, status, offset, pageSize).stream()
+        return postMapper.selectPageByCondition(postName, postCode, status, offset, pageSize)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -168,7 +175,8 @@ public class PostRepositoryImpl implements PostRepository {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 岗位总数
      */
     @Override
@@ -181,12 +189,14 @@ public class PostRepositoryImpl implements PostRepository {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 岗位列表
      */
     @Override
     public List<Post> findAllByCondition(String postName, String postCode, Integer status) {
-        return postMapper.selectAllByCondition(postName, postCode, status).stream()
+        return postMapper.selectAllByCondition(postName, postCode, status)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -195,6 +205,7 @@ public class PostRepositoryImpl implements PostRepository {
      * 检查岗位编码是否存在
      *
      * @param postCode 岗位编码
+     *
      * @return 是否存在
      */
     @Override
@@ -206,6 +217,7 @@ public class PostRepositoryImpl implements PostRepository {
      * 检查岗位名称是否存在
      *
      * @param postName 岗位名称
+     *
      * @return 是否存在
      */
     @Override
@@ -217,6 +229,7 @@ public class PostRepositoryImpl implements PostRepository {
      * 物理删除已逻辑删除的岗位记录（根据岗位编码）
      *
      * @param postCode 岗位编码
+     *
      * @return 是否删除成功
      */
     @Override
@@ -228,6 +241,7 @@ public class PostRepositoryImpl implements PostRepository {
      * 将领域对象转换为持久化对象
      *
      * @param post 岗位领域对象
+     *
      * @return 岗位持久化对象
      */
     private PostPO convertToPO(Post post) {
@@ -250,6 +264,7 @@ public class PostRepositoryImpl implements PostRepository {
      * 将持久化对象转换为领域对象
      *
      * @param postPO 岗位持久化对象
+     *
      * @return 岗位领域对象
      */
     private Post convertToDomain(PostPO postPO) {
@@ -267,4 +282,5 @@ public class PostRepositoryImpl implements PostRepository {
                 .remark(postPO.getRemark())
                 .build();
     }
+
 }

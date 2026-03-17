@@ -36,6 +36,7 @@ public interface LoginLogRepository {
      * 保存登录日志
      *
      * @param loginLog 登录日志实体
+     *
      * @return 保存后的登录日志
      */
     LoginLog save(LoginLog loginLog);
@@ -44,6 +45,7 @@ public interface LoginLogRepository {
      * 根据 ID 查询登录日志
      *
      * @param id 登录日志 ID
+     *
      * @return 登录日志实体，不存在则返回空
      */
     Optional<LoginLog> findById(Long id);
@@ -51,8 +53,9 @@ public interface LoginLogRepository {
     /**
      * 分页查询登录日志
      *
-     * @param pageNum 页码
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 登录日志列表
      */
     List<LoginLog> findPage(int pageNum, int pageSize);
@@ -60,31 +63,32 @@ public interface LoginLogRepository {
     /**
      * 根据条件分页查询登录日志
      *
-     * @param username 用户名（可选）
+     * @param username  用户名（可选）
      * @param ipAddress IP 地址（可选）
-     * @param status 登录状态（可选）
+     * @param status    登录状态（可选）
      * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param endTime   结束时间（可选）
+     * @param pageNum   页码
+     * @param pageSize  每页数量
+     *
      * @return 登录日志列表
      */
-    List<LoginLog> findPageByCondition(String username, String ipAddress, Integer status,
-                                        LocalDateTime startTime, LocalDateTime endTime,
-                                        int pageNum, int pageSize);
+    List<LoginLog> findPageByCondition(String username, String ipAddress, Integer status, LocalDateTime startTime,
+                                       LocalDateTime endTime, int pageNum, int pageSize);
 
     /**
      * 根据条件查询所有登录日志（不分页，用于导出）
      *
-     * @param username 用户名（可选）
+     * @param username  用户名（可选）
      * @param ipAddress IP 地址（可选）
-     * @param status 登录状态（可选）
+     * @param status    登录状态（可选）
      * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
+     * @param endTime   结束时间（可选）
+     *
      * @return 登录日志列表
      */
-    List<LoginLog> findAllByCondition(String username, String ipAddress, Integer status,
-                                       LocalDateTime startTime, LocalDateTime endTime);
+    List<LoginLog> findAllByCondition(String username, String ipAddress, Integer status, LocalDateTime startTime,
+                                      LocalDateTime endTime);
 
     /**
      * 统计登录日志总数
@@ -96,15 +100,16 @@ public interface LoginLogRepository {
     /**
      * 根据条件统计登录日志总数
      *
-     * @param username 用户名（可选）
+     * @param username  用户名（可选）
      * @param ipAddress IP 地址（可选）
-     * @param status 登录状态（可选）
+     * @param status    登录状态（可选）
      * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
+     * @param endTime   结束时间（可选）
+     *
      * @return 登录日志总数
      */
-    long countByCondition(String username, String ipAddress, Integer status,
-                          LocalDateTime startTime, LocalDateTime endTime);
+    long countByCondition(String username, String ipAddress, Integer status, LocalDateTime startTime,
+                          LocalDateTime endTime);
 
     /**
      * 清理指定日期之前的日志
@@ -113,7 +118,9 @@ public interface LoginLogRepository {
      * </p>
      *
      * @param beforeDate 清理该日期之前的日志
+     *
      * @return 清理的日志数量
      */
     int cleanLogBeforeDate(LocalDateTime beforeDate);
+
 }

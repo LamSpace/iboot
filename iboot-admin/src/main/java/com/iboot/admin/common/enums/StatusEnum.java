@@ -16,42 +16,49 @@
 
 package com.iboot.admin.common.enums;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 状态枚举
- * 
+ *
  * @author iBoot
  */
-@Getter
-@AllArgsConstructor
 public enum StatusEnum {
-    
+
     /**
      * 正常/启用
      */
     ENABLE(1, "正常"),
-    
     /**
      * 停用/禁用
      */
     DISABLE(0, "停用");
-    
+
     /**
      * 状态码
      */
     private final Integer code;
-    
+
     /**
      * 状态描述
      */
     private final String description;
-    
+
+    /**
+     * Creates a new {@code StatusEnum} instance.
+     *
+     * @param code        状态码
+     * @param description 状态描述
+     */
+    @SuppressWarnings("all")
+    private StatusEnum(final Integer code, final String description) {
+        this.code = code;
+        this.description = description;
+    }
+
     /**
      * 根据状态码获取枚举
      *
      * @param code 状态码
+     *
      * @return 状态枚举
      */
     public static StatusEnum getByCode(Integer code) {
@@ -65,4 +72,21 @@ public enum StatusEnum {
         }
         return null;
     }
+
+    /**
+     * 状态码
+     */
+    @SuppressWarnings("all")
+    public Integer getCode() {
+        return this.code;
+    }
+
+    /**
+     * 状态描述
+     */
+    @SuppressWarnings("all")
+    public String getDescription() {
+        return this.description;
+    }
+
 }

@@ -18,7 +18,6 @@ package com.iboot.admin.interfaces.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 
 import java.util.List;
 
@@ -27,7 +26,6 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Data
 @Schema(description = "消息发送请求")
 public class MessageSendRequest {
 
@@ -37,4 +35,73 @@ public class MessageSendRequest {
 
     @Schema(description = "接收用户ID列表（接收类型为指定用户时必填）")
     private List<Long> userIds;
+
+    @SuppressWarnings("all")
+    public MessageSendRequest() {
+    }
+
+    @SuppressWarnings("all")
+    public Long getMessageId() {
+        return this.messageId;
+    }
+
+    @SuppressWarnings("all")
+    public void setMessageId(final Long messageId) {
+        this.messageId = messageId;
+    }
+
+    @SuppressWarnings("all")
+    public List<Long> getUserIds() {
+        return this.userIds;
+    }
+
+    @SuppressWarnings("all")
+    public void setUserIds(final List<Long> userIds) {
+        this.userIds = userIds;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings("all")
+    public boolean equals(final java.lang.Object o) {
+        if (o == this)
+            return true;
+        if (!(o instanceof MessageSendRequest))
+            return false;
+        final MessageSendRequest other = (MessageSendRequest) o;
+        if (!other.canEqual((java.lang.Object) this))
+            return false;
+        final java.lang.Object this$messageId = this.getMessageId();
+        final java.lang.Object other$messageId = other.getMessageId();
+        if (this$messageId == null ? other$messageId != null : !this$messageId.equals(other$messageId))
+            return false;
+        final java.lang.Object this$userIds = this.getUserIds();
+        final java.lang.Object other$userIds = other.getUserIds();
+        if (this$userIds == null ? other$userIds != null : !this$userIds.equals(other$userIds))
+            return false;
+        return true;
+    }
+
+    @SuppressWarnings("all")
+    protected boolean canEqual(final java.lang.Object other) {
+        return other instanceof MessageSendRequest;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings("all")
+    public int hashCode() {
+        final int PRIME = 59;
+        int result = 1;
+        final java.lang.Object $messageId = this.getMessageId();
+        result = result * PRIME + ($messageId == null ? 43 : $messageId.hashCode());
+        final java.lang.Object $userIds = this.getUserIds();
+        result = result * PRIME + ($userIds == null ? 43 : $userIds.hashCode());
+        return result;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings("all")
+    public java.lang.String toString() {
+        return "MessageSendRequest(messageId=" + this.getMessageId() + ", userIds=" + this.getUserIds() + ")";
+    }
+
 }

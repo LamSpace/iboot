@@ -14,8 +14,7 @@ public class MetricsConfig {
      */
     @Bean
     public MeterRegistryCustomizer<MeterRegistry> configureMeterRegistry() {
-        return registry -> registry.config()
-                .commonTags("application", "iboot-admin", "namespace", "default");
+        return registry -> registry.config().commonTags("application", "iboot-admin", "namespace", "default");
     }
 
     /**
@@ -25,4 +24,5 @@ public class MetricsConfig {
     public TimedAspect timedAspect(MeterRegistry registry) {
         return new TimedAspect(registry);
     }
+
 }

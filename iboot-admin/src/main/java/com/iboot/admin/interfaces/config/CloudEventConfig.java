@@ -16,7 +16,6 @@
 
 package com.iboot.admin.interfaces.config;
 
-import com.iboot.admin.common.cloudevent.CloudEventBody;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,6 +44,7 @@ public class CloudEventConfig implements WebMvcConfigurer {
      * 为 CloudEventBody 类型设置特定的 Content-Type
      *
      * @param objectMapper Jackson ObjectMapper
+     *
      * @return HttpMessageConverter
      */
     @Bean
@@ -66,4 +66,5 @@ public class CloudEventConfig implements WebMvcConfigurer {
         MappingJackson2HttpMessageConverter converter = cloudEventHttpMessageConverter(objectMapper);
         converters.add(0, converter);
     }
+
 }

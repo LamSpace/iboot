@@ -19,9 +19,10 @@ package com.iboot.admin.common.util;
 import com.iboot.admin.application.service.DictApplicationService;
 import com.iboot.admin.common.annotation.ExcelColumn;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.dhatim.fastexcel.Workbook;
 import org.dhatim.fastexcel.Worksheet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -30,18 +31,24 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Excel导出工具类
  *
  * @author iBoot
  */
-@Slf4j
 public class ExcelExportUtil {
 
+    private static final Logger log = LoggerFactory.getLogger(ExcelExportUtil.class);
+
     private static final int DEFAULT_COLUMN_WIDTH = 15;
+
     private static final int MAX_COLUMN_WIDTH = 50;
+
     private static final String HEADER_FILL_COLOR = "C0C0C0";
 
     private ExcelExportUtil() {
@@ -57,10 +64,7 @@ public class ExcelExportUtil {
      * @param sheetName Sheet名称
      * @param <T>       数据类型
      */
-    public static <T> void exportExcel(HttpServletResponse response,
-                                       List<T> dataList,
-                                       Class<T> clazz,
-                                       String fileName,
+    public static <T> void exportExcel(HttpServletResponse response, List<T> dataList, Class<T> clazz, String fileName,
                                        String sheetName) throws IOException {
         // 获取并排序字段
         List<FieldInfo> fieldInfos = getExcelFields(clazz);
@@ -68,23 +72,17 @@ public class ExcelExportUtil {
             log.warn("No @ExcelColumn annotated fields found in {}", clazz.getName());
             return;
         }
-
         // 设置响应头（必须在获取OutputStream之前）
         setResponseHeaders(response, fileName);
-
         // 获取字典服务（延迟加载）
         DictApplicationService dictService = getDictService();
-
         Workbook workbook = new Workbook(response.getOutputStream(), "iBoot", "1.0");
         try {
             Worksheet ws = workbook.newWorksheet(sheetName);
-
             // 设置列宽
             setColumnWidths(ws, fieldInfos);
-
             // 创建表头
             createHeaderRow(ws, fieldInfos);
-
             // 填充数据
             int rowNum = 1;
             for (T data : dataList) {
@@ -95,14 +93,13 @@ public class ExcelExportUtil {
                 }
                 rowNum++;
             }
-
             workbook.finish();
         } catch (IOException e) {
             try {
                 workbook.finish();
             } catch (IOException ignored) {
-                // 忽略关闭时的异常
             }
+            // 忽略关闭时的异常
             throw e;
         }
     }
@@ -112,7 +109,6 @@ public class ExcelExportUtil {
      */
     private static List<FieldInfo> getExcelFields(Class<?> clazz) {
         List<FieldInfo> fieldInfos = new ArrayList<>();
-        
         // 获取所有字段（包括父类）
         Class<?> currentClass = clazz;
         while (currentClass != null && currentClass != Object.class) {
@@ -125,7 +121,6 @@ public class ExcelExportUtil {
             }
             currentClass = currentClass.getSuperclass();
         }
-
         // 按order排序
         fieldInfos.sort(Comparator.comparingInt(f -> f.annotation.order()));
         return fieldInfos;
@@ -163,16 +158,14 @@ public class ExcelExportUtil {
     /**
      * 设置单元格值
      */
-    private static void setCellValue(Worksheet ws, int row, int col, Object value,
-                                     FieldInfo fieldInfo, DictApplicationService dictService) throws IOException {
+    private static void setCellValue(Worksheet ws, int row, int col, Object value, FieldInfo fieldInfo,
+                                     DictApplicationService dictService) throws IOException {
         if (value == null) {
             ws.value(row, col, "");
             applyDataStyle(ws, row, col);
             return;
         }
-
         ExcelColumn annotation = fieldInfo.annotation;
-
         // 字典翻译
         if (!annotation.dictType().isEmpty() && dictService != null) {
             String dictLabel = dictService.getDictLabel(annotation.dictType(), String.valueOf(value));
@@ -180,7 +173,6 @@ public class ExcelExportUtil {
             applyDataStyle(ws, row, col);
             return;
         }
-
         // 日期类型处理
         if (value instanceof LocalDateTime) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(annotation.dateFormat());
@@ -188,37 +180,31 @@ public class ExcelExportUtil {
             applyDataStyle(ws, row, col);
             return;
         }
-
         if (value instanceof LocalDate) {
-            String format = annotation.dateFormat().contains(" ")
-                ? annotation.dateFormat().split(" ")[0]
-                : annotation.dateFormat();
+            String format = annotation.dateFormat().contains(" ") ? annotation.dateFormat().split(" ")[0]
+                    : annotation.dateFormat();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
             ws.value(row, col, ((LocalDate) value).format(formatter));
             applyDataStyle(ws, row, col);
             return;
         }
-
         if (value instanceof Date) {
             ws.value(row, col, value.toString());
             applyDataStyle(ws, row, col);
             return;
         }
-
         // 数字类型
         if (value instanceof Number) {
             ws.value(row, col, ((Number) value).doubleValue());
             applyDataStyle(ws, row, col);
             return;
         }
-
         // 布尔类型
         if (value instanceof Boolean) {
             ws.value(row, col, (Boolean) value ? "是" : "否");
             applyDataStyle(ws, row, col);
             return;
         }
-
         // 默认字符串处理
         ws.value(row, col, String.valueOf(value));
         applyDataStyle(ws, row, col);
@@ -228,11 +214,7 @@ public class ExcelExportUtil {
      * 应用数据单元格样式
      */
     private static void applyDataStyle(Worksheet ws, int row, int col) throws IOException {
-        ws.style(row, col)
-                .horizontalAlignment("center")
-                .verticalAlignment("center")
-                .borderStyle("thin")
-                .set();
+        ws.style(row, col).horizontalAlignment("center").verticalAlignment("center").borderStyle("thin").set();
     }
 
     /**
@@ -253,13 +235,11 @@ public class ExcelExportUtil {
      * 设置响应头
      */
     private static void setResponseHeaders(HttpServletResponse response, String fileName) {
-        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
-                .replace("+", "%20");
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("UTF-8");
-        response.setHeader("Content-Disposition",
-                "attachment; filename=\"" + encodedFileName + ".xlsx\";" +
-                        "filename*=UTF-8''" + encodedFileName + ".xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedFileName + ".xlsx\";"
+                + "filename*=UTF-8''" + encodedFileName + ".xlsx");
     }
 
     /**
@@ -277,13 +257,8 @@ public class ExcelExportUtil {
     /**
      * 字段信息内部类
      */
-    private static class FieldInfo {
-        final Field field;
-        final ExcelColumn annotation;
+    private record FieldInfo(Field field, ExcelColumn annotation) {
 
-        FieldInfo(Field field, ExcelColumn annotation) {
-            this.field = field;
-            this.annotation = annotation;
-        }
     }
+
 }

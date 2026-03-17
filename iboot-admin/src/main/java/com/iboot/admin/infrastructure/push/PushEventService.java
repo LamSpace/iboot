@@ -16,8 +16,8 @@
 
 package com.iboot.admin.infrastructure.push;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,20 +25,29 @@ import java.util.List;
 /**
  * 推送事件服务
  * <p>
- * 提供统一的推送事件发送接口，支持单播、组播、广播
- * 支持本地模式和 Redis Pub/Sub 集群模式
+ * 提供统一的推送事件发送接口，支持单播、组播、广播 支持本地模式和 Redis Pub/Sub 集群模式
  *
  * @author iBoot Team
  * @since 1.0.0
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class PushEventService {
 
+    private static final Logger log = LoggerFactory.getLogger(PushEventService.class);
+
     private final SseEmitterManager sseEmitterManager;
+
     private final RedisPushEventBroadcaster redisPushEventBroadcaster;
+
     private final PushProperties pushProperties;
+
+    @SuppressWarnings("all")
+    public PushEventService(final SseEmitterManager sseEmitterManager,
+                            final RedisPushEventBroadcaster redisPushEventBroadcaster, final PushProperties pushProperties) {
+        this.sseEmitterManager = sseEmitterManager;
+        this.redisPushEventBroadcaster = redisPushEventBroadcaster;
+        this.pushProperties = pushProperties;
+    }
 
     /**
      * 发送推送事件给指定用户（单播）
@@ -50,7 +59,6 @@ public class PushEventService {
         if (event.getTargetUserId() == null) {
             event.setTargetUserId(userId);
         }
-
         // 根据配置选择广播模式
         if (pushProperties.getBroadcaster() == PushProperties.BroadcasterType.REDIS) {
             // Redis 集群模式：发布到 Redis，由所有实例接收
@@ -105,6 +113,7 @@ public class PushEventService {
      * 检查用户是否在线
      *
      * @param userId 用户 ID
+     *
      * @return 是否在线
      */
     public boolean isOnline(Long userId) {
@@ -128,4 +137,5 @@ public class PushEventService {
     public List<Long> getOnlineUserIds() {
         return sseEmitterManager.getOnlineUserIds();
     }
+
 }

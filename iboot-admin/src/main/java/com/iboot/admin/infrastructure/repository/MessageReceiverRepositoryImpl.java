@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.MessageReceiver;
 import com.iboot.admin.domain.system.repository.MessageReceiverRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.MessageReceiverMapper;
 import com.iboot.admin.infrastructure.persistence.po.MessageReceiverPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -37,15 +36,20 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class MessageReceiverRepositoryImpl implements MessageReceiverRepository {
 
     private final MessageReceiverMapper messageReceiverMapper;
+
+    @SuppressWarnings("all")
+    public MessageReceiverRepositoryImpl(final MessageReceiverMapper messageReceiverMapper) {
+        this.messageReceiverMapper = messageReceiverMapper;
+    }
 
     /**
      * 保存消息接收记录
      *
      * @param receiver 消息接收记录实体
+     *
      * @return 是否保存成功
      */
     @Override
@@ -58,6 +62,7 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 批量保存消息接收记录
      *
      * @param receivers 消息接收记录列表
+     *
      * @return 是否保存成功
      */
     @Override
@@ -65,9 +70,7 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
         if (receivers == null || receivers.isEmpty()) {
             return true;
         }
-        List<MessageReceiverPO> poList = receivers.stream()
-                .map(this::convertToPO)
-                .collect(Collectors.toList());
+        List<MessageReceiverPO> poList = receivers.stream().map(this::convertToPO).collect(Collectors.toList());
         return messageReceiverMapper.batchInsert(poList) > 0;
     }
 
@@ -75,7 +78,8 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 将消息标记为已读
      *
      * @param messageId 消息 ID
-     * @param userId 用户 ID
+     * @param userId    用户 ID
+     *
      * @return 是否标记成功
      */
     @Override
@@ -87,6 +91,7 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 将用户的所有消息标记为已读
      *
      * @param userId 用户 ID
+     *
      * @return 是否标记成功
      */
     @Override
@@ -98,7 +103,8 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 软删除消息（逻辑删除）
      *
      * @param messageId 消息 ID
-     * @param userId 用户 ID
+     * @param userId    用户 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -110,7 +116,8 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 检查用户是否收到指定消息
      *
      * @param messageId 消息 ID
-     * @param userId 用户 ID
+     * @param userId    用户 ID
+     *
      * @return 是否存在
      */
     @Override
@@ -122,6 +129,7 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 统计用户未读消息数量
      *
      * @param userId 用户 ID
+     *
      * @return 未读消息数量
      */
     @Override
@@ -132,26 +140,30 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
     /**
      * 分页查询用户的消息列表
      *
-     * @param userId 用户 ID
+     * @param userId      用户 ID
      * @param messageType 消息类型（可选）
-     * @param isRead 是否已读（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param isRead      是否已读（可选）
+     * @param pageNum     页码
+     * @param pageSize    每页数量
+     *
      * @return 消息接收记录列表
      */
     @Override
-    public List<MessageReceiver> findPageByUserId(Long userId, String messageType, Integer isRead, int pageNum, int pageSize) {
+    public List<MessageReceiver> findPageByUserId(Long userId, String messageType, Integer isRead, int pageNum,
+                                                  int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        List<Map<String, Object>> rows = messageReceiverMapper.selectPageByUserId(userId, messageType, isRead, offset, pageSize);
+        List<Map<String, Object>> rows = messageReceiverMapper.selectPageByUserId(userId, messageType, isRead, offset,
+                pageSize);
         return rows.stream().map(this::convertMapToDomain).collect(Collectors.toList());
     }
 
     /**
      * 按条件统计用户消息数量
      *
-     * @param userId 用户 ID
+     * @param userId      用户 ID
      * @param messageType 消息类型
-     * @param isRead 是否已读
+     * @param isRead      是否已读
+     *
      * @return 消息数量
      */
     @Override
@@ -163,6 +175,7 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 根据消息 ID 删除接收记录
      *
      * @param messageId 消息 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -174,6 +187,7 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 根据消息 ID 查询接收记录列表
      *
      * @param messageId 消息 ID
+     *
      * @return 消息接收记录列表
      */
     @Override
@@ -186,6 +200,7 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 将领域对象转换为持久化对象
      *
      * @param domain 消息接收记录领域对象
+     *
      * @return 消息接收记录持久化对象
      */
     private MessageReceiverPO convertToPO(MessageReceiver domain) {
@@ -203,6 +218,7 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 将 Map 数据转换为领域对象
      *
      * @param row 数据库行数据
+     *
      * @return 消息接收记录领域对象
      */
     private MessageReceiver convertMapToDomain(Map<String, Object> row) {
@@ -218,6 +234,7 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 将 Map 数据转换为领域对象（带用户 ID）
      *
      * @param row 数据库行数据
+     *
      * @return 消息接收记录领域对象
      */
     private MessageReceiver convertMapToDomainWithUserId(Map<String, Object> row) {
@@ -235,11 +252,14 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 将对象转换为 Long 类型
      *
      * @param val 待转换的对象
+     *
      * @return Long 值
      */
     private Long toLong(Object val) {
-        if (val == null) return null;
-        if (val instanceof Long) return (Long) val;
+        if (val == null)
+            return null;
+        if (val instanceof Long)
+            return (Long) val;
         return Long.valueOf(val.toString());
     }
 
@@ -247,11 +267,15 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
      * 将对象转换为 Integer 类型
      *
      * @param val 待转换的对象
+     *
      * @return Integer 值
      */
     private Integer toInt(Object val) {
-        if (val == null) return null;
-        if (val instanceof Integer) return (Integer) val;
+        if (val == null)
+            return null;
+        if (val instanceof Integer)
+            return (Integer) val;
         return Integer.valueOf(val.toString());
     }
+
 }

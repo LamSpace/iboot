@@ -35,6 +35,7 @@ public interface DictTypeRepository {
      * 保存字典类型
      *
      * @param dictType 字典类型实体对象
+     *
      * @return 保存后的字典类型对象
      */
     DictType save(DictType dictType);
@@ -43,6 +44,7 @@ public interface DictTypeRepository {
      * 更新字典类型
      *
      * @param dictType 字典类型实体对象
+     *
      * @return 是否更新成功
      */
     boolean update(DictType dictType);
@@ -51,6 +53,7 @@ public interface DictTypeRepository {
      * 根据 ID 删除字典类型（逻辑删除）
      *
      * @param id 字典类型 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteById(Long id);
@@ -59,6 +62,7 @@ public interface DictTypeRepository {
      * 根据 ID 查询字典类型
      *
      * @param id 字典类型 ID
+     *
      * @return 字典类型实体，不存在则返回空
      */
     Optional<DictType> findById(Long id);
@@ -67,6 +71,7 @@ public interface DictTypeRepository {
      * 根据字典类型查询
      *
      * @param dictType 字典类型标识
+     *
      * @return 字典类型实体，不存在则返回空
      */
     Optional<DictType> findByDictType(String dictType);
@@ -81,8 +86,9 @@ public interface DictTypeRepository {
     /**
      * 分页查询字典类型
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 字典类型列表
      */
     List<DictType> findPage(int pageNum, int pageSize);
@@ -98,6 +104,7 @@ public interface DictTypeRepository {
      * 检查字典类型是否存在
      *
      * @param dictType 字典类型标识
+     *
      * @return 是否存在
      */
     boolean existsByDictType(String dictType);
@@ -109,7 +116,9 @@ public interface DictTypeRepository {
      * </p>
      *
      * @param dictType 字典类型标识
+     *
      * @return 是否删除成功
      */
     boolean removeDeletedByDictType(String dictType);
+
 }

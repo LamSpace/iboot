@@ -18,14 +18,27 @@
     </resultMap>
 
     <sql id="selectJobLogVo">
-        SELECT id, job_id, job_name, job_group, invoke_target, job_message, status, 
-               exception_info, start_time, end_time, cost_time, create_time
+        SELECT id,
+               job_id,
+               job_name,
+               job_group,
+               invoke_target,
+               job_message,
+               status,
+               exception_info,
+               start_time,
+               end_time,
+               cost_time,
+               create_time
         FROM sys_job_log
     </sql>
 
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.JobLogPO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_job_log (job_id, job_name, job_group, invoke_target, job_message, status, exception_info, start_time, end_time, cost_time)
-        VALUES (#{jobId}, #{jobName}, #{jobGroup}, #{invokeTarget}, #{jobMessage}, #{status}, #{exceptionInfo}, #{startTime}, #{endTime}, #{costTime})
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.JobLogPO" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO sys_job_log (job_id, job_name, job_group, invoke_target, job_message, status, exception_info,
+                                 start_time, end_time, cost_time)
+        VALUES (#{jobId}, #{jobName}, #{jobGroup}, #{invokeTarget}, #{jobMessage}, #{status}, #{exceptionInfo},
+                #{startTime}, #{endTime}, #{costTime})
     </insert>
 
     <select id="selectById" resultMap="JobLogResultMap">
@@ -72,7 +85,8 @@
     </select>
 
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_job_log
+        SELECT COUNT(*)
+        FROM sys_job_log
     </select>
 
     <select id="countByCondition" resultType="long">
@@ -100,11 +114,15 @@
     </select>
 
     <delete id="deleteBeforeDate">
-        DELETE FROM sys_job_log WHERE create_time &lt; #{beforeDate}
+        DELETE
+        FROM sys_job_log
+        WHERE create_time &lt; #{beforeDate}
     </delete>
 
     <delete id="deleteByJobId">
-        DELETE FROM sys_job_log WHERE job_id = #{jobId}
+        DELETE
+        FROM sys_job_log
+        WHERE job_id = #{jobId}
     </delete>
 
 </mapper>

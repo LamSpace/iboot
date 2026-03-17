@@ -25,25 +25,19 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Springdoc OpenAPI 配置
- * 
+ *
  * @author iBoot
  */
 @Configuration
 public class OpenApiConfig {
-    
+
     @Bean
     public OpenAPI customOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("iBoot 后台管理系统 API")
-                        .version("1.0.0")
-                        .description("基于 Spring Boot 3.3 + MyBatis 的后台管理系统")
-                        .contact(new Contact()
-                                .name("iBoot Team")
-                                .email("support@iboot.com")
-                                .url("https://iboot.com"))
-                        .license(new License()
-                                .name("Apache 2.0")
-                                .url("https://www.apache.org/licenses/LICENSE-2.0.html")));
+        return new OpenAPI().info(new Info().title("iBoot 后台管理系统 API")
+                .version("1.0.0")
+                .description("基于 Spring Boot 3.3 + MyBatis 的后台管理系统")
+                .contact(new Contact().name("iBoot Team").email("support@iboot.com").url("https://iboot.com"))
+                .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")));
     }
+
 }

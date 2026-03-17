@@ -21,8 +21,8 @@ import com.iboot.admin.domain.system.model.OperateLog;
 import com.iboot.admin.interfaces.dto.response.DashboardSummaryResponse;
 import com.iboot.admin.interfaces.dto.response.LoginLogResponse;
 import com.iboot.admin.interfaces.dto.response.OperateLogResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,23 +36,41 @@ import java.util.stream.Collectors;
  *
  * @author iBoot
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class DashboardApplicationService {
 
+    private static final Logger log = LoggerFactory.getLogger(DashboardApplicationService.class);
+
     private final UserApplicationService userApplicationService;
+
     private final RoleApplicationService roleApplicationService;
+
     private final DeptApplicationService deptApplicationService;
+
     private final PostApplicationService postApplicationService;
+
     private final LoginLogApplicationService loginLogApplicationService;
+
     private final OperateLogApplicationService operateLogApplicationService;
+
+    @SuppressWarnings("all")
+    public DashboardApplicationService(final UserApplicationService userApplicationService,
+                                       final RoleApplicationService roleApplicationService, final DeptApplicationService deptApplicationService,
+                                       final PostApplicationService postApplicationService,
+                                       final LoginLogApplicationService loginLogApplicationService,
+                                       final OperateLogApplicationService operateLogApplicationService) {
+        this.userApplicationService = userApplicationService;
+        this.roleApplicationService = roleApplicationService;
+        this.deptApplicationService = deptApplicationService;
+        this.postApplicationService = postApplicationService;
+        this.loginLogApplicationService = loginLogApplicationService;
+        this.operateLogApplicationService = operateLogApplicationService;
+    }
 
     /**
      * 获取仪表盘汇总数据
      * <p>
-     * 统计用户、角色、部门、岗位、登录日志、操作日志的数量，
-     * 并返回最新的 5 条登录日志和操作日志记录
+     * 统计用户、角色、部门、岗位、登录日志、操作日志的数量， 并返回最新的 5 条登录日志和操作日志记录
      * </p>
      *
      * @return 仪表盘汇总数据响应对象
@@ -64,18 +82,14 @@ public class DashboardApplicationService {
         long postCount = postApplicationService.countPosts();
         long loginLogCount = loginLogApplicationService.countLoginLogs();
         long operateLogCount = operateLogApplicationService.countOperateLogs();
-
         List<LoginLog> recentLoginLogs = loginLogApplicationService.getLoginLogPage(1, 5);
         List<OperateLog> recentOperateLogs = operateLogApplicationService.getOperateLogPage(1, 5);
-
         List<LoginLogResponse> loginLogResponses = recentLoginLogs.stream()
                 .map(this::convertLoginLog)
                 .collect(Collectors.toList());
-
         List<OperateLogResponse> operateLogResponses = recentOperateLogs.stream()
                 .map(this::convertOperateLog)
                 .collect(Collectors.toList());
-
         return DashboardSummaryResponse.builder()
                 .userCount(userCount)
                 .roleCount(roleCount)
@@ -92,6 +106,7 @@ public class DashboardApplicationService {
      * 将登录日志领域对象转换为响应对象
      *
      * @param log 登录日志领域对象
+     *
      * @return 登录日志响应对象
      */
     private LoginLogResponse convertLoginLog(LoginLog log) {
@@ -112,6 +127,7 @@ public class DashboardApplicationService {
      * 将操作日志领域对象转换为响应对象
      *
      * @param log 操作日志领域对象
+     *
      * @return 操作日志响应对象
      */
     private OperateLogResponse convertOperateLog(OperateLog log) {
@@ -134,4 +150,5 @@ public class DashboardApplicationService {
                 .operTime(log.getOperateTime())
                 .build();
     }
+
 }

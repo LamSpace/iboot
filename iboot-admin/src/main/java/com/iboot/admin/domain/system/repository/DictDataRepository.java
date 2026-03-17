@@ -32,6 +32,7 @@ public interface DictDataRepository {
      * 保存字典数据
      *
      * @param dictData 字典数据实体对象
+     *
      * @return 保存后的字典数据对象
      */
     DictData save(DictData dictData);
@@ -40,6 +41,7 @@ public interface DictDataRepository {
      * 更新字典数据
      *
      * @param dictData 字典数据实体对象
+     *
      * @return 是否更新成功
      */
     boolean update(DictData dictData);
@@ -58,6 +60,7 @@ public interface DictDataRepository {
      * 根据字典类型查询字典数据列表
      *
      * @param dictType 字典类型
+     *
      * @return 字典数据列表
      */
     List<DictData> findByDictType(String dictType);
@@ -65,8 +68,9 @@ public interface DictDataRepository {
     /**
      * 根据字典类型和键值查询
      *
-     * @param dictType 字典类型
+     * @param dictType  字典类型
      * @param dictValue 字典值
+     *
      * @return 字典数据实体，不存在则返回空
      */
     Optional<DictData> findByDictTypeAndValue(String dictType, String dictValue);
@@ -88,8 +92,9 @@ public interface DictDataRepository {
     /**
      * 检查字典数据是否存在
      *
-     * @param dictType 字典类型
+     * @param dictType  字典类型
      * @param dictValue 字典值
+     *
      * @return 是否存在
      */
     boolean existsByDictTypeAndValue(String dictType, String dictValue);
@@ -98,7 +103,9 @@ public interface DictDataRepository {
      * 根据字典类型删除所有字典数据
      *
      * @param dictType 字典类型
+     *
      * @return 是否删除成功
      */
     boolean deleteByDictType(String dictType);
+
 }

@@ -16,7 +16,6 @@
 
 package com.iboot.admin.infrastructure.push;
 
-import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
 /**
@@ -27,7 +26,6 @@ import org.springframework.context.ApplicationEvent;
  * @author iBoot Team
  * @since 1.0.0
  */
-@Getter
 public class MessageReadEvent extends ApplicationEvent {
 
     private static final long serialVersionUID = 1L;
@@ -61,4 +59,29 @@ public class MessageReadEvent extends ApplicationEvent {
         this.userId = userId;
         this.senderId = senderId;
     }
+
+    /**
+     * 消息 ID
+     */
+    @SuppressWarnings("all")
+    public Long getMessageId() {
+        return this.messageId;
+    }
+
+    /**
+     * 用户 ID
+     */
+    @SuppressWarnings("all")
+    public Long getUserId() {
+        return this.userId;
+    }
+
+    /**
+     * 发送者 ID（可选）
+     */
+    @SuppressWarnings("all")
+    public Long getSenderId() {
+        return this.senderId;
+    }
+
 }

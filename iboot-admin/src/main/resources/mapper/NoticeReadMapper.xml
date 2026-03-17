@@ -10,31 +10,46 @@
     </resultMap>
 
     <insert id="insert">
-        INSERT IGNORE INTO sys_notice_read (notice_id, user_id, read_time)
-        VALUES (#{noticeId}, #{userId}, #{readTime})
+        INSERT
+        IGNORE INTO sys_notice_read (notice_id, user_id, read_time)
+        VALUES (
+        #{noticeId},
+        #{userId},
+        #{readTime}
+        )
     </insert>
 
     <select id="countByNoticeIdAndUserId" resultType="int">
-        SELECT COUNT(*) FROM sys_notice_read
-        WHERE notice_id = #{noticeId} AND user_id = #{userId}
+        SELECT COUNT(*)
+        FROM sys_notice_read
+        WHERE notice_id = #{noticeId}
+          AND user_id = #{userId}
     </select>
 
     <select id="countUnreadByUserId" resultType="long">
-        SELECT COUNT(*) FROM sys_notice n
-        LEFT JOIN sys_notice_read nr ON n.id = nr.notice_id AND nr.user_id = #{userId}
-        WHERE n.status = '1' AND n.deleted = 0 AND nr.id IS NULL
+        SELECT COUNT(*)
+        FROM sys_notice n
+                 LEFT JOIN sys_notice_read nr ON n.id = nr.notice_id AND nr.user_id = #{userId}
+        WHERE n.status = '1'
+          AND n.deleted = 0
+          AND nr.id IS NULL
     </select>
 
     <select id="selectUnreadPublishedNoticeIds" resultType="long">
-        SELECT n.id FROM sys_notice n
-        LEFT JOIN sys_notice_read nr ON n.id = nr.notice_id AND nr.user_id = #{userId}
-        WHERE n.status = '1' AND n.deleted = 0 AND nr.id IS NULL
+        SELECT n.id
+        FROM sys_notice n
+                 LEFT JOIN sys_notice_read nr ON n.id = nr.notice_id AND nr.user_id = #{userId}
+        WHERE n.status = '1'
+          AND n.deleted = 0
+          AND nr.id IS NULL
         ORDER BY n.is_top DESC, n.create_time DESC
-        LIMIT #{limit}
+            LIMIT #{limit}
     </select>
 
     <delete id="deleteByNoticeId">
-        DELETE FROM sys_notice_read WHERE notice_id = #{noticeId}
+        DELETE
+        FROM sys_notice_read
+        WHERE notice_id = #{noticeId}
     </delete>
 
 </mapper>

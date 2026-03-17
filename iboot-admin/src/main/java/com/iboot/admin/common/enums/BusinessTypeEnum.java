@@ -16,70 +16,86 @@
 
 package com.iboot.admin.common.enums;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 业务操作类型枚举
- * 
+ *
  * @author iBoot
  */
-@Getter
-@AllArgsConstructor
 public enum BusinessTypeEnum {
-    
+
     /**
      * 其它
      */
     OTHER(0, "其它"),
-    
     /**
      * 新增
      */
     INSERT(1, "新增"),
-    
     /**
      * 修改
      */
     UPDATE(2, "修改"),
-    
     /**
      * 删除
      */
     DELETE(3, "删除"),
-    
     /**
      * 授权
      */
     GRANT(4, "授权"),
-    
     /**
      * 导出
      */
     EXPORT(5, "导出"),
-    
     /**
      * 导入
      */
     IMPORT(6, "导入"),
-    
     /**
      * 强退
      */
     FORCE_LOGOUT(7, "强退"),
-    
     /**
      * 清空数据
      */
     CLEAN(8, "清空");
-    
+
     /**
      * 类型码
      */
     private final Integer code;
-    
+
     /**
      * 类型描述
      */
     private final String description;
+
+    /**
+     * Creates a new {@code BusinessTypeEnum} instance.
+     *
+     * @param code        类型码
+     * @param description 类型描述
+     */
+    @SuppressWarnings("all")
+    private BusinessTypeEnum(final Integer code, final String description) {
+        this.code = code;
+        this.description = description;
+    }
+
+    /**
+     * 类型码
+     */
+    @SuppressWarnings("all")
+    public Integer getCode() {
+        return this.code;
+    }
+
+    /**
+     * 类型描述
+     */
+    @SuppressWarnings("all")
+    public String getDescription() {
+        return this.description;
+    }
+
 }

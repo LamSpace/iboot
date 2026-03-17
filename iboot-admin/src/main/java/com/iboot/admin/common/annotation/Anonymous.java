@@ -20,7 +20,7 @@ import java.lang.annotation.*;
 
 /**
  * 匿名访问注解
- *
+ * <p>
  * 用于标记无需认证即可访问的接口，通常用于登录、注册等公开接口
  *
  * @author iBoot
@@ -29,4 +29,5 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Anonymous {
+
 }

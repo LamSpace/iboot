@@ -16,20 +16,24 @@
         <result property="deleted" column="deleted"/>
     </resultMap>
 
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.LoginLogPO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.LoginLogPO" useGeneratedKeys="true"
+            keyProperty="id">
         INSERT INTO sys_login_log (username, ip_address, login_location, browser, os, status, message, login_time)
         VALUES (#{username}, #{ipAddress}, #{loginLocation}, #{browser}, #{os}, #{status}, #{message}, #{loginTime})
     </insert>
 
     <select id="selectById" resultMap="LoginLogResultMap">
-        SELECT * FROM sys_login_log WHERE id = #{id}
+        SELECT *
+        FROM sys_login_log
+        WHERE id = #{id}
     </select>
 
     <select id="selectPage" resultMap="LoginLogResultMap">
-        SELECT * FROM sys_login_log ll
+        SELECT *
+        FROM sys_login_log ll
         WHERE ll.deleted = 0
         ORDER BY ll.login_time DESC
-        LIMIT #{offset}, #{limit}
+            LIMIT #{offset}, #{limit}
     </select>
 
     <select id="selectPageByCondition" resultMap="LoginLogResultMap">
@@ -81,7 +85,9 @@
     </select>
 
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_login_log WHERE deleted = 0
+        SELECT COUNT(*)
+        FROM sys_login_log
+        WHERE deleted = 0
     </select>
 
     <select id="countByCondition" resultType="long">
@@ -107,38 +113,43 @@
     </select>
 
     <delete id="deleteBeforeDate">
-        DELETE FROM sys_login_log WHERE login_time &lt; #{beforeDate}
+        DELETE
+        FROM sys_login_log
+        WHERE login_time &lt; #{beforeDate}
     </delete>
 
     <select id="countByDate" resultType="java.util.Map">
-        SELECT DATE(login_time) as date, COUNT(*) as count
+        SELECT DATE (login_time) as date, COUNT (*) as count
         FROM sys_login_log
-        WHERE login_time &gt;= #{startTime} AND login_time &lt;= #{endTime}
-        GROUP BY DATE(login_time)
+        WHERE login_time &gt;= #{startTime}
+          AND login_time &lt;= #{endTime}
+        GROUP BY DATE (login_time)
         ORDER BY date
     </select>
 
     <select id="countByStatus" resultType="java.util.Map">
-        SELECT
-            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as success,
-            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as fail,
-            COUNT(*) as total
+        SELECT SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as success,
+               SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as fail,
+               COUNT(*)                                    as total
         FROM sys_login_log
-        WHERE login_time &gt;= #{startTime} AND login_time &lt;= #{endTime}
+        WHERE login_time &gt;= #{startTime}
+          AND login_time &lt;= #{endTime}
     </select>
 
     <select id="countDistinctUsers" resultType="long">
         SELECT COUNT(DISTINCT username)
         FROM sys_login_log
-        WHERE login_time &gt;= #{startTime} AND login_time &lt;= #{endTime}
-        AND status = 1
+        WHERE login_time &gt;= #{startTime}
+          AND login_time &lt;= #{endTime}
+          AND status = 1
     </select>
 
     <select id="countByHour" resultType="java.util.Map">
-        SELECT HOUR(login_time) as hour, COUNT(*) as count
+        SELECT HOUR (login_time) as hour, COUNT (*) as count
         FROM sys_login_log
-        WHERE login_time &gt;= #{startTime} AND login_time &lt;= #{endTime}
-        GROUP BY HOUR(login_time)
+        WHERE login_time &gt;= #{startTime}
+          AND login_time &lt;= #{endTime}
+        GROUP BY HOUR (login_time)
         ORDER BY hour
     </select>
 

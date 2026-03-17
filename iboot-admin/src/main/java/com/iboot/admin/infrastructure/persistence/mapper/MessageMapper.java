@@ -37,6 +37,7 @@ public interface MessageMapper {
      * 插入消息记录
      *
      * @param messagePO 消息持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(MessagePO messagePO);
@@ -45,6 +46,7 @@ public interface MessageMapper {
      * 更新消息记录
      *
      * @param messagePO 消息持久化对象
+     *
      * @return 影响的记录数
      */
     int update(MessagePO messagePO);
@@ -53,6 +55,7 @@ public interface MessageMapper {
      * 根据 ID 删除消息
      *
      * @param id 消息 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -61,6 +64,7 @@ public interface MessageMapper {
      * 根据 ID 查询消息
      *
      * @param id 消息 ID
+     *
      * @return 消息持久化对象
      */
     MessagePO selectById(@Param("id") Long id);
@@ -68,40 +72,40 @@ public interface MessageMapper {
     /**
      * 按条件分页查询消息
      *
-     * @param title 消息标题（可选）
+     * @param title       消息标题（可选）
      * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
-     * @param offset 偏移量
-     * @param limit 限制数量
+     * @param status      状态（可选）
+     * @param offset      偏移量
+     * @param limit       限制数量
+     *
      * @return 消息列表
      */
-    List<MessagePO> selectPageByCondition(@Param("title") String title,
-                                           @Param("messageType") String messageType,
-                                           @Param("status") String status,
-                                           @Param("offset") int offset,
-                                           @Param("limit") int limit);
+    List<MessagePO> selectPageByCondition(@Param("title") String title, @Param("messageType") String messageType,
+                                          @Param("status") String status,
+                                          @Param("offset") int offset, @Param("limit") int limit);
 
     /**
      * 按条件统计消息数量
      *
-     * @param title 消息标题（可选）
+     * @param title       消息标题（可选）
      * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
+     * @param status      状态（可选）
+     *
      * @return 消息数量
      */
-    long countByCondition(@Param("title") String title,
-                          @Param("messageType") String messageType,
+    long countByCondition(@Param("title") String title, @Param("messageType") String messageType,
                           @Param("status") String status);
 
     /**
      * 按条件查询所有消息（导出用）
      *
-     * @param title 消息标题（可选）
+     * @param title       消息标题（可选）
      * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
+     * @param status      状态（可选）
+     *
      * @return 消息列表
      */
-    List<MessagePO> selectAllByCondition(@Param("title") String title,
-                                         @Param("messageType") String messageType,
+    List<MessagePO> selectAllByCondition(@Param("title") String title, @Param("messageType") String messageType,
                                          @Param("status") String status);
+
 }

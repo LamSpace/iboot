@@ -27,7 +27,6 @@ import com.iboot.admin.interfaces.dto.response.OnlineUserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,34 +35,34 @@ import java.util.List;
 
 /**
  * 在线用户监控控制器
- * 
+ *
  * @author iBoot
  */
 @Tag(name = "在线用户监控", description = "在线用户监控相关接口")
 @RestController
 @RequestMapping("/api/online")
-@RequiredArgsConstructor
 public class OnlineUserController {
 
     private final OnlineUserApplicationService onlineUserApplicationService;
 
+    @SuppressWarnings("all")
+    public OnlineUserController(final OnlineUserApplicationService onlineUserApplicationService) {
+        this.onlineUserApplicationService = onlineUserApplicationService;
+    }
+
     @Operation(summary = "查询在线用户列表")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('online:list')")
-    public Result<PageResult<OnlineUserResponse>> list(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) String loginIp) {
-
+    public Result<PageResult<OnlineUserResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                       @RequestParam(defaultValue = "10") Integer pageSize,
+                                                       @RequestParam(required = false) String username,
+                                                       @RequestParam(required = false) String loginIp) {
         List<OnlineUserResponse> allUsers = onlineUserApplicationService.getOnlineUsers(username, loginIp);
-
         // 内存分页
         long total = allUsers.size();
         int fromIndex = Math.min((pageNum - 1) * pageSize, allUsers.size());
         int toIndex = Math.min(fromIndex + pageSize, allUsers.size());
         List<OnlineUserResponse> pageData = allUsers.subList(fromIndex, toIndex);
-
         PageResult<OnlineUserResponse> pageResult = new PageResult<>(pageData, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
@@ -83,23 +82,20 @@ public class OnlineUserController {
         onlineUserApplicationService.forceLogout(tokenId);
         return Result.success("强退成功", null);
     }
-    
+
     @Operation(summary = "导出在线用户列表")
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('online:export')")
     @Log(title = "在线用户", businessType = BusinessTypeEnum.EXPORT)
-    public void export(HttpServletResponse response,
-                       @RequestParam(required = false) String username,
+    public void export(HttpServletResponse response, @RequestParam(required = false) String username,
                        @RequestParam(required = false) String loginIp) throws IOException {
         List<OnlineUserResponse> allUsers = onlineUserApplicationService.getOnlineUsers(username, loginIp);
-        
         List<OnlineUserExportVO> exportList = allUsers.stream()
                 .map(this::convertToExportVO)
                 .collect(java.util.stream.Collectors.toList());
-        
         ExcelExportUtil.exportExcel(response, exportList, OnlineUserExportVO.class, "在线用户", "在线用户数据");
     }
-    
+
     private OnlineUserExportVO convertToExportVO(OnlineUserResponse user) {
         return OnlineUserExportVO.builder()
                 .userId(user.getUserId())
@@ -113,4 +109,5 @@ public class OnlineUserController {
                 .roles(user.getRoles() != null ? String.join(", ", user.getRoles()) : "")
                 .build();
     }
+
 }

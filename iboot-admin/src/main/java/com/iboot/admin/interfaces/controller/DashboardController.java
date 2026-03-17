@@ -21,7 +21,6 @@ import com.iboot.admin.common.result.Result;
 import com.iboot.admin.interfaces.dto.response.DashboardSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,10 +33,14 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Dashboard", description = "Dashboard 相关接口")
 @RestController
 @RequestMapping("/api/dashboard")
-@RequiredArgsConstructor
 public class DashboardController {
 
     private final DashboardApplicationService dashboardApplicationService;
+
+    @SuppressWarnings("all")
+    public DashboardController(final DashboardApplicationService dashboardApplicationService) {
+        this.dashboardApplicationService = dashboardApplicationService;
+    }
 
     @Operation(summary = "获取 Dashboard 汇总数据")
     @GetMapping("/summary")
@@ -45,4 +48,5 @@ public class DashboardController {
         DashboardSummaryResponse data = dashboardApplicationService.getDashboardSummary();
         return Result.success(data);
     }
+
 }

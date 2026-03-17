@@ -32,12 +32,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface FileMapper {
 
     // ==================== 查询映射 ====================
@@ -46,6 +41,7 @@ public interface FileMapper {
      * 将文件实体转换为响应 DTO
      *
      * @param fileInfo 文件实体
+     *
      * @return 文件响应 DTO
      */
     FileResponse toResponse(FileInfo fileInfo);
@@ -54,6 +50,7 @@ public interface FileMapper {
      * 将文件实体列表转换为响应 DTO 列表
      *
      * @param files 文件实体列表
+     *
      * @return 文件响应 DTO 列表
      */
     List<FileResponse> toResponseList(List<FileInfo> files);
@@ -62,6 +59,7 @@ public interface FileMapper {
      * 将文件实体转换为导出 VO
      *
      * @param fileInfo 文件实体
+     *
      * @return 文件导出 VO
      */
     FileExportVO toExportVO(FileInfo fileInfo);
@@ -70,6 +68,7 @@ public interface FileMapper {
      * 将文件实体列表转换为导出 VO 列表
      *
      * @param files 文件实体列表
+     *
      * @return 文件导出 VO 列表
      */
     List<FileExportVO> toExportVOList(List<FileInfo> files);
@@ -96,4 +95,5 @@ public interface FileMapper {
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     void updateEntityFromRequest(FileUpdateRequest request, @MappingTarget FileInfo fileInfo);
+
 }

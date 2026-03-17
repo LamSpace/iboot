@@ -32,12 +32,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface MessageMapper {
 
     // ==================== 查询映射 ====================
@@ -46,6 +41,7 @@ public interface MessageMapper {
      * 将消息实体转换为响应 DTO
      *
      * @param message 消息实体
+     *
      * @return 消息响应 DTO
      */
     MessageResponse toResponse(Message message);
@@ -54,6 +50,7 @@ public interface MessageMapper {
      * 将消息实体列表转换为响应 DTO 列表
      *
      * @param messages 消息实体列表
+     *
      * @return 消息响应 DTO 列表
      */
     List<MessageResponse> toResponseList(List<Message> messages);
@@ -62,6 +59,7 @@ public interface MessageMapper {
      * 将消息实体转换为导出 VO
      *
      * @param message 消息实体
+     *
      * @return 消息导出 VO
      */
     MessageExportVO toExportVO(Message message);
@@ -70,6 +68,7 @@ public interface MessageMapper {
      * 将消息实体列表转换为导出 VO 列表
      *
      * @param messages 消息实体列表
+     *
      * @return 消息导出 VO 列表
      */
     List<MessageExportVO> toExportVOList(List<Message> messages);
@@ -80,6 +79,7 @@ public interface MessageMapper {
      * 将消息请求转换为实体
      *
      * @param request 消息请求
+     *
      * @return 消息实体
      */
     @Mapping(target = "id", ignore = true)
@@ -111,4 +111,5 @@ public interface MessageMapper {
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "status", ignore = true)
     void updateEntityFromRequest(MessageRequest request, @MappingTarget Message message);
+
 }

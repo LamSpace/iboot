@@ -34,6 +34,7 @@ public interface MessageReceiverRepository {
      * 保存消息接收记录
      *
      * @param receiver 消息接收记录实体
+     *
      * @return 是否保存成功
      */
     boolean save(MessageReceiver receiver);
@@ -42,6 +43,7 @@ public interface MessageReceiverRepository {
      * 批量保存消息接收记录
      *
      * @param receivers 消息接收记录列表
+     *
      * @return 是否保存成功
      */
     boolean batchSave(List<MessageReceiver> receivers);
@@ -50,7 +52,8 @@ public interface MessageReceiverRepository {
      * 将消息标记为已读
      *
      * @param messageId 消息 ID
-     * @param userId 用户 ID
+     * @param userId    用户 ID
+     *
      * @return 是否标记成功
      */
     boolean markAsRead(Long messageId, Long userId);
@@ -59,6 +62,7 @@ public interface MessageReceiverRepository {
      * 将用户的所有消息标记为已读
      *
      * @param userId 用户 ID
+     *
      * @return 是否标记成功
      */
     boolean markAllAsRead(Long userId);
@@ -67,7 +71,8 @@ public interface MessageReceiverRepository {
      * 软删除消息（逻辑删除）
      *
      * @param messageId 消息 ID
-     * @param userId 用户 ID
+     * @param userId    用户 ID
+     *
      * @return 是否删除成功
      */
     boolean softDelete(Long messageId, Long userId);
@@ -76,7 +81,8 @@ public interface MessageReceiverRepository {
      * 检查用户是否收到指定消息
      *
      * @param messageId 消息 ID
-     * @param userId 用户 ID
+     * @param userId    用户 ID
+     *
      * @return 是否存在
      */
     boolean existsByMessageIdAndUserId(Long messageId, Long userId);
@@ -85,6 +91,7 @@ public interface MessageReceiverRepository {
      * 统计用户未读消息数量
      *
      * @param userId 用户 ID
+     *
      * @return 未读消息数量
      */
     long countUnreadByUserId(Long userId);
@@ -92,11 +99,12 @@ public interface MessageReceiverRepository {
     /**
      * 分页查询用户的消息列表
      *
-     * @param userId 用户 ID
+     * @param userId      用户 ID
      * @param messageType 消息类型（可选）
-     * @param isRead 是否已读（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param isRead      是否已读（可选）
+     * @param pageNum     页码
+     * @param pageSize    每页数量
+     *
      * @return 消息接收记录列表
      */
     List<MessageReceiver> findPageByUserId(Long userId, String messageType, Integer isRead, int pageNum, int pageSize);
@@ -104,9 +112,10 @@ public interface MessageReceiverRepository {
     /**
      * 按条件统计用户消息数量
      *
-     * @param userId 用户 ID
+     * @param userId      用户 ID
      * @param messageType 消息类型
-     * @param isRead 是否已读
+     * @param isRead      是否已读
+     *
      * @return 消息数量
      */
     long countByUserId(Long userId, String messageType, Integer isRead);
@@ -118,6 +127,7 @@ public interface MessageReceiverRepository {
      * </p>
      *
      * @param messageId 消息 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteByMessageId(Long messageId);
@@ -129,7 +139,9 @@ public interface MessageReceiverRepository {
      * </p>
      *
      * @param messageId 消息 ID
+     *
      * @return 消息接收记录列表
      */
     List<MessageReceiver> findByMessageId(Long messageId);
+
 }

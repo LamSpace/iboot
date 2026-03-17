@@ -36,6 +36,7 @@ public interface UserRepository {
      * 保存用户
      *
      * @param user 用户实体
+     *
      * @return 保存后的用户
      */
     User save(User user);
@@ -44,6 +45,7 @@ public interface UserRepository {
      * 根据 ID 查询用户
      *
      * @param id 用户 ID
+     *
      * @return 用户实体，不存在则返回空
      */
     Optional<User> findById(Long id);
@@ -52,6 +54,7 @@ public interface UserRepository {
      * 根据用户名查询用户
      *
      * @param username 用户名
+     *
      * @return 用户实体，不存在则返回空
      */
     Optional<User> findByUsername(String username);
@@ -60,6 +63,7 @@ public interface UserRepository {
      * 根据邮箱查询用户
      *
      * @param email 邮箱地址
+     *
      * @return 用户实体，不存在则返回空
      */
     Optional<User> findByEmail(String email);
@@ -68,6 +72,7 @@ public interface UserRepository {
      * 根据手机号查询用户
      *
      * @param phone 手机号码
+     *
      * @return 用户实体，不存在则返回空
      */
     Optional<User> findByPhone(String phone);
@@ -82,8 +87,9 @@ public interface UserRepository {
     /**
      * 分页查询用户
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 用户列表
      */
     List<User> findPage(int pageNum, int pageSize);
@@ -99,10 +105,11 @@ public interface UserRepository {
      * 按条件分页查询用户
      *
      * @param username 用户名（可选）
-     * @param phone 手机号（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
+     * @param phone    手机号（可选）
+     * @param status   状态（可选）
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 用户列表
      */
     List<User> findPageByCondition(String username, String phone, Integer status, int pageNum, int pageSize);
@@ -111,8 +118,9 @@ public interface UserRepository {
      * 按条件查询所有用户（不分页，用于导出）
      *
      * @param username 用户名（可选）
-     * @param phone 手机号（可选）
-     * @param status 状态（可选）
+     * @param phone    手机号（可选）
+     * @param status   状态（可选）
+     *
      * @return 用户列表
      */
     List<User> findAllByCondition(String username, String phone, Integer status);
@@ -121,8 +129,9 @@ public interface UserRepository {
      * 按条件统计用户总数
      *
      * @param username 用户名（可选）
-     * @param phone 手机号（可选）
-     * @param status 状态（可选）
+     * @param phone    手机号（可选）
+     * @param status   状态（可选）
+     *
      * @return 用户总数
      */
     long countByCondition(String username, String phone, Integer status);
@@ -131,6 +140,7 @@ public interface UserRepository {
      * 更新用户
      *
      * @param user 用户实体
+     *
      * @return 是否更新成功
      */
     boolean update(User user);
@@ -139,6 +149,7 @@ public interface UserRepository {
      * 删除用户（逻辑删除）
      *
      * @param id 用户 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteById(Long id);
@@ -147,6 +158,7 @@ public interface UserRepository {
      * 检查用户名是否存在
      *
      * @param username 用户名
+     *
      * @return 是否存在
      */
     boolean existsByUsername(String username);
@@ -155,6 +167,7 @@ public interface UserRepository {
      * 检查邮箱是否存在
      *
      * @param email 邮箱地址
+     *
      * @return 是否存在
      */
     boolean existsByEmail(String email);
@@ -163,6 +176,7 @@ public interface UserRepository {
      * 检查手机号是否存在
      *
      * @param phone 手机号码
+     *
      * @return 是否存在
      */
     boolean existsByPhone(String phone);
@@ -171,6 +185,7 @@ public interface UserRepository {
      * 根据部门 ID 查询用户
      *
      * @param deptId 部门 ID
+     *
      * @return 用户列表
      */
     List<User> findByDeptId(Long deptId);
@@ -179,6 +194,7 @@ public interface UserRepository {
      * 根据角色 ID 查询用户
      *
      * @param roleId 角色 ID
+     *
      * @return 用户列表
      */
     List<User> findByRoleId(Long roleId);
@@ -190,6 +206,7 @@ public interface UserRepository {
      * </p>
      *
      * @param username 用户名
+     *
      * @return 是否删除成功
      */
     boolean removeDeletedByUsername(String username);
@@ -198,8 +215,10 @@ public interface UserRepository {
      * 按创建时间统计用户数
      *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
+     *
      * @return 用户数
      */
     long countByCreateTime(LocalDateTime startTime, LocalDateTime endTime);
+
 }

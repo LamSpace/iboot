@@ -12,8 +12,15 @@
     </resultMap>
 
     <insert id="insert">
-        INSERT IGNORE INTO sys_message_receiver (message_id, user_id, is_read, read_time, is_deleted)
-        VALUES (#{messageId}, #{userId}, #{isRead}, #{readTime}, #{isDeleted})
+        INSERT
+        IGNORE INTO sys_message_receiver (message_id, user_id, is_read, read_time, is_deleted)
+        VALUES (
+        #{messageId},
+        #{userId},
+        #{isRead},
+        #{readTime},
+        #{isDeleted}
+        )
     </insert>
 
     <insert id="batchInsert">
@@ -26,46 +33,60 @@
 
     <update id="updateRead">
         UPDATE sys_message_receiver
-        SET is_read = 1, read_time = NOW()
-        WHERE message_id = #{messageId} AND user_id = #{userId} AND is_read = 0
+        SET is_read   = 1,
+            read_time = NOW()
+        WHERE message_id = #{messageId}
+          AND user_id = #{userId}
+          AND is_read = 0
     </update>
 
     <update id="updateAllRead">
         UPDATE sys_message_receiver r
-        INNER JOIN sys_message m ON r.message_id = m.id
-        SET r.is_read = 1, r.read_time = NOW()
-        WHERE r.user_id = #{userId} AND r.is_read = 0 AND r.is_deleted = 0
-          AND m.status = '1' AND m.deleted = 0
+            INNER JOIN sys_message m
+        ON r.message_id = m.id
+            SET r.is_read = 1, r.read_time = NOW()
+        WHERE r.user_id = #{userId}
+          AND r.is_read = 0
+          AND r.is_deleted = 0
+          AND m.status = '1'
+          AND m.deleted = 0
     </update>
 
     <update id="updateDeleted">
         UPDATE sys_message_receiver
         SET is_deleted = 1
-        WHERE message_id = #{messageId} AND user_id = #{userId}
+        WHERE message_id = #{messageId}
+          AND user_id = #{userId}
     </update>
 
     <select id="countByMessageIdAndUserId" resultType="int">
-        SELECT COUNT(*) FROM sys_message_receiver
-        WHERE message_id = #{messageId} AND user_id = #{userId}
+        SELECT COUNT(*)
+        FROM sys_message_receiver
+        WHERE message_id = #{messageId}
+          AND user_id = #{userId}
     </select>
 
     <select id="countUnreadByUserId" resultType="long">
-        SELECT COUNT(*) FROM sys_message_receiver r
-        INNER JOIN sys_message m ON r.message_id = m.id
-        WHERE r.user_id = #{userId} AND r.is_read = 0 AND r.is_deleted = 0
-          AND m.status = '1' AND m.deleted = 0
+        SELECT COUNT(*)
+        FROM sys_message_receiver r
+                 INNER JOIN sys_message m ON r.message_id = m.id
+        WHERE r.user_id = #{userId}
+          AND r.is_read = 0
+          AND r.is_deleted = 0
+          AND m.status = '1'
+          AND m.deleted = 0
     </select>
 
     <select id="selectPageByUserId" resultType="map">
         SELECT m.id AS id, m.title AS title, m.content AS content,
-               m.message_type AS messageType, m.priority AS priority,
-               m.sender_type AS senderType, m.sender_id AS senderId,
-               m.create_by AS createBy, m.create_time AS createTime,
-               r.is_read AS isRead, r.read_time AS readTime
+        m.message_type AS messageType, m.priority AS priority,
+        m.sender_type AS senderType, m.sender_id AS senderId,
+        m.create_by AS createBy, m.create_time AS createTime,
+        r.is_read AS isRead, r.read_time AS readTime
         FROM sys_message_receiver r
         INNER JOIN sys_message m ON r.message_id = m.id
         WHERE r.user_id = #{userId} AND r.is_deleted = 0
-          AND m.status = '1' AND m.deleted = 0
+        AND m.status = '1' AND m.deleted = 0
         <if test="messageType != null and messageType != ''">
             AND m.message_type = #{messageType}
         </if>
@@ -80,7 +101,7 @@
         SELECT COUNT(*) FROM sys_message_receiver r
         INNER JOIN sys_message m ON r.message_id = m.id
         WHERE r.user_id = #{userId} AND r.is_deleted = 0
-          AND m.status = '1' AND m.deleted = 0
+        AND m.status = '1' AND m.deleted = 0
         <if test="messageType != null and messageType != ''">
             AND m.message_type = #{messageType}
         </if>
@@ -90,7 +111,9 @@
     </select>
 
     <delete id="deleteByMessageId">
-        DELETE FROM sys_message_receiver WHERE message_id = #{messageId}
+        DELETE
+        FROM sys_message_receiver
+        WHERE message_id = #{messageId}
     </delete>
 
     <select id="findByMessageId" resultType="map">

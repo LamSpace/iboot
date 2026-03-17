@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.NoticeRead;
 import com.iboot.admin.domain.system.repository.NoticeReadRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.NoticeReadMapper;
 import com.iboot.admin.infrastructure.persistence.po.NoticeReadPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -34,15 +33,20 @@ import java.util.List;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class NoticeReadRepositoryImpl implements NoticeReadRepository {
 
     private final NoticeReadMapper noticeReadMapper;
+
+    @SuppressWarnings("all")
+    public NoticeReadRepositoryImpl(final NoticeReadMapper noticeReadMapper) {
+        this.noticeReadMapper = noticeReadMapper;
+    }
 
     /**
      * 保存公告已读记录
      *
      * @param noticeRead 公告已读记录实体
+     *
      * @return 是否保存成功
      */
     @Override
@@ -58,7 +62,8 @@ public class NoticeReadRepositoryImpl implements NoticeReadRepository {
      * 检查用户是否已阅读指定公告
      *
      * @param noticeId 公告 ID
-     * @param userId 用户 ID
+     * @param userId   用户 ID
+     *
      * @return 是否已读
      */
     @Override
@@ -70,6 +75,7 @@ public class NoticeReadRepositoryImpl implements NoticeReadRepository {
      * 统计用户未读公告数量
      *
      * @param userId 用户 ID
+     *
      * @return 未读公告数量
      */
     @Override
@@ -81,7 +87,8 @@ public class NoticeReadRepositoryImpl implements NoticeReadRepository {
      * 查询用户未读的已发布公告 ID 列表
      *
      * @param userId 用户 ID
-     * @param limit 返回数量限制
+     * @param limit  返回数量限制
+     *
      * @return 未读公告 ID 列表
      */
     @Override
@@ -93,10 +100,12 @@ public class NoticeReadRepositoryImpl implements NoticeReadRepository {
      * 根据公告 ID 删除已读记录
      *
      * @param noticeId 公告 ID
+     *
      * @return 是否删除成功
      */
     @Override
     public boolean deleteByNoticeId(Long noticeId) {
         return noticeReadMapper.deleteByNoticeId(noticeId) >= 0;
     }
+
 }

@@ -22,7 +22,7 @@ import java.lang.annotation.*;
 
 /**
  * 操作日志注解
- *
+ * <p>
  * 用于标记需要进行操作日志记录的方法，自动记录请求参数、响应数据、执行耗时等信息
  *
  * @author iBoot
@@ -31,24 +31,25 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Log {
-    
+
     /**
      * 模块名称
      */
     String title() default "";
-    
+
     /**
      * 业务操作类型
      */
     BusinessTypeEnum businessType() default BusinessTypeEnum.OTHER;
-    
+
     /**
      * 是否保存请求参数
      */
     boolean isSaveRequestData() default true;
-    
+
     /**
      * 是否保存响应数据
      */
     boolean isSaveResponseData() default true;
+
 }

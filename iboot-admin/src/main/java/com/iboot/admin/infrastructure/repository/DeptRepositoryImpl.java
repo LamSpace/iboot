@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.Dept;
 import com.iboot.admin.domain.system.repository.DeptRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.DeptMapper;
 import com.iboot.admin.infrastructure.persistence.po.DeptPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
@@ -38,10 +37,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class DeptRepositoryImpl implements DeptRepository {
 
     private final DeptMapper deptMapper;
+
+    @SuppressWarnings("all")
+    public DeptRepositoryImpl(final DeptMapper deptMapper) {
+        this.deptMapper = deptMapper;
+    }
 
     /**
      * 保存部门
@@ -50,6 +53,7 @@ public class DeptRepositoryImpl implements DeptRepository {
      * </p>
      *
      * @param dept 部门实体对象
+     *
      * @return 保存后的部门对象
      */
     @Override
@@ -67,6 +71,7 @@ public class DeptRepositoryImpl implements DeptRepository {
      * 更新部门
      *
      * @param dept 部门实体对象
+     *
      * @return 是否更新成功
      */
     @Override
@@ -79,6 +84,7 @@ public class DeptRepositoryImpl implements DeptRepository {
      * 根据 ID 删除部门（逻辑删除）
      *
      * @param id 部门 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -90,6 +96,7 @@ public class DeptRepositoryImpl implements DeptRepository {
      * 根据 ID 查询部门
      *
      * @param id 部门 ID
+     *
      * @return 部门实体，不存在则返回空
      */
     @Override
@@ -105,28 +112,26 @@ public class DeptRepositoryImpl implements DeptRepository {
      */
     @Override
     public List<Dept> findAll() {
-        return deptMapper.selectAll().stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return deptMapper.selectAll().stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 根据父 ID 查询子部门列表
      *
      * @param parentId 父部门 ID
+     *
      * @return 子部门列表
      */
     @Override
     public List<Dept> findByParentId(Long parentId) {
-        return deptMapper.selectByParentId(parentId).stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return deptMapper.selectByParentId(parentId).stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 查询部门及其所有子部门 ID（递归）
      *
      * @param deptId 部门 ID
+     *
      * @return 部门 ID 列表（包含自身和所有子部门）
      */
     @Override
@@ -148,6 +153,7 @@ public class DeptRepositoryImpl implements DeptRepository {
      * 检查部门编码是否存在
      *
      * @param deptCode 部门编码
+     *
      * @return 是否存在
      */
     @Override
@@ -160,6 +166,7 @@ public class DeptRepositoryImpl implements DeptRepository {
      *
      * @param deptName 部门名称
      * @param parentId 父部门 ID
+     *
      * @return 是否存在
      */
     @Override
@@ -171,6 +178,7 @@ public class DeptRepositoryImpl implements DeptRepository {
      * 检查是否有子部门
      *
      * @param deptId 部门 ID
+     *
      * @return 是否有子部门
      */
     @Override
@@ -197,6 +205,7 @@ public class DeptRepositoryImpl implements DeptRepository {
      * 将领域对象转换为持久化对象
      *
      * @param dept 部门领域对象
+     *
      * @return 部门持久化对象
      */
     private DeptPO convertToPO(Dept dept) {
@@ -222,6 +231,7 @@ public class DeptRepositoryImpl implements DeptRepository {
      * 将持久化对象转换为领域对象
      *
      * @param deptPO 部门持久化对象
+     *
      * @return 部门领域对象
      */
     private Dept convertToDomain(DeptPO deptPO) {
@@ -242,4 +252,5 @@ public class DeptRepositoryImpl implements DeptRepository {
                 .deleted(deptPO.getDeleted())
                 .build();
     }
+
 }

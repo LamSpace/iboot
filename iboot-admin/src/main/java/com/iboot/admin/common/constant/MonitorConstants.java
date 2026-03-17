@@ -59,4 +59,5 @@ public class MonitorConstants {
      * 应用信息端点
      */
     public static final String INFO_ENDPOINT = "/actuator/info";
+
 }

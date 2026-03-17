@@ -20,36 +20,37 @@ import java.lang.annotation.*;
 
 /**
  * Excel列注解，用于标记导出字段
- * 
+ *
  * @author iBoot
  */
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface ExcelColumn {
-    
+
     /**
      * 列名称
      */
     String name();
-    
+
     /**
      * 列排序（从小到大）
      */
     int order() default 0;
-    
+
     /**
      * 日期格式化（仅对日期类型有效）
      */
     String dateFormat() default "yyyy-MM-dd HH:mm:ss";
-    
+
     /**
      * 字典类型（用于字典值翻译）
      */
     String dictType() default "";
-    
+
     /**
      * 列宽度（字符数）
      */
     int width() default 0;
+
 }

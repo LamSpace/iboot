@@ -18,8 +18,6 @@ package com.iboot.admin.application.service;
 
 import com.iboot.admin.interfaces.dto.response.ServerInfoResponse;
 import com.iboot.admin.interfaces.dto.response.ServerInfoResponse.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.stereotype.Service;
 import oshi.SystemInfo;
@@ -47,27 +45,94 @@ import java.util.concurrent.TimeUnit;
 /**
  * 服务器监控应用服务
  * <p>
- * 提供服务器系统信息采集、服务健康检查等功能。
- * 监控阈值通过 sys_config 参数配置动态读取，检查项类型和状态通过 sys_dict 字典管理定义。
- * 支持 CPU、内存、JVM、磁盘、操作系统等信息采集，以及数据库和 Redis 连接健康检查。
+ * 提供服务器系统信息采集、服务健康检查等功能。 监控阈值通过 sys_config 参数配置动态读取，检查项类型和状态通过 sys_dict 字典管理定义。 支持 CPU、内存、JVM、磁盘、操作系统等信息采集，以及数据库和 Redis
+ * 连接健康检查。
  * </p>
  *
  * @author iBoot
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class ServerMonitorApplicationService {
 
-    private final ConfigApplicationService configApplicationService;
-    private final DictApplicationService dictApplicationService;
-    private final DataSource dataSource;
-    private final RedisConnectionFactory redisConnectionFactory;
+    @SuppressWarnings("all")
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory
+            .getLogger(ServerMonitorApplicationService.class);
 
     private static final String MONITOR_STATUS_UP = "UP";
+
     private static final String MONITOR_STATUS_WARN = "WARN";
+
     private static final String MONITOR_STATUS_DOWN = "DOWN";
+
     private static final String DICT_MONITOR_STATUS = "sys_monitor_status";
+
+    private final ConfigApplicationService configApplicationService;
+
+    private final DictApplicationService dictApplicationService;
+
+    private final DataSource dataSource;
+
+    private final RedisConnectionFactory redisConnectionFactory;
+
+    @SuppressWarnings("all")
+    public ServerMonitorApplicationService(final ConfigApplicationService configApplicationService,
+                                           final DictApplicationService dictApplicationService, final DataSource dataSource,
+                                           final RedisConnectionFactory redisConnectionFactory) {
+        this.configApplicationService = configApplicationService;
+        this.dictApplicationService = dictApplicationService;
+        this.dataSource = dataSource;
+        this.redisConnectionFactory = redisConnectionFactory;
+    }
+
+    /**
+     * 保留两位小数
+     *
+     * @param value 原始值
+     *
+     * @return 四舍五入后的值
+     */
+    private static double round(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
+
+    /**
+     * 格式化字节数为人类可读格式
+     *
+     * @param bytes 字节数
+     *
+     * @return 格式化后的字符串，如 "1.23 MB"
+     */
+    private static String formatBytes(long bytes) {
+        if (bytes <= 0)
+            return "0 B";
+        String[] units = {"B", "KB", "MB", "GB", "TB"};
+        int i = (int) (Math.log(bytes) / Math.log(1024));
+        i = Math.min(i, units.length - 1);
+        return String.format("%.2f %s", bytes / Math.pow(1024, i), units[i]);
+    }
+
+    /**
+     * 格式化时长为人类可读格式
+     *
+     * @param duration 时长对象
+     *
+     * @return 格式化后的字符串，如 "1 天 2 小时 3 分钟 4 秒"
+     */
+    private static String formatDuration(Duration duration) {
+        long days = duration.toDays();
+        long hours = duration.toHours() % 24;
+        long minutes = duration.toMinutes() % 60;
+        long seconds = duration.getSeconds() % 60;
+        StringBuilder sb = new StringBuilder();
+        if (days > 0)
+            sb.append(days).append("天 ");
+        if (hours > 0)
+            sb.append(hours).append("小时 ");
+        if (minutes > 0)
+            sb.append(minutes).append("分钟 ");
+        sb.append(seconds).append("秒");
+        return sb.toString();
+    }
 
     /**
      * 获取完整的服务器监控信息
@@ -81,7 +146,6 @@ public class ServerMonitorApplicationService {
         SystemInfo systemInfo = new SystemInfo();
         HardwareAbstractionLayer hardware = systemInfo.getHardware();
         OperatingSystem os = systemInfo.getOperatingSystem();
-
         return ServerInfoResponse.builder()
                 .cpu(getCpuInfo(hardware.getProcessor()))
                 .memory(getMemoryInfo(hardware.getMemory()))
@@ -96,11 +160,11 @@ public class ServerMonitorApplicationService {
     /**
      * 获取 CPU 信息
      * <p>
-     * 通过 OSHI 采集 CPU 核心数、型号和使用率等信息。
-     * CPU 使用率需要通过两次采样计算差值获得。
+     * 通过 OSHI 采集 CPU 核心数、型号和使用率等信息。 CPU 使用率需要通过两次采样计算差值获得。
      * </p>
      *
      * @param processor CPU 处理器对象
+     *
      * @return CPU 信息对象，包含使用率和状态
      */
     private CpuInfo getCpuInfo(CentralProcessor processor) {
@@ -112,23 +176,27 @@ public class ServerMonitorApplicationService {
             Thread.currentThread().interrupt();
         }
         long[] ticks = processor.getSystemCpuLoadTicks();
-
-        long user = ticks[CentralProcessor.TickType.USER.getIndex()] - prevTicks[CentralProcessor.TickType.USER.getIndex()];
-        long nice = ticks[CentralProcessor.TickType.NICE.getIndex()] - prevTicks[CentralProcessor.TickType.NICE.getIndex()];
-        long sys = ticks[CentralProcessor.TickType.SYSTEM.getIndex()] - prevTicks[CentralProcessor.TickType.SYSTEM.getIndex()];
-        long idle = ticks[CentralProcessor.TickType.IDLE.getIndex()] - prevTicks[CentralProcessor.TickType.IDLE.getIndex()];
-        long iowait = ticks[CentralProcessor.TickType.IOWAIT.getIndex()] - prevTicks[CentralProcessor.TickType.IOWAIT.getIndex()];
-        long irq = ticks[CentralProcessor.TickType.IRQ.getIndex()] - prevTicks[CentralProcessor.TickType.IRQ.getIndex()];
-        long softirq = ticks[CentralProcessor.TickType.SOFTIRQ.getIndex()] - prevTicks[CentralProcessor.TickType.SOFTIRQ.getIndex()];
-        long steal = ticks[CentralProcessor.TickType.STEAL.getIndex()] - prevTicks[CentralProcessor.TickType.STEAL.getIndex()];
-
+        long user = ticks[CentralProcessor.TickType.USER.getIndex()]
+                - prevTicks[CentralProcessor.TickType.USER.getIndex()];
+        long nice = ticks[CentralProcessor.TickType.NICE.getIndex()]
+                - prevTicks[CentralProcessor.TickType.NICE.getIndex()];
+        long sys = ticks[CentralProcessor.TickType.SYSTEM.getIndex()]
+                - prevTicks[CentralProcessor.TickType.SYSTEM.getIndex()];
+        long idle = ticks[CentralProcessor.TickType.IDLE.getIndex()]
+                - prevTicks[CentralProcessor.TickType.IDLE.getIndex()];
+        long iowait = ticks[CentralProcessor.TickType.IOWAIT.getIndex()]
+                - prevTicks[CentralProcessor.TickType.IOWAIT.getIndex()];
+        long irq = ticks[CentralProcessor.TickType.IRQ.getIndex()]
+                - prevTicks[CentralProcessor.TickType.IRQ.getIndex()];
+        long softirq = ticks[CentralProcessor.TickType.SOFTIRQ.getIndex()]
+                - prevTicks[CentralProcessor.TickType.SOFTIRQ.getIndex()];
+        long steal = ticks[CentralProcessor.TickType.STEAL.getIndex()]
+                - prevTicks[CentralProcessor.TickType.STEAL.getIndex()];
         long totalCpu = user + nice + sys + idle + iowait + irq + softirq + steal;
-
         double systemUsage = totalCpu == 0 ? 0 : round((sys * 100.0) / totalCpu);
         double userUsage = totalCpu == 0 ? 0 : round(((user + nice) * 100.0) / totalCpu);
         double totalUsage = totalCpu == 0 ? 0 : round(((totalCpu - idle) * 100.0) / totalCpu);
         double idleRate = totalCpu == 0 ? 0 : round((idle * 100.0) / totalCpu);
-
         return CpuInfo.builder()
                 .coreCount(processor.getLogicalProcessorCount())
                 .model(processor.getProcessorIdentifier().getName())
@@ -147,6 +215,7 @@ public class ServerMonitorApplicationService {
      * </p>
      *
      * @param memory 全局内存对象
+     *
      * @return 内存信息对象，包含使用率和状态
      */
     private MemoryInfo getMemoryInfo(GlobalMemory memory) {
@@ -154,7 +223,6 @@ public class ServerMonitorApplicationService {
         long available = memory.getAvailable();
         long used = total - available;
         double usageRate = total == 0 ? 0 : round((used * 100.0) / total);
-
         return MemoryInfo.builder()
                 .total(total)
                 .used(used)
@@ -178,18 +246,15 @@ public class ServerMonitorApplicationService {
     private JvmInfo getJvmInfo() {
         MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-
         long maxMemory = Runtime.getRuntime().maxMemory();
         long totalMemory = Runtime.getRuntime().totalMemory();
         long freeMemory = Runtime.getRuntime().freeMemory();
         long usedMemory = totalMemory - freeMemory;
         double usageRate = maxMemory == 0 ? 0 : round((usedMemory * 100.0) / maxMemory);
-
         // 计算运行时长
         long startTime = runtimeMXBean.getStartTime();
         LocalDateTime startDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(startTime), ZoneId.systemDefault());
         Duration uptime = Duration.ofMillis(System.currentTimeMillis() - startTime);
-
         return JvmInfo.builder()
                 .maxMemory(maxMemory)
                 .totalMemory(totalMemory)
@@ -215,19 +280,18 @@ public class ServerMonitorApplicationService {
      * </p>
      *
      * @param fileSystem 文件系统对象
+     *
      * @return 磁盘信息列表，每个磁盘包含使用率和状态
      */
     private List<DiskInfo> getDiskInfo(FileSystem fileSystem) {
         List<DiskInfo> diskInfoList = new ArrayList<>();
         double diskWarnThreshold = getThreshold("monitor.disk.warn.threshold", 80);
         double diskErrorThreshold = getThreshold("monitor.disk.error.threshold", 90);
-
         for (OSFileStore fs : fileSystem.getFileStores()) {
             long total = fs.getTotalSpace();
             long free = fs.getUsableSpace();
             long used = total - free;
             double usageRate = total == 0 ? 0 : round((used * 100.0) / total);
-
             String status;
             if (usageRate >= diskErrorThreshold) {
                 status = MONITOR_STATUS_DOWN;
@@ -236,7 +300,6 @@ public class ServerMonitorApplicationService {
             } else {
                 status = MONITOR_STATUS_UP;
             }
-
             diskInfoList.add(DiskInfo.builder()
                     .mountPoint(fs.getMount())
                     .fsType(fs.getType())
@@ -260,12 +323,12 @@ public class ServerMonitorApplicationService {
      * </p>
      *
      * @param os 操作系统对象
+     *
      * @return 操作系统信息对象
      */
     private OsInfo getOsInfo(OperatingSystem os) {
         long uptimeSeconds = os.getSystemUptime();
         Duration uptime = Duration.ofSeconds(uptimeSeconds);
-
         return OsInfo.builder()
                 .name(os.toString())
                 .arch(System.getProperty("os.arch"))
@@ -278,20 +341,17 @@ public class ServerMonitorApplicationService {
     /**
      * 执行各项服务健康检查
      * <p>
-     * 检查数据库连接和 Redis 连接状态。
-     * 检查项类型由字典 sys_monitor_type 定义。
+     * 检查数据库连接和 Redis 连接状态。 检查项类型由字典 sys_monitor_type 定义。
      * </p>
      *
      * @return 服务检查信息列表，包含每个服务的健康状态
      */
     private List<ServiceCheckInfo> getServiceChecks() {
         List<ServiceCheckInfo> checks = new ArrayList<>();
-
         // 数据库连接检查
         checks.add(checkDatabase());
         // Redis 连接检查
         checks.add(checkRedis());
-
         return checks;
     }
 
@@ -317,7 +377,6 @@ public class ServerMonitorApplicationService {
             log.warn("数据库健康检查失败", e);
         }
         long responseTime = System.currentTimeMillis() - start;
-
         return ServiceCheckInfo.builder()
                 .name("MySQL 数据库")
                 .type("db")
@@ -352,7 +411,6 @@ public class ServerMonitorApplicationService {
             log.warn("Redis 健康检查失败", e);
         }
         long responseTime = System.currentTimeMillis() - start;
-
         return ServiceCheckInfo.builder()
                 .name("Redis 缓存")
                 .type("redis")
@@ -363,21 +421,23 @@ public class ServerMonitorApplicationService {
                 .build();
     }
 
+    // ======================== 工具方法 ========================
+
     /**
      * 根据使用率和可配置阈值评估监控状态
      * <p>
      * 从 sys_config 参数配置中动态读取警告和错误阈值。
      * </p>
      *
-     * @param usageRate 当前使用率（百分比）
-     * @param warnThresholdKey 警告阈值配置键
+     * @param usageRate         当前使用率（百分比）
+     * @param warnThresholdKey  警告阈值配置键
      * @param errorThresholdKey 错误阈值配置键
+     *
      * @return 监控状态：UP（正常）、WARN（警告）、DOWN（异常）
      */
     private String evaluateStatus(double usageRate, String warnThresholdKey, String errorThresholdKey) {
         double warnThreshold = getThreshold(warnThresholdKey, 80);
         double errorThreshold = getThreshold(errorThresholdKey, 90);
-
         if (usageRate >= errorThreshold) {
             return MONITOR_STATUS_DOWN;
         } else if (usageRate >= warnThreshold) {
@@ -389,8 +449,9 @@ public class ServerMonitorApplicationService {
     /**
      * 从参数配置读取阈值，若配置不存在则使用默认值
      *
-     * @param configKey 配置键
+     * @param configKey    配置键
      * @param defaultValue 默认值
+     *
      * @return 阈值
      */
     private double getThreshold(String configKey, double defaultValue) {
@@ -409,6 +470,7 @@ public class ServerMonitorApplicationService {
      * 获取状态标签（从字典 sys_monitor_status 获取）
      *
      * @param statusValue 状态值
+     *
      * @return 状态标签，获取失败则返回原状态值
      */
     private String getStatusLabel(String statusValue) {
@@ -429,49 +491,4 @@ public class ServerMonitorApplicationService {
         return (sbaPath != null && !sbaPath.isEmpty()) ? sbaPath : "/sba";
     }
 
-    // ======================== 工具方法 ========================
-
-    /**
-     * 保留两位小数
-     *
-     * @param value 原始值
-     * @return 四舍五入后的值
-     */
-    private static double round(double value) {
-        return Math.round(value * 100.0) / 100.0;
-    }
-
-    /**
-     * 格式化字节数为人类可读格式
-     *
-     * @param bytes 字节数
-     * @return 格式化后的字符串，如 "1.23 MB"
-     */
-    private static String formatBytes(long bytes) {
-        if (bytes <= 0) return "0 B";
-        String[] units = {"B", "KB", "MB", "GB", "TB"};
-        int i = (int) (Math.log(bytes) / Math.log(1024));
-        i = Math.min(i, units.length - 1);
-        return String.format("%.2f %s", bytes / Math.pow(1024, i), units[i]);
-    }
-
-    /**
-     * 格式化时长为人类可读格式
-     *
-     * @param duration 时长对象
-     * @return 格式化后的字符串，如 "1 天 2 小时 3 分钟 4 秒"
-     */
-    private static String formatDuration(Duration duration) {
-        long days = duration.toDays();
-        long hours = duration.toHours() % 24;
-        long minutes = duration.toMinutes() % 60;
-        long seconds = duration.getSeconds() % 60;
-
-        StringBuilder sb = new StringBuilder();
-        if (days > 0) sb.append(days).append("天 ");
-        if (hours > 0) sb.append(hours).append("小时 ");
-        if (minutes > 0) sb.append(minutes).append("分钟 ");
-        sb.append(seconds).append("秒");
-        return sb.toString();
-    }
 }

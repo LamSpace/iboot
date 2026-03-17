@@ -38,6 +38,7 @@ public interface PostMapper {
      * 插入岗位记录
      *
      * @param postPO 岗位持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(PostPO postPO);
@@ -46,6 +47,7 @@ public interface PostMapper {
      * 更新岗位记录
      *
      * @param postPO 岗位持久化对象
+     *
      * @return 影响的记录数
      */
     int update(PostPO postPO);
@@ -54,6 +56,7 @@ public interface PostMapper {
      * 根据 ID 删除岗位
      *
      * @param id 岗位 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -62,6 +65,7 @@ public interface PostMapper {
      * 根据 ID 查询岗位
      *
      * @param id 岗位 ID
+     *
      * @return 岗位持久化对象
      */
     PostPO selectById(@Param("id") Long id);
@@ -70,6 +74,7 @@ public interface PostMapper {
      * 根据岗位编码查询岗位
      *
      * @param postCode 岗位编码
+     *
      * @return 岗位持久化对象
      */
     PostPO selectByPostCode(@Param("postCode") String postCode);
@@ -85,7 +90,8 @@ public interface PostMapper {
      * 分页查询岗位（受数据权限控制）
      *
      * @param offset 偏移量
-     * @param limit 限制数量
+     * @param limit  限制数量
+     *
      * @return 岗位列表
      */
     @DataScope(deptAlias = "p", userAlias = "p")
@@ -103,29 +109,28 @@ public interface PostMapper {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
-     * @param offset 偏移量
-     * @param limit 限制数量
+     * @param status   状态（可选）
+     * @param offset   偏移量
+     * @param limit    限制数量
+     *
      * @return 岗位列表
      */
     @DataScope(deptAlias = "p", userAlias = "p")
-    List<PostPO> selectPageByCondition(@Param("postName") String postName,
-                                       @Param("postCode") String postCode,
+    List<PostPO> selectPageByCondition(@Param("postName") String postName, @Param("postCode") String postCode,
                                        @Param("status") Integer status,
-                                       @Param("offset") int offset,
-                                       @Param("limit") int limit);
+                                       @Param("offset") int offset, @Param("limit") int limit);
 
     /**
      * 按条件统计岗位总数（受数据权限控制）
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 岗位总数
      */
     @DataScope(deptAlias = "p", userAlias = "p")
-    long countByCondition(@Param("postName") String postName,
-                          @Param("postCode") String postCode,
+    long countByCondition(@Param("postName") String postName, @Param("postCode") String postCode,
                           @Param("status") Integer status);
 
     /**
@@ -133,18 +138,19 @@ public interface PostMapper {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 岗位列表
      */
     @DataScope(deptAlias = "p", userAlias = "p")
-    List<PostPO> selectAllByCondition(@Param("postName") String postName,
-                                      @Param("postCode") String postCode,
+    List<PostPO> selectAllByCondition(@Param("postName") String postName, @Param("postCode") String postCode,
                                       @Param("status") Integer status);
 
     /**
      * 根据岗位编码统计数量
      *
      * @param postCode 岗位编码
+     *
      * @return 数量
      */
     int countByPostCode(@Param("postCode") String postCode);
@@ -153,6 +159,7 @@ public interface PostMapper {
      * 根据岗位名称统计数量
      *
      * @param postName 岗位名称
+     *
      * @return 数量
      */
     int countByPostName(@Param("postName") String postName);
@@ -161,7 +168,9 @@ public interface PostMapper {
      * 物理删除已逻辑删除的岗位记录（根据岗位编码）
      *
      * @param postCode 岗位编码
+     *
      * @return 影响的记录数
      */
     int removeDeletedByPostCode(@Param("postCode") String postCode);
+
 }

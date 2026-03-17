@@ -17,11 +17,10 @@
 package com.iboot.admin.infrastructure.push;
 
 import com.iboot.admin.common.cloudevent.CloudEventTypes;
-import com.iboot.admin.domain.system.model.Message;
 import com.iboot.admin.domain.system.model.MessageReceiver;
 import com.iboot.admin.domain.system.repository.MessageReceiverRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -40,13 +39,21 @@ import java.util.stream.Collectors;
  * @author iBoot Team
  * @since 1.0.0
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class MessagePushListener {
 
+    private static final Logger log = LoggerFactory.getLogger(MessagePushListener.class);
+
     private final PushEventService pushEventService;
+
     private final MessageReceiverRepository messageReceiverRepository;
+
+    @SuppressWarnings("all")
+    public MessagePushListener(final PushEventService pushEventService,
+                               final MessageReceiverRepository messageReceiverRepository) {
+        this.pushEventService = pushEventService;
+        this.messageReceiverRepository = messageReceiverRepository;
+    }
 
     /**
      * 监听消息发送事件，在事务提交后异步推送
@@ -57,18 +64,10 @@ public class MessagePushListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(MessageSentEvent event) {
         log.info("接收到消息发送事件，messageId: {}, eventId: {}", event.getMessageId(), event.getEventId());
-
         // 构建推送数据
-        Map<String, Object> pushData = Map.of(
-                "messageId", event.getMessageId(),
-                "title", event.getTitle(),
-                "content", event.getContent(),
-                "messageType", event.getMessageType(),
-                "priority", event.getPriority(),
-                "senderId", event.getSenderId(),
-                "sentAt", LocalDateTime.now().toString()
-        );
-
+        Map<String, Object> pushData = Map.of("messageId", event.getMessageId(), "title", event.getTitle(), "content",
+                event.getContent(), "messageType", event.getMessageType(), "priority", event.getPriority(), "senderId",
+                event.getSenderId(), "sentAt", LocalDateTime.now().toString());
         // 构建推送事件
         PushEvent pushEvent = PushEvent.builder()
                 .id("push-msg-" + java.util.UUID.randomUUID())
@@ -78,18 +77,13 @@ public class MessagePushListener {
                 .dataContentType("application/json")
                 .data(pushData)
                 .build();
-
         // 获取所有接收者并推送
         List<MessageReceiver> receivers = messageReceiverRepository.findByMessageId(event.getMessageId());
         if (receivers == null || receivers.isEmpty()) {
             log.warn("消息没有接收者，messageId: {}", event.getMessageId());
             return;
         }
-
-        List<Long> userIds = receivers.stream()
-                .map(MessageReceiver::getUserId)
-                .collect(Collectors.toList());
-
+        List<Long> userIds = receivers.stream().map(MessageReceiver::getUserId).collect(Collectors.toList());
         // 组播推送给所有接收者
         pushEventService.sendToUsers(userIds, pushEvent);
         log.info("消息推送完成，messageId: {}, 接收者数量：{}", event.getMessageId(), userIds.size());
@@ -104,14 +98,9 @@ public class MessagePushListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(MessageReadEvent event) {
         log.info("接收到消息已读事件，messageId: {}, userId: {}", event.getMessageId(), event.getUserId());
-
         // 构建推送数据
-        Map<String, Object> pushData = Map.of(
-                "messageId", event.getMessageId(),
-                "userId", event.getUserId(),
-                "readAt", LocalDateTime.now().toString()
-        );
-
+        Map<String, Object> pushData = Map.of("messageId", event.getMessageId(), "userId", event.getUserId(), "readAt",
+                LocalDateTime.now().toString());
         // 构建推送事件
         PushEvent pushEvent = PushEvent.builder()
                 .id("push-read-" + java.util.UUID.randomUUID())
@@ -121,11 +110,11 @@ public class MessagePushListener {
                 .dataContentType("application/json")
                 .data(pushData)
                 .build();
-
         // 推送给消息发送者（如果在线）
         if (event.getSenderId() != null) {
             pushEventService.sendToUser(event.getSenderId(), pushEvent);
             log.info("已读通知已推送，messageId: {}, senderId: {}", event.getMessageId(), event.getSenderId());
         }
     }
+
 }

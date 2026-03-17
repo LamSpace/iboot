@@ -17,7 +17,8 @@
 package com.iboot.admin.infrastructure.config.cache;
 
 import com.iboot.admin.application.service.BusinessMetricsService;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.data.redis.core.RedisTemplate;
 
@@ -26,27 +27,30 @@ import java.util.concurrent.Callable;
 /**
  * 二级缓存实现
  * <p>
- * L1: Caffeine 本地缓存（毫秒级响应）
- * L2: Redis 分布式缓存（跨节点共享）
+ * L1: Caffeine 本地缓存（毫秒级响应） L2: Redis 分布式缓存（跨节点共享）
  * <p>
- * 读取策略：L1 -> L2 -> DB（穿透写回）
- * 写入策略：同时写入 L1 + L2
- * 失效策略：同时清除 L1 + L2，并通过 Redis Pub/Sub 通知其他节点清除 L1
+ * 读取策略：L1 -> L2 -> DB（穿透写回） 写入策略：同时写入 L1 + L2 失效策略：同时清除 L1 + L2，并通过 Redis Pub/Sub 通知其他节点清除 L1
  *
  * @author iBoot
  */
-@Slf4j
 public class TwoLevelCache implements Cache {
 
+    private static final Logger log = LoggerFactory.getLogger(TwoLevelCache.class);
+
     private final String name;
+
     private final Cache l1Cache;
+
     private final Cache l2Cache;
+
     private final RedisTemplate<String, Object> redisTemplate;
+
     private final String evictChannel;
+
     private BusinessMetricsService metricsService;
 
-    public TwoLevelCache(String name, Cache l1Cache, Cache l2Cache,
-                         RedisTemplate<String, Object> redisTemplate, String evictChannel) {
+    public TwoLevelCache(String name, Cache l1Cache, Cache l2Cache, RedisTemplate<String, Object> redisTemplate,
+                         String evictChannel) {
         this.name = name;
         this.l1Cache = l1Cache;
         this.l2Cache = l2Cache;
@@ -79,7 +83,6 @@ public class TwoLevelCache implements Cache {
             }
             return wrapper;
         }
-
         // 2. L1 未命中，查 L2 Redis 缓存
         wrapper = l2Cache.get(key);
         if (wrapper != null) {
@@ -91,7 +94,6 @@ public class TwoLevelCache implements Cache {
             l1Cache.put(key, wrapper.get());
             return wrapper;
         }
-
         log.debug("Cache miss: {}:{}", name, key);
         if (metricsService != null) {
             metricsService.recordCacheMiss();
@@ -108,8 +110,7 @@ public class TwoLevelCache implements Cache {
         }
         Object value = wrapper.get();
         if (value != null && type != null && !type.isInstance(value)) {
-            throw new IllegalStateException(
-                    "Cached value is not of required type [" + type.getName() + "]: " + value);
+            throw new IllegalStateException("Cached value is not of required type [" + type.getName() + "]: " + value);
         }
         return (T) value;
     }
@@ -121,7 +122,6 @@ public class TwoLevelCache implements Cache {
         if (wrapper != null) {
             return (T) wrapper.get();
         }
-
         // 缓存未命中，调用 valueLoader 获取值
         try {
             T value = valueLoader.call();
@@ -204,4 +204,5 @@ public class TwoLevelCache implements Cache {
             log.debug("Published evict message: {}", message);
         }
     }
+
 }

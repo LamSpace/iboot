@@ -21,8 +21,8 @@ import com.iboot.admin.domain.system.model.DictData;
 import com.iboot.admin.domain.system.model.DictType;
 import com.iboot.admin.domain.system.repository.DictDataRepository;
 import com.iboot.admin.domain.system.repository.DictTypeRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,15 +37,23 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class DictApplicationService {
 
+    private static final Logger log = LoggerFactory.getLogger(DictApplicationService.class);
+
     private final DictTypeRepository dictTypeRepository;
+
     private final DictDataRepository dictDataRepository;
 
     // ==================== 字典类型操作 ====================
+
+    @SuppressWarnings("all")
+    public DictApplicationService(final DictTypeRepository dictTypeRepository,
+                                  final DictDataRepository dictDataRepository) {
+        this.dictTypeRepository = dictTypeRepository;
+        this.dictDataRepository = dictDataRepository;
+    }
 
     /**
      * 创建字典类型
@@ -54,7 +62,9 @@ public class DictApplicationService {
      * </p>
      *
      * @param dictType 字典类型实体
+     *
      * @return 创建后的字典类型
+     *
      * @throws BusinessException 当字典类型已存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
@@ -62,10 +72,8 @@ public class DictApplicationService {
         if (dictTypeRepository.existsByDictType(dictType.getDictType())) {
             throw new BusinessException("字典类型已存在");
         }
-
         // 清理同类型已删除字典记录（解决逻辑删除与唯一索引冲突问题）
         dictTypeRepository.removeDeletedByDictType(dictType.getDictType());
-
         dictType.setCreateTime(LocalDateTime.now());
         dictType.setStatus(1);
         return dictTypeRepository.save(dictType);
@@ -78,19 +86,19 @@ public class DictApplicationService {
      * </p>
      *
      * @param dictType 字典类型实体
+     *
      * @return 是否更新成功
+     *
      * @throws BusinessException 当字典类型不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateDictType(DictType dictType) {
         DictType existing = dictTypeRepository.findById(dictType.getId())
                 .orElseThrow(() -> new BusinessException("字典类型不存在"));
-
         // 如果修改了字典类型，需要同步更新字典数据
         if (!existing.getDictType().equals(dictType.getDictType())) {
-            // 这里可以添加更新字典数据的逻辑
         }
-
+        // 这里可以添加更新字典数据的逻辑
         dictType.setUpdateTime(LocalDateTime.now());
         return dictTypeRepository.update(dictType);
     }
@@ -102,17 +110,16 @@ public class DictApplicationService {
      * </p>
      *
      * @param id 字典类型 ID
+     *
      * @return 是否删除成功
+     *
      * @throws BusinessException 当字典类型不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteDictType(Long id) {
-        DictType dictType = dictTypeRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("字典类型不存在"));
-
+        DictType dictType = dictTypeRepository.findById(id).orElseThrow(() -> new BusinessException("字典类型不存在"));
         // 删除关联的字典数据
         dictDataRepository.deleteByDictType(dictType.getDictType());
-
         return dictTypeRepository.deleteById(id);
     }
 
@@ -120,12 +127,13 @@ public class DictApplicationService {
      * 根据 ID 获取字典类型
      *
      * @param id 字典类型 ID
+     *
      * @return 字典类型实体
+     *
      * @throws BusinessException 当字典类型不存在时抛出
      */
     public DictType getDictTypeById(Long id) {
-        return dictTypeRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("字典类型不存在"));
+        return dictTypeRepository.findById(id).orElseThrow(() -> new BusinessException("字典类型不存在"));
     }
 
     /**
@@ -140,13 +148,16 @@ public class DictApplicationService {
     /**
      * 分页获取字典类型
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 字典类型列表
      */
     public List<DictType> getDictTypePage(int pageNum, int pageSize) {
         return dictTypeRepository.findPage(pageNum, pageSize);
     }
+
+    // ==================== 字典数据操作 ====================
 
     /**
      * 统计字典类型总数
@@ -157,8 +168,6 @@ public class DictApplicationService {
         return dictTypeRepository.count();
     }
 
-    // ==================== 字典数据操作 ====================
-
     /**
      * 创建字典数据
      * <p>
@@ -166,7 +175,9 @@ public class DictApplicationService {
      * </p>
      *
      * @param dictData 字典数据实体
+     *
      * @return 创建后的字典数据
+     *
      * @throws BusinessException 当字典数据已存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
@@ -174,7 +185,6 @@ public class DictApplicationService {
         if (dictDataRepository.existsByDictTypeAndValue(dictData.getDictType(), dictData.getDictValue())) {
             throw new BusinessException("字典数据已存在");
         }
-
         dictData.setCreateTime(LocalDateTime.now());
         dictData.setStatus(1);
         return dictDataRepository.save(dictData);
@@ -187,14 +197,14 @@ public class DictApplicationService {
      * </p>
      *
      * @param dictData 字典数据实体
+     *
      * @return 是否更新成功
+     *
      * @throws BusinessException 当字典数据不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateDictData(DictData dictData) {
-        dictDataRepository.findById(dictData.getId())
-                .orElseThrow(() -> new BusinessException("字典数据不存在"));
-
+        dictDataRepository.findById(dictData.getId()).orElseThrow(() -> new BusinessException("字典数据不存在"));
         dictData.setUpdateTime(LocalDateTime.now());
         return dictDataRepository.update(dictData);
     }
@@ -206,7 +216,9 @@ public class DictApplicationService {
      * </p>
      *
      * @param id 字典数据 ID
+     *
      * @return 是否删除成功
+     *
      * @throws BusinessException 当字典数据不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
@@ -214,7 +226,6 @@ public class DictApplicationService {
         if (!dictDataRepository.findById(id).isPresent()) {
             throw new BusinessException("字典数据不存在");
         }
-
         return dictDataRepository.deleteById(id);
     }
 
@@ -222,18 +233,20 @@ public class DictApplicationService {
      * 根据 ID 获取字典数据
      *
      * @param id 字典数据 ID
+     *
      * @return 字典数据实体
+     *
      * @throws BusinessException 当字典数据不存在时抛出
      */
     public DictData getDictDataById(Long id) {
-        return dictDataRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("字典数据不存在"));
+        return dictDataRepository.findById(id).orElseThrow(() -> new BusinessException("字典数据不存在"));
     }
 
     /**
      * 根据字典类型获取字典数据列表
      *
      * @param dictType 字典类型
+     *
      * @return 字典数据列表
      */
     public List<DictData> getDictDataByType(String dictType) {
@@ -255,13 +268,13 @@ public class DictApplicationService {
      * 用于前端显示时将字典值转换为可读的标签文本
      * </p>
      *
-     * @param dictType 字典类型
+     * @param dictType  字典类型
      * @param dictValue 字典值
+     *
      * @return 字典标签，不存在则返回空字符串
      */
     public String getDictLabel(String dictType, String dictValue) {
-        return dictDataRepository.findByDictTypeAndValue(dictType, dictValue)
-                .map(DictData::getDictLabel)
-                .orElse("");
+        return dictDataRepository.findByDictTypeAndValue(dictType, dictValue).map(DictData::getDictLabel).orElse("");
     }
+
 }

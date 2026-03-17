@@ -34,6 +34,7 @@ public interface NoticeReadRepository {
      * 保存公告已读记录
      *
      * @param noticeRead 公告已读记录实体
+     *
      * @return 是否保存成功
      */
     boolean save(NoticeRead noticeRead);
@@ -42,7 +43,8 @@ public interface NoticeReadRepository {
      * 检查用户是否已阅读指定公告
      *
      * @param noticeId 公告 ID
-     * @param userId 用户 ID
+     * @param userId   用户 ID
+     *
      * @return 是否已读
      */
     boolean existsByNoticeIdAndUserId(Long noticeId, Long userId);
@@ -51,6 +53,7 @@ public interface NoticeReadRepository {
      * 统计用户未读公告数量
      *
      * @param userId 用户 ID
+     *
      * @return 未读公告数量
      */
     long countUnreadByUserId(Long userId);
@@ -59,7 +62,8 @@ public interface NoticeReadRepository {
      * 查询用户未读的已发布公告 ID 列表
      *
      * @param userId 用户 ID
-     * @param limit 返回数量限制
+     * @param limit  返回数量限制
+     *
      * @return 未读公告 ID 列表
      */
     List<Long> findUnreadPublishedNoticeIds(Long userId, int limit);
@@ -71,7 +75,9 @@ public interface NoticeReadRepository {
      * </p>
      *
      * @param noticeId 公告 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteByNoticeId(Long noticeId);
+
 }

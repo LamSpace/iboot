@@ -37,6 +37,7 @@ public interface DictDataMapper {
      * 插入字典数据记录
      *
      * @param dictDataPO 字典数据持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(DictDataPO dictDataPO);
@@ -45,6 +46,7 @@ public interface DictDataMapper {
      * 更新字典数据记录
      *
      * @param dictDataPO 字典数据持久化对象
+     *
      * @return 影响的记录数
      */
     int update(DictDataPO dictDataPO);
@@ -53,6 +55,7 @@ public interface DictDataMapper {
      * 根据 ID 删除字典数据
      *
      * @param id 字典数据 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -61,6 +64,7 @@ public interface DictDataMapper {
      * 根据 ID 查询字典数据
      *
      * @param id 字典数据 ID
+     *
      * @return 字典数据持久化对象
      */
     DictDataPO selectById(@Param("id") Long id);
@@ -69,6 +73,7 @@ public interface DictDataMapper {
      * 根据字典类型查询字典数据列表
      *
      * @param dictType 字典类型
+     *
      * @return 字典数据列表
      */
     List<DictDataPO> selectByDictType(@Param("dictType") String dictType);
@@ -76,8 +81,9 @@ public interface DictDataMapper {
     /**
      * 根据字典类型和值查询字典数据
      *
-     * @param dictType 字典类型
+     * @param dictType  字典类型
      * @param dictValue 字典值
+     *
      * @return 字典数据持久化对象
      */
     DictDataPO selectByDictTypeAndValue(@Param("dictType") String dictType, @Param("dictValue") String dictValue);
@@ -99,8 +105,9 @@ public interface DictDataMapper {
     /**
      * 根据字典类型和值统计数量
      *
-     * @param dictType 字典类型
+     * @param dictType  字典类型
      * @param dictValue 字典值
+     *
      * @return 数量
      */
     int countByDictTypeAndValue(@Param("dictType") String dictType, @Param("dictValue") String dictValue);
@@ -109,7 +116,9 @@ public interface DictDataMapper {
      * 根据字典类型删除字典数据
      *
      * @param dictType 字典类型
+     *
      * @return 影响的记录数
      */
     int deleteByDictType(@Param("dictType") String dictType);
+
 }

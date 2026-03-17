@@ -35,6 +35,7 @@ public interface MessageRepository {
      * 保存消息
      *
      * @param message 消息实体
+     *
      * @return 保存后的消息
      */
     Message save(Message message);
@@ -43,6 +44,7 @@ public interface MessageRepository {
      * 更新消息
      *
      * @param message 消息实体
+     *
      * @return 是否更新成功
      */
     boolean update(Message message);
@@ -51,6 +53,7 @@ public interface MessageRepository {
      * 根据 ID 删除消息（逻辑删除）
      *
      * @param id 消息 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteById(Long id);
@@ -59,6 +62,7 @@ public interface MessageRepository {
      * 根据 ID 查询消息
      *
      * @param id 消息 ID
+     *
      * @return 消息实体，不存在则返回空
      */
     Optional<Message> findById(Long id);
@@ -66,11 +70,12 @@ public interface MessageRepository {
     /**
      * 按条件分页查询消息
      *
-     * @param title 消息标题（可选）
+     * @param title       消息标题（可选）
      * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param status      状态（可选）
+     * @param pageNum     页码
+     * @param pageSize    每页数量
+     *
      * @return 消息列表
      */
     List<Message> findPageByCondition(String title, String messageType, String status, int pageNum, int pageSize);
@@ -78,9 +83,10 @@ public interface MessageRepository {
     /**
      * 按条件统计消息数量
      *
-     * @param title 消息标题（可选）
+     * @param title       消息标题（可选）
      * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
+     * @param status      状态（可选）
+     *
      * @return 消息数量
      */
     long countByCondition(String title, String messageType, String status);
@@ -88,10 +94,12 @@ public interface MessageRepository {
     /**
      * 按条件查询所有消息（导出用）
      *
-     * @param title 消息标题（可选）
+     * @param title       消息标题（可选）
      * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
+     * @param status      状态（可选）
+     *
      * @return 消息列表
      */
     List<Message> findAllByCondition(String title, String messageType, String status);
+
 }

@@ -32,12 +32,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface RoleMapper {
 
     // ==================== 查询映射 ====================
@@ -46,6 +41,7 @@ public interface RoleMapper {
      * 将角色实体转换为响应 DTO
      *
      * @param role 角色实体
+     *
      * @return 角色响应 DTO
      */
     RoleResponse toResponse(Role role);
@@ -54,6 +50,7 @@ public interface RoleMapper {
      * 将角色实体列表转换为响应 DTO 列表
      *
      * @param roles 角色实体列表
+     *
      * @return 角色响应 DTO 列表
      */
     List<RoleResponse> toResponseList(List<Role> roles);
@@ -62,6 +59,7 @@ public interface RoleMapper {
      * 将角色实体转换为导出 VO
      *
      * @param role 角色实体
+     *
      * @return 角色导出 VO
      */
     RoleExportVO toExportVO(Role role);
@@ -70,6 +68,7 @@ public interface RoleMapper {
      * 将角色实体列表转换为导出 VO 列表
      *
      * @param roles 角色实体列表
+     *
      * @return 角色导出 VO 列表
      */
     List<RoleExportVO> toExportVOList(List<Role> roles);
@@ -80,6 +79,7 @@ public interface RoleMapper {
      * 将角色请求转换为实体
      *
      * @param request 角色请求
+     *
      * @return 角色实体
      */
     @Mapping(target = "id", ignore = true)
@@ -105,4 +105,5 @@ public interface RoleMapper {
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     void updateEntityFromRequest(RoleRequest request, @MappingTarget Role role);
+
 }

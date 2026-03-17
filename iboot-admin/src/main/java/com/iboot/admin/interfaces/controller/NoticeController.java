@@ -32,7 +32,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,30 +47,28 @@ import java.util.stream.Collectors;
 @Tag(name = "系统公告", description = "系统公告相关接口")
 @RestController
 @RequestMapping("/api/notice")
-@RequiredArgsConstructor
 public class NoticeController {
 
     private final NoticeApplicationService noticeApplicationService;
 
-    // ==================== 后台管理接口 ====================
+    @SuppressWarnings("all")
+    public NoticeController(final NoticeApplicationService noticeApplicationService) {
+        this.noticeApplicationService = noticeApplicationService;
+    }
 
+    // ==================== 后台管理接口 ====================
     @Operation(summary = "查询公告列表")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('notice:list')")
-    public Result<PageResult<NoticeResponse>> list(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String noticeTitle,
-            @RequestParam(required = false) String noticeType,
-            @RequestParam(required = false) String status) {
-
-        List<Notice> notices = noticeApplicationService.getNoticePage(noticeTitle, noticeType, status, pageNum, pageSize);
+    public Result<PageResult<NoticeResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                   @RequestParam(defaultValue = "10") Integer pageSize,
+                                                   @RequestParam(required = false) String noticeTitle,
+                                                   @RequestParam(required = false) String noticeType,
+                                                   @RequestParam(required = false) String status) {
+        List<Notice> notices = noticeApplicationService.getNoticePage(noticeTitle, noticeType, status, pageNum,
+                pageSize);
         long total = noticeApplicationService.countNotices(noticeTitle, noticeType, status);
-
-        List<NoticeResponse> responses = notices.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-
+        List<NoticeResponse> responses = notices.stream().map(this::convertToResponse).collect(Collectors.toList());
         PageResult<NoticeResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
@@ -131,34 +128,28 @@ public class NoticeController {
         noticeApplicationService.revokeNotice(id);
         return Result.success();
     }
-    
+
     @Operation(summary = "导出公告列表")
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('notice:export')")
     @Log(title = "系统公告", businessType = BusinessTypeEnum.EXPORT)
-    public void export(HttpServletResponse response,
-                       @RequestParam(required = false) String noticeTitle,
-                       @RequestParam(required = false) String noticeType,
-                       @RequestParam(required = false) String status) throws IOException {
+    public void export(HttpServletResponse response, @RequestParam(required = false) String noticeTitle,
+                       @RequestParam(required = false) String noticeType, @RequestParam(required = false) String status)
+            throws IOException {
         List<Notice> notices = noticeApplicationService.getAllNoticesByCondition(noticeTitle, noticeType, status);
-        List<NoticeExportVO> exportList = notices.stream()
-                .map(this::convertToExportVO)
-                .collect(Collectors.toList());
+        List<NoticeExportVO> exportList = notices.stream().map(this::convertToExportVO).collect(Collectors.toList());
         ExcelExportUtil.exportExcel(response, exportList, NoticeExportVO.class, "公告列表", "公告数据");
     }
 
     // ==================== 用户端接口 ====================
-
     @Operation(summary = "获取已发布公告列表")
     @GetMapping("/published")
     public Result<List<PublishedNoticeResponse>> published() {
         Long userId = SecurityUtils.getCurrentUserId();
         List<Notice> notices = noticeApplicationService.getPublishedNotices();
-
         List<PublishedNoticeResponse> responses = notices.stream()
                 .map(notice -> convertToPublishedResponse(notice, userId))
                 .collect(Collectors.toList());
-
         return Result.success(responses);
     }
 
@@ -179,7 +170,6 @@ public class NoticeController {
     }
 
     // ==================== 转换方法 ====================
-
     private Notice convertToEntity(NoticeRequest request) {
         return Notice.builder()
                 .noticeTitle(request.getNoticeTitle())
@@ -216,7 +206,7 @@ public class NoticeController {
                 .isRead(noticeApplicationService.isRead(notice.getId(), userId))
                 .build();
     }
-    
+
     private NoticeExportVO convertToExportVO(Notice notice) {
         return NoticeExportVO.builder()
                 .id(notice.getId())
@@ -230,4 +220,5 @@ public class NoticeController {
                 .createTime(notice.getCreateTime())
                 .build();
     }
+
 }

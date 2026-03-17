@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.FileInfo;
 import com.iboot.admin.domain.system.repository.FileRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.FileMapper;
 import com.iboot.admin.infrastructure.persistence.po.FilePO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class FileRepositoryImpl implements FileRepository {
 
     private final FileMapper fileMapper;
+
+    @SuppressWarnings("all")
+    public FileRepositoryImpl(final FileMapper fileMapper) {
+        this.fileMapper = fileMapper;
+    }
 
     /**
      * 保存文件信息
@@ -48,6 +51,7 @@ public class FileRepositoryImpl implements FileRepository {
      * </p>
      *
      * @param fileInfo 文件信息实体
+     *
      * @return 保存后的文件信息
      */
     @Override
@@ -65,6 +69,7 @@ public class FileRepositoryImpl implements FileRepository {
      * 更新文件信息
      *
      * @param fileInfo 文件信息实体
+     *
      * @return 是否更新成功
      */
     @Override
@@ -77,6 +82,7 @@ public class FileRepositoryImpl implements FileRepository {
      * 根据 ID 删除文件信息（逻辑删除）
      *
      * @param id 文件信息 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -88,6 +94,7 @@ public class FileRepositoryImpl implements FileRepository {
      * 根据 ID 查询文件信息
      *
      * @param id 文件信息 ID
+     *
      * @return 文件信息实体，不存在则返回空
      */
     @Override
@@ -103,24 +110,21 @@ public class FileRepositoryImpl implements FileRepository {
      */
     @Override
     public List<FileInfo> findAll() {
-        return fileMapper.selectAll().stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return fileMapper.selectAll().stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 分页查询文件信息
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 文件信息列表
      */
     @Override
     public List<FileInfo> findPage(int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return fileMapper.selectPage(offset, pageSize).stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return fileMapper.selectPage(offset, pageSize).stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
@@ -136,17 +140,20 @@ public class FileRepositoryImpl implements FileRepository {
     /**
      * 按条件分页查询文件信息
      *
-     * @param fileName 文件名称（可选）
+     * @param fileName     文件名称（可选）
      * @param fileCategory 文件分类（可选）
-     * @param fileExt 文件扩展名（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param fileExt      文件扩展名（可选）
+     * @param pageNum      页码
+     * @param pageSize     每页数量
+     *
      * @return 文件信息列表
      */
     @Override
-    public List<FileInfo> findPageByCondition(String fileName, String fileCategory, String fileExt, int pageNum, int pageSize) {
+    public List<FileInfo> findPageByCondition(String fileName, String fileCategory, String fileExt, int pageNum,
+                                              int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return fileMapper.selectPageByCondition(fileName, fileCategory, fileExt, offset, pageSize).stream()
+        return fileMapper.selectPageByCondition(fileName, fileCategory, fileExt, offset, pageSize)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -154,9 +161,10 @@ public class FileRepositoryImpl implements FileRepository {
     /**
      * 按条件统计文件信息总数
      *
-     * @param fileName 文件名称（可选）
+     * @param fileName     文件名称（可选）
      * @param fileCategory 文件分类（可选）
-     * @param fileExt 文件扩展名（可选）
+     * @param fileExt      文件扩展名（可选）
+     *
      * @return 文件信息总数
      */
     @Override
@@ -167,13 +175,15 @@ public class FileRepositoryImpl implements FileRepository {
     /**
      * 按条件查询所有文件信息（不分页，用于导出）
      *
-     * @param fileName 文件名称（可选）
+     * @param fileName     文件名称（可选）
      * @param fileCategory 文件分类（可选）
+     *
      * @return 文件信息列表
      */
     @Override
     public List<FileInfo> findAllByCondition(String fileName, String fileCategory) {
-        return fileMapper.selectAllByCondition(fileName, fileCategory).stream()
+        return fileMapper.selectAllByCondition(fileName, fileCategory)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -182,6 +192,7 @@ public class FileRepositoryImpl implements FileRepository {
      * 将领域对象转换为持久化对象
      *
      * @param fileInfo 文件信息领域对象
+     *
      * @return 文件信息持久化对象
      */
     private FilePO convertToPO(FileInfo fileInfo) {
@@ -208,6 +219,7 @@ public class FileRepositoryImpl implements FileRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 文件信息持久化对象
+     *
      * @return 文件信息领域对象
      */
     private FileInfo convertToDomain(FilePO po) {
@@ -229,4 +241,5 @@ public class FileRepositoryImpl implements FileRepository {
                 .remark(po.getRemark())
                 .build();
     }
+
 }

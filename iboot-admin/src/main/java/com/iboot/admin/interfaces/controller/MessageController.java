@@ -34,7 +34,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,30 +49,28 @@ import java.util.stream.Collectors;
 @Tag(name = "消息中心", description = "消息中心相关接口")
 @RestController
 @RequestMapping("/api/message")
-@RequiredArgsConstructor
 public class MessageController {
 
     private final MessageApplicationService messageApplicationService;
 
-    // ==================== 后台管理接口 ====================
+    @SuppressWarnings("all")
+    public MessageController(final MessageApplicationService messageApplicationService) {
+        this.messageApplicationService = messageApplicationService;
+    }
 
+    // ==================== 后台管理接口 ====================
     @Operation(summary = "查询消息列表")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('message:list')")
-    public Result<PageResult<MessageResponse>> list(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String messageType,
-            @RequestParam(required = false) String status) {
-
-        List<Message> messages = messageApplicationService.getMessagePage(title, messageType, status, pageNum, pageSize);
+    public Result<PageResult<MessageResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                    @RequestParam(defaultValue = "10") Integer pageSize,
+                                                    @RequestParam(required = false) String title,
+                                                    @RequestParam(required = false) String messageType,
+                                                    @RequestParam(required = false) String status) {
+        List<Message> messages = messageApplicationService.getMessagePage(title, messageType, status, pageNum,
+                pageSize);
         long total = messageApplicationService.countMessages(title, messageType, status);
-
-        List<MessageResponse> responses = messages.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-
+        List<MessageResponse> responses = messages.stream().map(this::convertToResponse).collect(Collectors.toList());
         PageResult<MessageResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
@@ -133,40 +130,34 @@ public class MessageController {
         messageApplicationService.revokeMessage(id);
         return Result.success();
     }
-    
+
     @Operation(summary = "导出消息列表")
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('message:export')")
     @Log(title = "消息管理", businessType = BusinessTypeEnum.EXPORT)
-    public void export(HttpServletResponse response,
-                       @RequestParam(required = false) String title,
+    public void export(HttpServletResponse response, @RequestParam(required = false) String title,
                        @RequestParam(required = false) String messageType,
-                       @RequestParam(required = false) String status) throws IOException {
+                       @RequestParam(required = false) String status)
+            throws IOException {
         List<Message> messages = messageApplicationService.getAllMessagesByCondition(title, messageType, status);
-        List<MessageExportVO> exportList = messages.stream()
-                .map(this::convertToExportVO)
-                .collect(Collectors.toList());
+        List<MessageExportVO> exportList = messages.stream().map(this::convertToExportVO).collect(Collectors.toList());
         ExcelExportUtil.exportExcel(response, exportList, MessageExportVO.class, "消息列表", "消息数据");
     }
 
     // ==================== 用户端接口 ====================
-
     @Operation(summary = "获取用户收件箱")
     @GetMapping("/inbox")
-    public Result<PageResult<UserMessageResponse>> inbox(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String messageType,
-            @RequestParam(required = false) Integer isRead) {
-
+    public Result<PageResult<UserMessageResponse>> inbox(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                         @RequestParam(defaultValue = "10") Integer pageSize,
+                                                         @RequestParam(required = false) String messageType,
+                                                         @RequestParam(required = false) Integer isRead) {
         Long userId = SecurityUtils.getCurrentUserId();
-        List<MessageReceiver> receivers = messageApplicationService.getUserMessages(userId, messageType, isRead, pageNum, pageSize);
+        List<MessageReceiver> receivers = messageApplicationService.getUserMessages(userId, messageType, isRead,
+                pageNum, pageSize);
         long total = messageApplicationService.countUserMessages(userId, messageType, isRead);
-
         List<UserMessageResponse> responses = receivers.stream()
                 .map(this::convertToUserMessageResponse)
                 .collect(Collectors.toList());
-
         PageResult<UserMessageResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
@@ -204,7 +195,6 @@ public class MessageController {
     }
 
     // ==================== 转换方法 ====================
-
     private Message convertToEntity(MessageRequest request) {
         return Message.builder()
                 .title(request.getTitle())
@@ -240,7 +230,7 @@ public class MessageController {
                 .readTime(receiver.getReadTime())
                 .build();
     }
-    
+
     private MessageExportVO convertToExportVO(Message message) {
         return MessageExportVO.builder()
                 .id(message.getId())
@@ -255,4 +245,5 @@ public class MessageController {
                 .createTime(message.getCreateTime())
                 .build();
     }
+
 }

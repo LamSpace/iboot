@@ -38,6 +38,7 @@ public interface FileMapper {
      * 插入文件记录
      *
      * @param filePO 文件持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(FilePO filePO);
@@ -46,6 +47,7 @@ public interface FileMapper {
      * 更新文件记录
      *
      * @param filePO 文件持久化对象
+     *
      * @return 影响的记录数
      */
     int update(FilePO filePO);
@@ -54,6 +56,7 @@ public interface FileMapper {
      * 根据 ID 删除文件
      *
      * @param id 文件 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -62,6 +65,7 @@ public interface FileMapper {
      * 根据 ID 查询文件
      *
      * @param id 文件 ID
+     *
      * @return 文件持久化对象
      */
     FilePO selectById(@Param("id") Long id);
@@ -77,7 +81,8 @@ public interface FileMapper {
      * 分页查询文件（受数据权限控制）
      *
      * @param offset 偏移量
-     * @param limit 限制数量
+     * @param limit  限制数量
+     *
      * @return 文件列表
      */
     @DataScope(deptAlias = "f", userAlias = "f")
@@ -93,40 +98,40 @@ public interface FileMapper {
     /**
      * 按条件分页查询文件（受数据权限控制）
      *
-     * @param fileName 文件名称（可选）
+     * @param fileName     文件名称（可选）
      * @param fileCategory 文件分类（可选）
-     * @param fileExt 文件扩展名（可选）
-     * @param offset 偏移量
-     * @param limit 限制数量
+     * @param fileExt      文件扩展名（可选）
+     * @param offset       偏移量
+     * @param limit        限制数量
+     *
      * @return 文件列表
      */
     @DataScope(deptAlias = "f", userAlias = "f")
-    List<FilePO> selectPageByCondition(@Param("fileName") String fileName,
-                                       @Param("fileCategory") String fileCategory,
+    List<FilePO> selectPageByCondition(@Param("fileName") String fileName, @Param("fileCategory") String fileCategory,
                                        @Param("fileExt") String fileExt,
-                                       @Param("offset") int offset,
-                                       @Param("limit") int limit);
+                                       @Param("offset") int offset, @Param("limit") int limit);
 
     /**
      * 按条件统计文件总数
      *
-     * @param fileName 文件名称（可选）
+     * @param fileName     文件名称（可选）
      * @param fileCategory 文件分类（可选）
-     * @param fileExt 文件扩展名（可选）
+     * @param fileExt      文件扩展名（可选）
+     *
      * @return 文件总数
      */
-    long countByCondition(@Param("fileName") String fileName,
-                          @Param("fileCategory") String fileCategory,
+    long countByCondition(@Param("fileName") String fileName, @Param("fileCategory") String fileCategory,
                           @Param("fileExt") String fileExt);
 
     /**
      * 按条件查询所有文件（导出用）
      *
-     * @param fileName 文件名称（可选）
+     * @param fileName     文件名称（可选）
      * @param fileCategory 文件分类（可选）
+     *
      * @return 文件列表
      */
     @DataScope(deptAlias = "f", userAlias = "f")
-    List<FilePO> selectAllByCondition(@Param("fileName") String fileName,
-                                      @Param("fileCategory") String fileCategory);
+    List<FilePO> selectAllByCondition(@Param("fileName") String fileName, @Param("fileCategory") String fileCategory);
+
 }

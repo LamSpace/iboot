@@ -35,6 +35,7 @@ public interface PostRepository {
      * 保存岗位
      *
      * @param post 岗位实体
+     *
      * @return 保存后的岗位
      */
     Post save(Post post);
@@ -43,6 +44,7 @@ public interface PostRepository {
      * 更新岗位
      *
      * @param post 岗位实体
+     *
      * @return 是否更新成功
      */
     boolean update(Post post);
@@ -51,6 +53,7 @@ public interface PostRepository {
      * 根据 ID 删除岗位（逻辑删除）
      *
      * @param id 岗位 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteById(Long id);
@@ -59,6 +62,7 @@ public interface PostRepository {
      * 根据 ID 查询岗位
      *
      * @param id 岗位 ID
+     *
      * @return 岗位实体，不存在则返回空
      */
     Optional<Post> findById(Long id);
@@ -67,6 +71,7 @@ public interface PostRepository {
      * 根据岗位编码查询岗位
      *
      * @param postCode 岗位编码
+     *
      * @return 岗位实体，不存在则返回空
      */
     Optional<Post> findByPostCode(String postCode);
@@ -81,8 +86,9 @@ public interface PostRepository {
     /**
      * 分页查询岗位
      *
-     * @param pageNum 页码
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 岗位列表
      */
     List<Post> findPage(int pageNum, int pageSize);
@@ -99,9 +105,10 @@ public interface PostRepository {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
+     * @param status   状态（可选）
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 岗位列表
      */
     List<Post> findPageByCondition(String postName, String postCode, Integer status, int pageNum, int pageSize);
@@ -111,7 +118,8 @@ public interface PostRepository {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 岗位总数
      */
     long countByCondition(String postName, String postCode, Integer status);
@@ -121,7 +129,8 @@ public interface PostRepository {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 岗位列表
      */
     List<Post> findAllByCondition(String postName, String postCode, Integer status);
@@ -130,6 +139,7 @@ public interface PostRepository {
      * 检查岗位编码是否存在
      *
      * @param postCode 岗位编码
+     *
      * @return 是否存在
      */
     boolean existsByPostCode(String postCode);
@@ -138,6 +148,7 @@ public interface PostRepository {
      * 检查岗位名称是否存在
      *
      * @param postName 岗位名称
+     *
      * @return 是否存在
      */
     boolean existsByPostName(String postName);
@@ -149,7 +160,9 @@ public interface PostRepository {
      * </p>
      *
      * @param postCode 岗位编码
+     *
      * @return 是否删除成功
      */
     boolean removeDeletedByPostCode(String postCode);
+
 }

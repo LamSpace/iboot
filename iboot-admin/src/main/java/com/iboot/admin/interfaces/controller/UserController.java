@@ -17,11 +17,7 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.mapper.system.UserMapper;
-import com.iboot.admin.application.service.ConfigApplicationService;
-import com.iboot.admin.application.service.DeptApplicationService;
-import com.iboot.admin.application.service.PostApplicationService;
-import com.iboot.admin.application.service.RoleApplicationService;
-import com.iboot.admin.application.service.UserApplicationService;
+import com.iboot.admin.application.service.*;
 import com.iboot.admin.common.annotation.Log;
 import com.iboot.admin.common.enums.BusinessTypeEnum;
 import com.iboot.admin.common.exception.BusinessException;
@@ -41,7 +37,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,32 +52,47 @@ import java.util.List;
 @Tag(name = "用户管理", description = "用户管理相关接口")
 @RestController
 @RequestMapping("/api/user")
-@RequiredArgsConstructor
 public class UserController {
 
+    private static final String CONFIG_KEY_INIT_PASSWORD = "sys.user.initPassword";
+
+    private static final String DEFAULT_INIT_PASSWORD = "123456";
+
     private final UserMapper userMapper;
+
     private final UserApplicationService userApplicationService;
+
     private final ConfigApplicationService configApplicationService;
+
     private final DeptApplicationService deptApplicationService;
+
     private final PostApplicationService postApplicationService;
+
     private final RoleApplicationService roleApplicationService;
 
-    private static final String CONFIG_KEY_INIT_PASSWORD = "sys.user.initPassword";
-    private static final String DEFAULT_INIT_PASSWORD = "123456";
+    @SuppressWarnings("all")
+    public UserController(final UserMapper userMapper, final UserApplicationService userApplicationService,
+                          final ConfigApplicationService configApplicationService,
+                          final DeptApplicationService deptApplicationService, final PostApplicationService postApplicationService,
+                          final RoleApplicationService roleApplicationService) {
+        this.userMapper = userMapper;
+        this.userApplicationService = userApplicationService;
+        this.configApplicationService = configApplicationService;
+        this.deptApplicationService = deptApplicationService;
+        this.postApplicationService = postApplicationService;
+        this.roleApplicationService = roleApplicationService;
+    }
 
     @Operation(summary = "查询用户列表")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('user:list')")
-    public Result<PageResult<UserResponse>> list(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) String phone,
-            @RequestParam(required = false) Integer status) {
-
+    public Result<PageResult<UserResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                 @RequestParam(defaultValue = "10") Integer pageSize,
+                                                 @RequestParam(required = false) String username,
+                                                 @RequestParam(required = false) String phone,
+                                                 @RequestParam(required = false) Integer status) {
         List<User> users;
         long total;
-
         if (username != null || phone != null || status != null) {
             users = userApplicationService.getUserPageByCondition(username, phone, status, pageNum, pageSize);
             total = userApplicationService.countUsersByCondition(username, phone, status);
@@ -90,9 +100,7 @@ public class UserController {
             users = userApplicationService.getUserPage(pageNum, pageSize);
             total = userApplicationService.countUsers();
         }
-
         List<UserResponse> userResponses = userMapper.toResponseList(users);
-
         PageResult<UserResponse> pageResult = new PageResult<>(userResponses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
@@ -213,19 +221,16 @@ public class UserController {
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('user:export')")
     @Log(title = "用户管理", businessType = BusinessTypeEnum.EXPORT)
-    public void export(HttpServletResponse response,
-                       @RequestParam(required = false) String username,
-                       @RequestParam(required = false) String phone,
-                       @RequestParam(required = false) Integer status) throws IOException {
+    public void export(HttpServletResponse response, @RequestParam(required = false) String username,
+                       @RequestParam(required = false) String phone, @RequestParam(required = false) Integer status)
+            throws IOException {
         List<User> users;
         if (username != null || phone != null || status != null) {
             users = userApplicationService.getAllUsersByCondition(username, phone, status);
         } else {
             users = userApplicationService.getAllUsers();
         }
-
         List<UserExportVO> exportList = userMapper.toExportVOList(users);
-
         ExcelExportUtil.exportExcel(response, exportList, UserExportVO.class, "用户列表", "用户数据");
     }
 
@@ -233,6 +238,7 @@ public class UserController {
      * 将领域实体转换为个人信息响应 DTO
      *
      * @param user 用户领域实体
+     *
      * @return 个人信息响应 DTO
      */
     private ProfileResponse convertToProfileResponse(User user) {
@@ -242,10 +248,9 @@ public class UserController {
             try {
                 deptName = deptApplicationService.getDeptById(user.getDeptId()).getDeptName();
             } catch (Exception e) {
-                // 部门不存在时忽略
             }
         }
-
+        // 部门不存在时忽略
         // 获取岗位名称列表
         List<String> postNames = new ArrayList<>();
         if (user.getPostIds() != null) {
@@ -253,11 +258,10 @@ public class UserController {
                 try {
                     postNames.add(postApplicationService.getPostById(postId).getPostName());
                 } catch (Exception e) {
-                    // 岗位不存在时忽略
                 }
+                // 岗位不存在时忽略
             }
         }
-
         // 获取角色名称列表
         List<String> roleNames = new ArrayList<>();
         if (user.getRoleIds() != null) {
@@ -265,11 +269,10 @@ public class UserController {
                 try {
                     roleNames.add(roleApplicationService.getRoleById(roleId).getRoleName());
                 } catch (Exception e) {
-                    // 角色不存在时忽略
                 }
+                // 角色不存在时忽略
             }
         }
-
         return ProfileResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -284,4 +287,5 @@ public class UserController {
                 .createTime(user.getCreateTime())
                 .build();
     }
+
 }

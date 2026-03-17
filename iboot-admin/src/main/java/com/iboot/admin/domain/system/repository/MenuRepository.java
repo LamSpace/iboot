@@ -35,6 +35,7 @@ public interface MenuRepository {
      * 保存菜单
      *
      * @param menu 菜单实体
+     *
      * @return 保存后的菜单
      */
     Menu save(Menu menu);
@@ -43,6 +44,7 @@ public interface MenuRepository {
      * 根据 ID 查询菜单
      *
      * @param id 菜单 ID
+     *
      * @return 菜单实体，不存在则返回空
      */
     Optional<Menu> findById(Long id);
@@ -58,6 +60,7 @@ public interface MenuRepository {
      * 根据父菜单 ID 查询子菜单
      *
      * @param parentId 父菜单 ID
+     *
      * @return 子菜单列表
      */
     List<Menu> findByParentId(Long parentId);
@@ -66,6 +69,7 @@ public interface MenuRepository {
      * 更新菜单
      *
      * @param menu 菜单实体
+     *
      * @return 是否更新成功
      */
     boolean update(Menu menu);
@@ -74,6 +78,7 @@ public interface MenuRepository {
      * 根据 ID 删除菜单（逻辑删除）
      *
      * @param id 菜单 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteById(Long id);
@@ -82,6 +87,7 @@ public interface MenuRepository {
      * 根据用户 ID 查询用户有权限的菜单
      *
      * @param userId 用户 ID
+     *
      * @return 菜单列表
      */
     List<Menu> findByUserId(Long userId);
@@ -90,6 +96,7 @@ public interface MenuRepository {
      * 根据角色 ID 查询角色拥有的菜单
      *
      * @param roleId 角色 ID
+     *
      * @return 菜单列表
      */
     List<Menu> findByRoleId(Long roleId);
@@ -98,6 +105,7 @@ public interface MenuRepository {
      * 根据权限标识查询菜单
      *
      * @param permission 权限标识
+     *
      * @return 菜单实体，不存在则返回空
      */
     Optional<Menu> findByPermission(String permission);
@@ -114,6 +122,7 @@ public interface MenuRepository {
      *
      * @param menuName 菜单名称
      * @param parentId 父菜单 ID
+     *
      * @return 是否存在
      */
     boolean existsByMenuNameAndParentId(String menuName, Long parentId);
@@ -122,6 +131,7 @@ public interface MenuRepository {
      * 检查菜单是否有子菜单
      *
      * @param id 菜单 ID
+     *
      * @return 是否有子菜单
      */
     boolean hasChildren(Long id);
@@ -132,4 +142,5 @@ public interface MenuRepository {
      * @return 菜单总数
      */
     long count();
+
 }

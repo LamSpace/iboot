@@ -22,9 +22,9 @@ import com.iboot.admin.domain.system.repository.FileRepository;
 import com.iboot.admin.domain.system.service.FileStorageStrategy;
 import com.iboot.admin.infrastructure.storage.LocalFileStorageStrategy;
 import com.iboot.admin.infrastructure.storage.StorageObject;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,66 +43,75 @@ import java.util.stream.Collectors;
 /**
  * 文件管理应用服务
  * <p>
- * 负责文件上传、下载、删除、更新和查询等业务逻辑处理。
- * 支持多种存储策略（本地存储/MinIO），通过 FileStorageStrategy 接口实现存储方式切换。
- * 文件大小和允许的类型通过 sys_config 参数配置动态读取，支持自动推断文件分类。
+ * 负责文件上传、下载、删除、更新和查询等业务逻辑处理。 支持多种存储策略（本地存储/MinIO），通过 FileStorageStrategy 接口实现存储方式切换。 文件大小和允许的类型通过 sys_config
+ * 参数配置动态读取，支持自动推断文件分类。
  * </p>
  *
  * @author iBoot
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class FileApplicationService {
 
-    private final FileRepository fileRepository;
-    private final ConfigApplicationService configApplicationService;
-    private final FileStorageStrategy fileStorageStrategy;
-    private final LocalFileStorageStrategy localFileStorageStrategy;
+    private static final Logger log = LoggerFactory.getLogger(FileApplicationService.class);
 
     private static final String CONFIG_KEY_MAX_SIZE = "sys.file.maxSize";
+
     private static final String CONFIG_KEY_ALLOWED_EXTENSIONS = "sys.file.allowedExtensions";
 
     private static final long DEFAULT_MAX_SIZE_MB = 50;
 
+    private final FileRepository fileRepository;
+
+    private final ConfigApplicationService configApplicationService;
+
+    private final FileStorageStrategy fileStorageStrategy;
+
+    private final LocalFileStorageStrategy localFileStorageStrategy;
+
+    @SuppressWarnings("all")
+    public FileApplicationService(final FileRepository fileRepository,
+                                  final ConfigApplicationService configApplicationService, final FileStorageStrategy fileStorageStrategy,
+                                  final LocalFileStorageStrategy localFileStorageStrategy) {
+        this.fileRepository = fileRepository;
+        this.configApplicationService = configApplicationService;
+        this.fileStorageStrategy = fileStorageStrategy;
+        this.localFileStorageStrategy = localFileStorageStrategy;
+    }
+
     /**
      * 上传文件
      * <p>
-     * 校验文件大小和类型，生成唯一存储路径，使用存储策略保存文件，
-     * 自动推断文件分类（如果未指定），最后保存文件信息到数据库。
-     * 存储路径格式：yyyy/MM/dd/UUID.ext
+     * 校验文件大小和类型，生成唯一存储路径，使用存储策略保存文件， 自动推断文件分类（如果未指定），最后保存文件信息到数据库。 存储路径格式：yyyy/MM/dd/UUID.ext
      * </p>
      *
-     * @param file 上传的文件
+     * @param file         上传的文件
      * @param fileCategory 文件分类，为空则自动推断
-     * @param uploadBy 上传人
+     * @param uploadBy     上传人
+     *
      * @return 文件信息实体
+     *
      * @throws BusinessException 当文件为空、超过大小限制或类型不允许时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public FileInfo uploadFile(MultipartFile file, String fileCategory, String uploadBy) {
         // 1. 校验文件
         validateFile(file);
-
         // 2. 生成存储路径
         String originalFilename = file.getOriginalFilename();
         String ext = FilenameUtils.getExtension(originalFilename);
         String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String storedFileName = UUID.randomUUID().toString().replace("-", "") + "." + ext;
         String relativePath = datePath + "/" + storedFileName;
-
         // 3. 使用存储策略保存文件
         try {
             fileStorageStrategy.save(file, relativePath);
         } catch (IOException e) {
             throw new BusinessException("文件保存失败：" + e.getMessage());
         }
-
         // 4. 自动推断文件分类（如果未指定）
         if (fileCategory == null || fileCategory.isEmpty()) {
             fileCategory = inferFileCategory(ext);
         }
-
         // 5. 保存文件信息到数据库
         FileInfo fileInfo = FileInfo.builder()
                 .fileName(originalFilename)
@@ -116,10 +125,7 @@ public class FileApplicationService {
                 .createBy(uploadBy)
                 .createTime(LocalDateTime.now())
                 .build();
-
-        log.info("文件上传成功：{} -> {} (存储类型：{})",
-                originalFilename, relativePath, fileStorageStrategy.getStorageType());
-
+        log.info("文件上传成功：{} -> {} (存储类型：{})", originalFilename, relativePath, fileStorageStrategy.getStorageType());
         return fileRepository.save(fileInfo);
     }
 
@@ -127,12 +133,13 @@ public class FileApplicationService {
      * 根据 ID 获取文件信息
      *
      * @param id 文件 ID
+     *
      * @return 文件信息实体
+     *
      * @throws BusinessException 当文件不存在时抛出
      */
     public FileInfo getFileById(Long id) {
-        return fileRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("文件不存在"));
+        return fileRepository.findById(id).orElseThrow(() -> new BusinessException("文件不存在"));
     }
 
     /**
@@ -142,7 +149,9 @@ public class FileApplicationService {
      * </p>
      *
      * @param fileId 文件 ID
+     *
      * @return 文件下载 URL
+     *
      * @throws BusinessException 当文件不存在时抛出
      */
     public String getFileDownloadUrl(Long fileId) {
@@ -157,8 +166,10 @@ public class FileApplicationService {
      * </p>
      *
      * @param fileId 文件 ID
+     *
      * @return 存储对象，包含输入流和文件名
-     * @throws IOException 当读取文件失败时抛出
+     *
+     * @throws IOException       当读取文件失败时抛出
      * @throws BusinessException 当文件不存在时抛出
      */
     public StorageObject getFileStream(Long fileId) throws IOException {
@@ -170,6 +181,7 @@ public class FileApplicationService {
      * 获取文件的磁盘完整路径（仅用于本地存储的兼容）
      *
      * @param fileInfo 文件信息实体
+     *
      * @return 文件的完整磁盘路径
      */
     public Path getFileDiskPath(FileInfo fileInfo) {
@@ -197,22 +209,20 @@ public class FileApplicationService {
     /**
      * 删除文件
      * <p>
-     * 逻辑删除数据库记录，并使用存储策略删除物理文件。
-     * 物理文件删除失败时记录警告日志，不影响数据库删除结果。
+     * 逻辑删除数据库记录，并使用存储策略删除物理文件。 物理文件删除失败时记录警告日志，不影响数据库删除结果。
      * </p>
      *
      * @param id 文件 ID
+     *
      * @return 是否删除成功（数据库记录）
+     *
      * @throws BusinessException 当文件不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteFile(Long id) {
-        FileInfo fileInfo = fileRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("文件不存在"));
-
+        FileInfo fileInfo = fileRepository.findById(id).orElseThrow(() -> new BusinessException("文件不存在"));
         // 逻辑删除数据库记录
         boolean result = fileRepository.deleteById(id);
-
         // 使用存储策略删除文件
         if (result) {
             boolean deleted = fileStorageStrategy.delete(fileInfo.getFilePath());
@@ -220,7 +230,6 @@ public class FileApplicationService {
                 log.warn("删除存储文件失败：{}", fileInfo.getFilePath());
             }
         }
-
         return result;
     }
 
@@ -231,13 +240,14 @@ public class FileApplicationService {
      * </p>
      *
      * @param fileInfo 文件信息实体
+     *
      * @return 是否更新成功
+     *
      * @throws BusinessException 当文件不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateFileInfo(FileInfo fileInfo) {
-        fileRepository.findById(fileInfo.getId())
-                .orElseThrow(() -> new BusinessException("文件不存在"));
+        fileRepository.findById(fileInfo.getId()).orElseThrow(() -> new BusinessException("文件不存在"));
         fileInfo.setUpdateTime(LocalDateTime.now());
         return fileRepository.update(fileInfo);
     }
@@ -245,8 +255,9 @@ public class FileApplicationService {
     /**
      * 分页获取文件列表
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 文件列表
      */
     public List<FileInfo> getFilePage(int pageNum, int pageSize) {
@@ -268,14 +279,16 @@ public class FileApplicationService {
      * 支持按文件名、文件分类和扩展名进行条件查询。
      * </p>
      *
-     * @param fileName 文件名（可选）
+     * @param fileName     文件名（可选）
      * @param fileCategory 文件分类（可选）
-     * @param fileExt 文件扩展名（可选）
-     * @param pageNum 页码，从 1 开始
-     * @param pageSize 每页数量
+     * @param fileExt      文件扩展名（可选）
+     * @param pageNum      页码，从 1 开始
+     * @param pageSize     每页数量
+     *
      * @return 文件列表
      */
-    public List<FileInfo> getFilePageByCondition(String fileName, String fileCategory, String fileExt, int pageNum, int pageSize) {
+    public List<FileInfo> getFilePageByCondition(String fileName, String fileCategory, String fileExt, int pageNum,
+                                                 int pageSize) {
         return fileRepository.findPageByCondition(fileName, fileCategory, fileExt, pageNum, pageSize);
     }
 
@@ -285,9 +298,10 @@ public class FileApplicationService {
      * 支持按文件名、文件分类和扩展名进行条件统计。
      * </p>
      *
-     * @param fileName 文件名（可选）
+     * @param fileName     文件名（可选）
      * @param fileCategory 文件分类（可选）
-     * @param fileExt 文件扩展名（可选）
+     * @param fileExt      文件扩展名（可选）
+     *
      * @return 文件总数
      */
     public long countFilesByCondition(String fileName, String fileCategory, String fileExt) {
@@ -312,8 +326,9 @@ public class FileApplicationService {
      * 不分页获取所有符合条件的文件，用于数据导出。
      * </p>
      *
-     * @param fileName 文件名（可选）
+     * @param fileName     文件名（可选）
      * @param fileCategory 文件分类（可选）
+     *
      * @return 文件列表
      */
     public List<FileInfo> getAllFilesByCondition(String fileName, String fileCategory) {
@@ -327,27 +342,25 @@ public class FileApplicationService {
      * </p>
      *
      * @param file 上传的文件
+     *
      * @throws BusinessException 当文件校验失败时抛出
      */
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("上传文件不能为空");
         }
-
         // 校验文件大小
         long maxSizeMB = getMaxFileSize();
         long maxSizeBytes = maxSizeMB * 1024 * 1024;
         if (file.getSize() > maxSizeBytes) {
             throw new BusinessException("文件大小超过限制，最大允许 " + maxSizeMB + "MB");
         }
-
         // 校验文件扩展名
         String originalFilename = file.getOriginalFilename();
         String ext = FilenameUtils.getExtension(originalFilename);
         if (ext == null || ext.isEmpty()) {
             throw new BusinessException("无法识别文件类型");
         }
-
         Set<String> allowedExtensions = getAllowedExtensions();
         if (!allowedExtensions.isEmpty() && !allowedExtensions.contains(ext.toLowerCase())) {
             throw new BusinessException("不允许上传该类型文件：" + ext);
@@ -396,11 +409,11 @@ public class FileApplicationService {
     /**
      * 根据文件扩展名推断文件分类
      * <p>
-     * 支持的分类包括：document（文档）、image（图片）、video（视频）、
-     * audio（音频）、archive（压缩包）、other（其他）。
+     * 支持的分类包括：document（文档）、image（图片）、video（视频）、 audio（音频）、archive（压缩包）、other（其他）。
      * </p>
      *
      * @param ext 文件扩展名
+     *
      * @return 文件分类标识
      */
     private String inferFileCategory(String ext) {
@@ -421,4 +434,5 @@ public class FileApplicationService {
         }
         return "other";
     }
+
 }

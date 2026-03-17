@@ -20,11 +20,7 @@ import com.iboot.admin.domain.system.model.Menu;
 import com.iboot.admin.interfaces.dto.export.MenuExportVO;
 import com.iboot.admin.interfaces.dto.request.MenuRequest;
 import com.iboot.admin.interfaces.dto.response.MenuResponse;
-import org.mapstruct.InjectionStrategy;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.Named;
+import org.mapstruct.*;
 
 import java.util.List;
 
@@ -33,12 +29,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface MenuMapper {
 
     // ==================== 查询映射 ====================
@@ -47,6 +38,7 @@ public interface MenuMapper {
      * 将菜单实体转换为响应 DTO
      *
      * @param menu 菜单实体
+     *
      * @return 菜单响应 DTO
      */
     @Mapping(target = "children", ignore = true)
@@ -56,18 +48,18 @@ public interface MenuMapper {
      * 将菜单实体列表转换为树形响应 DTO 列表
      *
      * @param menus 菜单实体列表
+     *
      * @return 菜单树形响应 DTO 列表
      */
     default List<MenuResponse> toTreeResponseList(List<Menu> menus) {
-        return menus.stream()
-                .map(this::toTreeResponse)
-                .toList();
+        return menus.stream().map(this::toTreeResponse).toList();
     }
 
     /**
      * 将菜单实体转换为导出 VO
      *
      * @param menu 菜单实体
+     *
      * @return 菜单导出 VO
      */
     MenuExportVO toExportVO(Menu menu);
@@ -76,6 +68,7 @@ public interface MenuMapper {
      * 将菜单实体列表转换为导出 VO 列表
      *
      * @param menus 菜单实体列表
+     *
      * @return 菜单导出 VO 列表
      */
     List<MenuExportVO> toExportVOList(List<Menu> menus);
@@ -86,6 +79,7 @@ public interface MenuMapper {
      * 将菜单请求转换为实体
      *
      * @param request 菜单请求
+     *
      * @return 菜单实体
      */
     @Mapping(target = "id", ignore = true)
@@ -120,16 +114,16 @@ public interface MenuMapper {
      * 将菜单实体转换为树形响应 DTO（递归处理子菜单）
      *
      * @param menu 菜单实体
+     *
      * @return 菜单树形响应 DTO
      */
     @Named("toTreeResponse")
     default MenuResponse toTreeResponse(Menu menu) {
         MenuResponse response = toResponse(menu);
         if (menu.getChildren() != null && !menu.getChildren().isEmpty()) {
-            response.setChildren(menu.getChildren().stream()
-                    .map(this::toTreeResponse)
-                    .toList());
+            response.setChildren(menu.getChildren().stream().map(this::toTreeResponse).toList());
         }
         return response;
     }
+
 }

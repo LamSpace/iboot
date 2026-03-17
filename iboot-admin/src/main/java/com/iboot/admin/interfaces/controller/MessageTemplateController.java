@@ -27,7 +27,6 @@ import com.iboot.admin.interfaces.dto.response.MessageTemplateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,28 +41,29 @@ import java.util.stream.Collectors;
 @Tag(name = "消息模板", description = "消息模板相关接口")
 @RestController
 @RequestMapping("/api/message/template")
-@RequiredArgsConstructor
 public class MessageTemplateController {
 
     private final MessageTemplateApplicationService messageTemplateApplicationService;
 
+    @SuppressWarnings("all")
+    public MessageTemplateController(final MessageTemplateApplicationService messageTemplateApplicationService) {
+        this.messageTemplateApplicationService = messageTemplateApplicationService;
+    }
+
     @Operation(summary = "查询消息模板列表")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('message:template:list')")
-    public Result<PageResult<MessageTemplateResponse>> list(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String templateName,
-            @RequestParam(required = false) String messageType,
-            @RequestParam(required = false) Integer status) {
-
-        List<MessageTemplate> templates = messageTemplateApplicationService.getTemplatePage(templateName, messageType, status, pageNum, pageSize);
+    public Result<PageResult<MessageTemplateResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                            @RequestParam(defaultValue = "10") Integer pageSize,
+                                                            @RequestParam(required = false) String templateName,
+                                                            @RequestParam(required = false) String messageType,
+                                                            @RequestParam(required = false) Integer status) {
+        List<MessageTemplate> templates = messageTemplateApplicationService.getTemplatePage(templateName, messageType,
+                status, pageNum, pageSize);
         long total = messageTemplateApplicationService.countTemplates(templateName, messageType, status);
-
         List<MessageTemplateResponse> responses = templates.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
-
         PageResult<MessageTemplateResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
@@ -118,7 +118,6 @@ public class MessageTemplateController {
     }
 
     // ==================== 转换方法 ====================
-
     private MessageTemplate convertToEntity(MessageTemplateRequest request) {
         return MessageTemplate.builder()
                 .templateCode(request.getTemplateCode())
@@ -143,4 +142,5 @@ public class MessageTemplateController {
                 .remark(template.getRemark())
                 .build();
     }
+
 }

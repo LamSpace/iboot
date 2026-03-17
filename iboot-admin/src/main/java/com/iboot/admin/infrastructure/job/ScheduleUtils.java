@@ -38,6 +38,7 @@ public final class ScheduleUtils {
      * 获取 Quartz Job类
      *
      * @param job 定时任务
+     *
      * @return Job类
      */
     private static Class<? extends org.quartz.Job> getQuartzJobClass(Job job) {
@@ -68,9 +69,7 @@ public final class ScheduleUtils {
         // 构建job信息
         Long jobId = job.getId();
         String jobGroup = job.getJobGroup();
-        JobDetail jobDetail = JobBuilder.newJob(jobClass)
-                .withIdentity(getJobKey(jobId, jobGroup))
-                .build();
+        JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(getJobKey(jobId, jobGroup)).build();
 
         // 表达式调度构建器
         CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(job.getCronExpression());
@@ -165,9 +164,11 @@ public final class ScheduleUtils {
      * 检查cron表达式是否有效
      *
      * @param cronExpression cron表达式
+     *
      * @return 是否有效
      */
     public static boolean isValidCronExpression(String cronExpression) {
         return CronExpression.isValidExpression(cronExpression);
     }
+
 }

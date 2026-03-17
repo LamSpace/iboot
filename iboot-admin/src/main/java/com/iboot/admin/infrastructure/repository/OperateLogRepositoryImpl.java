@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.OperateLog;
 import com.iboot.admin.domain.system.repository.OperateLogRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.OperateLogMapper;
 import com.iboot.admin.infrastructure.persistence.po.OperateLogPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -37,15 +36,20 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class OperateLogRepositoryImpl implements OperateLogRepository {
 
     private final OperateLogMapper operateLogMapper;
+
+    @SuppressWarnings("all")
+    public OperateLogRepositoryImpl(final OperateLogMapper operateLogMapper) {
+        this.operateLogMapper = operateLogMapper;
+    }
 
     /**
      * 保存操作日志
      *
      * @param operateLog 操作日志实体
+     *
      * @return 保存后的操作日志
      */
     @Override
@@ -59,6 +63,7 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
      * 根据 ID 查询操作日志
      *
      * @param id 操作日志 ID
+     *
      * @return 操作日志实体，不存在则返回空
      */
     @Override
@@ -70,14 +75,16 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
     /**
      * 分页查询操作日志
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 操作日志列表
      */
     @Override
     public List<OperateLog> findPage(int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return operateLogMapper.selectPage(offset, pageSize).stream()
+        return operateLogMapper.selectPage(offset, pageSize)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -85,22 +92,23 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
     /**
      * 根据条件分页查询操作日志
      *
-     * @param title 操作标题（可选）
+     * @param title        操作标题（可选）
      * @param operatorName 操作人员姓名（可选）
      * @param businessType 业务类型（可选）
-     * @param status 操作状态（可选）
-     * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param status       操作状态（可选）
+     * @param startTime    开始时间（可选）
+     * @param endTime      结束时间（可选）
+     * @param pageNum      页码
+     * @param pageSize     每页数量
+     *
      * @return 操作日志列表
      */
     @Override
-    public List<OperateLog> findPageByCondition(String title, String operatorName, Integer businessType,
-                                                 Integer status, LocalDateTime startTime, LocalDateTime endTime,
-                                                 int pageNum, int pageSize) {
+    public List<OperateLog> findPageByCondition(String title, String operatorName, Integer businessType, Integer status,
+                                                LocalDateTime startTime, LocalDateTime endTime, int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return operateLogMapper.selectPageByCondition(title, operatorName, businessType, status, startTime, endTime, offset, pageSize)
+        return operateLogMapper
+                .selectPageByCondition(title, operatorName, businessType, status, startTime, endTime, offset, pageSize)
                 .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
@@ -109,17 +117,18 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
     /**
      * 根据条件查询所有操作日志（不分页，用于导出）
      *
-     * @param title 操作标题（可选）
+     * @param title        操作标题（可选）
      * @param operatorName 操作人员姓名（可选）
      * @param businessType 业务类型（可选）
-     * @param status 操作状态（可选）
-     * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
+     * @param status       操作状态（可选）
+     * @param startTime    开始时间（可选）
+     * @param endTime      结束时间（可选）
+     *
      * @return 操作日志列表
      */
     @Override
-    public List<OperateLog> findAllByCondition(String title, String operatorName, Integer businessType,
-                                                Integer status, LocalDateTime startTime, LocalDateTime endTime) {
+    public List<OperateLog> findAllByCondition(String title, String operatorName, Integer businessType, Integer status,
+                                               LocalDateTime startTime, LocalDateTime endTime) {
         return operateLogMapper.selectAllByCondition(title, operatorName, businessType, status, startTime, endTime)
                 .stream()
                 .map(this::convertToDomain)
@@ -139,17 +148,18 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
     /**
      * 根据条件统计操作日志总数
      *
-     * @param title 操作标题（可选）
+     * @param title        操作标题（可选）
      * @param operatorName 操作人员姓名（可选）
      * @param businessType 业务类型（可选）
-     * @param status 操作状态（可选）
-     * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
+     * @param status       操作状态（可选）
+     * @param startTime    开始时间（可选）
+     * @param endTime      结束时间（可选）
+     *
      * @return 操作日志总数
      */
     @Override
-    public long countByCondition(String title, String operatorName, Integer businessType,
-                                  Integer status, LocalDateTime startTime, LocalDateTime endTime) {
+    public long countByCondition(String title, String operatorName, Integer businessType, Integer status,
+                                 LocalDateTime startTime, LocalDateTime endTime) {
         return operateLogMapper.countByCondition(title, operatorName, businessType, status, startTime, endTime);
     }
 
@@ -157,6 +167,7 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
      * 清理指定日期之前的日志
      *
      * @param beforeDate 清理该日期之前的日志
+     *
      * @return 清理的日志数量
      */
     @Override
@@ -168,6 +179,7 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
      * 将领域对象转换为持久化对象
      *
      * @param operateLog 操作日志领域对象
+     *
      * @return 操作日志持久化对象
      */
     private OperateLogPO convertToPO(OperateLog operateLog) {
@@ -196,6 +208,7 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 操作日志持久化对象
+     *
      * @return 操作日志领域对象
      */
     private OperateLog convertToDomain(OperateLogPO po) {
@@ -219,4 +232,5 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
                 .costTime(po.getCostTime())
                 .build();
     }
+
 }

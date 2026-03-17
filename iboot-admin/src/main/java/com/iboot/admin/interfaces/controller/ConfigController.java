@@ -31,7 +31,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,73 +40,70 @@ import java.util.stream.Collectors;
 
 /**
  * 参数配置控制器
- * 
+ *
  * @author iBoot
  */
 @Tag(name = "参数配置", description = "参数配置相关接口")
 @RestController
 @RequestMapping("/api/config")
-@RequiredArgsConstructor
 public class ConfigController {
-    
-    private final ConfigApplicationService configApplicationService;
-    
+
     private static final String CONFIG_KEY_SYSTEM_NAME = "sys.name";
+
     private static final String CONFIG_KEY_REGISTER_USER = "sys.account.registerUser";
+
     private static final String DEFAULT_SYSTEM_NAME = "iBoot 后台管理系统";
-    
+
+    private final ConfigApplicationService configApplicationService;
+
+    @SuppressWarnings("all")
+    public ConfigController(final ConfigApplicationService configApplicationService) {
+        this.configApplicationService = configApplicationService;
+    }
+
     @Operation(summary = "获取公开系统配置", description = "获取系统名称、注册开关等公开配置，无需登录")
     @GetMapping("/public")
     public Result<PublicConfigResponse> getPublicConfig() {
         String systemName = configApplicationService.getConfigValue(CONFIG_KEY_SYSTEM_NAME);
         String registerEnabled = configApplicationService.getConfigValue(CONFIG_KEY_REGISTER_USER);
-        
         return Result.success(PublicConfigResponse.builder()
                 .systemName(systemName != null ? systemName : DEFAULT_SYSTEM_NAME)
                 .registerEnabled("true".equalsIgnoreCase(registerEnabled))
                 .build());
     }
-    
+
     @Operation(summary = "查询参数配置列表")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('config:list')")
-    public Result<PageResult<ConfigResponse>> list(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String configName,
-            @RequestParam(required = false) String configKey,
-            @RequestParam(required = false) Integer configType) {
-        
+    public Result<PageResult<ConfigResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                   @RequestParam(defaultValue = "10") Integer pageSize,
+                                                   @RequestParam(required = false) String configName,
+                                                   @RequestParam(required = false) String configKey,
+                                                   @RequestParam(required = false) Integer configType) {
         List<Config> configs;
         long total;
-        
         if (configName != null || configKey != null || configType != null) {
-            configs = configApplicationService.getConfigPageByCondition(configName, configKey, configType, pageNum, pageSize);
+            configs = configApplicationService.getConfigPageByCondition(configName, configKey, configType, pageNum,
+                    pageSize);
             total = configApplicationService.countConfigsByCondition(configName, configKey, configType);
         } else {
             configs = configApplicationService.getConfigPage(pageNum, pageSize);
             total = configApplicationService.countConfigs();
         }
-        
-        List<ConfigResponse> responses = configs.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-        
+        List<ConfigResponse> responses = configs.stream().map(this::convertToResponse).collect(Collectors.toList());
         PageResult<ConfigResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
-    
+
     @Operation(summary = "查询所有参数配置")
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('config:list')")
     public Result<List<ConfigResponse>> all() {
         List<Config> configs = configApplicationService.getAllConfigs();
-        List<ConfigResponse> responses = configs.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        List<ConfigResponse> responses = configs.stream().map(this::convertToResponse).collect(Collectors.toList());
         return Result.success(responses);
     }
-    
+
     @Operation(summary = "查询参数配置详情")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('config:query')")
@@ -115,14 +111,14 @@ public class ConfigController {
         Config config = configApplicationService.getConfigById(id);
         return Result.success(convertToResponse(config));
     }
-    
+
     @Operation(summary = "根据配置键查询配置值")
     @GetMapping("/key/{configKey}")
     public Result<String> getByKey(@PathVariable String configKey) {
         String value = configApplicationService.getConfigValue(configKey);
         return Result.success(value);
     }
-    
+
     @Operation(summary = "新增参数配置")
     @PostMapping
     @PreAuthorize("hasAuthority('config:add')")
@@ -132,7 +128,7 @@ public class ConfigController {
         Config createdConfig = configApplicationService.createConfig(config);
         return Result.success(convertToResponse(createdConfig));
     }
-    
+
     @Operation(summary = "修改参数配置")
     @PutMapping
     @PreAuthorize("hasAuthority('config:edit')")
@@ -143,7 +139,7 @@ public class ConfigController {
         configApplicationService.updateConfig(config);
         return Result.success();
     }
-    
+
     @Operation(summary = "删除参数配置")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('config:remove')")
@@ -152,7 +148,7 @@ public class ConfigController {
         configApplicationService.deleteConfig(id);
         return Result.success();
     }
-    
+
     @Operation(summary = "刷新配置缓存")
     @DeleteMapping("/refreshCache")
     @PreAuthorize("hasAuthority('config:remove')")
@@ -161,29 +157,25 @@ public class ConfigController {
         configApplicationService.refreshCache();
         return Result.success();
     }
-    
+
     @Operation(summary = "导出配置列表")
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('config:export')")
     @Log(title = "参数配置", businessType = BusinessTypeEnum.EXPORT)
-    public void export(HttpServletResponse response,
-                       @RequestParam(required = false) String configName,
+    public void export(HttpServletResponse response, @RequestParam(required = false) String configName,
                        @RequestParam(required = false) String configKey,
-                       @RequestParam(required = false) Integer configType) throws IOException {
+                       @RequestParam(required = false) Integer configType)
+            throws IOException {
         List<Config> configs;
         if (configName != null || configKey != null || configType != null) {
             configs = configApplicationService.getAllConfigsByCondition(configName, configKey, configType);
         } else {
             configs = configApplicationService.getAllConfigs();
         }
-        
-        List<ConfigExportVO> exportList = configs.stream()
-                .map(this::convertToExportVO)
-                .collect(Collectors.toList());
-        
+        List<ConfigExportVO> exportList = configs.stream().map(this::convertToExportVO).collect(Collectors.toList());
         ExcelExportUtil.exportExcel(response, exportList, ConfigExportVO.class, "配置列表", "配置数据");
     }
-    
+
     private ConfigExportVO convertToExportVO(Config config) {
         return ConfigExportVO.builder()
                 .id(config.getId())
@@ -195,7 +187,7 @@ public class ConfigController {
                 .createTime(config.getCreateTime())
                 .build();
     }
-    
+
     private Config convertToEntity(ConfigRequest request) {
         return Config.builder()
                 .configName(request.getConfigName())
@@ -205,7 +197,7 @@ public class ConfigController {
                 .remark(request.getRemark())
                 .build();
     }
-    
+
     private ConfigResponse convertToResponse(Config config) {
         return ConfigResponse.builder()
                 .id(config.getId())
@@ -217,4 +209,5 @@ public class ConfigController {
                 .createTime(config.getCreateTime())
                 .build();
     }
+
 }

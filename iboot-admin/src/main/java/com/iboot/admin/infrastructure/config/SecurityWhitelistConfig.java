@@ -19,65 +19,44 @@ package com.iboot.admin.infrastructure.config;
 import org.springframework.stereotype.Component;
 
 /**
- * 安全白名单配置类
- * 统一管理不需要身份验证的路径配置
- * 
+ * 安全白名单配置类 统一管理不需要身份验证的路径配置
+ *
  * @author iBoot
  */
 @Component
 public class SecurityWhitelistConfig {
-    
+
     /**
      * 白名单路径 - 不需要身份验证的路径
      */
     public static final String[] WHITE_LIST_PATHS = {
             // 认证相关路径
-            "/api/auth/login",
-            "/api/auth/logout",
-            "/api/auth/register",
-            
+            "/api/auth/login", "/api/auth/logout", "/api/auth/register",
+
             // 公开配置接口
             "/api/config/public",
-            
+
             // Swagger UI 相关路径
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/v3/api-docs/**",
-            "/v3/api-docs",
-            "/v3/api-docs.yaml",
-            "/v3/api-docs/swagger-config",
-            "/swagger-resources/**",
-            "/webjars/**",
-            "/doc.html",
-            
+            "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs", "/v3/api-docs.yaml",
+            "/v3/api-docs/swagger-config", "/swagger-resources/**", "/webjars/**", "/doc.html",
+
             // 静态资源路径
-            "/favicon.ico",
-            "/error",
-            "/static/**",
-            
+            "/favicon.ico", "/error", "/static/**",
+
             // 根路径静态资源（通配符）
-            "/**/*.ico",
-            "/**/*.png",
-            "/**/*.jpg",
-            "/**/*.jpeg",
-            "/**/*.gif",
-            "/**/*.css",
-            "/**/*.js",
-            
+            "/**/*.ico", "/**/*.png", "/**/*.jpg", "/**/*.jpeg", "/**/*.gif", "/**/*.css", "/**/*.js",
+
             // 监控相关路径
-            "/actuator/**",
-            "/druid/**",
-            
+            "/actuator/**", "/druid/**",
+
             // Spring Boot Admin 路径
-            "/sba/**",
-            "/instances/**",
-            "/applications/**"
-    };
-    
+            "/sba/**", "/instances/**", "/applications/**"};
+
     /**
      * 检查给定路径是否在白名单中
-     * 
+     *
      * @param requestURI 请求路径
+     *
      * @return 是否在白名单中
      */
     public static boolean isWhitelisted(String requestURI) {
@@ -88,12 +67,13 @@ public class SecurityWhitelistConfig {
         }
         return false;
     }
-    
+
     /**
      * 检查路径是否匹配模式
-     * 
-     * @param path 路径
+     *
+     * @param path    路径
      * @param pattern 模式
+     *
      * @return 是否匹配
      */
     private static boolean matchesPattern(String path, String pattern) {
@@ -114,4 +94,5 @@ public class SecurityWhitelistConfig {
             return path.equals(pattern);
         }
     }
+
 }

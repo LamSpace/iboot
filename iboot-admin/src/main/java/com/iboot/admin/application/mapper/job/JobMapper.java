@@ -32,12 +32,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface JobMapper {
 
     // ==================== 查询映射 ====================
@@ -46,6 +41,7 @@ public interface JobMapper {
      * 将定时任务实体转换为响应 DTO
      *
      * @param job 定时任务实体
+     *
      * @return 定时任务响应 DTO
      */
     JobResponse toResponse(Job job);
@@ -54,6 +50,7 @@ public interface JobMapper {
      * 将定时任务实体列表转换为响应 DTO 列表
      *
      * @param jobs 定时任务实体列表
+     *
      * @return 定时任务响应 DTO 列表
      */
     List<JobResponse> toResponseList(List<Job> jobs);
@@ -62,6 +59,7 @@ public interface JobMapper {
      * 将定时任务实体转换为导出 VO
      *
      * @param job 定时任务实体
+     *
      * @return 定时任务导出 VO
      */
     JobExportVO toExportVO(Job job);
@@ -70,6 +68,7 @@ public interface JobMapper {
      * 将定时任务实体列表转换为导出 VO 列表
      *
      * @param jobs 定时任务实体列表
+     *
      * @return 定时任务导出 VO 列表
      */
     List<JobExportVO> toExportVOList(List<Job> jobs);
@@ -80,6 +79,7 @@ public interface JobMapper {
      * 将定时任务请求转换为实体
      *
      * @param request 定时任务请求
+     *
      * @return 定时任务实体
      */
     @Mapping(target = "id", ignore = true)
@@ -103,4 +103,5 @@ public interface JobMapper {
     @Mapping(target = "createTime", ignore = true)
     @Mapping(target = "updateTime", ignore = true)
     void updateEntityFromRequest(JobRequest request, @MappingTarget Job job);
+
 }

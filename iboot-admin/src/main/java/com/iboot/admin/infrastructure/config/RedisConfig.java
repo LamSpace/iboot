@@ -48,7 +48,7 @@ import java.time.Duration;
  * Redis 与二级缓存配置类
  * <p>
  * 实现 L1（Caffeine本地缓存）+ L2（Redis分布式缓存）的二级缓存架构
- * 
+ *
  * @author iBoot
  */
 @Configuration
@@ -77,23 +77,23 @@ public class RedisConfig {
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
+
         // 使用 Jackson2JsonRedisSerializer 来序列化和反序列化 redis 的 value 值
-        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
-        
+        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(
+                Object.class);
+
         ObjectMapper objectMapper = new ObjectMapper();
         // 指定要序列化的域，field,get 和 set，以及修饰符范围，ANY 是都有包括 private 和 public
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         // 指定序列化输入的类型，类必须是非 final 修饰的，final 修饰的类，比如 String,Integer 等会抛出异常
-        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL);
+        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
         // 注册 JavaTimeModule 以支持 Java 8 时间类型
         objectMapper.registerModule(new JavaTimeModule());
-        
+
         jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
-        
+
         StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
-        
+
         // key 采用 String 的序列化方式
         template.setKeySerializer(stringRedisSerializer);
         // hash 的 key 也采用 String 的序列化方式
@@ -102,7 +102,7 @@ public class RedisConfig {
         template.setValueSerializer(jackson2JsonRedisSerializer);
         // hash 的 value 序列化方式采用 jackson
         template.setHashValueSerializer(jackson2JsonRedisSerializer);
-        
+
         template.afterPropertiesSet();
         return template;
     }
@@ -129,9 +129,7 @@ public class RedisConfig {
         // 配置 JSON 序列化器，支持类型信息
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        objectMapper.activateDefaultTyping(
-                LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL,
+        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY);
         objectMapper.registerModule(new JavaTimeModule());
 
@@ -139,15 +137,11 @@ public class RedisConfig {
 
         RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(L2_CACHE_TTL_MINUTES))
-                .serializeKeysWith(RedisSerializationContext.SerializationPair
-                        .fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair
-                        .fromSerializer(jsonSerializer))
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
                 .disableCachingNullValues();
 
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(cacheConfig)
-                .build();
+        return RedisCacheManager.builder(connectionFactory).cacheDefaults(cacheConfig).build();
     }
 
     /**
@@ -157,10 +151,8 @@ public class RedisConfig {
      */
     @Bean
     @Primary
-    public CacheManager cacheManager(CaffeineCacheManager caffeineCacheManager,
-                                     RedisCacheManager redisCacheManager,
-                                     RedisTemplate<String, Object> redisTemplate,
-                                     BusinessMetricsService metricsService) {
+    public CacheManager cacheManager(CaffeineCacheManager caffeineCacheManager, RedisCacheManager redisCacheManager,
+                                     RedisTemplate<String, Object> redisTemplate, BusinessMetricsService metricsService) {
         return new TwoLevelCacheManager(caffeineCacheManager, redisCacheManager, redisTemplate, metricsService);
     }
 
@@ -170,9 +162,8 @@ public class RedisConfig {
      * 用于监听缓存失效消息，保证分布式环境下的缓存一致性
      */
     @Bean
-    public RedisMessageListenerContainer redisMessageListenerContainer(
-            RedisConnectionFactory connectionFactory,
-            CacheManager cacheManager) {
+    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory connectionFactory,
+                                                                       CacheManager cacheManager) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
 
@@ -183,4 +174,5 @@ public class RedisConfig {
 
         return container;
     }
+
 }

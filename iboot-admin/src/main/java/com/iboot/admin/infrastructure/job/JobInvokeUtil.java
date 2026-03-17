@@ -87,6 +87,7 @@ public final class JobInvokeUtil {
      * 获取bean名称
      *
      * @param invokeTarget 目标字符串
+     *
      * @return bean名称
      */
     public static String getBeanName(String invokeTarget) {
@@ -98,6 +99,7 @@ public final class JobInvokeUtil {
      * 获取方法名称
      *
      * @param invokeTarget 目标字符串
+     *
      * @return 方法名称
      */
     public static String getMethodName(String invokeTarget) {
@@ -109,6 +111,7 @@ public final class JobInvokeUtil {
      * 获取method方法参数相关列表
      *
      * @param invokeTarget 目标字符串
+     *
      * @return 参数列表
      */
     public static List<Object[]> getMethodParams(String invokeTarget) {
@@ -130,11 +133,13 @@ public final class JobInvokeUtil {
             }
             // Long类型
             else if (StringUtils.endsWithIgnoreCase(str, "L")) {
-                resultList.add(new Object[]{Long.valueOf(StringUtils.substring(str, 0, str.length() - 1)), Long.class});
+                resultList
+                        .add(new Object[]{Long.valueOf(StringUtils.substring(str, 0, str.length() - 1)), Long.class});
             }
             // Double类型
             else if (StringUtils.endsWithIgnoreCase(str, "D")) {
-                resultList.add(new Object[]{Double.valueOf(StringUtils.substring(str, 0, str.length() - 1)), Double.class});
+                resultList.add(
+                        new Object[]{Double.valueOf(StringUtils.substring(str, 0, str.length() - 1)), Double.class});
             }
             // Integer类型
             else if (StringUtils.isNumeric(str)) {
@@ -152,6 +157,7 @@ public final class JobInvokeUtil {
      * 获取参数类型数组
      *
      * @param methodParams 参数列表
+     *
      * @return 参数类型数组
      */
     public static Class<?>[] getMethodParamsType(List<Object[]> methodParams) {
@@ -166,6 +172,7 @@ public final class JobInvokeUtil {
      * 获取参数值数组
      *
      * @param methodParams 参数列表
+     *
      * @return 参数值数组
      */
     public static Object[] getMethodParamsValue(List<Object[]> methodParams) {
@@ -175,4 +182,5 @@ public final class JobInvokeUtil {
         }
         return paramValues;
     }
+
 }

@@ -16,8 +16,10 @@
         <result property="remark" column="remark"/>
     </resultMap>
 
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.ConfigPO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_config (config_name, config_key, config_value, config_type, create_by, create_time, deleted, remark)
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.ConfigPO" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO sys_config (config_name, config_key, config_value, config_type, create_by, create_time, deleted,
+                                remark)
         VALUES (#{configName}, #{configKey}, #{configValue}, #{configType}, #{createBy}, #{createTime}, 0, #{remark})
     </insert>
 
@@ -36,27 +38,45 @@
     </update>
 
     <update id="deleteById">
-        UPDATE sys_config SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+        UPDATE sys_config
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
     <select id="selectById" resultMap="ConfigResultMap">
-        SELECT * FROM sys_config WHERE id = #{id} AND deleted = 0
+        SELECT *
+        FROM sys_config
+        WHERE id = #{id}
+          AND deleted = 0
     </select>
 
     <select id="selectByConfigKey" resultMap="ConfigResultMap">
-        SELECT * FROM sys_config WHERE config_key = #{configKey} AND deleted = 0
+        SELECT *
+        FROM sys_config
+        WHERE config_key = #{configKey}
+          AND deleted = 0
     </select>
 
     <select id="selectAll" resultMap="ConfigResultMap">
-        SELECT * FROM sys_config WHERE deleted = 0 ORDER BY create_time DESC
+        SELECT *
+        FROM sys_config
+        WHERE deleted = 0
+        ORDER BY create_time DESC
     </select>
 
     <select id="selectPage" resultMap="ConfigResultMap">
-        SELECT * FROM sys_config WHERE deleted = 0 ORDER BY create_time DESC LIMIT #{offset}, #{limit}
+        SELECT *
+        FROM sys_config
+        WHERE deleted = 0
+        ORDER BY create_time DESC LIMIT #{offset}, #{limit}
     </select>
 
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_config WHERE deleted = 0
+        SELECT COUNT(*)
+        FROM sys_config
+        WHERE deleted = 0
     </select>
 
     <!-- 按条件分页查询配置记录 -->
@@ -114,12 +134,18 @@
     </select>
 
     <select id="countByConfigKey" resultType="int">
-        SELECT COUNT(*) FROM sys_config WHERE config_key = #{configKey} AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_config
+        WHERE config_key = #{configKey}
+          AND deleted = 0
     </select>
 
     <!-- 物理删除已逻辑删除的配置记录 -->
     <delete id="removeDeletedByConfigKey">
-        DELETE FROM sys_config WHERE config_key = #{configKey} AND deleted = 1
+        DELETE
+        FROM sys_config
+        WHERE config_key = #{configKey}
+          AND deleted = 1
     </delete>
 
 </mapper>

@@ -16,7 +16,6 @@
 
 package com.iboot.admin.infrastructure.persistence.mapper;
 
-import com.iboot.admin.common.annotation.DataScope;
 import com.iboot.admin.infrastructure.persistence.po.DictTypePO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -38,6 +37,7 @@ public interface DictTypeMapper {
      * 插入字典类型记录
      *
      * @param dictTypePO 字典类型持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(DictTypePO dictTypePO);
@@ -46,6 +46,7 @@ public interface DictTypeMapper {
      * 更新字典类型记录
      *
      * @param dictTypePO 字典类型持久化对象
+     *
      * @return 影响的记录数
      */
     int update(DictTypePO dictTypePO);
@@ -54,6 +55,7 @@ public interface DictTypeMapper {
      * 根据 ID 删除字典类型
      *
      * @param id 字典类型 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -62,6 +64,7 @@ public interface DictTypeMapper {
      * 根据 ID 查询字典类型
      *
      * @param id 字典类型 ID
+     *
      * @return 字典类型持久化对象
      */
     DictTypePO selectById(@Param("id") Long id);
@@ -70,6 +73,7 @@ public interface DictTypeMapper {
      * 根据字典类型查询
      *
      * @param dictType 字典类型
+     *
      * @return 字典类型持久化对象
      */
     DictTypePO selectByDictType(@Param("dictType") String dictType);
@@ -85,7 +89,8 @@ public interface DictTypeMapper {
      * 分页查询字典类型
      *
      * @param offset 偏移量
-     * @param limit 限制数量
+     * @param limit  限制数量
+     *
      * @return 字典类型列表
      */
     List<DictTypePO> selectPage(@Param("offset") int offset, @Param("limit") int limit);
@@ -101,6 +106,7 @@ public interface DictTypeMapper {
      * 根据字典类型统计数量
      *
      * @param dictType 字典类型
+     *
      * @return 数量
      */
     int countByDictType(@Param("dictType") String dictType);
@@ -112,7 +118,9 @@ public interface DictTypeMapper {
      * </p>
      *
      * @param dictType 字典类型
+     *
      * @return 影响的记录数
      */
     int removeDeletedByDictType(@Param("dictType") String dictType);
+
 }

@@ -36,6 +36,7 @@ public interface OperateLogRepository {
      * 保存操作日志
      *
      * @param operateLog 操作日志实体
+     *
      * @return 保存后的操作日志
      */
     OperateLog save(OperateLog operateLog);
@@ -44,6 +45,7 @@ public interface OperateLogRepository {
      * 根据 ID 查询操作日志
      *
      * @param id 操作日志 ID
+     *
      * @return 操作日志实体，不存在则返回空
      */
     Optional<OperateLog> findById(Long id);
@@ -51,8 +53,9 @@ public interface OperateLogRepository {
     /**
      * 分页查询操作日志
      *
-     * @param pageNum 页码
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 操作日志列表
      */
     List<OperateLog> findPage(int pageNum, int pageSize);
@@ -60,33 +63,34 @@ public interface OperateLogRepository {
     /**
      * 根据条件分页查询操作日志
      *
-     * @param title 操作标题（可选）
+     * @param title        操作标题（可选）
      * @param operatorName 操作人员姓名（可选）
      * @param businessType 业务类型（可选）
-     * @param status 操作状态（可选）
-     * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param status       操作状态（可选）
+     * @param startTime    开始时间（可选）
+     * @param endTime      结束时间（可选）
+     * @param pageNum      页码
+     * @param pageSize     每页数量
+     *
      * @return 操作日志列表
      */
-    List<OperateLog> findPageByCondition(String title, String operatorName, Integer businessType,
-                                          Integer status, LocalDateTime startTime, LocalDateTime endTime,
-                                          int pageNum, int pageSize);
+    List<OperateLog> findPageByCondition(String title, String operatorName, Integer businessType, Integer status,
+                                         LocalDateTime startTime, LocalDateTime endTime, int pageNum, int pageSize);
 
     /**
      * 根据条件查询所有操作日志（不分页，用于导出）
      *
-     * @param title 操作标题（可选）
+     * @param title        操作标题（可选）
      * @param operatorName 操作人员姓名（可选）
      * @param businessType 业务类型（可选）
-     * @param status 操作状态（可选）
-     * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
+     * @param status       操作状态（可选）
+     * @param startTime    开始时间（可选）
+     * @param endTime      结束时间（可选）
+     *
      * @return 操作日志列表
      */
-    List<OperateLog> findAllByCondition(String title, String operatorName, Integer businessType,
-                                         Integer status, LocalDateTime startTime, LocalDateTime endTime);
+    List<OperateLog> findAllByCondition(String title, String operatorName, Integer businessType, Integer status,
+                                        LocalDateTime startTime, LocalDateTime endTime);
 
     /**
      * 统计操作日志总数
@@ -98,16 +102,17 @@ public interface OperateLogRepository {
     /**
      * 根据条件统计操作日志总数
      *
-     * @param title 操作标题（可选）
+     * @param title        操作标题（可选）
      * @param operatorName 操作人员姓名（可选）
      * @param businessType 业务类型（可选）
-     * @param status 操作状态（可选）
-     * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
+     * @param status       操作状态（可选）
+     * @param startTime    开始时间（可选）
+     * @param endTime      结束时间（可选）
+     *
      * @return 操作日志总数
      */
-    long countByCondition(String title, String operatorName, Integer businessType,
-                          Integer status, LocalDateTime startTime, LocalDateTime endTime);
+    long countByCondition(String title, String operatorName, Integer businessType, Integer status,
+                          LocalDateTime startTime, LocalDateTime endTime);
 
     /**
      * 清理指定日期之前的日志
@@ -116,7 +121,9 @@ public interface OperateLogRepository {
      * </p>
      *
      * @param beforeDate 清理该日期之前的日志
+     *
      * @return 清理的日志数量
      */
     int cleanLogBeforeDate(LocalDateTime beforeDate);
+
 }

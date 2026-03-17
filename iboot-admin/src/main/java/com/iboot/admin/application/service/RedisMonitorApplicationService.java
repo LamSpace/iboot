@@ -19,8 +19,8 @@ package com.iboot.admin.application.service;
 import com.iboot.admin.common.result.PageResult;
 import com.iboot.admin.interfaces.dto.response.RedisMonitorResponse;
 import com.iboot.admin.interfaces.dto.response.RedisMonitorResponse.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -29,7 +29,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -40,27 +39,168 @@ import java.util.stream.Collectors;
 /**
  * Redis 缓存监控应用服务
  * <p>
- * 提供 Redis 服务器信息采集、缓存键管理等功能。
- * 监控阈值通过 sys_config 参数配置动态读取，状态标签通过 sys_dict 字典管理定义。
- * 支持采集 Redis 服务器信息、内存使用、命令统计、键空间信息，以及缓存键的浏览、查询和删除操作。
+ * 提供 Redis 服务器信息采集、缓存键管理等功能。 监控阈值通过 sys_config 参数配置动态读取，状态标签通过 sys_dict 字典管理定义。 支持采集 Redis
+ * 服务器信息、内存使用、命令统计、键空间信息，以及缓存键的浏览、查询和删除操作。
  * </p>
  *
  * @author iBoot
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class RedisMonitorApplicationService {
 
-    private final RedisConnectionFactory redisConnectionFactory;
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final ConfigApplicationService configApplicationService;
-    private final DictApplicationService dictApplicationService;
+    private static final Logger log = LoggerFactory.getLogger(RedisMonitorApplicationService.class);
 
     private static final String MONITOR_STATUS_UP = "UP";
+
     private static final String MONITOR_STATUS_WARN = "WARN";
+
     private static final String MONITOR_STATUS_DOWN = "DOWN";
+
     private static final String DICT_MONITOR_STATUS = "sys_monitor_status";
+
+    private final RedisConnectionFactory redisConnectionFactory;
+
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private final ConfigApplicationService configApplicationService;
+
+    private final DictApplicationService dictApplicationService;
+
+    @SuppressWarnings("all")
+    public RedisMonitorApplicationService(final RedisConnectionFactory redisConnectionFactory,
+                                          final RedisTemplate<String, Object> redisTemplate, final ConfigApplicationService configApplicationService,
+                                          final DictApplicationService dictApplicationService) {
+        this.redisConnectionFactory = redisConnectionFactory;
+        this.redisTemplate = redisTemplate;
+        this.configApplicationService = configApplicationService;
+        this.dictApplicationService = dictApplicationService;
+    }
+
+    /**
+     * 从 Properties 中获取字符串属性
+     *
+     * @param info Properties 对象
+     * @param key  属性键
+     *
+     * @return 属性值，不存在则返回空字符串
+     */
+    private static String getProperty(Properties info, String key) {
+        String value = info.getProperty(key);
+        return value != null ? value : "";
+    }
+
+    /**
+     * 从 Properties 中解析 int 值
+     *
+     * @param info Properties 对象
+     * @param key  属性键
+     *
+     * @return 整数值，解析失败则返回 0
+     */
+    private static int parseInt(Properties info, String key) {
+        try {
+            String value = info.getProperty(key);
+            return value != null ? Integer.parseInt(value) : 0;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 从 Properties 中解析 long 值
+     *
+     * @param info Properties 对象
+     * @param key  属性键
+     *
+     * @return 长整数值，解析失败则返回 0
+     */
+    private static long parseLong(Properties info, String key) {
+        try {
+            String value = info.getProperty(key);
+            return value != null ? Long.parseLong(value) : 0;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 从 Properties 中解析 double 值
+     *
+     * @param info Properties 对象
+     * @param key  属性键
+     *
+     * @return 双精度浮点数值，解析失败则返回 0
+     */
+    private static double parseDouble(Properties info, String key) {
+        try {
+            String value = info.getProperty(key);
+            return value != null ? Double.parseDouble(value) : 0;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    // ======================== 构建监控数据 ========================
+
+    /**
+     * 格式化字节数为人类可读格式
+     *
+     * @param bytes 字节数
+     *
+     * @return 格式化后的字符串，如 "1.23 MB"
+     */
+    private static String formatBytes(long bytes) {
+        if (bytes <= 0)
+            return "0 B";
+        String[] units = {"B", "KB", "MB", "GB", "TB"};
+        int i = (int) (Math.log(bytes) / Math.log(1024));
+        i = Math.min(i, units.length - 1);
+        return String.format("%.2f %s", bytes / Math.pow(1024, i), units[i]);
+    }
+
+    /**
+     * 格式化时长为人类可读格式
+     *
+     * @param duration 时长对象
+     *
+     * @return 格式化后的字符串，如 "1 天 2 小时 3 分钟 4 秒"
+     */
+    private static String formatDuration(Duration duration) {
+        long days = duration.toDays();
+        long hours = duration.toHours() % 24;
+        long minutes = duration.toMinutes() % 60;
+        long seconds = duration.getSeconds() % 60;
+        StringBuilder sb = new StringBuilder();
+        if (days > 0)
+            sb.append(days).append("天 ");
+        if (hours > 0)
+            sb.append(hours).append("小时 ");
+        if (minutes > 0)
+            sb.append(minutes).append("分钟 ");
+        sb.append(seconds).append("秒");
+        return sb.toString();
+    }
+
+    /**
+     * 格式化 TTL 为人类可读格式
+     *
+     * @param ttl 剩余生存时间（秒）
+     *
+     * @return 格式化后的字符串，如 "5 分钟 30 秒"
+     */
+    private static String formatTtl(Long ttl) {
+        if (ttl == null || ttl == -2)
+            return "已过期";
+        if (ttl == -1)
+            return "永久";
+        if (ttl < 60)
+            return ttl + "秒";
+        if (ttl < 3600)
+            return (ttl / 60) + "分钟" + (ttl % 60 > 0 ? (ttl % 60) + "秒" : "");
+        if (ttl < 86400)
+            return (ttl / 3600) + "小时" + ((ttl % 3600) / 60 > 0 ? ((ttl % 3600) / 60) + "分钟" : "");
+        return (ttl / 86400) + "天" + ((ttl % 86400) / 3600 > 0 ? ((ttl % 86400) / 3600) + "小时" : "");
+    }
 
     /**
      * 获取 Redis 完整监控信息
@@ -72,7 +212,6 @@ public class RedisMonitorApplicationService {
      */
     public RedisMonitorResponse getRedisMonitorInfo() {
         Properties info = getRedisInfo();
-
         return RedisMonitorResponse.builder()
                 .serverInfo(buildServerInfo(info))
                 .memoryInfo(buildMemoryInfo(info))
@@ -88,24 +227,20 @@ public class RedisMonitorApplicationService {
      * 使用 SCAN 命令遍历匹配指定模式的缓存键，避免使用 KEYS 命令导致阻塞。
      * </p>
      *
-     * @param pattern 键名匹配模式，支持通配符，为空则匹配所有键
-     * @param pageNum 页码，从 1 开始
+     * @param pattern  键名匹配模式，支持通配符，为空则匹配所有键
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 分页结果，包含缓存键信息列表和总数
      */
     public PageResult<CacheKeyInfo> getCacheKeys(String pattern, int pageNum, int pageSize) {
         List<String> allKeys = scanKeys(pattern);
         long total = allKeys.size();
-
         // 手动分页
         int start = (pageNum - 1) * pageSize;
         int end = Math.min(start + pageSize, allKeys.size());
         List<String> pageKeys = start < allKeys.size() ? allKeys.subList(start, end) : Collections.emptyList();
-
-        List<CacheKeyInfo> keyInfos = pageKeys.stream()
-                .map(this::buildCacheKeyInfo)
-                .collect(Collectors.toList());
-
+        List<CacheKeyInfo> keyInfos = pageKeys.stream().map(this::buildCacheKeyInfo).collect(Collectors.toList());
         return new PageResult<>(keyInfos, total, pageNum, pageSize);
     }
 
@@ -116,6 +251,7 @@ public class RedisMonitorApplicationService {
      * </p>
      *
      * @param key 缓存键名
+     *
      * @return 缓存键详情对象，不存在则返回 null
      */
     public CacheKeyDetail getCacheKeyValue(String key) {
@@ -123,35 +259,30 @@ public class RedisMonitorApplicationService {
         if (dataType == null || dataType == DataType.NONE) {
             return null;
         }
-
         String type = dataType.code();
         Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
         Object value = getValueByType(key, dataType);
-
-        return CacheKeyDetail.builder()
-                .key(key)
-                .type(type)
-                .ttl(ttl != null ? ttl : -2)
-                .value(value)
-                .build();
+        return CacheKeyDetail.builder().key(key).type(type).ttl(ttl != null ? ttl : -2).value(value).build();
     }
+
+    // ======================== 缓存键操作 ========================
 
     /**
      * 删除缓存键
      *
      * @param key 缓存键名
+     *
      * @return 是否删除成功
      */
     public boolean deleteCacheKey(String key) {
         Boolean result = redisTemplate.delete(key);
-        return Boolean.TRUE.equals(result);
+        return result;
     }
 
     /**
      * 清空当前数据库所有缓存
      * <p>
-     * 执行 FLUSHDB 命令清空当前选中的 Redis 数据库。
-     * 注意：此操作不可逆，请谨慎使用。
+     * 执行 FLUSHDB 命令清空当前选中的 Redis 数据库。 注意：此操作不可逆，请谨慎使用。
      * </p>
      */
     public void clearAllKeys() {
@@ -162,8 +293,6 @@ public class RedisMonitorApplicationService {
             connection.close();
         }
     }
-
-    // ======================== 构建监控数据 ========================
 
     /**
      * 获取 Redis INFO 信息
@@ -183,10 +312,13 @@ public class RedisMonitorApplicationService {
         }
     }
 
+    // ======================== 工具方法 ========================
+
     /**
      * 构建服务器信息对象
      *
      * @param info Redis INFO 信息
+     *
      * @return 服务器信息对象
      */
     private ServerInfo buildServerInfo(Properties info) {
@@ -206,11 +338,11 @@ public class RedisMonitorApplicationService {
     /**
      * 构建内存信息对象
      * <p>
-     * 计算内存使用率并从参数配置读取阈值评估状态。
-     * maxmemory=0 表示无限制，视为正常状态。
+     * 计算内存使用率并从参数配置读取阈值评估状态。 maxmemory=0 表示无限制，视为正常状态。
      * </p>
      *
      * @param info Redis INFO 信息
+     *
      * @return 内存信息对象，包含使用率和状态
      */
     private MemoryInfo buildMemoryInfo(Properties info) {
@@ -219,17 +351,14 @@ public class RedisMonitorApplicationService {
         String usedMemoryHuman = getProperty(info, "used_memory_human");
         String maxMemoryHuman = getProperty(info, "maxmemory_human");
         double fragmentationRatio = parseDouble(info, "mem_fragmentation_ratio");
-
         // 计算内存使用率
         double memoryUsageRate = 0;
         if (maxMemory > 0) {
             memoryUsageRate = Math.round((usedMemory * 100.0) / maxMemory * 100.0) / 100.0;
         }
-
         // 从参数配置读取阈值
         int warnThreshold = getThresholdInt("monitor.redis.memory.warn.threshold", 70);
         int errorThreshold = getThresholdInt("monitor.redis.memory.error.threshold", 85);
-
         // 计算状态
         String status;
         if (maxMemory <= 0) {
@@ -242,12 +371,10 @@ public class RedisMonitorApplicationService {
         } else {
             status = MONITOR_STATUS_UP;
         }
-
         String statusLabel = dictApplicationService.getDictLabel(DICT_MONITOR_STATUS, status);
         if (statusLabel == null || statusLabel.isEmpty()) {
             statusLabel = status;
         }
-
         return MemoryInfo.builder()
                 .usedMemory(usedMemory)
                 .usedMemoryHuman(usedMemoryHuman != null ? usedMemoryHuman : formatBytes(usedMemory))
@@ -269,6 +396,7 @@ public class RedisMonitorApplicationService {
      * </p>
      *
      * @param info Redis INFO 信息
+     *
      * @return 统计信息对象
      */
     private StatsInfo buildStatsInfo(Properties info) {
@@ -276,7 +404,6 @@ public class RedisMonitorApplicationService {
         long keyspaceMisses = parseLong(info, "keyspace_misses");
         long totalHitMiss = keyspaceHits + keyspaceMisses;
         double hitRate = totalHitMiss > 0 ? Math.round((keyspaceHits * 100.0) / totalHitMiss * 100.0) / 100.0 : 0;
-
         return StatsInfo.builder()
                 .totalConnectionsReceived(parseLong(info, "total_connections_received"))
                 .totalCommandsProcessed(parseLong(info, "total_commands_processed"))
@@ -298,13 +425,13 @@ public class RedisMonitorApplicationService {
      * </p>
      *
      * @param info Redis INFO 信息
+     *
      * @return 键空间信息列表，按数据库索引排序
      */
     private List<KeyspaceInfo> buildKeyspaceInfo(Properties info) {
         List<KeyspaceInfo> list = new ArrayList<>();
         Pattern dbPattern = Pattern.compile("^db(\\d+)$");
         Pattern valuePattern = Pattern.compile("keys=(\\d+),expires=(\\d+),avg_ttl=(\\d+)");
-
         for (String key : info.stringPropertyNames()) {
             Matcher dbMatcher = dbPattern.matcher(key);
             if (dbMatcher.matches()) {
@@ -321,7 +448,6 @@ public class RedisMonitorApplicationService {
                 }
             }
         }
-
         list.sort(Comparator.comparingInt(KeyspaceInfo::getDbIndex));
         return list;
     }
@@ -329,18 +455,17 @@ public class RedisMonitorApplicationService {
     /**
      * 解析命令统计信息（Top10）
      * <p>
-     * Redis INFO 格式：cmdstat_get:calls=100,usec=2000,usec_per_call=20.00
-     * 按调用次数降序取前 10 个命令。
+     * Redis INFO 格式：cmdstat_get:calls=100,usec=2000,usec_per_call=20.00 按调用次数降序取前 10 个命令。
      * </p>
      *
      * @param info Redis INFO 信息
+     *
      * @return 命令统计列表，Top10
      */
     private List<CommandStat> buildCommandStats(Properties info) {
         List<CommandStat> list = new ArrayList<>();
         Pattern cmdPattern = Pattern.compile("^cmdstat_(.+)$");
         Pattern valuePattern = Pattern.compile("calls=(\\d+),usec=(\\d+),usec_per_call=([\\d.]+)");
-
         for (String key : info.stringPropertyNames()) {
             Matcher cmdMatcher = cmdPattern.matcher(key);
             if (cmdMatcher.matches()) {
@@ -357,13 +482,10 @@ public class RedisMonitorApplicationService {
                 }
             }
         }
-
         // 按调用次数降序，取 Top10
         list.sort((a, b) -> Long.compare(b.getCalls(), a.getCalls()));
         return list.size() > 10 ? list.subList(0, 10) : list;
     }
-
-    // ======================== 缓存键操作 ========================
 
     /**
      * 使用 SCAN 命令遍历匹配键（避免 KEYS 命令阻塞）
@@ -372,6 +494,7 @@ public class RedisMonitorApplicationService {
      * </p>
      *
      * @param pattern 匹配模式，为空则匹配所有键
+     *
      * @return 所有匹配的键名列表
      */
     private List<String> scanKeys(String pattern) {
@@ -380,13 +503,11 @@ public class RedisMonitorApplicationService {
                 .match(pattern != null && !pattern.isEmpty() ? pattern : "*")
                 .count(1000)
                 .build();
-
         try (Cursor<String> cursor = redisTemplate.scan(options)) {
             while (cursor.hasNext()) {
                 keys.add(cursor.next());
             }
         }
-
         keys.sort(String::compareTo);
         return keys;
     }
@@ -395,12 +516,12 @@ public class RedisMonitorApplicationService {
      * 构建缓存键信息对象
      *
      * @param key 缓存键名
+     *
      * @return 缓存键信息对象
      */
     private CacheKeyInfo buildCacheKeyInfo(String key) {
         DataType dataType = redisTemplate.type(key);
         Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
-
         return CacheKeyInfo.builder()
                 .key(key)
                 .type(dataType != null ? dataType.code() : "unknown")
@@ -415,8 +536,9 @@ public class RedisMonitorApplicationService {
      * 支持 STRING、HASH、LIST、SET、ZSET 五种 Redis 数据类型。
      * </p>
      *
-     * @param key 缓存键名
+     * @param key      缓存键名
      * @param dataType 数据类型
+     *
      * @return 键值对象，获取失败则返回错误信息
      */
     private Object getValueByType(String key, DataType dataType) {
@@ -435,13 +557,12 @@ public class RedisMonitorApplicationService {
         }
     }
 
-    // ======================== 工具方法 ========================
-
     /**
      * 从系统配置读取阈值，若配置不存在或格式错误则使用默认值
      *
-     * @param configKey 配置键
+     * @param configKey    配置键
      * @param defaultValue 默认值
+     *
      * @return 阈值
      */
     private int getThresholdInt(String configKey, int defaultValue) {
@@ -456,112 +577,4 @@ public class RedisMonitorApplicationService {
         return defaultValue;
     }
 
-    /**
-     * 从 Properties 中获取字符串属性
-     *
-     * @param info Properties 对象
-     * @param key 属性键
-     * @return 属性值，不存在则返回空字符串
-     */
-    private static String getProperty(Properties info, String key) {
-        String value = info.getProperty(key);
-        return value != null ? value : "";
-    }
-
-    /**
-     * 从 Properties 中解析 int 值
-     *
-     * @param info Properties 对象
-     * @param key 属性键
-     * @return 整数值，解析失败则返回 0
-     */
-    private static int parseInt(Properties info, String key) {
-        try {
-            String value = info.getProperty(key);
-            return value != null ? Integer.parseInt(value) : 0;
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    /**
-     * 从 Properties 中解析 long 值
-     *
-     * @param info Properties 对象
-     * @param key 属性键
-     * @return 长整数值，解析失败则返回 0
-     */
-    private static long parseLong(Properties info, String key) {
-        try {
-            String value = info.getProperty(key);
-            return value != null ? Long.parseLong(value) : 0;
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    /**
-     * 从 Properties 中解析 double 值
-     *
-     * @param info Properties 对象
-     * @param key 属性键
-     * @return 双精度浮点数值，解析失败则返回 0
-     */
-    private static double parseDouble(Properties info, String key) {
-        try {
-            String value = info.getProperty(key);
-            return value != null ? Double.parseDouble(value) : 0;
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    /**
-     * 格式化字节数为人类可读格式
-     *
-     * @param bytes 字节数
-     * @return 格式化后的字符串，如 "1.23 MB"
-     */
-    private static String formatBytes(long bytes) {
-        if (bytes <= 0) return "0 B";
-        String[] units = {"B", "KB", "MB", "GB", "TB"};
-        int i = (int) (Math.log(bytes) / Math.log(1024));
-        i = Math.min(i, units.length - 1);
-        return String.format("%.2f %s", bytes / Math.pow(1024, i), units[i]);
-    }
-
-    /**
-     * 格式化时长为人类可读格式
-     *
-     * @param duration 时长对象
-     * @return 格式化后的字符串，如 "1 天 2 小时 3 分钟 4 秒"
-     */
-    private static String formatDuration(Duration duration) {
-        long days = duration.toDays();
-        long hours = duration.toHours() % 24;
-        long minutes = duration.toMinutes() % 60;
-        long seconds = duration.getSeconds() % 60;
-
-        StringBuilder sb = new StringBuilder();
-        if (days > 0) sb.append(days).append("天 ");
-        if (hours > 0) sb.append(hours).append("小时 ");
-        if (minutes > 0) sb.append(minutes).append("分钟 ");
-        sb.append(seconds).append("秒");
-        return sb.toString();
-    }
-
-    /**
-     * 格式化 TTL 为人类可读格式
-     *
-     * @param ttl 剩余生存时间（秒）
-     * @return 格式化后的字符串，如 "5 分钟 30 秒"
-     */
-    private static String formatTtl(Long ttl) {
-        if (ttl == null || ttl == -2) return "已过期";
-        if (ttl == -1) return "永久";
-        if (ttl < 60) return ttl + "秒";
-        if (ttl < 3600) return (ttl / 60) + "分钟" + (ttl % 60 > 0 ? (ttl % 60) + "秒" : "");
-        if (ttl < 86400) return (ttl / 3600) + "小时" + ((ttl % 3600) / 60 > 0 ? ((ttl % 3600) / 60) + "分钟" : "");
-        return (ttl / 86400) + "天" + ((ttl % 86400) / 3600 > 0 ? ((ttl % 86400) / 3600) + "小时" : "");
-    }
 }

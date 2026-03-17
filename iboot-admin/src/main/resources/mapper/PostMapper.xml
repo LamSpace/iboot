@@ -17,7 +17,8 @@
         <result property="remark" column="remark"/>
     </resultMap>
 
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.PostPO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.PostPO" useGeneratedKeys="true"
+            keyProperty="id">
         INSERT INTO sys_post (post_code, post_name, post_sort, status, create_by, create_time, deleted, remark)
         VALUES (#{postCode}, #{postName}, #{postSort}, #{status}, #{createBy}, #{createTime}, 0, #{remark})
     </insert>
@@ -37,27 +38,45 @@
     </update>
 
     <update id="deleteById">
-        UPDATE sys_post SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+        UPDATE sys_post
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
     <select id="selectById" resultMap="PostResultMap">
-        SELECT * FROM sys_post WHERE id = #{id} AND deleted = 0
+        SELECT *
+        FROM sys_post
+        WHERE id = #{id}
+          AND deleted = 0
     </select>
 
     <select id="selectByPostCode" resultMap="PostResultMap">
-        SELECT * FROM sys_post WHERE post_code = #{postCode} AND deleted = 0
+        SELECT *
+        FROM sys_post
+        WHERE post_code = #{postCode}
+          AND deleted = 0
     </select>
 
     <select id="selectAll" resultMap="PostResultMap">
-        SELECT * FROM sys_post WHERE deleted = 0 ORDER BY post_sort ASC
+        SELECT *
+        FROM sys_post
+        WHERE deleted = 0
+        ORDER BY post_sort ASC
     </select>
 
     <select id="selectPage" resultMap="PostResultMap">
-        SELECT * FROM sys_post p WHERE p.deleted = 0 ORDER BY p.post_sort ASC LIMIT #{offset}, #{limit}
+        SELECT *
+        FROM sys_post p
+        WHERE p.deleted = 0
+        ORDER BY p.post_sort ASC LIMIT #{offset}, #{limit}
     </select>
 
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_post p WHERE p.deleted = 0
+        SELECT COUNT(*)
+        FROM sys_post p
+        WHERE p.deleted = 0
     </select>
 
     <!-- 按条件分页查询岗位记录 -->
@@ -115,16 +134,25 @@
     </select>
 
     <select id="countByPostCode" resultType="int">
-        SELECT COUNT(*) FROM sys_post WHERE post_code = #{postCode} AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_post
+        WHERE post_code = #{postCode}
+          AND deleted = 0
     </select>
 
     <select id="countByPostName" resultType="int">
-        SELECT COUNT(*) FROM sys_post WHERE post_name = #{postName} AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_post
+        WHERE post_name = #{postName}
+          AND deleted = 0
     </select>
 
     <!-- 物理删除已逻辑删除的岗位记录（根据岗位编码） -->
     <delete id="removeDeletedByPostCode">
-        DELETE FROM sys_post WHERE post_code = #{postCode} AND deleted = 1
+        DELETE
+        FROM sys_post
+        WHERE post_code = #{postCode}
+          AND deleted = 1
     </delete>
 
 </mapper>

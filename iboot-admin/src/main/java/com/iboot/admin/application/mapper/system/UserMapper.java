@@ -33,10 +33,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface UserMapper {
 
     // ==================== 查询映射 ====================
@@ -45,6 +42,7 @@ public interface UserMapper {
      * 将用户实体转换为响应 DTO
      *
      * @param user 用户实体
+     *
      * @return 用户响应 DTO
      */
     @Mapping(source = "avatar", target = "avatar", defaultValue = "")
@@ -54,6 +52,7 @@ public interface UserMapper {
      * 将用户实体列表转换为响应 DTO 列表
      *
      * @param users 用户实体列表
+     *
      * @return 用户响应 DTO 列表
      */
     List<UserResponse> toResponseList(List<User> users);
@@ -62,6 +61,7 @@ public interface UserMapper {
      * 将用户实体转换为导出 VO
      *
      * @param user 用户实体
+     *
      * @return 用户导出 VO
      */
     UserExportVO toExportVO(User user);
@@ -70,6 +70,7 @@ public interface UserMapper {
      * 将用户实体列表转换为导出 VO 列表
      *
      * @param users 用户实体列表
+     *
      * @return 用户导出 VO 列表
      */
     List<UserExportVO> toExportVOList(List<User> users);
@@ -80,6 +81,7 @@ public interface UserMapper {
      * 将创建用户请求转换为实体
      *
      * @param request 创建用户请求
+     *
      * @return 用户实体
      */
     @Mapping(target = "id", ignore = true)
@@ -113,4 +115,5 @@ public interface UserMapper {
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "avatar", ignore = true)
     void updateEntityFromRequest(UpdateUserRequest request, @MappingTarget User user);
+
 }

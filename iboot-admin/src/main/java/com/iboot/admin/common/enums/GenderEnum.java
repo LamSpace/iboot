@@ -16,47 +16,53 @@
 
 package com.iboot.admin.common.enums;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 性别枚举
- * 
+ *
  * @author iBoot
  */
-@Getter
-@AllArgsConstructor
 public enum GenderEnum {
-    
+
     /**
      * 未知
      */
     UNKNOWN(0, "未知"),
-    
     /**
      * 男
      */
     MALE(1, "男"),
-    
     /**
      * 女
      */
     FEMALE(2, "女");
-    
+
     /**
      * 性别码
      */
     private final Integer code;
-    
+
     /**
      * 性别描述
      */
     private final String description;
-    
+
+    /**
+     * Creates a new {@code GenderEnum} instance.
+     *
+     * @param code        性别码
+     * @param description 性别描述
+     */
+    @SuppressWarnings("all")
+    private GenderEnum(final Integer code, final String description) {
+        this.code = code;
+        this.description = description;
+    }
+
     /**
      * 根据代码获取枚举
      *
      * @param code 性别码
+     *
      * @return 性别枚举
      */
     public static GenderEnum getByCode(Integer code) {
@@ -70,4 +76,21 @@ public enum GenderEnum {
         }
         return UNKNOWN;
     }
+
+    /**
+     * 性别码
+     */
+    @SuppressWarnings("all")
+    public Integer getCode() {
+        return this.code;
+    }
+
+    /**
+     * 性别描述
+     */
+    @SuppressWarnings("all")
+    public String getDescription() {
+        return this.description;
+    }
+
 }

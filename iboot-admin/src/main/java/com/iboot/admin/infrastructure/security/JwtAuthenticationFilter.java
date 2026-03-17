@@ -25,9 +25,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -46,33 +46,41 @@ import java.util.stream.Collectors;
  *
  * @author iBoot
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final JwtTokenUtil jwtTokenUtil;
+
     private final RedisTemplate<String, Object> redisTemplate;
+
     private final ObjectMapper objectMapper;
+
     private final JwtSecurityConfig jwtSecurityConfig;
+
+    @SuppressWarnings("all")
+    public JwtAuthenticationFilter(final JwtTokenUtil jwtTokenUtil, final RedisTemplate<String, Object> redisTemplate,
+                                   final ObjectMapper objectMapper, final JwtSecurityConfig jwtSecurityConfig) {
+        this.jwtTokenUtil = jwtTokenUtil;
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+        this.jwtSecurityConfig = jwtSecurityConfig;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-
         // 检查是否为白名单路径（使用统一配置的匹配方法）
         String requestURI = request.getRequestURI();
         boolean isWhiteListPath = SecurityWhitelistConfig.isWhitelisted(requestURI);
-
         // 如果是白名单路径，直接放行
         if (isWhiteListPath) {
             chain.doFilter(request, response);
             return;
         }
-
         // 获取 token
         String token = getTokenFromRequest(request);
-
         if (StringUtils.isNotBlank(token)) {
             try {
                 // 验证 token 签名（过期时间由 Redis 控制）
@@ -81,29 +89,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String redisKey = Constants.LOGIN_TOKEN_KEY + token;
                     @SuppressWarnings("unchecked")
                     Map<String, Object> loginUser = (Map<String, Object>) redisTemplate.opsForValue().get(redisKey);
-
                     if (loginUser != null) {
                         // 构建认证信息
                         Long userId = Long.valueOf(loginUser.get(Constants.USER_ID).toString());
                         String username = loginUser.get("username").toString();
-
                         // 刷新 token 过期时间（从配置读取）
                         long sessionTimeoutMinutes = jwtSecurityConfig.getSessionTimeout();
                         redisTemplate.expire(redisKey, sessionTimeoutMinutes, TimeUnit.MINUTES);
-
                         // 同步刷新 online_token 映射的过期时间
                         String onlineKey = Constants.ONLINE_TOKEN_KEY + userId;
                         redisTemplate.expire(onlineKey, sessionTimeoutMinutes, TimeUnit.MINUTES);
-
                         @SuppressWarnings("unchecked")
                         List<String> permissions = (List<String>) loginUser.get(Constants.PERMISSIONS);
                         List<SimpleGrantedAuthority> authorities = permissions.stream()
                                 .map(SimpleGrantedAuthority::new)
                                 .collect(Collectors.toList());
-
-                        UsernamePasswordAuthenticationToken authentication =
-                                new UsernamePasswordAuthenticationToken(loginUser, null, authorities);
-
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                loginUser, null, authorities);
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                     }
                 }
@@ -115,15 +117,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
         }
-
         chain.doFilter(request, response);
     }
 
     /**
-     * 从请求中获取 Token
-     * 优先从 Authorization 请求头获取，其次从 URL 参数获取（用于文件下载、SSE 连接等场景）
+     * 从请求中获取 Token 优先从 Authorization 请求头获取，其次从 URL 参数获取（用于文件下载、SSE 连接等场景）
      *
      * @param request HTTP 请求
+     *
      * @return JWT 令牌字符串
      */
     private String getTokenFromRequest(HttpServletRequest request) {
@@ -144,4 +145,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         return null;
     }
+
 }

@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.Role;
 import com.iboot.admin.domain.system.repository.RoleRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.RoleMapper;
 import com.iboot.admin.infrastructure.persistence.po.RolePO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class RoleRepositoryImpl implements RoleRepository {
 
     private final RoleMapper roleMapper;
+
+    @SuppressWarnings("all")
+    public RoleRepositoryImpl(final RoleMapper roleMapper) {
+        this.roleMapper = roleMapper;
+    }
 
     /**
      * 保存角色
@@ -48,6 +51,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * </p>
      *
      * @param role 角色实体
+     *
      * @return 保存后的角色
      */
     @Override
@@ -65,6 +69,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 根据 ID 查询角色
      *
      * @param id 角色 ID
+     *
      * @return 角色实体，不存在则返回空
      */
     @Override
@@ -76,6 +81,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 根据角色编码查询角色
      *
      * @param roleCode 角色编码
+     *
      * @return 角色实体，不存在则返回空
      */
     @Override
@@ -96,8 +102,9 @@ public class RoleRepositoryImpl implements RoleRepository {
     /**
      * 分页查询角色
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 角色列表
      */
     @Override
@@ -121,16 +128,19 @@ public class RoleRepositoryImpl implements RoleRepository {
      *
      * @param roleName 角色名称（可选）
      * @param roleCode 角色编码（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
+     * @param status   状态（可选）
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 角色列表
      */
     @Override
     public List<Role> findPageByCondition(String roleName, String roleCode, Integer status, int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return roleMapper.selectPageByCondition(roleName, roleCode, status, offset, pageSize).stream()
-                .map(this::convertToDomain).collect(Collectors.toList());
+        return roleMapper.selectPageByCondition(roleName, roleCode, status, offset, pageSize)
+                .stream()
+                .map(this::convertToDomain)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -138,13 +148,16 @@ public class RoleRepositoryImpl implements RoleRepository {
      *
      * @param roleName 角色名称（可选）
      * @param roleCode 角色编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 角色列表
      */
     @Override
     public List<Role> findAllByCondition(String roleName, String roleCode, Integer status) {
-        return roleMapper.selectAllByCondition(roleName, roleCode, status).stream()
-                .map(this::convertToDomain).collect(Collectors.toList());
+        return roleMapper.selectAllByCondition(roleName, roleCode, status)
+                .stream()
+                .map(this::convertToDomain)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -152,7 +165,8 @@ public class RoleRepositoryImpl implements RoleRepository {
      *
      * @param roleName 角色名称（可选）
      * @param roleCode 角色编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 角色总数
      */
     @Override
@@ -164,6 +178,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 更新角色
      *
      * @param role 角色实体
+     *
      * @return 是否更新成功
      */
     @Override
@@ -175,6 +190,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 根据 ID 删除角色（逻辑删除）
      *
      * @param id 角色 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -186,6 +202,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 检查角色编码是否存在
      *
      * @param roleCode 角色编码
+     *
      * @return 是否存在
      */
     @Override
@@ -197,6 +214,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 检查角色名称是否存在
      *
      * @param roleName 角色名称
+     *
      * @return 是否存在
      */
     @Override
@@ -208,6 +226,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 根据用户 ID 查询用户拥有的角色
      *
      * @param userId 用户 ID
+     *
      * @return 角色列表
      */
     @Override
@@ -219,6 +238,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 统计拥有指定角色的用户数
      *
      * @param roleId 角色 ID
+     *
      * @return 用户数
      */
     @Override
@@ -239,7 +259,7 @@ public class RoleRepositoryImpl implements RoleRepository {
     /**
      * 插入角色的菜单关联
      *
-     * @param roleId 角色 ID
+     * @param roleId  角色 ID
      * @param menuIds 菜单 ID 列表
      */
     @Override
@@ -262,7 +282,7 @@ public class RoleRepositoryImpl implements RoleRepository {
     /**
      * 插入角色的部门关联（数据权限）
      *
-     * @param roleId 角色 ID
+     * @param roleId  角色 ID
      * @param deptIds 部门 ID 列表
      */
     @Override
@@ -276,6 +296,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 查询角色拥有的菜单 ID 列表
      *
      * @param roleId 角色 ID
+     *
      * @return 菜单 ID 列表
      */
     @Override
@@ -287,6 +308,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 查询角色拥有的部门 ID 列表（数据权限）
      *
      * @param roleId 角色 ID
+     *
      * @return 部门 ID 列表
      */
     @Override
@@ -298,6 +320,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 物理删除已逻辑删除的角色记录（根据角色编码）
      *
      * @param roleCode 角色编码
+     *
      * @return 是否删除成功
      */
     @Override
@@ -309,6 +332,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 将领域对象转换为持久化对象
      *
      * @param role 角色领域对象
+     *
      * @return 角色持久化对象
      */
     private RolePO convertToPO(Role role) {
@@ -332,6 +356,7 @@ public class RoleRepositoryImpl implements RoleRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 角色持久化对象
+     *
      * @return 角色领域对象
      */
     private Role convertToDomain(RolePO po) {
@@ -350,4 +375,5 @@ public class RoleRepositoryImpl implements RoleRepository {
                 .remark(po.getRemark())
                 .build();
     }
+
 }

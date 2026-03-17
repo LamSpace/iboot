@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iboot.admin.common.result.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
@@ -30,25 +30,29 @@ import java.io.IOException;
 
 /**
  * 授权失败处理器
- * 
+ *
  * @author iBoot
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class JwtAccessDeniedHandler implements AccessDeniedHandler {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAccessDeniedHandler.class);
+
     private final ObjectMapper objectMapper;
-    
+
+    @SuppressWarnings("all")
+    public JwtAccessDeniedHandler(final ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
                        AccessDeniedException accessDeniedException) throws IOException {
         log.error("授权失败: {}", accessDeniedException.getMessage());
-        
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType("application/json;charset=UTF-8");
-        
         Result<Void> result = Result.error(403, "无权限访问");
         response.getWriter().write(objectMapper.writeValueAsString(result));
     }
+
 }

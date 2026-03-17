@@ -23,7 +23,6 @@ import com.iboot.admin.interfaces.dto.response.StatisticsResponse.UsageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,19 +41,22 @@ import java.time.LocalTime;
 @Tag(name = "统计分析", description = "统计分析相关接口")
 @RestController
 @RequestMapping("/api/statistics")
-@RequiredArgsConstructor
 public class StatisticsController {
 
     private final StatisticsApplicationService statisticsApplicationService;
 
+    @SuppressWarnings("all")
+    public StatisticsController(final StatisticsApplicationService statisticsApplicationService) {
+        this.statisticsApplicationService = statisticsApplicationService;
+    }
+
     @Operation(summary = "获取数据统计报表")
     @GetMapping("/report")
     public Result<ReportResponse> getReport(
-            @Parameter(description = "开始日期") 
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-            @Parameter(description = "结束日期") 
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
-        
+            @Parameter(description = "开始日期") @RequestParam(required = false) @DateTimeFormat(
+                    pattern = "yyyy-MM-dd") LocalDate startDate,
+            @Parameter(description = "结束日期") @RequestParam(required = false) @DateTimeFormat(
+                    pattern = "yyyy-MM-dd") LocalDate endDate) {
         // 默认最近7天
         if (startDate == null) {
             startDate = LocalDate.now().minusDays(6);
@@ -62,10 +64,8 @@ public class StatisticsController {
         if (endDate == null) {
             endDate = LocalDate.now();
         }
-        
         LocalDateTime startTime = startDate.atStartOfDay();
         LocalDateTime endTime = endDate.atTime(LocalTime.MAX);
-        
         ReportResponse data = statisticsApplicationService.getReportStatistics(startTime, endTime);
         return Result.success(data);
     }
@@ -73,11 +73,10 @@ public class StatisticsController {
     @Operation(summary = "获取系统使用分析")
     @GetMapping("/usage")
     public Result<UsageResponse> getUsageAnalysis(
-            @Parameter(description = "开始日期") 
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-            @Parameter(description = "结束日期") 
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
-        
+            @Parameter(description = "开始日期") @RequestParam(required = false) @DateTimeFormat(
+                    pattern = "yyyy-MM-dd") LocalDate startDate,
+            @Parameter(description = "结束日期") @RequestParam(required = false) @DateTimeFormat(
+                    pattern = "yyyy-MM-dd") LocalDate endDate) {
         // 默认最近30天
         if (startDate == null) {
             startDate = LocalDate.now().minusDays(29);
@@ -85,11 +84,10 @@ public class StatisticsController {
         if (endDate == null) {
             endDate = LocalDate.now();
         }
-        
         LocalDateTime startTime = startDate.atStartOfDay();
         LocalDateTime endTime = endDate.atTime(LocalTime.MAX);
-        
         UsageResponse data = statisticsApplicationService.getUsageAnalysis(startTime, endTime);
         return Result.success(data);
     }
+
 }

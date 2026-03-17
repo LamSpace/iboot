@@ -18,7 +18,8 @@ package com.iboot.admin.infrastructure.security;
 
 import com.iboot.admin.common.constant.Constants;
 import com.iboot.admin.common.exception.BusinessException;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -29,8 +30,9 @@ import java.util.Map;
  *
  * @author iBoot
  */
-@Slf4j
 public class SecurityUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(SecurityUtils.class);
 
     private SecurityUtils() {
         // 私有构造函数，防止实例化
@@ -40,6 +42,7 @@ public class SecurityUtils {
      * 获取当前登录用户 ID
      *
      * @return 用户 ID
+     *
      * @throws BusinessException 当用户未登录时抛出
      */
     public static Long getCurrentUserId() {
@@ -47,9 +50,7 @@ public class SecurityUtils {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new BusinessException("用户未登录");
         }
-
         Object principal = authentication.getPrincipal();
-
         // 情况 1:principal 是 Map 类型 (JWT 认证过滤器设置)
         if (principal instanceof Map) {
             @SuppressWarnings("unchecked")
@@ -59,7 +60,6 @@ public class SecurityUtils {
                 return Long.valueOf(userId.toString());
             }
         }
-
         // 情况 2：principal 是 UserDetails 或其他类型，尝试从 details 获取
         Object details = authentication.getDetails();
         if (details instanceof Map) {
@@ -70,13 +70,11 @@ public class SecurityUtils {
                 return Long.valueOf(userId.toString());
             }
         }
-
         // 情况 3：principal 是字符串，说明认证信息不完整（可能是 Spring Security 默认行为）
         if (principal instanceof String) {
             log.warn("认证信息不完整，principal 为 String 类型，用户可能未通过 JWT 认证");
             throw new BusinessException("用户未登录或会话已过期");
         }
-
         throw new BusinessException("无法获取用户信息");
     }
 
@@ -84,6 +82,7 @@ public class SecurityUtils {
      * 获取当前登录用户名
      *
      * @return 用户名
+     *
      * @throws BusinessException 当用户未登录时抛出
      */
     public static String getCurrentUsername() {
@@ -91,9 +90,7 @@ public class SecurityUtils {
         if (authentication == null) {
             throw new BusinessException("用户未登录");
         }
-
         Object principal = authentication.getPrincipal();
-
         // 情况 1:principal 是 Map 类型 (JWT 认证过滤器设置)
         if (principal instanceof Map) {
             @SuppressWarnings("unchecked")
@@ -103,7 +100,6 @@ public class SecurityUtils {
                 return username.toString();
             }
         }
-
         // 情况 2:principal 是字符串或其他类型
         return authentication.getName();
     }
@@ -138,9 +134,7 @@ public class SecurityUtils {
             if (authentication == null) {
                 return null;
             }
-
             Object principal = authentication.getPrincipal();
-
             // 情况 1:principal 是 Map 类型 (JWT 认证过滤器设置)
             if (principal instanceof Map) {
                 @SuppressWarnings("unchecked")
@@ -150,7 +144,6 @@ public class SecurityUtils {
                     return Long.valueOf(deptId.toString());
                 }
             }
-
             // 情况 2：尝试从 details 获取
             Object details = authentication.getDetails();
             if (details instanceof Map) {
@@ -161,10 +154,10 @@ public class SecurityUtils {
                     return Long.valueOf(deptId.toString());
                 }
             }
-
             return null;
         } catch (Exception e) {
             return null;
         }
     }
+
 }

@@ -35,7 +35,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -53,26 +52,26 @@ import java.util.stream.Collectors;
 @Tag(name = "定时任务管理", description = "定时任务管理相关接口")
 @RestController
 @RequestMapping("/api/job")
-@RequiredArgsConstructor
 public class JobController {
 
     private final JobApplicationService jobApplicationService;
 
-    // ==================== 任务管理接口 ====================
+    @SuppressWarnings("all")
+    public JobController(final JobApplicationService jobApplicationService) {
+        this.jobApplicationService = jobApplicationService;
+    }
 
+    // ==================== 任务管理接口 ====================
     @Operation(summary = "查询定时任务列表")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('job:list')")
-    public Result<PageResult<JobResponse>> list(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String jobName,
-            @RequestParam(required = false) String jobGroup,
-            @RequestParam(required = false) Integer status) {
-
+    public Result<PageResult<JobResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                @RequestParam(defaultValue = "10") Integer pageSize,
+                                                @RequestParam(required = false) String jobName,
+                                                @RequestParam(required = false) String jobGroup,
+                                                @RequestParam(required = false) Integer status) {
         List<Job> jobs;
         long total;
-
         if (jobName != null || jobGroup != null || status != null) {
             jobs = jobApplicationService.getJobPageByCondition(jobName, jobGroup, status, pageNum, pageSize);
             total = jobApplicationService.countJobsByCondition(jobName, jobGroup, status);
@@ -80,11 +79,7 @@ public class JobController {
             jobs = jobApplicationService.getJobPage(pageNum, pageSize);
             total = jobApplicationService.countJobs();
         }
-
-        List<JobResponse> responses = jobs.stream()
-                .map(this::convertJobToResponse)
-                .collect(Collectors.toList());
-
+        List<JobResponse> responses = jobs.stream().map(this::convertJobToResponse).collect(Collectors.toList());
         PageResult<JobResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
@@ -93,8 +88,7 @@ public class JobController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('job:query')")
     public Result<JobResponse> getInfo(@PathVariable Long id) {
-        Job job = jobApplicationService.getJobById(id)
-                .orElseThrow(() -> new BusinessException("任务不存在"));
+        Job job = jobApplicationService.getJobById(id).orElseThrow(() -> new BusinessException("任务不存在"));
         return Result.success(convertJobToResponse(job));
     }
 
@@ -149,24 +143,21 @@ public class JobController {
         jobApplicationService.runJob(id);
         return Result.success();
     }
-    
+
     @Operation(summary = "导出定时任务列表")
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('job:export')")
     @Log(title = "定时任务", businessType = BusinessTypeEnum.EXPORT)
-    public void export(HttpServletResponse response,
-                       @RequestParam(required = false) String jobName,
-                       @RequestParam(required = false) String jobGroup,
-                       @RequestParam(required = false) Integer status) throws IOException {
+    public void export(HttpServletResponse response, @RequestParam(required = false) String jobName,
+                       @RequestParam(required = false) String jobGroup, @RequestParam(required = false) Integer status)
+            throws IOException {
         List<Job> jobs;
         if (jobName != null || jobGroup != null || status != null) {
             jobs = jobApplicationService.getAllJobsByCondition(jobName, jobGroup, status);
         } else {
             jobs = jobApplicationService.getAllJobs();
         }
-        List<JobExportVO> exportList = jobs.stream()
-                .map(this::convertJobToExportVO)
-                .collect(Collectors.toList());
+        List<JobExportVO> exportList = jobs.stream().map(this::convertJobToExportVO).collect(Collectors.toList());
         ExcelExportUtil.exportExcel(response, exportList, JobExportVO.class, "定时任务", "任务数据");
     }
 
@@ -177,35 +168,33 @@ public class JobController {
     }
 
     // ==================== 任务日志接口 ====================
-
     @Operation(summary = "查询任务执行日志列表")
     @GetMapping("/log/list")
     @PreAuthorize("hasAuthority('job:log')")
-    public Result<PageResult<JobLogResponse>> logList(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) Long jobId,
-            @RequestParam(required = false) String jobName,
-            @RequestParam(required = false) String jobGroup,
-            @RequestParam(required = false) Integer status,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime beginTime,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
-
+    public Result<PageResult<JobLogResponse>> logList(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                      @RequestParam(defaultValue = "10") Integer pageSize,
+                                                      @RequestParam(required = false) Long jobId,
+                                                      @RequestParam(required = false) String jobName,
+                                                      @RequestParam(required = false) String jobGroup,
+                                                      @RequestParam(required = false) Integer status,
+                                                      @RequestParam(required = false)
+                                                      @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                                                      LocalDateTime beginTime,
+                                                      @RequestParam(required = false)
+                                                      @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                                                      LocalDateTime endTime) {
         List<JobLog> logs;
         long total;
-
-        if (jobId != null || jobName != null || jobGroup != null || status != null || beginTime != null || endTime != null) {
-            logs = jobApplicationService.getJobLogPageByCondition(jobId, jobName, jobGroup, status, beginTime, endTime, pageNum, pageSize);
+        if (jobId != null || jobName != null || jobGroup != null || status != null || beginTime != null
+                || endTime != null) {
+            logs = jobApplicationService.getJobLogPageByCondition(jobId, jobName, jobGroup, status, beginTime, endTime,
+                    pageNum, pageSize);
             total = jobApplicationService.countJobLogsByCondition(jobId, jobName, jobGroup, status, beginTime, endTime);
         } else {
             logs = jobApplicationService.getJobLogPage(pageNum, pageSize);
             total = jobApplicationService.countJobLogs();
         }
-
-        List<JobLogResponse> responses = logs.stream()
-                .map(this::convertJobLogToResponse)
-                .collect(Collectors.toList());
-
+        List<JobLogResponse> responses = logs.stream().map(this::convertJobLogToResponse).collect(Collectors.toList());
         PageResult<JobLogResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
@@ -214,8 +203,7 @@ public class JobController {
     @GetMapping("/log/{id}")
     @PreAuthorize("hasAuthority('job:log')")
     public Result<JobLogResponse> getLogInfo(@PathVariable Long id) {
-        JobLog log = jobApplicationService.getJobLogById(id)
-                .orElseThrow(() -> new BusinessException("任务日志不存在"));
+        JobLog log = jobApplicationService.getJobLogById(id).orElseThrow(() -> new BusinessException("任务日志不存在"));
         return Result.success(convertJobLogToResponse(log));
     }
 
@@ -223,9 +211,8 @@ public class JobController {
     @DeleteMapping("/log/clean")
     @PreAuthorize("hasAuthority('job:log')")
     @Log(title = "定时任务日志", businessType = BusinessTypeEnum.CLEAN)
-    public Result<Integer> cleanLog(
-            @RequestParam(required = false) Long jobId,
-            @RequestParam(required = false) Integer days) {
+    public Result<Integer> cleanLog(@RequestParam(required = false) Long jobId,
+                                    @RequestParam(required = false) Integer days) {
         int count;
         if (jobId != null) {
             count = jobApplicationService.cleanJobLogsByJobId(jobId);
@@ -241,7 +228,6 @@ public class JobController {
     }
 
     // ==================== 转换方法 ====================
-
     private Job convertRequestToJob(JobRequest request) {
         return Job.builder()
                 .id(request.getId())
@@ -290,7 +276,7 @@ public class JobController {
                 .createTime(log.getCreateTime())
                 .build();
     }
-    
+
     private JobExportVO convertJobToExportVO(Job job) {
         return JobExportVO.builder()
                 .id(job.getId())
@@ -305,4 +291,5 @@ public class JobController {
                 .createTime(job.getCreateTime())
                 .build();
     }
+
 }

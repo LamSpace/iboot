@@ -16,57 +16,61 @@
 
 package com.iboot.admin.common.enums;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 数据权限范围枚举
- * 
+ *
  * @author iBoot
  */
-@Getter
-@AllArgsConstructor
 public enum DataScopeEnum {
-    
+
     /**
      * 全部数据权限
      */
     ALL(1, "全部数据权限"),
-    
     /**
      * 自定义数据权限
      */
     CUSTOM(2, "自定义数据权限"),
-    
     /**
      * 本部门数据权限
      */
     DEPT(3, "本部门数据权限"),
-    
     /**
      * 本部门及以下数据权限
      */
     DEPT_AND_CHILD(4, "本部门及以下数据权限"),
-    
     /**
      * 仅本人数据权限
      */
     SELF(5, "仅本人数据权限");
-    
+
     /**
      * 权限范围码
      */
     private final Integer code;
-    
+
     /**
      * 权限范围描述
      */
     private final String description;
-    
+
+    /**
+     * Creates a new {@code DataScopeEnum} instance.
+     *
+     * @param code        权限范围码
+     * @param description 权限范围描述
+     */
+    @SuppressWarnings("all")
+    private DataScopeEnum(final Integer code, final String description) {
+        this.code = code;
+        this.description = description;
+    }
+
     /**
      * 根据代码获取枚举
      *
      * @param code 权限范围码
+     *
      * @return 数据权限范围枚举
      */
     public static DataScopeEnum getByCode(Integer code) {
@@ -80,4 +84,21 @@ public enum DataScopeEnum {
         }
         return null;
     }
+
+    /**
+     * 权限范围码
+     */
+    @SuppressWarnings("all")
+    public Integer getCode() {
+        return this.code;
+    }
+
+    /**
+     * 权限范围描述
+     */
+    @SuppressWarnings("all")
+    public String getDescription() {
+        return this.description;
+    }
+
 }

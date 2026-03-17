@@ -16,35 +16,58 @@
 
 package com.iboot.admin.common.enums;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 用户类型枚举
- * 
+ *
  * @author iBoot
  */
-@Getter
-@AllArgsConstructor
 public enum UserTypeEnum {
-    
+
     /**
      * 系统用户
      */
     SYSTEM(1, "系统用户"),
-    
     /**
      * 普通用户
      */
     NORMAL(2, "普通用户");
-    
+
     /**
      * 用户类型码
      */
     private final Integer code;
-    
+
     /**
      * 用户类型描述
      */
     private final String description;
+
+    /**
+     * Creates a new {@code UserTypeEnum} instance.
+     *
+     * @param code        用户类型码
+     * @param description 用户类型描述
+     */
+    @SuppressWarnings("all")
+    private UserTypeEnum(final Integer code, final String description) {
+        this.code = code;
+        this.description = description;
+    }
+
+    /**
+     * 用户类型码
+     */
+    @SuppressWarnings("all")
+    public Integer getCode() {
+        return this.code;
+    }
+
+    /**
+     * 用户类型描述
+     */
+    @SuppressWarnings("all")
+    public String getDescription() {
+        return this.description;
+    }
+
 }

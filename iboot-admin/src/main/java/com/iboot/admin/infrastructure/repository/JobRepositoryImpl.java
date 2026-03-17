@@ -20,7 +20,6 @@ import com.iboot.admin.domain.job.model.Job;
 import com.iboot.admin.domain.job.repository.JobRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.JobMapper;
 import com.iboot.admin.infrastructure.persistence.po.JobPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class JobRepositoryImpl implements JobRepository {
 
     private final JobMapper jobMapper;
+
+    @SuppressWarnings("all")
+    public JobRepositoryImpl(final JobMapper jobMapper) {
+        this.jobMapper = jobMapper;
+    }
 
     /**
      * 保存定时任务
@@ -48,6 +51,7 @@ public class JobRepositoryImpl implements JobRepository {
      * </p>
      *
      * @param job 定时任务实体
+     *
      * @return 保存后的定时任务
      */
     @Override
@@ -62,6 +66,7 @@ public class JobRepositoryImpl implements JobRepository {
      * 更新定时任务
      *
      * @param job 定时任务实体
+     *
      * @return 更新后的定时任务
      */
     @Override
@@ -75,6 +80,7 @@ public class JobRepositoryImpl implements JobRepository {
      * 根据 ID 查询定时任务
      *
      * @param id 定时任务 ID
+     *
      * @return 定时任务实体，不存在则返回空
      */
     @Override
@@ -86,8 +92,9 @@ public class JobRepositoryImpl implements JobRepository {
     /**
      * 根据任务名和分组查询定时任务
      *
-     * @param jobName 任务名称
+     * @param jobName  任务名称
      * @param jobGroup 任务分组
+     *
      * @return 定时任务实体，不存在则返回空
      */
     @Override
@@ -103,39 +110,36 @@ public class JobRepositoryImpl implements JobRepository {
      */
     @Override
     public List<Job> findAll() {
-        return jobMapper.selectAll().stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return jobMapper.selectAll().stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 分页查询定时任务
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 定时任务列表
      */
     @Override
     public List<Job> findPage(int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return jobMapper.selectPage(offset, pageSize).stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return jobMapper.selectPage(offset, pageSize).stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 按条件分页查询定时任务
      *
-     * @param jobName 任务名称（可选）
+     * @param jobName  任务名称（可选）
      * @param jobGroup 任务分组（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
+     * @param status   状态（可选）
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 定时任务列表
      */
     @Override
-    public List<Job> findPageByCondition(String jobName, String jobGroup, Integer status,
-                                          int pageNum, int pageSize) {
+    public List<Job> findPageByCondition(String jobName, String jobGroup, Integer status, int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
         return jobMapper.selectPageByCondition(jobName, jobGroup, status, offset, pageSize)
                 .stream()
@@ -156,9 +160,10 @@ public class JobRepositoryImpl implements JobRepository {
     /**
      * 按条件统计定时任务总数
      *
-     * @param jobName 任务名称（可选）
+     * @param jobName  任务名称（可选）
      * @param jobGroup 任务分组（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 定时任务总数
      */
     @Override
@@ -169,14 +174,16 @@ public class JobRepositoryImpl implements JobRepository {
     /**
      * 按条件查询所有定时任务（不分页，用于导出）
      *
-     * @param jobName 任务名称（可选）
+     * @param jobName  任务名称（可选）
      * @param jobGroup 任务分组（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 定时任务列表
      */
     @Override
     public List<Job> findAllByCondition(String jobName, String jobGroup, Integer status) {
-        return jobMapper.selectAllByCondition(jobName, jobGroup, status).stream()
+        return jobMapper.selectAllByCondition(jobName, jobGroup, status)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -185,6 +192,7 @@ public class JobRepositoryImpl implements JobRepository {
      * 根据 ID 删除定时任务（逻辑删除）
      *
      * @param id 定时任务 ID
+     *
      * @return 删除的记录数
      */
     @Override
@@ -195,8 +203,9 @@ public class JobRepositoryImpl implements JobRepository {
     /**
      * 更新定时任务状态
      *
-     * @param id 定时任务 ID
+     * @param id     定时任务 ID
      * @param status 新状态
+     *
      * @return 更新的记录数
      */
     @Override
@@ -208,6 +217,7 @@ public class JobRepositoryImpl implements JobRepository {
      * 将领域对象转换为持久化对象
      *
      * @param job 定时任务领域对象
+     *
      * @return 定时任务持久化对象
      */
     private JobPO convertToPO(Job job) {
@@ -230,6 +240,7 @@ public class JobRepositoryImpl implements JobRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 定时任务持久化对象
+     *
      * @return 定时任务领域对象
      */
     private Job convertToDomain(JobPO po) {
@@ -249,4 +260,5 @@ public class JobRepositoryImpl implements JobRepository {
                 .updateTime(po.getUpdateTime())
                 .build();
     }
+
 }

@@ -19,7 +19,6 @@ package com.iboot.admin.infrastructure.config;
 import com.iboot.admin.infrastructure.security.JwtAccessDeniedHandler;
 import com.iboot.admin.infrastructure.security.JwtAuthenticationEntryPoint;
 import com.iboot.admin.infrastructure.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,59 +41,56 @@ import java.util.List;
 
 /**
  * Spring Security 配置类
- * 
+ *
  * @author iBoot
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
-    
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
-    
+
     /**
      * 白名单路径 - 使用统一配置
      */
     private static final String[] WHITE_LIST = SecurityWhitelistConfig.WHITE_LIST_PATHS;
-    
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
+    @SuppressWarnings("all")
+    public SecurityConfig(final JwtAuthenticationFilter jwtAuthenticationFilter,
+                          final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+                          final JwtAccessDeniedHandler jwtAccessDeniedHandler) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                // 禁用 CSRF
-                .csrf(AbstractHttpConfigurer::disable)
-                
-                // 允许 iframe 嵌入 SBA 监控页面（开发环境前后端端口不同，需 disable）
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.disable())
-                )
-                
-                // 配置 CORS
+
+        // 禁用 CSRF
+        // 允许 iframe 嵌入 SBA 监控页面（开发环境前后端端口不同，需 disable）
+        // 配置 CORS
+        // 配置会话管理为无状态
+        // 配置授权规则
+        // 配置异常处理
+        // 添加 JWT 过滤器
+        http.csrf(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                
-                // 配置会话管理为无状态
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                
-                // 配置授权规则
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(WHITE_LIST).permitAll()
-                        .anyRequest().authenticated()
-                )
-                
-                // 配置异常处理
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                        .accessDeniedHandler(jwtAccessDeniedHandler)
-                )
-                
-                // 添加 JWT 过滤器
+                .authorizeHttpRequests(
+                        authorize -> authorize.requestMatchers(WHITE_LIST).permitAll().anyRequest().authenticated())
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        
         return http.build();
     }
-    
+
     /**
      * 密码编码器 Bean
      *
@@ -104,12 +100,14 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     /**
      * 认证管理器 Bean
      *
      * @param authenticationConfiguration 认证配置
+     *
      * @return AuthenticationManager 实例
+     *
      * @throws Exception 配置异常
      */
     @Bean
@@ -117,7 +115,7 @@ public class SecurityConfig {
             throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-    
+
     /**
      * CORS 配置 Bean
      *
@@ -131,9 +129,9 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }

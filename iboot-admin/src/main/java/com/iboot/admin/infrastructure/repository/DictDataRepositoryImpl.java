@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.DictData;
 import com.iboot.admin.domain.system.repository.DictDataRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.DictDataMapper;
 import com.iboot.admin.infrastructure.persistence.po.DictDataPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class DictDataRepositoryImpl implements DictDataRepository {
 
     private final DictDataMapper dictDataMapper;
+
+    @SuppressWarnings("all")
+    public DictDataRepositoryImpl(final DictDataMapper dictDataMapper) {
+        this.dictDataMapper = dictDataMapper;
+    }
 
     /**
      * 保存字典数据
@@ -48,6 +51,7 @@ public class DictDataRepositoryImpl implements DictDataRepository {
      * </p>
      *
      * @param dictData 字典数据实体对象
+     *
      * @return 保存后的字典数据对象
      */
     @Override
@@ -65,6 +69,7 @@ public class DictDataRepositoryImpl implements DictDataRepository {
      * 更新字典数据
      *
      * @param dictData 字典数据实体对象
+     *
      * @return 是否更新成功
      */
     @Override
@@ -77,6 +82,7 @@ public class DictDataRepositoryImpl implements DictDataRepository {
      * 根据 ID 删除字典数据（逻辑删除）
      *
      * @param id 字典数据 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -88,6 +94,7 @@ public class DictDataRepositoryImpl implements DictDataRepository {
      * 根据 ID 查询字典数据
      *
      * @param id 字典数据 ID
+     *
      * @return 字典数据实体，不存在则返回空
      */
     @Override
@@ -100,11 +107,13 @@ public class DictDataRepositoryImpl implements DictDataRepository {
      * 根据字典类型查询字典数据列表
      *
      * @param dictType 字典类型
+     *
      * @return 字典数据列表
      */
     @Override
     public List<DictData> findByDictType(String dictType) {
-        return dictDataMapper.selectByDictType(dictType).stream()
+        return dictDataMapper.selectByDictType(dictType)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -112,8 +121,9 @@ public class DictDataRepositoryImpl implements DictDataRepository {
     /**
      * 根据字典类型和值查询字典数据
      *
-     * @param dictType 字典类型
+     * @param dictType  字典类型
      * @param dictValue 字典值
+     *
      * @return 字典数据实体，不存在则返回空
      */
     @Override
@@ -129,9 +139,7 @@ public class DictDataRepositoryImpl implements DictDataRepository {
      */
     @Override
     public List<DictData> findAll() {
-        return dictDataMapper.selectAll().stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return dictDataMapper.selectAll().stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
@@ -147,8 +155,9 @@ public class DictDataRepositoryImpl implements DictDataRepository {
     /**
      * 检查字典数据是否存在
      *
-     * @param dictType 字典类型
+     * @param dictType  字典类型
      * @param dictValue 字典值
+     *
      * @return 是否存在
      */
     @Override
@@ -160,6 +169,7 @@ public class DictDataRepositoryImpl implements DictDataRepository {
      * 根据字典类型删除所有字典数据
      *
      * @param dictType 字典类型
+     *
      * @return 是否删除成功
      */
     @Override
@@ -171,6 +181,7 @@ public class DictDataRepositoryImpl implements DictDataRepository {
      * 将领域对象转换为持久化对象
      *
      * @param dictData 字典数据领域对象
+     *
      * @return 字典数据持久化对象
      */
     private DictDataPO convertToPO(DictData dictData) {
@@ -197,6 +208,7 @@ public class DictDataRepositoryImpl implements DictDataRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 字典数据持久化对象
+     *
      * @return 字典数据领域对象
      */
     private DictData convertToDomain(DictDataPO po) {
@@ -218,4 +230,5 @@ public class DictDataRepositoryImpl implements DictDataRepository {
                 .remark(po.getRemark())
                 .build();
     }
+
 }

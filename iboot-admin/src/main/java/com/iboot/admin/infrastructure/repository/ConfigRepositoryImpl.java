@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.Config;
 import com.iboot.admin.domain.system.repository.ConfigRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.ConfigMapper;
 import com.iboot.admin.infrastructure.persistence.po.ConfigPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class ConfigRepositoryImpl implements ConfigRepository {
 
     private final ConfigMapper configMapper;
+
+    @SuppressWarnings("all")
+    public ConfigRepositoryImpl(final ConfigMapper configMapper) {
+        this.configMapper = configMapper;
+    }
 
     /**
      * 保存系统配置
@@ -48,6 +51,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * </p>
      *
      * @param config 系统配置实体
+     *
      * @return 保存后的系统配置
      */
     @Override
@@ -65,6 +69,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 更新系统配置
      *
      * @param config 系统配置实体
+     *
      * @return 是否更新成功
      */
     @Override
@@ -77,6 +82,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 根据 ID 删除系统配置（逻辑删除）
      *
      * @param id 系统配置 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -88,6 +94,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 根据 ID 查询系统配置
      *
      * @param id 系统配置 ID
+     *
      * @return 系统配置实体，不存在则返回空
      */
     @Override
@@ -100,6 +107,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 根据配置键查询系统配置
      *
      * @param configKey 配置键
+     *
      * @return 系统配置实体，不存在则返回空
      */
     @Override
@@ -115,22 +123,22 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      */
     @Override
     public List<Config> findAll() {
-        return configMapper.selectAll().stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return configMapper.selectAll().stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 分页查询系统配置
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 系统配置列表
      */
     @Override
     public List<Config> findPage(int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return configMapper.selectPage(offset, pageSize).stream()
+        return configMapper.selectPage(offset, pageSize)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -149,16 +157,19 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 按条件分页查询系统配置
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param pageNum    页码
+     * @param pageSize   每页数量
+     *
      * @return 系统配置列表
      */
     @Override
-    public List<Config> findPageByCondition(String configName, String configKey, Integer configType, int pageNum, int pageSize) {
+    public List<Config> findPageByCondition(String configName, String configKey, Integer configType, int pageNum,
+                                            int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return configMapper.selectPageByCondition(configName, configKey, configType, offset, pageSize).stream()
+        return configMapper.selectPageByCondition(configName, configKey, configType, offset, pageSize)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -167,8 +178,9 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 按条件统计系统配置总数
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
+     *
      * @return 系统配置总数
      */
     @Override
@@ -180,13 +192,15 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 按条件查询所有系统配置（不分页，用于导出）
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
+     *
      * @return 系统配置列表
      */
     @Override
     public List<Config> findAllByCondition(String configName, String configKey, Integer configType) {
-        return configMapper.selectAllByCondition(configName, configKey, configType).stream()
+        return configMapper.selectAllByCondition(configName, configKey, configType)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -195,6 +209,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 检查配置键是否存在
      *
      * @param configKey 配置键
+     *
      * @return 是否存在
      */
     @Override
@@ -206,6 +221,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 物理删除已逻辑删除的系统配置记录（根据配置键）
      *
      * @param configKey 配置键
+     *
      * @return 是否删除成功
      */
     @Override
@@ -217,6 +233,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 将领域对象转换为持久化对象
      *
      * @param config 系统配置领域对象
+     *
      * @return 系统配置持久化对象
      */
     private ConfigPO convertToPO(Config config) {
@@ -239,6 +256,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 系统配置持久化对象
+     *
      * @return 系统配置领域对象
      */
     private Config convertToDomain(ConfigPO po) {
@@ -256,4 +274,5 @@ public class ConfigRepositoryImpl implements ConfigRepository {
                 .remark(po.getRemark())
                 .build();
     }
+
 }

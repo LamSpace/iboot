@@ -19,8 +19,8 @@ package com.iboot.admin.application.service;
 import com.iboot.admin.common.exception.BusinessException;
 import com.iboot.admin.domain.system.model.Post;
 import com.iboot.admin.domain.system.repository.PostRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,28 +30,33 @@ import java.util.List;
 /**
  * 岗位应用服务
  * <p>
- * 负责岗位的创建、更新、删除、查询等业务逻辑处理，
- * 支持岗位状态管理和条件查询
+ * 负责岗位的创建、更新、删除、查询等业务逻辑处理， 支持岗位状态管理和条件查询
  * </p>
  *
  * @author iBoot
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class PostApplicationService {
 
+    private static final Logger log = LoggerFactory.getLogger(PostApplicationService.class);
+
     private final PostRepository postRepository;
+
+    @SuppressWarnings("all")
+    public PostApplicationService(final PostRepository postRepository) {
+        this.postRepository = postRepository;
+    }
 
     /**
      * 创建岗位
      * <p>
-     * 校验岗位编码和名称的唯一性，清理同编码已删除岗位记录，
-     * 设置默认状态为启用
+     * 校验岗位编码和名称的唯一性，清理同编码已删除岗位记录， 设置默认状态为启用
      * </p>
      *
      * @param post 岗位实体
+     *
      * @return 创建后的岗位实体
+     *
      * @throws BusinessException 当岗位编码或名称已存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
@@ -60,15 +65,12 @@ public class PostApplicationService {
         if (postRepository.existsByPostCode(post.getPostCode())) {
             throw new BusinessException("岗位编码已存在");
         }
-
         // 清理同编码已删除岗位记录（解决逻辑删除与唯一索引冲突问题）
         postRepository.removeDeletedByPostCode(post.getPostCode());
-
         // 校验岗位名称唯一性
         if (postRepository.existsByPostName(post.getPostName())) {
             throw new BusinessException("岗位名称已存在");
         }
-
         post.setCreateTime(LocalDateTime.now());
         post.setStatus(1);
         return postRepository.save(post);
@@ -81,14 +83,14 @@ public class PostApplicationService {
      * </p>
      *
      * @param post 岗位实体
+     *
      * @return 是否更新成功
+     *
      * @throws BusinessException 当岗位不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updatePost(Post post) {
-        Post existingPost = postRepository.findById(post.getId())
-                .orElseThrow(() -> new BusinessException("岗位不存在"));
-
+        Post existingPost = postRepository.findById(post.getId()).orElseThrow(() -> new BusinessException("岗位不存在"));
         post.setUpdateTime(LocalDateTime.now());
         return postRepository.update(post);
     }
@@ -100,7 +102,9 @@ public class PostApplicationService {
      * </p>
      *
      * @param id 岗位 ID
+     *
      * @return 是否删除成功
+     *
      * @throws BusinessException 当岗位不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
@@ -108,7 +112,6 @@ public class PostApplicationService {
         if (!postRepository.findById(id).isPresent()) {
             throw new BusinessException("岗位不存在");
         }
-
         return postRepository.deleteById(id);
     }
 
@@ -116,12 +119,13 @@ public class PostApplicationService {
      * 根据 ID 获取岗位
      *
      * @param id 岗位 ID
+     *
      * @return 岗位实体
+     *
      * @throws BusinessException 当岗位不存在时抛出
      */
     public Post getPostById(Long id) {
-        return postRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("岗位不存在"));
+        return postRepository.findById(id).orElseThrow(() -> new BusinessException("岗位不存在"));
     }
 
     /**
@@ -136,8 +140,9 @@ public class PostApplicationService {
     /**
      * 分页获取岗位
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 岗位列表
      */
     public List<Post> getPostPage(int pageNum, int pageSize) {
@@ -158,12 +163,14 @@ public class PostApplicationService {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码，从 1 开始
+     * @param status   状态（可选）
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 岗位列表
      */
-    public List<Post> getPostPageByCondition(String postName, String postCode, Integer status, int pageNum, int pageSize) {
+    public List<Post> getPostPageByCondition(String postName, String postCode, Integer status, int pageNum,
+                                             int pageSize) {
         return postRepository.findPageByCondition(postName, postCode, status, pageNum, pageSize);
     }
 
@@ -172,7 +179,8 @@ public class PostApplicationService {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 岗位总数
      */
     public long countPostsByCondition(String postName, String postCode, Integer status) {
@@ -184,7 +192,8 @@ public class PostApplicationService {
      *
      * @param postName 岗位名称（可选）
      * @param postCode 岗位编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 岗位列表
      */
     public List<Post> getAllPostsByCondition(String postName, String postCode, Integer status) {
@@ -194,9 +203,11 @@ public class PostApplicationService {
     /**
      * 修改岗位状态
      *
-     * @param id 岗位 ID
+     * @param id     岗位 ID
      * @param status 状态：1-启用，0-停用
+     *
      * @return 是否修改成功
+     *
      * @throws BusinessException 当岗位不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
@@ -209,4 +220,5 @@ public class PostApplicationService {
         }
         return postRepository.update(post);
     }
+
 }

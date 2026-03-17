@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.MessageTemplate;
 import com.iboot.admin.domain.system.repository.MessageTemplateRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.MessageTemplateMapper;
 import com.iboot.admin.infrastructure.persistence.po.MessageTemplatePO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,15 +35,20 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class MessageTemplateRepositoryImpl implements MessageTemplateRepository {
 
     private final MessageTemplateMapper messageTemplateMapper;
+
+    @SuppressWarnings("all")
+    public MessageTemplateRepositoryImpl(final MessageTemplateMapper messageTemplateMapper) {
+        this.messageTemplateMapper = messageTemplateMapper;
+    }
 
     /**
      * 保存消息模板
      *
      * @param template 消息模板实体
+     *
      * @return 保存后的消息模板
      */
     @Override
@@ -59,6 +63,7 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 更新消息模板
      *
      * @param template 消息模板实体
+     *
      * @return 是否更新成功
      */
     @Override
@@ -71,6 +76,7 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 根据 ID 删除消息模板（逻辑删除）
      *
      * @param id 消息模板 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -82,6 +88,7 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 根据 ID 查询消息模板
      *
      * @param id 消息模板 ID
+     *
      * @return 消息模板实体，不存在则返回空
      */
     @Override
@@ -94,6 +101,7 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 根据模板编码查询消息模板
      *
      * @param templateCode 模板编码
+     *
      * @return 消息模板实体，不存在则返回空
      */
     @Override
@@ -106,14 +114,16 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 按条件分页查询消息模板
      *
      * @param templateName 模板名称（可选）
-     * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param messageType  消息类型（可选）
+     * @param status       状态（可选）
+     * @param pageNum      页码
+     * @param pageSize     每页数量
+     *
      * @return 消息模板列表
      */
     @Override
-    public List<MessageTemplate> findPageByCondition(String templateName, String messageType, Integer status, int pageNum, int pageSize) {
+    public List<MessageTemplate> findPageByCondition(String templateName, String messageType, Integer status,
+                                                     int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
         return messageTemplateMapper.selectPageByCondition(templateName, messageType, status, offset, pageSize)
                 .stream()
@@ -125,8 +135,9 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 按条件统计消息模板数量
      *
      * @param templateName 模板名称（可选）
-     * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
+     * @param messageType  消息类型（可选）
+     * @param status       状态（可选）
+     *
      * @return 消息模板数量
      */
     @Override
@@ -138,6 +149,7 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 检查模板编码是否存在
      *
      * @param templateCode 模板编码
+     *
      * @return 是否存在
      */
     @Override
@@ -149,6 +161,7 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 物理删除已逻辑删除的消息模板记录
      *
      * @param templateCode 模板编码
+     *
      * @return 是否删除成功
      */
     @Override
@@ -173,6 +186,7 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 将持久化对象转换为领域对象
      *
      * @param po 消息模板持久化对象
+     *
      * @return 消息模板领域对象
      */
     private MessageTemplate convertToDomain(MessageTemplatePO po) {
@@ -196,6 +210,7 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
      * 将领域对象转换为持久化对象
      *
      * @param domain 消息模板领域对象
+     *
      * @return 消息模板持久化对象
      */
     private MessageTemplatePO convertToPO(MessageTemplate domain) {
@@ -214,4 +229,5 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
         po.setRemark(domain.getRemark());
         return po;
     }
+
 }

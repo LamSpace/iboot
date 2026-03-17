@@ -20,9 +20,12 @@
         <result property="remark" column="remark"/>
     </resultMap>
 
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.DictDataPO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_dict_data (dict_type, dict_label, dict_value, dict_sort, css_class, list_class, is_default, status, create_by, create_time, deleted, remark)
-        VALUES (#{dictType}, #{dictLabel}, #{dictValue}, #{dictSort}, #{cssClass}, #{listClass}, #{isDefault}, #{status}, #{createBy}, #{createTime}, 0, #{remark})
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.DictDataPO" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO sys_dict_data (dict_type, dict_label, dict_value, dict_sort, css_class, list_class, is_default,
+                                   status, create_by, create_time, deleted, remark)
+        VALUES (#{dictType}, #{dictLabel}, #{dictValue}, #{dictSort}, #{cssClass}, #{listClass}, #{isDefault},
+                #{status}, #{createBy}, #{createTime}, 0, #{remark})
     </insert>
 
     <update id="update" parameterType="com.iboot.admin.infrastructure.persistence.po.DictDataPO">
@@ -44,35 +47,63 @@
     </update>
 
     <update id="deleteById">
-        UPDATE sys_dict_data SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+        UPDATE sys_dict_data
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
     <select id="selectById" resultMap="DictDataResultMap">
-        SELECT * FROM sys_dict_data WHERE id = #{id} AND deleted = 0
+        SELECT *
+        FROM sys_dict_data
+        WHERE id = #{id}
+          AND deleted = 0
     </select>
 
     <select id="selectByDictType" resultMap="DictDataResultMap">
-        SELECT * FROM sys_dict_data WHERE dict_type = #{dictType} AND deleted = 0 ORDER BY dict_sort ASC
+        SELECT *
+        FROM sys_dict_data
+        WHERE dict_type = #{dictType}
+          AND deleted = 0
+        ORDER BY dict_sort ASC
     </select>
 
     <select id="selectByDictTypeAndValue" resultMap="DictDataResultMap">
-        SELECT * FROM sys_dict_data WHERE dict_type = #{dictType} AND dict_value = #{dictValue} AND deleted = 0
+        SELECT *
+        FROM sys_dict_data
+        WHERE dict_type = #{dictType}
+          AND dict_value = #{dictValue}
+          AND deleted = 0
     </select>
 
     <select id="selectAll" resultMap="DictDataResultMap">
-        SELECT * FROM sys_dict_data WHERE deleted = 0 ORDER BY dict_sort ASC
+        SELECT *
+        FROM sys_dict_data
+        WHERE deleted = 0
+        ORDER BY dict_sort ASC
     </select>
 
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_dict_data WHERE deleted = 0
+        SELECT COUNT(*)
+        FROM sys_dict_data
+        WHERE deleted = 0
     </select>
 
     <select id="countByDictTypeAndValue" resultType="int">
-        SELECT COUNT(*) FROM sys_dict_data WHERE dict_type = #{dictType} AND dict_value = #{dictValue} AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_dict_data
+        WHERE dict_type = #{dictType}
+          AND dict_value = #{dictValue}
+          AND deleted = 0
     </select>
 
     <update id="deleteByDictType">
-        UPDATE sys_dict_data SET deleted = 1, update_time = NOW() WHERE dict_type = #{dictType} AND deleted = 0
+        UPDATE sys_dict_data
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE dict_type = #{dictType}
+          AND deleted = 0
     </update>
 
 </mapper>

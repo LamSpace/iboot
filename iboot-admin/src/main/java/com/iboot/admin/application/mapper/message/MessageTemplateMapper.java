@@ -32,12 +32,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface MessageTemplateMapper {
 
     // ==================== 查询映射 ====================
@@ -46,6 +41,7 @@ public interface MessageTemplateMapper {
      * 将消息模板实体转换为响应 DTO
      *
      * @param template 消息模板实体
+     *
      * @return 消息模板响应 DTO
      */
     MessageTemplateResponse toResponse(MessageTemplate template);
@@ -54,6 +50,7 @@ public interface MessageTemplateMapper {
      * 将消息模板实体列表转换为响应 DTO 列表
      *
      * @param templates 消息模板实体列表
+     *
      * @return 消息模板响应 DTO 列表
      */
     List<MessageTemplateResponse> toResponseList(List<MessageTemplate> templates);
@@ -62,6 +59,7 @@ public interface MessageTemplateMapper {
      * 将消息模板实体转换为导出 VO
      *
      * @param template 消息模板实体
+     *
      * @return 消息模板导出 VO
      */
     MessageTemplateExportVO toExportVO(MessageTemplate template);
@@ -70,6 +68,7 @@ public interface MessageTemplateMapper {
      * 将消息模板实体列表转换为导出 VO 列表
      *
      * @param templates 消息模板实体列表
+     *
      * @return 消息模板导出 VO 列表
      */
     List<MessageTemplateExportVO> toExportVOList(List<MessageTemplate> templates);
@@ -80,6 +79,7 @@ public interface MessageTemplateMapper {
      * 将消息模板请求转换为实体
      *
      * @param request 消息模板请求
+     *
      * @return 消息模板实体
      */
     @Mapping(target = "id", ignore = true)
@@ -105,4 +105,5 @@ public interface MessageTemplateMapper {
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     void updateEntityFromRequest(MessageTemplateRequest request, @MappingTarget MessageTemplate template);
+
 }

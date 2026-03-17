@@ -15,7 +15,8 @@
         <result property="remark" column="remark"/>
     </resultMap>
 
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.DictTypePO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.DictTypePO" useGeneratedKeys="true"
+            keyProperty="id">
         INSERT INTO sys_dict_type (dict_name, dict_type, status, create_by, create_time, deleted, remark)
         VALUES (#{dictName}, #{dictType}, #{status}, #{createBy}, #{createTime}, 0, #{remark})
     </insert>
@@ -34,36 +35,60 @@
     </update>
 
     <update id="deleteById">
-        UPDATE sys_dict_type SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+        UPDATE sys_dict_type
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
     <select id="selectById" resultMap="DictTypeResultMap">
-        SELECT * FROM sys_dict_type WHERE id = #{id} AND deleted = 0
+        SELECT *
+        FROM sys_dict_type
+        WHERE id = #{id}
+          AND deleted = 0
     </select>
 
     <select id="selectByDictType" resultMap="DictTypeResultMap">
-        SELECT * FROM sys_dict_type WHERE dict_type = #{dictType} AND deleted = 0
+        SELECT *
+        FROM sys_dict_type
+        WHERE dict_type = #{dictType}
+          AND deleted = 0
     </select>
 
     <select id="selectAll" resultMap="DictTypeResultMap">
-        SELECT * FROM sys_dict_type WHERE deleted = 0 ORDER BY create_time DESC
+        SELECT *
+        FROM sys_dict_type
+        WHERE deleted = 0
+        ORDER BY create_time DESC
     </select>
 
     <select id="selectPage" resultMap="DictTypeResultMap">
-        SELECT * FROM sys_dict_type WHERE deleted = 0 ORDER BY create_time DESC LIMIT #{offset}, #{limit}
+        SELECT *
+        FROM sys_dict_type
+        WHERE deleted = 0
+        ORDER BY create_time DESC LIMIT #{offset}, #{limit}
     </select>
 
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_dict_type WHERE deleted = 0
+        SELECT COUNT(*)
+        FROM sys_dict_type
+        WHERE deleted = 0
     </select>
 
     <select id="countByDictType" resultType="int">
-        SELECT COUNT(*) FROM sys_dict_type WHERE dict_type = #{dictType} AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_dict_type
+        WHERE dict_type = #{dictType}
+          AND deleted = 0
     </select>
 
     <!-- 物理删除已逻辑删除的字典类型记录 -->
     <delete id="removeDeletedByDictType">
-        DELETE FROM sys_dict_type WHERE dict_type = #{dictType} AND deleted = 1
+        DELETE
+        FROM sys_dict_type
+        WHERE dict_type = #{dictType}
+          AND deleted = 1
     </delete>
 
 </mapper>

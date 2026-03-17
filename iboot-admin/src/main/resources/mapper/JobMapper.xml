@@ -21,14 +21,30 @@
     </resultMap>
 
     <sql id="selectJobVo">
-        SELECT j.id, j.job_name, j.job_group, j.dept_id, j.invoke_target, j.cron_expression, j.misfire_policy,
-               j.concurrent, j.status, j.remark, j.create_by, j.create_time, j.update_by, j.update_time, j.deleted
+        SELECT j.id,
+               j.job_name,
+               j.job_group,
+               j.dept_id,
+               j.invoke_target,
+               j.cron_expression,
+               j.misfire_policy,
+               j.concurrent,
+               j.status,
+               j.remark,
+               j.create_by,
+               j.create_time,
+               j.update_by,
+               j.update_time,
+               j.deleted
         FROM sys_job j
     </sql>
 
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.JobPO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_job (job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, remark, create_by)
-        VALUES (#{jobName}, #{jobGroup}, #{invokeTarget}, #{cronExpression}, #{misfirePolicy}, #{concurrent}, #{status}, #{remark}, #{createBy})
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.JobPO" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO sys_job (job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status,
+                             remark, create_by)
+        VALUES (#{jobName}, #{jobGroup}, #{invokeTarget}, #{cronExpression}, #{misfirePolicy}, #{concurrent}, #{status},
+                #{remark}, #{createBy})
     </insert>
 
     <update id="update" parameterType="com.iboot.admin.infrastructure.persistence.po.JobPO">
@@ -90,7 +106,9 @@
     </select>
 
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_job j WHERE j.deleted = 0
+        SELECT COUNT(*)
+        FROM sys_job j
+        WHERE j.deleted = 0
     </select>
 
     <select id="countByCondition" resultType="long">
@@ -128,11 +146,18 @@
     </select>
 
     <update id="deleteById">
-        UPDATE sys_job SET deleted = 1, update_time = NOW() WHERE id = #{id}
+        UPDATE sys_job
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE id = #{id}
     </update>
 
     <update id="updateStatus">
-        UPDATE sys_job SET status = #{status}, update_time = NOW() WHERE id = #{id} AND deleted = 0
+        UPDATE sys_job
+        SET status      = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
 </mapper>

@@ -30,7 +30,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class IBootAdminApplication {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         SpringApplication.run(IBootAdminApplication.class, args);
     }
 

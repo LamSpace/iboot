@@ -20,8 +20,6 @@ import com.iboot.admin.common.exception.BusinessException;
 import com.iboot.admin.domain.system.model.MessageTemplate;
 import com.iboot.admin.domain.system.repository.MessageTemplateRepository;
 import com.iboot.admin.infrastructure.security.SecurityUtils;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,12 +35,19 @@ import java.util.Map;
  *
  * @author iBoot
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class MessageTemplateApplicationService {
 
+    @SuppressWarnings("all")
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory
+            .getLogger(MessageTemplateApplicationService.class);
+
     private final MessageTemplateRepository messageTemplateRepository;
+
+    @SuppressWarnings("all")
+    public MessageTemplateApplicationService(final MessageTemplateRepository messageTemplateRepository) {
+        this.messageTemplateRepository = messageTemplateRepository;
+    }
 
     /**
      * 创建消息模板
@@ -51,7 +56,9 @@ public class MessageTemplateApplicationService {
      * </p>
      *
      * @param template 消息模板实体
+     *
      * @return 创建后的消息模板
+     *
      * @throws BusinessException 当模板编码已存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
@@ -59,9 +66,7 @@ public class MessageTemplateApplicationService {
         if (messageTemplateRepository.existsByTemplateCode(template.getTemplateCode())) {
             throw new BusinessException("模板编码已存在");
         }
-
         messageTemplateRepository.removeDeletedByTemplateCode(template.getTemplateCode());
-
         template.setCreateBy(SecurityUtils.getCurrentUsername());
         template.setCreateTime(LocalDateTime.now());
         if (template.getStatus() == null) {
@@ -77,14 +82,14 @@ public class MessageTemplateApplicationService {
      * </p>
      *
      * @param template 消息模板实体
+     *
      * @return 是否更新成功
+     *
      * @throws BusinessException 当模板不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateTemplate(MessageTemplate template) {
-        messageTemplateRepository.findById(template.getId())
-                .orElseThrow(() -> new BusinessException("消息模板不存在"));
-
+        messageTemplateRepository.findById(template.getId()).orElseThrow(() -> new BusinessException("消息模板不存在"));
         template.setUpdateBy(SecurityUtils.getCurrentUsername());
         template.setUpdateTime(LocalDateTime.now());
         return messageTemplateRepository.update(template);
@@ -97,14 +102,14 @@ public class MessageTemplateApplicationService {
      * </p>
      *
      * @param id 消息模板 ID
+     *
      * @return 是否删除成功
+     *
      * @throws BusinessException 当模板不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteTemplate(Long id) {
-        messageTemplateRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("消息模板不存在"));
-
+        messageTemplateRepository.findById(id).orElseThrow(() -> new BusinessException("消息模板不存在"));
         return messageTemplateRepository.deleteById(id);
     }
 
@@ -112,19 +117,22 @@ public class MessageTemplateApplicationService {
      * 根据 ID 获取消息模板
      *
      * @param id 消息模板 ID
+     *
      * @return 消息模板实体
+     *
      * @throws BusinessException 当模板不存在时抛出
      */
     public MessageTemplate getTemplateById(Long id) {
-        return messageTemplateRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("消息模板不存在"));
+        return messageTemplateRepository.findById(id).orElseThrow(() -> new BusinessException("消息模板不存在"));
     }
 
     /**
      * 根据模板编码获取消息模板
      *
      * @param templateCode 模板编码
+     *
      * @return 消息模板实体
+     *
      * @throws BusinessException 当模板不存在时抛出
      */
     public MessageTemplate getTemplateByCode(String templateCode) {
@@ -136,13 +144,15 @@ public class MessageTemplateApplicationService {
      * 分页查询消息模板列表
      *
      * @param templateName 模板名称（可选）
-     * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码，从 1 开始
-     * @param pageSize 每页数量
+     * @param messageType  消息类型（可选）
+     * @param status       状态（可选）
+     * @param pageNum      页码，从 1 开始
+     * @param pageSize     每页数量
+     *
      * @return 消息模板列表
      */
-    public List<MessageTemplate> getTemplatePage(String templateName, String messageType, Integer status, int pageNum, int pageSize) {
+    public List<MessageTemplate> getTemplatePage(String templateName, String messageType, Integer status, int pageNum,
+                                                 int pageSize) {
         return messageTemplateRepository.findPageByCondition(templateName, messageType, status, pageNum, pageSize);
     }
 
@@ -150,8 +160,9 @@ public class MessageTemplateApplicationService {
      * 统计消息模板数量
      *
      * @param templateName 模板名称（可选）
-     * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
+     * @param messageType  消息类型（可选）
+     * @param status       状态（可选）
+     *
      * @return 消息模板总数
      */
     public long countTemplates(String templateName, String messageType, Integer status) {
@@ -174,8 +185,10 @@ public class MessageTemplateApplicationService {
      * </p>
      *
      * @param templateCode 模板编码
-     * @param params 变量参数 Map，键为变量名，值为变量值
+     * @param params       变量参数 Map，键为变量名，值为变量值
+     *
      * @return 填充后的模板内容
+     *
      * @throws BusinessException 当模板不存在或已停用时抛出
      */
     public String fillTemplate(String templateCode, Map<String, String> params) {
@@ -185,4 +198,5 @@ public class MessageTemplateApplicationService {
         }
         return template.fillContent(params);
     }
+
 }

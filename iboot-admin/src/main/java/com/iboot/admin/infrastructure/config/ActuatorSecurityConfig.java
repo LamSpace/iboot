@@ -21,17 +21,17 @@ import org.springframework.core.annotation.Order;
 
 /**
  * Actuator 安全配置
- *
- * Actuator 端点的访问控制已由 {@link SecurityWhitelistConfig} 统一管理：
- * - /actuator/** 路径在白名单中，允许匿名访问
- * - Spring Boot Admin 需要无障碍访问 Actuator 端点完成注册和数据采集
- * - 生产环境建议通过网络层（防火墙/Nginx）限制 Actuator 端点的外部访问
+ * <p>
+ * Actuator 端点的访问控制已由 {@link SecurityWhitelistConfig} 统一管理： - /actuator/** 路径在白名单中，允许匿名访问 - Spring Boot Admin 需要无障碍访问
+ * Actuator 端点完成注册和数据采集 - 生产环境建议通过网络层（防火墙/Nginx）限制 Actuator 端点的外部访问
  *
  * @author iBoot
  */
 @Configuration
 @Order(1)
 public class ActuatorSecurityConfig {
+
     // Actuator 端点访问控制由 SecurityWhitelistConfig 和 SecurityConfig 统一处理
     // 不再定义独立的 SecurityFilterChain，避免与主安全链冲突导致 StackOverflowError
+
 }

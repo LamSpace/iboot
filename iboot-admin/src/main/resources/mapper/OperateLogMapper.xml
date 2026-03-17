@@ -24,20 +24,27 @@
         <result property="deleted" column="deleted"/>
     </resultMap>
 
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.OperateLogPO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_operate_log (title, business_type, method, request_method, operator_type, operator_name, dept_name, url, ip, location, param, result, status, error_msg, operate_time, cost_time)
-        VALUES (#{title}, #{businessType}, #{method}, #{requestMethod}, #{operatorType}, #{operatorName}, #{deptName}, #{url}, #{ip}, #{location}, #{param}, #{result}, #{status}, #{errorMsg}, #{operateTime}, #{costTime})
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.OperateLogPO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_operate_log (title, business_type, method, request_method, operator_type, operator_name,
+                                     dept_name, url, ip, location, param, result, status, error_msg, operate_time,
+                                     cost_time)
+        VALUES (#{title}, #{businessType}, #{method}, #{requestMethod}, #{operatorType}, #{operatorName}, #{deptName},
+                #{url}, #{ip}, #{location}, #{param}, #{result}, #{status}, #{errorMsg}, #{operateTime}, #{costTime})
     </insert>
 
     <select id="selectById" resultMap="OperateLogResultMap">
-        SELECT * FROM sys_operate_log WHERE id = #{id}
+        SELECT *
+        FROM sys_operate_log
+        WHERE id = #{id}
     </select>
 
     <select id="selectPage" resultMap="OperateLogResultMap">
-        SELECT * FROM sys_operate_log ol
+        SELECT *
+        FROM sys_operate_log ol
         WHERE ol.deleted = 0
         ORDER BY ol.operate_time DESC
-        LIMIT #{offset}, #{limit}
+            LIMIT #{offset}, #{limit}
     </select>
 
     <select id="selectPageByCondition" resultMap="OperateLogResultMap">
@@ -95,7 +102,9 @@
     </select>
 
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_operate_log WHERE deleted = 0
+        SELECT COUNT(*)
+        FROM sys_operate_log
+        WHERE deleted = 0
     </select>
 
     <select id="countByCondition" resultType="long">
@@ -124,57 +133,66 @@
     </select>
 
     <delete id="deleteBeforeDate">
-        DELETE FROM sys_operate_log WHERE operate_time &lt; #{beforeDate}
+        DELETE
+        FROM sys_operate_log
+        WHERE operate_time &lt; #{beforeDate}
     </delete>
 
     <select id="countByDate" resultType="java.util.Map">
-        SELECT DATE(operate_time) as date, COUNT(*) as count
+        SELECT DATE (operate_time) as date, COUNT (*) as count
         FROM sys_operate_log
-        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
-        GROUP BY DATE(operate_time)
+        WHERE operate_time &gt;= #{startTime}
+          AND operate_time &lt;= #{endTime}
+        GROUP BY DATE (operate_time)
         ORDER BY date
     </select>
 
     <select id="countByModule" resultType="java.util.Map">
         SELECT title as module, COUNT(*) as count
         FROM sys_operate_log
-        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
+        WHERE operate_time &gt;= #{startTime}
+          AND operate_time &lt;= #{endTime}
         GROUP BY title
         ORDER BY count DESC
     </select>
 
     <select id="countByStatus" resultType="java.util.Map">
-        SELECT
-            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as success,
-            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as fail,
-            COUNT(*) as total
+        SELECT SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as success,
+               SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as fail,
+               COUNT(*)                                    as total
         FROM sys_operate_log
-        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
+        WHERE operate_time &gt;= #{startTime}
+          AND operate_time &lt;= #{endTime}
     </select>
 
     <select id="countByHour" resultType="java.util.Map">
-        SELECT HOUR(operate_time) as hour, COUNT(*) as count
+        SELECT HOUR (operate_time) as hour, COUNT (*) as count
         FROM sys_operate_log
-        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
-        GROUP BY HOUR(operate_time)
+        WHERE operate_time &gt;= #{startTime}
+          AND operate_time &lt;= #{endTime}
+        GROUP BY HOUR (operate_time)
         ORDER BY hour
     </select>
 
     <select id="topActiveUsers" resultType="java.util.Map">
         SELECT operator_name as username, COUNT(*) as count
         FROM sys_operate_log
-        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
-        AND operator_name IS NOT NULL AND operator_name != ''
+        WHERE operate_time &gt;= #{startTime}
+          AND operate_time &lt;= #{endTime}
+          AND operator_name IS NOT NULL
+          AND operator_name != ''
         GROUP BY operator_name
         ORDER BY count DESC
-        LIMIT #{limit}
+            LIMIT #{limit}
     </select>
 
     <select id="countByRequestMethod" resultType="java.util.Map">
         SELECT request_method as name, COUNT(*) as count
         FROM sys_operate_log
-        WHERE operate_time &gt;= #{startTime} AND operate_time &lt;= #{endTime}
-        AND request_method IS NOT NULL AND request_method != ''
+        WHERE operate_time &gt;= #{startTime}
+          AND operate_time &lt;= #{endTime}
+          AND request_method IS NOT NULL
+          AND request_method != ''
         GROUP BY request_method
         ORDER BY count DESC
     </select>

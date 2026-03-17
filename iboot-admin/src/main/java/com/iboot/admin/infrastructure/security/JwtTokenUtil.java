@@ -31,28 +31,29 @@ import java.util.Map;
 
 /**
  * JWT 工具类
- * 
+ *
  * @author iBoot
  */
 @Component
 public class JwtTokenUtil {
-    
+
     /**
      * 令牌密钥
      */
     @Value("${jwt.secret:iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits}")
     private String secret;
-    
+
     /**
      * 令牌有效期（默认 30 分钟）
      */
     @Value("${jwt.expiration:1800}")
     private Long expiration;
-    
+
     /**
      * 生成 Token
      *
      * @param claims 用户信息
+     *
      * @return token
      */
     public String createToken(Map<String, Object> claims) {
@@ -62,62 +63,58 @@ public class JwtTokenUtil {
     /**
      * 生成 Token（指定过期时间）
      *
-     * @param claims          用户信息
+     * @param claims            用户信息
      * @param expirationSeconds 过期时间（秒）
+     *
      * @return token
      */
     public String createToken(Map<String, Object> claims, long expirationSeconds) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationSeconds * 1000);
-        
-        return Jwts.builder()
-                .claims(claims)
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(getSecretKey())
-                .compact();
+
+        return Jwts.builder().claims(claims).issuedAt(now).expiration(expiryDate).signWith(getSecretKey()).compact();
     }
-    
+
     /**
      * 从 Token 中获取数据声明
      *
      * @param token JWT令牌
+     *
      * @return Claims 数据声明对象
      */
     public Claims parseToken(String token) {
-        return Jwts.parser()
-                .verifyWith(getSecretKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        return Jwts.parser().verifyWith(getSecretKey()).build().parseSignedClaims(token).getPayload();
     }
-    
+
     /**
      * 从 Token 中获取用户 ID
      *
      * @param token JWT令牌
+     *
      * @return 用户ID
      */
     public Long getUserIdFromToken(String token) {
         Claims claims = parseToken(token);
         return Long.valueOf(claims.get(Constants.USER_ID).toString());
     }
-    
+
     /**
      * 从 Token 中获取用户名
      *
      * @param token JWT令牌
+     *
      * @return 用户名
      */
     public String getUsernameFromToken(String token) {
         Claims claims = parseToken(token);
         return claims.getSubject();
     }
-    
+
     /**
      * 验证 Token 是否过期
      *
      * @param token JWT令牌
+     *
      * @return 如果已过期则返回true，否则返回false
      */
     public boolean isTokenExpired(String token) {
@@ -129,11 +126,12 @@ public class JwtTokenUtil {
             return true;
         }
     }
-    
+
     /**
      * 验证 Token
      *
      * @param token JWT令牌
+     *
      * @return 如果有效则返回true，否则返回false
      */
     public boolean validateToken(String token) {
@@ -144,12 +142,12 @@ public class JwtTokenUtil {
             return false;
         }
     }
-    
+
     /**
-     * 仅验证 Token 签名（忽略过期时间）
-     * 用于配合 Redis 滑动过期的 session 管理机制
+     * 仅验证 Token 签名（忽略过期时间） 用于配合 Redis 滑动过期的 session 管理机制
      *
      * @param token JWT令牌
+     *
      * @return 签名有效则返回true，否则返回false
      */
     public boolean validateTokenSignature(String token) {
@@ -163,7 +161,7 @@ public class JwtTokenUtil {
             return false;
         }
     }
-    
+
     /**
      * 获取密钥
      *
@@ -172,4 +170,5 @@ public class JwtTokenUtil {
     private SecretKey getSecretKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
+
 }

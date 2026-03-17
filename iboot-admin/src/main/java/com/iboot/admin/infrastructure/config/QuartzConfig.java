@@ -19,14 +19,12 @@ package com.iboot.admin.infrastructure.config;
 import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 
 /**
- * Quartz 配置类
- * 确保 Quartz 使用 Spring 管理的 DataSource 和事务管理器
+ * Quartz 配置类 确保 Quartz 使用 Spring 管理的 DataSource 和事务管理器
  *
  * @author iBoot
  */
@@ -34,15 +32,15 @@ import javax.sql.DataSource;
 public class QuartzConfig {
 
     /**
-     * 自定义 SchedulerFactoryBean 配置
-     * 将 Spring 管理的 DataSource 和事务管理器注入到 Quartz
+     * 自定义 SchedulerFactoryBean 配置 将 Spring 管理的 DataSource 和事务管理器注入到 Quartz
      */
     @Bean
-    public SchedulerFactoryBeanCustomizer schedulerFactoryBeanCustomizer(
-            DataSource dataSource, PlatformTransactionManager transactionManager) {
+    public SchedulerFactoryBeanCustomizer schedulerFactoryBeanCustomizer(DataSource dataSource,
+                                                                         PlatformTransactionManager transactionManager) {
         return schedulerFactoryBean -> {
             schedulerFactoryBean.setDataSource(dataSource);
             schedulerFactoryBean.setTransactionManager(transactionManager);
         };
     }
+
 }

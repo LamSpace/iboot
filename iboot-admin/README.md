@@ -48,30 +48,36 @@ com.iboot.admin
 ## 核心功能
 
 ### 1. 用户管理
+
 - 用户注册、登录、登出
 - 用户信息维护
 - 用户状态管理
 - 用户权限分配
 
 ### 2. 角色管理
+
 - 角色创建、编辑、删除
 - 角色权限分配
 - 角色状态管理
 
 ### 3. 菜单管理
+
 - 菜单结构维护
 - 权限标识管理
 - 菜单排序管理
 
 ### 4. 部门管理
+
 - 部门层级管理
 - 部门人员分配
 
 ### 5. 岗位管理
+
 - 岗位信息维护
 - 岗位人员分配
 
 ### 6. 安全管理
+
 - JWT身份验证
 - RBAC权限控制
 - 数据权限控制
@@ -80,16 +86,19 @@ com.iboot.admin
 ## 安全机制
 
 ### JWT身份验证
+
 - 无状态身份验证
 - 自动刷新令牌
 - Redis存储会话信息
 
 ### 权限控制
+
 - 基于角色的访问控制（RBAC）
 - 细粒度权限管理
 - 数据权限控制
 
 ### 数据安全
+
 - 敏感信息加密存储
 - SQL注入防护
 - XSS攻击防护
@@ -97,12 +106,14 @@ com.iboot.admin
 ## API文档
 
 系统集成了Swagger/OpenAPI，提供交互式API文档：
+
 - 访问地址: `http://localhost:8080/swagger-ui.html`
 - API文档: `http://localhost:8080/v3/api-docs`
 
 ## 配置说明
 
 ### 数据库配置
+
 在`application.yml`中配置数据库连接信息：
 
 ```yaml
@@ -115,6 +126,7 @@ spring:
 ```
 
 ### JWT配置
+
 ```yaml
 jwt:
   secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
@@ -124,6 +136,7 @@ jwt:
 ## 启动方式
 
 ### 开发环境启动
+
 ```bash
 # 使用Maven启动
 mvn spring-boot:run
@@ -134,6 +147,7 @@ java -jar target/iboot-admin.jar
 ```
 
 ### 生产环境启动
+
 ```bash
 # 使用JVM参数优化
 java -Xms512m -Xmx1024m -jar target/iboot-admin.jar
@@ -142,11 +156,13 @@ java -Xms512m -Xmx1024m -jar target/iboot-admin.jar
 ## Docker部署
 
 ### 构建镜像
+
 ```bash
 docker build -t iboot-admin .
 ```
 
 ### 运行容器
+
 ```bash
 docker run -d -p 8080:8080 --name iboot-admin iboot-admin
 ```
@@ -176,10 +192,13 @@ docker run -d -p 8080:8080 --name iboot-admin iboot-admin
 
 ## 许可证
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "
+AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific
+language governing permissions and limitations under the License.
 
 See the [LICENSE](../LICENSE) file for additional licensing information.

@@ -32,12 +32,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface PostMapper {
 
     // ==================== 查询映射 ====================
@@ -46,6 +41,7 @@ public interface PostMapper {
      * 将岗位实体转换为响应 DTO
      *
      * @param post 岗位实体
+     *
      * @return 岗位响应 DTO
      */
     PostResponse toResponse(Post post);
@@ -54,6 +50,7 @@ public interface PostMapper {
      * 将岗位实体列表转换为响应 DTO 列表
      *
      * @param posts 岗位实体列表
+     *
      * @return 岗位响应 DTO 列表
      */
     List<PostResponse> toResponseList(List<Post> posts);
@@ -62,6 +59,7 @@ public interface PostMapper {
      * 将岗位实体转换为导出 VO
      *
      * @param post 岗位实体
+     *
      * @return 岗位导出 VO
      */
     PostExportVO toExportVO(Post post);
@@ -70,6 +68,7 @@ public interface PostMapper {
      * 将岗位实体列表转换为导出 VO 列表
      *
      * @param posts 岗位实体列表
+     *
      * @return 岗位导出 VO 列表
      */
     List<PostExportVO> toExportVOList(List<Post> posts);
@@ -80,6 +79,7 @@ public interface PostMapper {
      * 将岗位请求转换为实体
      *
      * @param request 岗位请求
+     *
      * @return 岗位实体
      */
     @Mapping(target = "id", ignore = true)
@@ -105,4 +105,5 @@ public interface PostMapper {
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     void updateEntityFromRequest(PostRequest request, @MappingTarget Post post);
+
 }

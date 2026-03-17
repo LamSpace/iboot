@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.DictType;
 import com.iboot.admin.domain.system.repository.DictTypeRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.DictTypeMapper;
 import com.iboot.admin.infrastructure.persistence.po.DictTypePO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class DictTypeRepositoryImpl implements DictTypeRepository {
 
     private final DictTypeMapper dictTypeMapper;
+
+    @SuppressWarnings("all")
+    public DictTypeRepositoryImpl(final DictTypeMapper dictTypeMapper) {
+        this.dictTypeMapper = dictTypeMapper;
+    }
 
     /**
      * 保存字典类型
@@ -48,6 +51,7 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      * </p>
      *
      * @param dictType 字典类型实体对象
+     *
      * @return 保存后的字典类型对象
      */
     @Override
@@ -65,6 +69,7 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      * 更新字典类型
      *
      * @param dictType 字典类型实体对象
+     *
      * @return 是否更新成功
      */
     @Override
@@ -77,6 +82,7 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      * 根据 ID 删除字典类型（逻辑删除）
      *
      * @param id 字典类型 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -88,6 +94,7 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      * 根据 ID 查询字典类型
      *
      * @param id 字典类型 ID
+     *
      * @return 字典类型实体，不存在则返回空
      */
     @Override
@@ -100,6 +107,7 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      * 根据字典类型查询
      *
      * @param dictType 字典类型标识
+     *
      * @return 字典类型实体，不存在则返回空
      */
     @Override
@@ -115,22 +123,22 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      */
     @Override
     public List<DictType> findAll() {
-        return dictTypeMapper.selectAll().stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return dictTypeMapper.selectAll().stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 分页查询字典类型
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 字典类型列表
      */
     @Override
     public List<DictType> findPage(int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return dictTypeMapper.selectPage(offset, pageSize).stream()
+        return dictTypeMapper.selectPage(offset, pageSize)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -149,6 +157,7 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      * 检查字典类型是否存在
      *
      * @param dictType 字典类型标识
+     *
      * @return 是否存在
      */
     @Override
@@ -160,6 +169,7 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      * 物理删除已逻辑删除的字典类型记录
      *
      * @param dictType 字典类型标识
+     *
      * @return 是否删除成功
      */
     @Override
@@ -171,6 +181,7 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      * 将领域对象转换为持久化对象
      *
      * @param dictType 字典类型领域对象
+     *
      * @return 字典类型持久化对象
      */
     private DictTypePO convertToPO(DictType dictType) {
@@ -192,6 +203,7 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 字典类型持久化对象
+     *
      * @return 字典类型领域对象
      */
     private DictType convertToDomain(DictTypePO po) {
@@ -208,4 +220,5 @@ public class DictTypeRepositoryImpl implements DictTypeRepository {
                 .remark(po.getRemark())
                 .build();
     }
+
 }

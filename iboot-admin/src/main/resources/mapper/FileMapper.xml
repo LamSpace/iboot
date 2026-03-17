@@ -21,7 +21,8 @@
         <result property="remark" column="remark"/>
     </resultMap>
 
-    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.FilePO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.iboot.admin.infrastructure.persistence.po.FilePO" useGeneratedKeys="true"
+            keyProperty="id">
         INSERT INTO sys_file (file_name, file_path, file_size, file_type, file_ext, file_category,
                               upload_by, upload_time, create_by, create_time, deleted, remark)
         VALUES (#{fileName}, #{filePath}, #{fileSize}, #{fileType}, #{fileExt}, #{fileCategory},
@@ -41,23 +42,38 @@
     </update>
 
     <update id="deleteById">
-        UPDATE sys_file SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+        UPDATE sys_file
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
     <select id="selectById" resultMap="FileResultMap">
-        SELECT * FROM sys_file WHERE id = #{id} AND deleted = 0
+        SELECT *
+        FROM sys_file
+        WHERE id = #{id}
+          AND deleted = 0
     </select>
 
     <select id="selectAll" resultMap="FileResultMap">
-        SELECT * FROM sys_file f WHERE f.deleted = 0 ORDER BY f.upload_time DESC
+        SELECT *
+        FROM sys_file f
+        WHERE f.deleted = 0
+        ORDER BY f.upload_time DESC
     </select>
 
     <select id="selectPage" resultMap="FileResultMap">
-        SELECT * FROM sys_file f WHERE f.deleted = 0 ORDER BY f.upload_time DESC LIMIT #{offset}, #{limit}
+        SELECT *
+        FROM sys_file f
+        WHERE f.deleted = 0
+        ORDER BY f.upload_time DESC LIMIT #{offset}, #{limit}
     </select>
 
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM sys_file f WHERE f.deleted = 0
+        SELECT COUNT(*)
+        FROM sys_file f
+        WHERE f.deleted = 0
     </select>
 
     <select id="selectPageByCondition" resultMap="FileResultMap">

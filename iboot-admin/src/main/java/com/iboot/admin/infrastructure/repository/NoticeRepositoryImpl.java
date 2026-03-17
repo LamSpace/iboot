@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.Notice;
 import com.iboot.admin.domain.system.repository.NoticeRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.NoticeMapper;
 import com.iboot.admin.infrastructure.persistence.po.NoticePO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class NoticeRepositoryImpl implements NoticeRepository {
 
     private final NoticeMapper noticeMapper;
+
+    @SuppressWarnings("all")
+    public NoticeRepositoryImpl(final NoticeMapper noticeMapper) {
+        this.noticeMapper = noticeMapper;
+    }
 
     /**
      * 保存公告
@@ -48,6 +51,7 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * </p>
      *
      * @param notice 公告实体
+     *
      * @return 保存后的公告
      */
     @Override
@@ -62,6 +66,7 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * 更新公告
      *
      * @param notice 公告实体
+     *
      * @return 是否更新成功
      */
     @Override
@@ -74,6 +79,7 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * 根据 ID 删除公告（逻辑删除）
      *
      * @param id 公告 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -85,6 +91,7 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * 根据 ID 查询公告
      *
      * @param id 公告 ID
+     *
      * @return 公告实体，不存在则返回空
      */
     @Override
@@ -97,14 +104,16 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * 按条件分页查询公告
      *
      * @param noticeTitle 公告标题（可选）
-     * @param noticeType 公告类型（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param noticeType  公告类型（可选）
+     * @param status      状态（可选）
+     * @param pageNum     页码
+     * @param pageSize    每页数量
+     *
      * @return 公告列表
      */
     @Override
-    public List<Notice> findPageByCondition(String noticeTitle, String noticeType, String status, int pageNum, int pageSize) {
+    public List<Notice> findPageByCondition(String noticeTitle, String noticeType, String status, int pageNum,
+                                            int pageSize) {
         int offset = (pageNum - 1) * pageSize;
         return noticeMapper.selectPageByCondition(noticeTitle, noticeType, status, offset, pageSize)
                 .stream()
@@ -116,8 +125,9 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * 按条件统计公告总数
      *
      * @param noticeTitle 公告标题（可选）
-     * @param noticeType 公告类型（可选）
-     * @param status 状态（可选）
+     * @param noticeType  公告类型（可选）
+     * @param status      状态（可选）
+     *
      * @return 公告总数
      */
     @Override
@@ -129,8 +139,9 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * 按条件查询所有公告（不分页，用于导出）
      *
      * @param noticeTitle 公告标题（可选）
-     * @param noticeType 公告类型（可选）
-     * @param status 状态（可选）
+     * @param noticeType  公告类型（可选）
+     * @param status      状态（可选）
+     *
      * @return 公告列表
      */
     @Override
@@ -145,6 +156,7 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * 查询已发布的公告（按发布时间倒序，限制数量）
      *
      * @param limit 最大返回数量
+     *
      * @return 已发布公告列表
      */
     @Override
@@ -169,6 +181,7 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 公告持久化对象
+     *
      * @return 公告领域对象
      */
     private Notice convertToDomain(NoticePO po) {
@@ -192,6 +205,7 @@ public class NoticeRepositoryImpl implements NoticeRepository {
      * 将领域对象转换为持久化对象
      *
      * @param domain 公告领域对象
+     *
      * @return 公告持久化对象
      */
     private NoticePO convertToPO(Notice domain) {
@@ -210,4 +224,5 @@ public class NoticeRepositoryImpl implements NoticeRepository {
         po.setRemark(domain.getRemark());
         return po;
     }
+
 }

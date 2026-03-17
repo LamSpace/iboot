@@ -37,6 +37,7 @@ public interface RoleMapper {
      * 插入角色记录
      *
      * @param role 角色持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(RolePO role);
@@ -45,6 +46,7 @@ public interface RoleMapper {
      * 更新角色记录
      *
      * @param role 角色持久化对象
+     *
      * @return 影响的记录数
      */
     int update(RolePO role);
@@ -53,6 +55,7 @@ public interface RoleMapper {
      * 根据 ID 删除角色记录
      *
      * @param id 角色 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -61,6 +64,7 @@ public interface RoleMapper {
      * 根据 ID 查询角色记录
      *
      * @param id 角色 ID
+     *
      * @return 角色持久化对象
      */
     RolePO selectById(@Param("id") Long id);
@@ -69,6 +73,7 @@ public interface RoleMapper {
      * 根据角色编码查询角色记录
      *
      * @param roleCode 角色编码
+     *
      * @return 角色持久化对象
      */
     RolePO selectByRoleCode(@Param("roleCode") String roleCode);
@@ -84,7 +89,8 @@ public interface RoleMapper {
      * 分页查询角色记录
      *
      * @param offset 偏移量
-     * @param limit 限制数量
+     * @param limit  限制数量
+     *
      * @return 角色持久化对象列表
      */
     List<RolePO> selectPage(@Param("offset") int offset, @Param("limit") int limit);
@@ -101,27 +107,26 @@ public interface RoleMapper {
      *
      * @param roleName 角色名称（可选）
      * @param roleCode 角色编码（可选）
-     * @param status 状态（可选）
-     * @param offset 偏移量
-     * @param limit 限制数量
+     * @param status   状态（可选）
+     * @param offset   偏移量
+     * @param limit    限制数量
+     *
      * @return 角色持久化对象列表
      */
-    List<RolePO> selectPageByCondition(@Param("roleName") String roleName,
-                                       @Param("roleCode") String roleCode,
+    List<RolePO> selectPageByCondition(@Param("roleName") String roleName, @Param("roleCode") String roleCode,
                                        @Param("status") Integer status,
-                                       @Param("offset") int offset,
-                                       @Param("limit") int limit);
+                                       @Param("offset") int offset, @Param("limit") int limit);
 
     /**
      * 按条件查询所有角色记录（不分页，用于导出）
      *
      * @param roleName 角色名称（可选）
      * @param roleCode 角色编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 角色持久化对象列表
      */
-    List<RolePO> selectAllByCondition(@Param("roleName") String roleName,
-                                      @Param("roleCode") String roleCode,
+    List<RolePO> selectAllByCondition(@Param("roleName") String roleName, @Param("roleCode") String roleCode,
                                       @Param("status") Integer status);
 
     /**
@@ -129,17 +134,18 @@ public interface RoleMapper {
      *
      * @param roleName 角色名称（可选）
      * @param roleCode 角色编码（可选）
-     * @param status 状态（可选）
+     * @param status   状态（可选）
+     *
      * @return 角色总数
      */
-    long countByCondition(@Param("roleName") String roleName,
-                          @Param("roleCode") String roleCode,
+    long countByCondition(@Param("roleName") String roleName, @Param("roleCode") String roleCode,
                           @Param("status") Integer status);
 
     /**
      * 检查角色编码是否存在
      *
      * @param roleCode 角色编码
+     *
      * @return 存在返回 1，否则返回 0
      */
     int existsByRoleCode(@Param("roleCode") String roleCode);
@@ -148,6 +154,7 @@ public interface RoleMapper {
      * 根据用户 ID 查询角色列表
      *
      * @param userId 用户 ID
+     *
      * @return 角色持久化对象列表
      */
     List<RolePO> selectByUserId(@Param("userId") Long userId);
@@ -156,6 +163,7 @@ public interface RoleMapper {
      * 检查角色名称是否存在
      *
      * @param roleName 角色名称
+     *
      * @return 存在返回 1，否则返回 0
      */
     int existsByRoleName(@Param("roleName") String roleName);
@@ -164,6 +172,7 @@ public interface RoleMapper {
      * 统计角色关联的用户数
      *
      * @param roleId 角色 ID
+     *
      * @return 用户数
      */
     long countUsersByRoleId(@Param("roleId") Long roleId);
@@ -173,6 +182,7 @@ public interface RoleMapper {
      *
      * @param roleId 角色 ID
      * @param menuId 菜单 ID
+     *
      * @return 影响的记录数
      */
     int insertRoleMenu(@Param("roleId") Long roleId, @Param("menuId") Long menuId);
@@ -181,6 +191,7 @@ public interface RoleMapper {
      * 根据角色 ID 删除角色菜单关联记录
      *
      * @param roleId 角色 ID
+     *
      * @return 影响的记录数
      */
     int deleteRoleMenuByRoleId(@Param("roleId") Long roleId);
@@ -189,6 +200,7 @@ public interface RoleMapper {
      * 根据角色 ID 查询菜单 ID 列表
      *
      * @param roleId 角色 ID
+     *
      * @return 菜单 ID 列表
      */
     List<Long> selectMenuIdsByRoleId(@Param("roleId") Long roleId);
@@ -198,6 +210,7 @@ public interface RoleMapper {
      *
      * @param roleId 角色 ID
      * @param deptId 部门 ID
+     *
      * @return 影响的记录数
      */
     int insertRoleDept(@Param("roleId") Long roleId, @Param("deptId") Long deptId);
@@ -206,6 +219,7 @@ public interface RoleMapper {
      * 根据角色 ID 删除角色部门关联记录
      *
      * @param roleId 角色 ID
+     *
      * @return 影响的记录数
      */
     int deleteRoleDeptByRoleId(@Param("roleId") Long roleId);
@@ -214,6 +228,7 @@ public interface RoleMapper {
      * 根据角色 ID 查询部门 ID 列表
      *
      * @param roleId 角色 ID
+     *
      * @return 部门 ID 列表
      */
     List<Long> selectDeptIdsByRoleId(@Param("roleId") Long roleId);
@@ -222,7 +237,9 @@ public interface RoleMapper {
      * 物理删除已逻辑删除的角色记录（根据角色编码）
      *
      * @param roleCode 角色编码
+     *
      * @return 影响的记录数
      */
     int removeDeletedByRoleCode(@Param("roleCode") String roleCode);
+
 }

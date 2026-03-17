@@ -32,12 +32,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface DictMapper {
 
     // ==================== 字典类型映射 ====================
@@ -46,6 +41,7 @@ public interface DictMapper {
      * 将字典类型实体转换为响应 DTO
      *
      * @param dictType 字典类型实体
+     *
      * @return 字典类型响应 DTO
      */
     DictTypeResponse typeToResponse(DictType dictType);
@@ -54,6 +50,7 @@ public interface DictMapper {
      * 将字典类型实体列表转换为响应 DTO 列表
      *
      * @param dictTypes 字典类型实体列表
+     *
      * @return 字典类型响应 DTO 列表
      */
     List<DictTypeResponse> typeToResponseList(List<DictType> dictTypes);
@@ -62,6 +59,7 @@ public interface DictMapper {
      * 将字典类型实体转换为导出 VO
      *
      * @param dictType 字典类型实体
+     *
      * @return 字典类型导出 VO
      */
     DictTypeExportVO typeToExportVO(DictType dictType);
@@ -70,6 +68,7 @@ public interface DictMapper {
      * 将字典类型实体列表转换为导出 VO 列表
      *
      * @param dictTypes 字典类型实体列表
+     *
      * @return 字典类型导出 VO 列表
      */
     List<DictTypeExportVO> typeToExportVOList(List<DictType> dictTypes);
@@ -78,6 +77,7 @@ public interface DictMapper {
      * 将字典类型请求转换为实体
      *
      * @param request 字典类型请求
+     *
      * @return 字典类型实体
      */
     @Mapping(target = "id", ignore = true)
@@ -101,4 +101,5 @@ public interface DictMapper {
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     void updateEntityFromRequest(DictTypeRequest request, @MappingTarget DictType dictType);
+
 }

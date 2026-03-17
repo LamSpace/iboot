@@ -19,8 +19,8 @@ package com.iboot.admin.infrastructure.push;
 import com.iboot.admin.common.cloudevent.CloudEventBody;
 import com.iboot.admin.common.cloudevent.CloudEventTypes;
 import com.iboot.admin.infrastructure.security.SecurityUtils;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,14 +35,21 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * @author iBoot Team
  * @since 1.0.0
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/push")
-@RequiredArgsConstructor
 public class PushEndpoint {
 
+    private static final Logger log = LoggerFactory.getLogger(PushEndpoint.class);
+
     private final SseEmitterManager sseEmitterManager;
+
     private final PushEventService pushEventService;
+
+    @SuppressWarnings("all")
+    public PushEndpoint(final SseEmitterManager sseEmitterManager, final PushEventService pushEventService) {
+        this.sseEmitterManager = sseEmitterManager;
+        this.pushEventService = pushEventService;
+    }
 
     /**
      * 建立 SSE 连接
@@ -55,9 +62,7 @@ public class PushEndpoint {
     public SseEmitter connect() {
         Long userId = SecurityUtils.getCurrentUserId();
         log.info("用户请求建立 SSE 连接，userId: {}", userId);
-
         SseEmitter emitter = sseEmitterManager.connect(userId);
-
         // 发送连接成功事件
         PushEvent connectedEvent = PushEvent.builder()
                 .id("conn-" + java.util.UUID.randomUUID())
@@ -65,14 +70,10 @@ public class PushEndpoint {
                 .source("/api/push/connect")
                 .time(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME))
                 .dataContentType("application/json")
-                .data(java.util.Map.of(
-                        "userId", userId,
-                        "connectedAt", java.time.LocalDateTime.now().toString(),
-                        "onlineCount", sseEmitterManager.getOnlineCount()
-                ))
+                .data(java.util.Map.of("userId", userId, "connectedAt", java.time.LocalDateTime.now().toString(),
+                        "onlineCount", sseEmitterManager.getOnlineCount()))
                 .targetUserId(userId)
                 .build();
-
         try {
             emitter.send(SseEmitter.event()
                     .id(connectedEvent.getId())
@@ -83,7 +84,6 @@ public class PushEndpoint {
         } catch (Exception e) {
             log.error("发送连接成功事件失败，userId: {}", userId, e);
         }
-
         return emitter;
     }
 
@@ -96,12 +96,9 @@ public class PushEndpoint {
     public CloudEventBody<java.util.Map<String, Object>> getStatus() {
         Long userId = SecurityUtils.getCurrentUserId();
         boolean online = sseEmitterManager.isOnline(userId);
-
-        java.util.Map<String, Object> status = java.util.Map.of(
-                "online", online,
-                "totalOnline", sseEmitterManager.getOnlineCount()
-        );
-
+        java.util.Map<String, Object> status = java.util.Map.of("online", online, "totalOnline",
+                sseEmitterManager.getOnlineCount());
         return CloudEventBody.success("/api/push/status", "在线状态查询成功", status);
     }
+
 }

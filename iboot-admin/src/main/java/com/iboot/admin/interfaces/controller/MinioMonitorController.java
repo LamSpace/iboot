@@ -20,7 +20,6 @@ import com.iboot.admin.application.service.MinioAdminService;
 import com.iboot.admin.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,18 +28,21 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * MinIO监控控制器
- * 提供MinIO集群状态、存储桶信息等监控数据接口
+ * MinIO监控控制器 提供MinIO集群状态、存储桶信息等监控数据接口
  *
  * @author iBoot
  */
 @Tag(name = "MinIO监控", description = "MinIO对象存储监控信息接口")
 @RestController
 @RequestMapping("/api/monitor/minio")
-@RequiredArgsConstructor
 public class MinioMonitorController {
 
     private final MinioAdminService minioAdminService;
+
+    @SuppressWarnings("all")
+    public MinioMonitorController(final MinioAdminService minioAdminService) {
+        this.minioAdminService = minioAdminService;
+    }
 
     @Operation(summary = "获取MinIO监控信息", description = "获取MinIO集群状态、存储桶列表、存储使用情况等")
     @GetMapping
@@ -57,4 +59,5 @@ public class MinioMonitorController {
         boolean online = minioAdminService.pingMinio();
         return Result.success(online);
     }
+
 }

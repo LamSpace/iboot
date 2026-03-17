@@ -26,24 +26,25 @@ import com.iboot.admin.interfaces.dto.response.RedisMonitorResponse.CacheKeyDeta
 import com.iboot.admin.interfaces.dto.response.RedisMonitorResponse.CacheKeyInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Redis 缓存监控控制器
- * 提供 Redis 服务器监控信息、缓存键管理等接口
- * 监控阈值通过参数配置动态调整，状态标签通过字典管理灵活定义
+ * Redis 缓存监控控制器 提供 Redis 服务器监控信息、缓存键管理等接口 监控阈值通过参数配置动态调整，状态标签通过字典管理灵活定义
  *
  * @author iBoot
  */
 @Tag(name = "Redis缓存监控", description = "Redis缓存监控及缓存键管理接口")
 @RestController
 @RequestMapping("/api/monitor/redis")
-@RequiredArgsConstructor
 public class RedisMonitorController {
 
     private final RedisMonitorApplicationService redisMonitorApplicationService;
+
+    @SuppressWarnings("all")
+    public RedisMonitorController(final RedisMonitorApplicationService redisMonitorApplicationService) {
+        this.redisMonitorApplicationService = redisMonitorApplicationService;
+    }
 
     @Operation(summary = "获取Redis监控信息", description = "获取Redis服务器信息、内存、统计、键空间、命令统计等监控数据")
     @GetMapping
@@ -56,10 +57,9 @@ public class RedisMonitorController {
     @Operation(summary = "查询缓存键列表", description = "使用SCAN命令分页查询缓存键，支持通配符匹配")
     @GetMapping("/keys")
     @PreAuthorize("hasAuthority('redis:list')")
-    public Result<PageResult<CacheKeyInfo>> getCacheKeys(
-            @RequestParam(defaultValue = "*") String pattern,
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "20") Integer pageSize) {
+    public Result<PageResult<CacheKeyInfo>> getCacheKeys(@RequestParam(defaultValue = "*") String pattern,
+                                                         @RequestParam(defaultValue = "1") Integer pageNum,
+                                                         @RequestParam(defaultValue = "20") Integer pageSize) {
         PageResult<CacheKeyInfo> pageResult = redisMonitorApplicationService.getCacheKeys(pattern, pageNum, pageSize);
         return Result.success(pageResult);
     }
@@ -92,4 +92,5 @@ public class RedisMonitorController {
         redisMonitorApplicationService.clearAllKeys();
         return Result.success();
     }
+
 }

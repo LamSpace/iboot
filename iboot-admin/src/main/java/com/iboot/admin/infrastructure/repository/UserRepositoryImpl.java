@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.User;
 import com.iboot.admin.domain.system.repository.UserRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.UserMapper;
 import com.iboot.admin.infrastructure.persistence.po.UserPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -37,19 +36,23 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class UserRepositoryImpl implements UserRepository {
 
     private final UserMapper userMapper;
 
+    @SuppressWarnings("all")
+    public UserRepositoryImpl(final UserMapper userMapper) {
+        this.userMapper = userMapper;
+    }
+
     /**
      * 保存用户
      * <p>
-     * 如果 ID 为空则插入新记录，否则更新现有记录。
-     * 同时保存用户与角色、岗位的关联关系。
+     * 如果 ID 为空则插入新记录，否则更新现有记录。 同时保存用户与角色、岗位的关联关系。
      * </p>
      *
      * @param user 用户实体
+     *
      * @return 保存后的用户
      */
     @Override
@@ -60,7 +63,6 @@ public class UserRepositoryImpl implements UserRepository {
         } else {
             userMapper.update(userPO);
         }
-
         // 保存用户角色关联
         if (user.getRoleIds() != null) {
             userMapper.deleteUserRoleByUserId(userPO.getId());
@@ -68,7 +70,6 @@ public class UserRepositoryImpl implements UserRepository {
                 userMapper.insertUserRole(userPO.getId(), roleId);
             }
         }
-
         // 保存用户岗位关联
         if (user.getPostIds() != null) {
             userMapper.deleteUserPostByUserId(userPO.getId());
@@ -76,7 +77,6 @@ public class UserRepositoryImpl implements UserRepository {
                 userMapper.insertUserPost(userPO.getId(), postId);
             }
         }
-
         return convertToDomain(userPO);
     }
 
@@ -84,6 +84,7 @@ public class UserRepositoryImpl implements UserRepository {
      * 根据 ID 查询用户
      *
      * @param id 用户 ID
+     *
      * @return 用户实体，不存在则返回空
      */
     @Override
@@ -96,6 +97,7 @@ public class UserRepositoryImpl implements UserRepository {
      * 根据用户名查询用户
      *
      * @param username 用户名
+     *
      * @return 用户实体，不存在则返回空
      */
     @Override
@@ -108,6 +110,7 @@ public class UserRepositoryImpl implements UserRepository {
      * 根据邮箱查询用户
      *
      * @param email 邮箱地址
+     *
      * @return 用户实体，不存在则返回空
      */
     @Override
@@ -120,6 +123,7 @@ public class UserRepositoryImpl implements UserRepository {
      * 根据手机号查询用户
      *
      * @param phone 手机号
+     *
      * @return 用户实体，不存在则返回空
      */
     @Override
@@ -135,24 +139,21 @@ public class UserRepositoryImpl implements UserRepository {
      */
     @Override
     public List<User> findAll() {
-        return userMapper.selectAll().stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return userMapper.selectAll().stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 分页查询用户
      *
-     * @param pageNum 页码，从 1 开始
+     * @param pageNum  页码，从 1 开始
      * @param pageSize 每页数量
+     *
      * @return 用户列表
      */
     @Override
     public List<User> findPage(int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return userMapper.selectPage(offset, pageSize).stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return userMapper.selectPage(offset, pageSize).stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
@@ -169,16 +170,18 @@ public class UserRepositoryImpl implements UserRepository {
      * 按条件分页查询用户
      *
      * @param username 用户名（可选）
-     * @param phone 手机号（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
+     * @param phone    手机号（可选）
+     * @param status   状态（可选）
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 用户列表
      */
     @Override
     public List<User> findPageByCondition(String username, String phone, Integer status, int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return userMapper.selectPageByCondition(username, phone, status, offset, pageSize).stream()
+        return userMapper.selectPageByCondition(username, phone, status, offset, pageSize)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -187,13 +190,15 @@ public class UserRepositoryImpl implements UserRepository {
      * 按条件查询所有用户（不分页，用于导出）
      *
      * @param username 用户名（可选）
-     * @param phone 手机号（可选）
-     * @param status 状态（可选）
+     * @param phone    手机号（可选）
+     * @param status   状态（可选）
+     *
      * @return 用户列表
      */
     @Override
     public List<User> findAllByCondition(String username, String phone, Integer status) {
-        return userMapper.selectAllByCondition(username, phone, status).stream()
+        return userMapper.selectAllByCondition(username, phone, status)
+                .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
     }
@@ -202,8 +207,9 @@ public class UserRepositoryImpl implements UserRepository {
      * 按条件统计用户总数
      *
      * @param username 用户名（可选）
-     * @param phone 手机号（可选）
-     * @param status 状态（可选）
+     * @param phone    手机号（可选）
+     * @param status   状态（可选）
+     *
      * @return 用户总数
      */
     @Override
@@ -218,13 +224,13 @@ public class UserRepositoryImpl implements UserRepository {
      * </p>
      *
      * @param user 用户实体
+     *
      * @return 是否更新成功
      */
     @Override
     public boolean update(User user) {
         UserPO userPO = convertToPO(user);
         boolean result = userMapper.update(userPO) > 0;
-
         // 更新用户角色关联
         if (user.getRoleIds() != null) {
             userMapper.deleteUserRoleByUserId(user.getId());
@@ -232,7 +238,6 @@ public class UserRepositoryImpl implements UserRepository {
                 userMapper.insertUserRole(user.getId(), roleId);
             }
         }
-
         // 更新用户岗位关联
         if (user.getPostIds() != null) {
             userMapper.deleteUserPostByUserId(user.getId());
@@ -240,7 +245,6 @@ public class UserRepositoryImpl implements UserRepository {
                 userMapper.insertUserPost(user.getId(), postId);
             }
         }
-
         return result;
     }
 
@@ -248,6 +252,7 @@ public class UserRepositoryImpl implements UserRepository {
      * 根据 ID 删除用户（逻辑删除）
      *
      * @param id 用户 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -259,6 +264,7 @@ public class UserRepositoryImpl implements UserRepository {
      * 检查用户名是否存在
      *
      * @param username 用户名
+     *
      * @return 是否存在
      */
     @Override
@@ -270,6 +276,7 @@ public class UserRepositoryImpl implements UserRepository {
      * 检查邮箱是否存在
      *
      * @param email 邮箱地址
+     *
      * @return 是否存在
      */
     @Override
@@ -281,6 +288,7 @@ public class UserRepositoryImpl implements UserRepository {
      * 检查手机号是否存在
      *
      * @param phone 手机号
+     *
      * @return 是否存在
      */
     @Override
@@ -292,32 +300,31 @@ public class UserRepositoryImpl implements UserRepository {
      * 根据部门 ID 查询用户列表
      *
      * @param deptId 部门 ID
+     *
      * @return 用户列表
      */
     @Override
     public List<User> findByDeptId(Long deptId) {
-        return userMapper.selectByDeptId(deptId).stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return userMapper.selectByDeptId(deptId).stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 根据角色 ID 查询用户列表
      *
      * @param roleId 角色 ID
+     *
      * @return 用户列表
      */
     @Override
     public List<User> findByRoleId(Long roleId) {
-        return userMapper.selectByRoleId(roleId).stream()
-                .map(this::convertToDomain)
-                .collect(Collectors.toList());
+        return userMapper.selectByRoleId(roleId).stream().map(this::convertToDomain).collect(Collectors.toList());
     }
 
     /**
      * 物理删除已逻辑删除的用户记录（根据用户名）
      *
      * @param username 用户名
+     *
      * @return 是否删除成功
      */
     @Override
@@ -329,7 +336,8 @@ public class UserRepositoryImpl implements UserRepository {
      * 统计指定时间范围内创建的用户数量
      *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
+     *
      * @return 用户数量
      */
     @Override
@@ -341,6 +349,7 @@ public class UserRepositoryImpl implements UserRepository {
      * 将领域对象转换为持久化对象
      *
      * @param user 用户领域对象
+     *
      * @return 用户持久化对象
      */
     private UserPO convertToPO(User user) {
@@ -374,6 +383,7 @@ public class UserRepositoryImpl implements UserRepository {
      * </p>
      *
      * @param userPO 用户持久化对象
+     *
      * @return 用户领域对象
      */
     private User convertToDomain(UserPO userPO) {
@@ -381,7 +391,6 @@ public class UserRepositoryImpl implements UserRepository {
         List<Long> roleIds = userMapper.selectRoleIdsByUserId(userPO.getId());
         // 查询用户关联的岗位 ID 列表
         List<Long> postIds = userMapper.selectPostIdsByUserId(userPO.getId());
-
         return User.builder()
                 .id(userPO.getId())
                 .username(userPO.getUsername())
@@ -406,4 +415,5 @@ public class UserRepositoryImpl implements UserRepository {
                 .remark(userPO.getRemark())
                 .build();
     }
+
 }

@@ -38,6 +38,7 @@ public interface DeptMapper {
      * 插入部门记录
      *
      * @param deptPO 部门持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(DeptPO deptPO);
@@ -46,6 +47,7 @@ public interface DeptMapper {
      * 更新部门记录
      *
      * @param deptPO 部门持久化对象
+     *
      * @return 影响的记录数
      */
     int update(DeptPO deptPO);
@@ -54,6 +56,7 @@ public interface DeptMapper {
      * 根据 ID 删除部门
      *
      * @param id 部门 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -62,6 +65,7 @@ public interface DeptMapper {
      * 根据 ID 查询部门
      *
      * @param id 部门 ID
+     *
      * @return 部门持久化对象
      */
     DeptPO selectById(@Param("id") Long id);
@@ -78,6 +82,7 @@ public interface DeptMapper {
      * 根据父 ID 查询子部门列表
      *
      * @param parentId 父部门 ID
+     *
      * @return 子部门列表
      */
     List<DeptPO> selectByParentId(@Param("parentId") Long parentId);
@@ -86,6 +91,7 @@ public interface DeptMapper {
      * 查询部门及其所有子部门 ID（递归）
      *
      * @param deptId 部门 ID
+     *
      * @return 部门 ID 列表
      */
     List<Long> selectChildrenIds(@Param("deptId") Long deptId);
@@ -101,6 +107,7 @@ public interface DeptMapper {
      * 根据部门编码统计数量
      *
      * @param deptCode 部门编码
+     *
      * @return 数量
      */
     int countByDeptCode(@Param("deptCode") String deptCode);
@@ -110,6 +117,7 @@ public interface DeptMapper {
      *
      * @param deptName 部门名称
      * @param parentId 父部门 ID
+     *
      * @return 数量
      */
     int countByDeptNameAndParentId(@Param("deptName") String deptName, @Param("parentId") Long parentId);
@@ -118,6 +126,7 @@ public interface DeptMapper {
      * 统计子部门数量
      *
      * @param deptId 部门 ID
+     *
      * @return 子部门数量
      */
     int countChildren(@Param("deptId") Long deptId);
@@ -132,15 +141,99 @@ public interface DeptMapper {
     /**
      * 部门用户数量统计 DTO
      */
-    @lombok.Data
     class DeptUserCountDTO {
+
         /**
          * 部门 ID
          */
         private Long deptId;
+
         /**
          * 用户数量
          */
         private Integer userCount;
+
+        @SuppressWarnings("all")
+        public DeptUserCountDTO() {
+        }
+
+        /**
+         * 部门 ID
+         */
+        @SuppressWarnings("all")
+        public Long getDeptId() {
+            return this.deptId;
+        }
+
+        /**
+         * 部门 ID
+         */
+        @SuppressWarnings("all")
+        public void setDeptId(final Long deptId) {
+            this.deptId = deptId;
+        }
+
+        /**
+         * 用户数量
+         */
+        @SuppressWarnings("all")
+        public Integer getUserCount() {
+            return this.userCount;
+        }
+
+        /**
+         * 用户数量
+         */
+        @SuppressWarnings("all")
+        public void setUserCount(final Integer userCount) {
+            this.userCount = userCount;
+        }
+
+        @java.lang.Override
+        @SuppressWarnings("all")
+        public boolean equals(final java.lang.Object o) {
+            if (o == this)
+                return true;
+            if (!(o instanceof DeptMapper.DeptUserCountDTO))
+                return false;
+            final DeptMapper.DeptUserCountDTO other = (DeptMapper.DeptUserCountDTO) o;
+            if (!other.canEqual((java.lang.Object) this))
+                return false;
+            final java.lang.Object this$deptId = this.getDeptId();
+            final java.lang.Object other$deptId = other.getDeptId();
+            if (this$deptId == null ? other$deptId != null : !this$deptId.equals(other$deptId))
+                return false;
+            final java.lang.Object this$userCount = this.getUserCount();
+            final java.lang.Object other$userCount = other.getUserCount();
+            if (this$userCount == null ? other$userCount != null : !this$userCount.equals(other$userCount))
+                return false;
+            return true;
+        }
+
+        @SuppressWarnings("all")
+        protected boolean canEqual(final java.lang.Object other) {
+            return other instanceof DeptMapper.DeptUserCountDTO;
+        }
+
+        @java.lang.Override
+        @SuppressWarnings("all")
+        public int hashCode() {
+            final int PRIME = 59;
+            int result = 1;
+            final java.lang.Object $deptId = this.getDeptId();
+            result = result * PRIME + ($deptId == null ? 43 : $deptId.hashCode());
+            final java.lang.Object $userCount = this.getUserCount();
+            result = result * PRIME + ($userCount == null ? 43 : $userCount.hashCode());
+            return result;
+        }
+
+        @java.lang.Override
+        @SuppressWarnings("all")
+        public java.lang.String toString() {
+            return "DeptMapper.DeptUserCountDTO(deptId=" + this.getDeptId() + ", userCount=" + this.getUserCount()
+                    + ")";
+        }
+
     }
+
 }

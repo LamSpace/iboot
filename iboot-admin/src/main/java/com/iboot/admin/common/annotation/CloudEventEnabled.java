@@ -16,19 +16,14 @@
 
 package com.iboot.admin.common.annotation;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * CloudEvents 启用注解
  * <p>
  * 标记在 Controller 类或方法上，表示该接口的响应需要包装为 CloudEvents 格式
  * <p>
- * 使用方式：
- * <pre>
+ * 使用方式： <pre>
  * {@code @RestController}
  * {@code @RequestMapping("/api/user")}
  * {@code @CloudEventEnabled} // 标记整个 Controller
@@ -67,4 +62,5 @@ public @interface CloudEventEnabled {
      * 如果不指定，将根据响应结果自动推导（成功/失败）
      */
     String type() default "";
+
 }

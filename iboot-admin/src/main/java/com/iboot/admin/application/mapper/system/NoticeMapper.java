@@ -32,12 +32,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface NoticeMapper {
 
     // ==================== 查询映射 ====================
@@ -46,6 +41,7 @@ public interface NoticeMapper {
      * 将公告实体转换为响应 DTO
      *
      * @param notice 公告实体
+     *
      * @return 公告响应 DTO
      */
     NoticeResponse toResponse(Notice notice);
@@ -54,6 +50,7 @@ public interface NoticeMapper {
      * 将公告实体列表转换为响应 DTO 列表
      *
      * @param notices 公告实体列表
+     *
      * @return 公告响应 DTO 列表
      */
     List<NoticeResponse> toResponseList(List<Notice> notices);
@@ -62,6 +59,7 @@ public interface NoticeMapper {
      * 将公告实体转换为导出 VO
      *
      * @param notice 公告实体
+     *
      * @return 公告导出 VO
      */
     NoticeExportVO toExportVO(Notice notice);
@@ -70,6 +68,7 @@ public interface NoticeMapper {
      * 将公告实体列表转换为导出 VO 列表
      *
      * @param notices 公告实体列表
+     *
      * @return 公告导出 VO 列表
      */
     List<NoticeExportVO> toExportVOList(List<Notice> notices);
@@ -80,6 +79,7 @@ public interface NoticeMapper {
      * 将公告请求转换为实体
      *
      * @param request 公告请求
+     *
      * @return 公告实体
      */
     @Mapping(target = "id", ignore = true)
@@ -107,4 +107,5 @@ public interface NoticeMapper {
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "status", ignore = true)
     void updateEntityFromRequest(NoticeRequest request, @MappingTarget Notice notice);
+
 }

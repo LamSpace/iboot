@@ -30,7 +30,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,30 +39,31 @@ import java.util.stream.Collectors;
 
 /**
  * 岗位管理控制器
- * 
+ *
  * @author iBoot
  */
 @Tag(name = "岗位管理", description = "岗位管理相关接口")
 @RestController
 @RequestMapping("/api/post")
-@RequiredArgsConstructor
 public class PostController {
-    
+
     private final PostApplicationService postApplicationService;
-    
+
+    @SuppressWarnings("all")
+    public PostController(final PostApplicationService postApplicationService) {
+        this.postApplicationService = postApplicationService;
+    }
+
     @Operation(summary = "查询岗位列表")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('post:list')")
-    public Result<PageResult<PostResponse>> list(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String postName,
-            @RequestParam(required = false) String postCode,
-            @RequestParam(required = false) Integer status) {
-        
+    public Result<PageResult<PostResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                 @RequestParam(defaultValue = "10") Integer pageSize,
+                                                 @RequestParam(required = false) String postName,
+                                                 @RequestParam(required = false) String postCode,
+                                                 @RequestParam(required = false) Integer status) {
         List<Post> posts;
         long total;
-        
         if (postName != null || postCode != null || status != null) {
             posts = postApplicationService.getPostPageByCondition(postName, postCode, status, pageNum, pageSize);
             total = postApplicationService.countPostsByCondition(postName, postCode, status);
@@ -71,26 +71,20 @@ public class PostController {
             posts = postApplicationService.getPostPage(pageNum, pageSize);
             total = postApplicationService.countPosts();
         }
-        
-        List<PostResponse> responses = posts.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-        
+        List<PostResponse> responses = posts.stream().map(this::convertToResponse).collect(Collectors.toList());
         PageResult<PostResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
-    
+
     @Operation(summary = "查询所有岗位")
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('post:list')")
     public Result<List<PostResponse>> all() {
         List<Post> posts = postApplicationService.getAllPosts();
-        List<PostResponse> responses = posts.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        List<PostResponse> responses = posts.stream().map(this::convertToResponse).collect(Collectors.toList());
         return Result.success(responses);
     }
-    
+
     @Operation(summary = "查询岗位详情")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('post:query')")
@@ -98,7 +92,7 @@ public class PostController {
         Post post = postApplicationService.getPostById(id);
         return Result.success(convertToResponse(post));
     }
-    
+
     @Operation(summary = "新增岗位")
     @PostMapping
     @PreAuthorize("hasAuthority('post:add')")
@@ -108,7 +102,7 @@ public class PostController {
         Post createdPost = postApplicationService.createPost(post);
         return Result.success(convertToResponse(createdPost));
     }
-    
+
     @Operation(summary = "修改岗位")
     @PutMapping
     @PreAuthorize("hasAuthority('post:edit')")
@@ -119,7 +113,7 @@ public class PostController {
         postApplicationService.updatePost(post);
         return Result.success();
     }
-    
+
     @Operation(summary = "删除岗位")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('post:remove')")
@@ -128,7 +122,7 @@ public class PostController {
         postApplicationService.deletePost(id);
         return Result.success();
     }
-    
+
     @Operation(summary = "修改岗位状态")
     @PutMapping("/changeStatus")
     @PreAuthorize("hasAuthority('post:edit')")
@@ -137,29 +131,24 @@ public class PostController {
         postApplicationService.changeStatus(id, status);
         return Result.success();
     }
-    
+
     @Operation(summary = "导出岗位列表")
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('post:export')")
     @Log(title = "岗位管理", businessType = BusinessTypeEnum.EXPORT)
-    public void export(HttpServletResponse response,
-                       @RequestParam(required = false) String postName,
-                       @RequestParam(required = false) String postCode,
-                       @RequestParam(required = false) Integer status) throws IOException {
+    public void export(HttpServletResponse response, @RequestParam(required = false) String postName,
+                       @RequestParam(required = false) String postCode, @RequestParam(required = false) Integer status)
+            throws IOException {
         List<Post> posts;
         if (postName != null || postCode != null || status != null) {
             posts = postApplicationService.getAllPostsByCondition(postName, postCode, status);
         } else {
             posts = postApplicationService.getAllPosts();
         }
-        
-        List<PostExportVO> exportList = posts.stream()
-                .map(this::convertToExportVO)
-                .collect(Collectors.toList());
-        
+        List<PostExportVO> exportList = posts.stream().map(this::convertToExportVO).collect(Collectors.toList());
         ExcelExportUtil.exportExcel(response, exportList, PostExportVO.class, "岗位列表", "岗位数据");
     }
-    
+
     private PostExportVO convertToExportVO(Post post) {
         return PostExportVO.builder()
                 .id(post.getId())
@@ -171,7 +160,7 @@ public class PostController {
                 .createTime(post.getCreateTime())
                 .build();
     }
-    
+
     private Post convertToEntity(PostRequest request) {
         return Post.builder()
                 .postCode(request.getPostCode())
@@ -181,7 +170,7 @@ public class PostController {
                 .remark(request.getRemark())
                 .build();
     }
-    
+
     private PostResponse convertToResponse(Post post) {
         return PostResponse.builder()
                 .id(post.getId())
@@ -193,4 +182,5 @@ public class PostController {
                 .createTime(post.getCreateTime())
                 .build();
     }
+
 }

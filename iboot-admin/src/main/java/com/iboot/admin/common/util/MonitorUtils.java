@@ -2,13 +2,11 @@ package com.iboot.admin.common.util;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,6 +19,7 @@ public class MonitorUtils {
     private MeterRegistry meterRegistry;
 
     private Counter requestCounter;
+
     private Timer requestTimer;
 
     @PostConstruct
@@ -39,8 +38,8 @@ public class MonitorUtils {
     /**
      * 增加API请求计数
      *
-     * @param uri 请求URI
-     * @param method HTTP方法
+     * @param uri     请求URI
+     * @param method  HTTP方法
      * @param outcome 请求结果
      */
     public void incrementRequest(String uri, String method, String outcome) {
@@ -58,8 +57,8 @@ public class MonitorUtils {
     /**
      * 记录API请求耗时
      *
-     * @param uri 请求URI
-     * @param method HTTP方法
+     * @param uri      请求URI
+     * @param method   HTTP方法
      * @param duration 请求耗时
      */
     public void recordRequestTime(String uri, String method, long duration, TimeUnit unit) {
@@ -76,8 +75,8 @@ public class MonitorUtils {
     /**
      * 记录API请求耗时（秒）
      *
-     * @param uri 请求URI
-     * @param method HTTP方法
+     * @param uri             请求URI
+     * @param method          HTTP方法
      * @param durationSeconds 请求耗时（秒）
      */
     public void recordRequestTimeSeconds(String uri, String method, double durationSeconds) {
@@ -97,4 +96,5 @@ public class MonitorUtils {
     public MeterRegistry getMeterRegistry() {
         return meterRegistry;
     }
+
 }

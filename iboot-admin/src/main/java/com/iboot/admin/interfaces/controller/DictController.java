@@ -34,7 +34,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,48 +43,43 @@ import java.util.stream.Collectors;
 
 /**
  * 数据字典控制器
- * 
+ *
  * @author iBoot
  */
 @Tag(name = "数据字典", description = "数据字典相关接口")
 @RestController
 @RequestMapping("/api/dict")
-@RequiredArgsConstructor
 public class DictController {
-    
+
     private final DictApplicationService dictApplicationService;
-    
+
+    @SuppressWarnings("all")
+    public DictController(final DictApplicationService dictApplicationService) {
+        this.dictApplicationService = dictApplicationService;
+    }
+
     // ==================== 字典类型接口 ====================
-    
     @Operation(summary = "查询字典类型列表")
     @GetMapping("/type/list")
     @PreAuthorize("hasAuthority('dict:list')")
-    public Result<PageResult<DictTypeResponse>> typeList(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        
+    public Result<PageResult<DictTypeResponse>> typeList(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                         @RequestParam(defaultValue = "10") Integer pageSize) {
         List<DictType> types = dictApplicationService.getDictTypePage(pageNum, pageSize);
         long total = dictApplicationService.countDictTypes();
-        
-        List<DictTypeResponse> responses = types.stream()
-                .map(this::convertTypeToResponse)
-                .collect(Collectors.toList());
-        
+        List<DictTypeResponse> responses = types.stream().map(this::convertTypeToResponse).collect(Collectors.toList());
         PageResult<DictTypeResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
     }
-    
+
     @Operation(summary = "查询所有字典类型")
     @GetMapping("/type/all")
     @PreAuthorize("hasAuthority('dict:list')")
     public Result<List<DictTypeResponse>> typeAll() {
         List<DictType> types = dictApplicationService.getAllDictTypes();
-        List<DictTypeResponse> responses = types.stream()
-                .map(this::convertTypeToResponse)
-                .collect(Collectors.toList());
+        List<DictTypeResponse> responses = types.stream().map(this::convertTypeToResponse).collect(Collectors.toList());
         return Result.success(responses);
     }
-    
+
     @Operation(summary = "查询字典类型详情")
     @GetMapping("/type/{id}")
     @PreAuthorize("hasAuthority('dict:query')")
@@ -93,7 +87,7 @@ public class DictController {
         DictType dictType = dictApplicationService.getDictTypeById(id);
         return Result.success(convertTypeToResponse(dictType));
     }
-    
+
     @Operation(summary = "新增字典类型")
     @PostMapping("/type")
     @PreAuthorize("hasAuthority('dict:add')")
@@ -103,7 +97,7 @@ public class DictController {
         DictType createdType = dictApplicationService.createDictType(dictType);
         return Result.success(convertTypeToResponse(createdType));
     }
-    
+
     @Operation(summary = "修改字典类型")
     @PutMapping("/type")
     @PreAuthorize("hasAuthority('dict:edit')")
@@ -114,7 +108,7 @@ public class DictController {
         dictApplicationService.updateDictType(dictType);
         return Result.success();
     }
-    
+
     @Operation(summary = "删除字典类型")
     @DeleteMapping("/type/{id}")
     @PreAuthorize("hasAuthority('dict:remove')")
@@ -123,7 +117,7 @@ public class DictController {
         dictApplicationService.deleteDictType(id);
         return Result.success();
     }
-    
+
     @Operation(summary = "导出字典类型列表")
     @GetMapping("/type/export")
     @PreAuthorize("hasAuthority('dict:export')")
@@ -135,9 +129,8 @@ public class DictController {
                 .collect(Collectors.toList());
         ExcelExportUtil.exportExcel(response, exportList, DictTypeExportVO.class, "字典类型", "字典类型数据");
     }
-    
+
     // ==================== 字典数据接口 ====================
-    
     @Operation(summary = "根据字典类型查询字典数据")
     @GetMapping("/data/type/{dictType}")
     public Result<List<DictDataResponse>> dataByType(@PathVariable String dictType) {
@@ -147,7 +140,7 @@ public class DictController {
                 .collect(Collectors.toList());
         return Result.success(responses);
     }
-    
+
     @Operation(summary = "查询字典数据详情")
     @GetMapping("/data/{id}")
     @PreAuthorize("hasAuthority('dict:query')")
@@ -155,7 +148,7 @@ public class DictController {
         DictData dictData = dictApplicationService.getDictDataById(id);
         return Result.success(convertDataToResponse(dictData));
     }
-    
+
     @Operation(summary = "新增字典数据")
     @PostMapping("/data")
     @PreAuthorize("hasAuthority('dict:add')")
@@ -165,7 +158,7 @@ public class DictController {
         DictData createdData = dictApplicationService.createDictData(dictData);
         return Result.success(convertDataToResponse(createdData));
     }
-    
+
     @Operation(summary = "修改字典数据")
     @PutMapping("/data")
     @PreAuthorize("hasAuthority('dict:edit')")
@@ -176,7 +169,7 @@ public class DictController {
         dictApplicationService.updateDictData(dictData);
         return Result.success();
     }
-    
+
     @Operation(summary = "删除字典数据")
     @DeleteMapping("/data/{id}")
     @PreAuthorize("hasAuthority('dict:remove')")
@@ -185,13 +178,13 @@ public class DictController {
         dictApplicationService.deleteDictData(id);
         return Result.success();
     }
-    
+
     @Operation(summary = "导出字典数据列表")
     @GetMapping("/data/export")
     @PreAuthorize("hasAuthority('dict:export')")
     @Log(title = "数据字典", businessType = BusinessTypeEnum.EXPORT)
-    public void exportData(HttpServletResponse response,
-                           @RequestParam(required = false) String dictType) throws IOException {
+    public void exportData(HttpServletResponse response, @RequestParam(required = false) String dictType)
+            throws IOException {
         List<DictData> dataList;
         if (dictType != null && !dictType.isEmpty()) {
             dataList = dictApplicationService.getDictDataByType(dictType);
@@ -203,16 +196,15 @@ public class DictController {
                 .collect(Collectors.toList());
         ExcelExportUtil.exportExcel(response, exportList, DictDataExportVO.class, "字典数据", "字典数据");
     }
-    
+
     @Operation(summary = "获取字典标签")
     @GetMapping("/label")
     public Result<String> getDictLabel(@RequestParam String dictType, @RequestParam String dictValue) {
         String label = dictApplicationService.getDictLabel(dictType, dictValue);
         return Result.success(label);
     }
-    
+
     // ==================== 转换方法 ====================
-    
     private DictType convertTypeToEntity(DictTypeRequest request) {
         return DictType.builder()
                 .dictType(request.getDictType())
@@ -221,7 +213,7 @@ public class DictController {
                 .remark(request.getRemark())
                 .build();
     }
-    
+
     private DictTypeResponse convertTypeToResponse(DictType dictType) {
         return DictTypeResponse.builder()
                 .id(dictType.getId())
@@ -232,7 +224,7 @@ public class DictController {
                 .createTime(dictType.getCreateTime())
                 .build();
     }
-    
+
     private DictData convertDataToEntity(DictDataRequest request) {
         return DictData.builder()
                 .dictType(request.getDictType())
@@ -246,7 +238,7 @@ public class DictController {
                 .remark(request.getRemark())
                 .build();
     }
-    
+
     private DictDataResponse convertDataToResponse(DictData dictData) {
         return DictDataResponse.builder()
                 .id(dictData.getId())
@@ -262,7 +254,7 @@ public class DictController {
                 .createTime(dictData.getCreateTime())
                 .build();
     }
-    
+
     private DictTypeExportVO convertTypeToExportVO(DictType dictType) {
         return DictTypeExportVO.builder()
                 .id(dictType.getId())
@@ -273,7 +265,7 @@ public class DictController {
                 .createTime(dictType.getCreateTime())
                 .build();
     }
-    
+
     private DictDataExportVO convertDataToExportVO(DictData dictData) {
         return DictDataExportVO.builder()
                 .id(dictData.getId())
@@ -289,4 +281,5 @@ public class DictController {
                 .createTime(dictData.getCreateTime())
                 .build();
     }
+
 }

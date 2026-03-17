@@ -17,7 +17,6 @@
 package com.iboot.admin.infrastructure.config;
 
 import com.iboot.admin.infrastructure.interceptor.DataScopeInterceptor;
-import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
@@ -29,20 +28,21 @@ import javax.sql.DataSource;
 
 /**
  * MyBatis 配置类
- * 
+ *
  * @author iBoot
  */
 @Configuration
 @MapperScan("com.iboot.admin.infrastructure.persistence.mapper")
 public class MyBatisConfig {
-    
+
     @Bean
-    public SqlSessionFactory sqlSessionFactory(DataSource dataSource, DataScopeInterceptor dataScopeInterceptor) throws Exception {
+    public SqlSessionFactory sqlSessionFactory(DataSource dataSource, DataScopeInterceptor dataScopeInterceptor)
+            throws Exception {
         SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
         sessionFactory.setDataSource(dataSource);
 
         // 注册数据权限拦截器
-        sessionFactory.setPlugins(new Interceptor[]{dataScopeInterceptor});
+        sessionFactory.setPlugins(dataScopeInterceptor);
 
         // 设置 MyBatis 配置
         org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
@@ -58,9 +58,10 @@ public class MyBatisConfig {
         sessionFactory.setConfiguration(configuration);
 
         // 设置 mapper xml 文件位置
-        sessionFactory.setMapperLocations(
-                new PathMatchingResourcePatternResolver().getResources("classpath*:mapper/**/*.xml"));
+        sessionFactory
+                .setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath*:mapper/**/*.xml"));
 
         return sessionFactory.getObject();
     }
+
 }

@@ -18,8 +18,9 @@ package com.iboot.admin.infrastructure.push;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -28,35 +29,47 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
-
 /**
  * Redis 推送事件广播器
  * <p>
- * 基于 Redis Pub/Sub 实现多实例间的推送事件广播
- * 用于在集群环境下将推送事件广播到所有应用实例
+ * 基于 Redis Pub/Sub 实现多实例间的推送事件广播 用于在集群环境下将推送事件广播到所有应用实例
  *
  * @author iBoot Team
  * @since 1.0.0
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class RedisPushEventBroadcaster implements MessageListener {
 
+    private static final Logger log = LoggerFactory.getLogger(RedisPushEventBroadcaster.class);
+
     private final RedisTemplate<String, Object> redisTemplate;
+
     private final RedisMessageListenerContainer redisMessageListenerContainer;
+
     private final SseEmitterManager sseEmitterManager;
+
     private final ObjectMapper objectMapper;
+
     private final PushProperties pushProperties;
+
+    @SuppressWarnings("all")
+    public RedisPushEventBroadcaster(final RedisTemplate<String, Object> redisTemplate,
+                                     final RedisMessageListenerContainer redisMessageListenerContainer,
+                                     final SseEmitterManager sseEmitterManager, final ObjectMapper objectMapper,
+                                     final PushProperties pushProperties) {
+        this.redisTemplate = redisTemplate;
+        this.redisMessageListenerContainer = redisMessageListenerContainer;
+        this.sseEmitterManager = sseEmitterManager;
+        this.objectMapper = objectMapper;
+        this.pushProperties = pushProperties;
+    }
 
     /**
      * 获取 Redis 频道名称
      */
     private String getChannel() {
-        return pushProperties != null && pushProperties.getRedis() != null
-            ? pushProperties.getRedis().getChannel()
-            : "iboot:push:events";
+        return pushProperties != null && pushProperties.getRedis() != null ? pushProperties.getRedis().getChannel()
+                : "iboot:push:events";
     }
 
     /**
@@ -65,14 +78,11 @@ public class RedisPushEventBroadcaster implements MessageListener {
     @PostConstruct
     public void init() {
         log.info("初始化 Redis Push Pub/Sub 订阅，频道：{}", getChannel());
-
         // 创建消息监听器适配器
         MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(this);
         listenerAdapter.setSerializer(redisTemplate.getStringSerializer());
-
         // 订阅频道
         redisMessageListenerContainer.addMessageListener(listenerAdapter, new PatternTopic(getChannel()));
-
         log.info("Redis Push Pub/Sub 订阅初始化完成");
     }
 
@@ -114,14 +124,10 @@ public class RedisPushEventBroadcaster implements MessageListener {
             if (body == null || body.length == 0) {
                 return;
             }
-
             String messageBody = new String(body);
-            log.debug("收到 Redis 推送事件，channel: {}, message: {}",
-                    new String(message.getChannel()), messageBody);
-
+            log.debug("收到 Redis 推送事件，channel: {}, message: {}", new String(message.getChannel()), messageBody);
             // 反序列化推送事件
             PushEvent event = objectMapper.readValue(messageBody, PushEvent.class);
-
             // 检查事件来源，避免循环广播
             String sourceInstance = event.getSource();
             String currentInstance = getCurrentInstanceId();
@@ -129,20 +135,17 @@ public class RedisPushEventBroadcaster implements MessageListener {
                 log.debug("忽略本实例发布的事件，eventId: {}", event.getId());
                 return;
             }
-
             // 推送给本地用户
             if (event.getTargetUserId() != null) {
                 // 单播
                 boolean success = sseEmitterManager.send(event.getTargetUserId(), event);
                 if (success) {
-                    log.debug("已向本地用户推送消息，userId: {}, eventId: {}",
-                            event.getTargetUserId(), event.getId());
+                    log.debug("已向本地用户推送消息，userId: {}, eventId: {}", event.getTargetUserId(), event.getId());
                 }
             } else {
                 // 广播/组播逻辑可根据需要扩展
                 log.debug("收到广播事件，eventId: {}, type: {}", event.getId(), event.getType());
             }
-
         } catch (Exception e) {
             log.error("处理 Redis 推送事件失败", e);
         }
@@ -155,7 +158,7 @@ public class RedisPushEventBroadcaster implements MessageListener {
      */
     private String getCurrentInstanceId() {
         // 使用服务器地址和端口作为实例标识
-        return System.getenv("HOSTNAME") != null ?
-                System.getenv("HOSTNAME") : "instance-" + System.nanoTime();
+        return System.getenv("HOSTNAME") != null ? System.getenv("HOSTNAME") : "instance-" + System.nanoTime();
     }
+
 }

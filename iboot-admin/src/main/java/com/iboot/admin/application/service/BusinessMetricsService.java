@@ -2,102 +2,103 @@ package com.iboot.admin.application.service;
 
 import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.binder.BaseUnits;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 业务指标收集服务
  * <p>
- * 负责收集和记录各类业务相关的监控指标，通过 Micrometer 框架将指标暴露给 Prometheus。
- * 支持的指标包括：用户登录（成功/失败/在线数）、业务流程（耗时/成功/失败）、
- * 缓存命中率、文件操作（上传/下载）等。
+ * 负责收集和记录各类业务相关的监控指标，通过 Micrometer 框架将指标暴露给 Prometheus。 支持的指标包括：用户登录（成功/失败/在线数）、业务流程（耗时/成功/失败）、 缓存命中率、文件操作（上传/下载）等。
  * 所有指标均带有 application=iboot-admin 标签，便于 Grafana 仪表板进行数据展示。
  * </p>
  *
  * @author iBoot
  */
-@Slf4j
 @Service
 public class BusinessMetricsService {
+
+    private static final Logger log = LoggerFactory.getLogger(BusinessMetricsService.class);
 
     @Autowired
     private MeterRegistry meterRegistry;
 
     // 用户相关指标
     private Counter userLoginSuccessCounter;
+
     private Counter userLoginFailedCounter;
+
     private AtomicInteger onlineUserCount;
 
     // 业务流程指标
     private Timer businessProcessTimer;
+
     private Counter businessProcessSuccessCounter;
+
     private Counter businessProcessFailedCounter;
 
     // 系统健康指标
     private Gauge cacheHitRateGauge;
+
     private AtomicInteger cacheHitCount;
+
     private AtomicInteger cacheTotalCount;
 
     // 数据库连接池指标由 DruidMetricsBinder 从 Druid 数据源直接获取
-
     // 文件操作指标
     private Counter fileUploadCounter;
+
     private Counter fileDownloadCounter;
+
     private DistributionSummary fileUploadSizeSummary;
 
     // 消息推送指标
     private AtomicInteger pushConnectionCount;
+
     private Counter pushEventSentCounter;
+
     private Counter pushEventFailedCounter;
 
     /**
      * 初始化业务监控指标
      * <p>
-     * 在 Spring 容器启动后自动执行，注册各类指标到 MeterRegistry。
-     * 指标名称遵循 Grafana 仪表板期望的命名规范。
+     * 在 Spring 容器启动后自动执行，注册各类指标到 MeterRegistry。 指标名称遵循 Grafana 仪表板期望的命名规范。
      * </p>
      */
     @PostConstruct
     public void init() {
         log.info("初始化业务监控指标...");
-
         // 用户登录指标 - 使用 Grafana 仪表板期望的指标名称
         userLoginSuccessCounter = Counter.builder("user_login_success")
                 .description("用户登录成功次数")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         userLoginFailedCounter = Counter.builder("user_login_failed")
                 .description("用户登录失败次数")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         onlineUserCount = new AtomicInteger(0);
         Gauge.builder("user_online_count", onlineUserCount, AtomicInteger::get)
                 .description("在线用户数量")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         // 业务流程指标
         businessProcessTimer = Timer.builder("business_process_duration")
                 .description("业务流程处理耗时")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         businessProcessSuccessCounter = Counter.builder("business_process_success")
                 .description("业务流程成功次数")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         businessProcessFailedCounter = Counter.builder("business_process_failed")
                 .description("业务流程失败次数")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         // 缓存指标
         cacheHitCount = new AtomicInteger(0);
         cacheTotalCount = new AtomicInteger(0);
@@ -106,24 +107,20 @@ public class BusinessMetricsService {
                 .tag("application", "iboot-admin")
                 .baseUnit(BaseUnits.PERCENT)
                 .register(meterRegistry);
-
         // 文件操作指标
         fileUploadCounter = Counter.builder("file_upload_count")
                 .description("文件上传次数")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         fileDownloadCounter = Counter.builder("file_download_count")
                 .description("文件下载次数")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         fileUploadSizeSummary = DistributionSummary.builder("file_upload_size")
                 .description("文件上传大小分布")
                 .tag("application", "iboot-admin")
                 .baseUnit(BaseUnits.BYTES)
                 .register(meterRegistry);
-
         // 消息推送指标
         pushConnectionCount = new AtomicInteger(0);
         Gauge.builder("push_connection_active", pushConnectionCount, AtomicInteger::get)
@@ -131,17 +128,14 @@ public class BusinessMetricsService {
                 .tag("application", "iboot-admin")
                 .baseUnit(BaseUnits.CONNECTIONS)
                 .register(meterRegistry);
-
         pushEventSentCounter = Counter.builder("push_event_sent")
                 .description("推送事件发送成功次数")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         pushEventFailedCounter = Counter.builder("push_event_failed")
                 .description("推送事件发送失败次数")
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
-
         log.info("业务监控指标初始化完成");
     }
 
@@ -188,8 +182,7 @@ public class BusinessMetricsService {
     /**
      * 开始业务流程计时
      * <p>
-     * 用于记录业务流程的处理耗时，配合 recordBusinessProcessSuccess 或
-     * recordBusinessProcessFailed 使用。
+     * 用于记录业务流程的处理耗时，配合 recordBusinessProcessSuccess 或 recordBusinessProcessFailed 使用。
      * </p>
      *
      * @return Timer.Sample 计时样本
@@ -204,7 +197,7 @@ public class BusinessMetricsService {
      * 停止计时并记录成功次数，支持按流程类型打标签。
      * </p>
      *
-     * @param sample 计时样本
+     * @param sample      计时样本
      * @param processType 流程类型，用于标签区分
      */
     public void recordBusinessProcessSuccess(Timer.Sample sample, String processType) {
@@ -221,7 +214,7 @@ public class BusinessMetricsService {
      * 停止计时并记录失败次数，支持按流程类型打标签。
      * </p>
      *
-     * @param sample 计时样本
+     * @param sample      计时样本
      * @param processType 流程类型，用于标签区分
      */
     public void recordBusinessProcessFailed(Timer.Sample sample, String processType) {
@@ -263,7 +256,8 @@ public class BusinessMetricsService {
      */
     private double calculateCacheHitRate() {
         int total = cacheTotalCount.get();
-        if (total == 0) return 0.0;
+        if (total == 0)
+            return 0.0;
         return (double) cacheHitCount.get() / total * 100;
     }
 
@@ -331,11 +325,8 @@ public class BusinessMetricsService {
      * @return 指标汇总字符串
      */
     public String getMetricsSummary() {
-        return String.format(
-            "在线用户：%d, 缓存命中率：%.2f%%, 推送连接：%d",
-            getOnlineUserCount(),
-            calculateCacheHitRate(),
-            getPushConnectionCount()
-        );
+        return String.format("在线用户：%d, 缓存命中率：%.2f%%, 推送连接：%d", getOnlineUserCount(), calculateCacheHitRate(),
+                getPushConnectionCount());
     }
+
 }

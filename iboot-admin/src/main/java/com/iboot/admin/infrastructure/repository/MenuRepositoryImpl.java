@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.Menu;
 import com.iboot.admin.domain.system.repository.MenuRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.MenuMapper;
 import com.iboot.admin.infrastructure.persistence.po.MenuPO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class MenuRepositoryImpl implements MenuRepository {
 
     private final MenuMapper menuMapper;
+
+    @SuppressWarnings("all")
+    public MenuRepositoryImpl(final MenuMapper menuMapper) {
+        this.menuMapper = menuMapper;
+    }
 
     /**
      * 保存菜单
@@ -48,6 +51,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * </p>
      *
      * @param menu 菜单实体
+     *
      * @return 保存后的菜单
      */
     @Override
@@ -65,6 +69,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 根据 ID 查询菜单
      *
      * @param id 菜单 ID
+     *
      * @return 菜单实体，不存在则返回空
      */
     @Override
@@ -86,6 +91,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 根据父菜单 ID 查询子菜单
      *
      * @param parentId 父菜单 ID
+     *
      * @return 子菜单列表
      */
     @Override
@@ -97,6 +103,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 更新菜单
      *
      * @param menu 菜单实体
+     *
      * @return 是否更新成功
      */
     @Override
@@ -108,6 +115,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 根据 ID 删除菜单（逻辑删除）
      *
      * @param id 菜单 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -119,6 +127,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 根据用户 ID 查询用户有权限的菜单
      *
      * @param userId 用户 ID
+     *
      * @return 菜单列表
      */
     @Override
@@ -130,6 +139,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 根据角色 ID 查询角色拥有的菜单
      *
      * @param roleId 角色 ID
+     *
      * @return 菜单列表
      */
     @Override
@@ -141,6 +151,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 根据权限标识查询菜单
      *
      * @param permission 权限标识
+     *
      * @return 菜单实体，不存在则返回空
      */
     @Override
@@ -163,6 +174,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      *
      * @param menuName 菜单名称
      * @param parentId 父菜单 ID
+     *
      * @return 是否存在
      */
     @Override
@@ -174,6 +186,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 检查菜单是否有子菜单
      *
      * @param id 菜单 ID
+     *
      * @return 是否有子菜单
      */
     @Override
@@ -195,6 +208,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 将领域对象转换为持久化对象
      *
      * @param menu 菜单领域对象
+     *
      * @return 菜单持久化对象
      */
     private MenuPO convertToPO(Menu menu) {
@@ -225,6 +239,7 @@ public class MenuRepositoryImpl implements MenuRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 菜单持久化对象
+     *
      * @return 菜单领域对象
      */
     private Menu convertToDomain(MenuPO po) {
@@ -250,4 +265,5 @@ public class MenuRepositoryImpl implements MenuRepository {
                 .remark(po.getRemark())
                 .build();
     }
+
 }

@@ -1,75 +1,75 @@
 version: '3.8'
 
 services:
-  # ==================== 应用服务 ====================
-  iboot-admin:
-    build:
-      context: ../iboot-admin
-      dockerfile: Dockerfile
-    container_name: iboot-admin
-    ports:
-      - "8080:8080"
-    environment:
-      - TZ=Asia/Shanghai
-      - SPRING_PROFILES_ACTIVE=docker
-      # 数据库配置（使用简单变量名，与 application.yml 占位符对应）
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
-      - MYSQL_USERNAME=root
-      - MYSQL_PASSWORD=root
-      # Redis 配置
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      # MinIO 配置
-      - MINIO_URL=http://minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      # Elasticsearch 配置
-      - ELASTICSEARCH_URIS=http://elasticsearch:9200
-      # Logstash 配置
-      - LOGSTASH_HOST=logstash
-      # JVM 配置
-      - JAVA_MAX_MEM_RATIO=75
-      - JAVA_DIAGNOSTICS=true
-      # SSE 推送配置
-      - IBOOT_PUSH_SSE_HEARTBEAT_INTERVAL=30000
-    volumes:
-      - admin_logs:/app/logs
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q 'UP' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      minio:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-      logstash:
-        condition: service_healthy
+  # # ==================== 应用服务 ====================
+  # iboot-admin:
+  #   build:
+  #     context: ../iboot-admin
+  #     dockerfile: Dockerfile
+  #   container_name: iboot-admin
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - TZ=Asia/Shanghai
+  #     - SPRING_PROFILES_ACTIVE=docker
+  #     # 数据库配置（使用简单变量名，与 application.yml 占位符对应）
+  #     - MYSQL_HOST=mysql
+  #     - MYSQL_PORT=3306
+  #     - MYSQL_USERNAME=root
+  #     - MYSQL_PASSWORD=root
+  #     # Redis 配置
+  #     - REDIS_HOST=redis
+  #     - REDIS_PORT=6379
+  #     # MinIO 配置
+  #     - MINIO_URL=http://minio:9000
+  #     - MINIO_ACCESS_KEY=minioadmin
+  #     - MINIO_SECRET_KEY=minioadmin
+  #     # Elasticsearch 配置
+  #     - ELASTICSEARCH_URIS=http://elasticsearch:9200
+  #     # Logstash 配置
+  #     - LOGSTASH_HOST=logstash
+  #     # JVM 配置
+  #     - JAVA_MAX_MEM_RATIO=75
+  #     - JAVA_DIAGNOSTICS=true
+  #     # SSE 推送配置
+  #     - IBOOT_PUSH_SSE_HEARTBEAT_INTERVAL=30000
+  #   volumes:
+  #     - admin_logs:/app/logs
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q 'UP' || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 60s
+  #   restart: unless-stopped
+  #   networks:
+  #     - iboot-network
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #     minio:
+  #       condition: service_healthy
+  #     elasticsearch:
+  #       condition: service_healthy
+  #     logstash:
+  #       condition: service_healthy
 
-  iboot-portal:
-    build:
-      context: ../iboot-portal
-      dockerfile: Dockerfile
-    container_name: iboot-portal
-    ports:
-      - "80:80"
-    environment:
-      - TZ=Asia/Shanghai
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      - iboot-admin
+  # iboot-portal:
+  #   build:
+  #     context: ../iboot-portal
+  #     dockerfile: Dockerfile
+  #   container_name: iboot-portal
+  #   ports:
+  #     - "80:80"
+  #   environment:
+  #     - TZ=Asia/Shanghai
+  #   restart: unless-stopped
+  #   networks:
+  #     - iboot-network
+  #   depends_on:
+  #     - iboot-admin
 
   mysql:
     image: mysql:8.0.45

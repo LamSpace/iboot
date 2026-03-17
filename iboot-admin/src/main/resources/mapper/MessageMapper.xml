@@ -21,8 +21,10 @@
     </resultMap>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_message (title, content, message_type, priority, sender_type, sender_id, receiver_type, status, create_by, create_time, deleted, remark)
-        VALUES (#{title}, #{content}, #{messageType}, #{priority}, #{senderType}, #{senderId}, #{receiverType}, #{status}, #{createBy}, #{createTime}, 0, #{remark})
+        INSERT INTO sys_message (title, content, message_type, priority, sender_type, sender_id, receiver_type, status,
+                                 create_by, create_time, deleted, remark)
+        VALUES (#{title}, #{content}, #{messageType}, #{priority}, #{senderType}, #{senderId}, #{receiverType},
+                #{status}, #{createBy}, #{createTime}, 0, #{remark})
     </insert>
 
     <update id="update">
@@ -44,11 +46,18 @@
     </update>
 
     <update id="deleteById">
-        UPDATE sys_message SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+        UPDATE sys_message
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
     <select id="selectById" resultMap="MessageResultMap">
-        SELECT * FROM sys_message WHERE id = #{id} AND deleted = 0
+        SELECT *
+        FROM sys_message
+        WHERE id = #{id}
+          AND deleted = 0
     </select>
 
     <select id="selectPageByCondition" resultMap="MessageResultMap">

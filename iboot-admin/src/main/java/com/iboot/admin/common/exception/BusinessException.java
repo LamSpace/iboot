@@ -16,49 +16,63 @@
 
 package com.iboot.admin.common.exception;
 
-import lombok.Getter;
-
 /**
  * 业务异常类
- * 
+ *
  * @author iBoot
  */
-@Getter
 public class BusinessException extends RuntimeException {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 错误码
      */
-    private Integer code;
-    
+    private final Integer code;
+
     /**
      * 错误消息
      */
-    private String message;
-    
+    private final String message;
+
     public BusinessException(String message) {
         super(message);
         this.message = message;
         this.code = 500;
     }
-    
+
     public BusinessException(Integer code, String message) {
         super(message);
         this.code = code;
         this.message = message;
     }
-    
+
     public BusinessException(String message, Throwable cause) {
         super(message, cause);
         this.message = message;
         this.code = 500;
     }
-    
+
     public BusinessException(Integer code, String message, Throwable cause) {
         super(message, cause);
         this.code = code;
         this.message = message;
     }
+
+    /**
+     * 错误码
+     */
+    @SuppressWarnings("all")
+    public Integer getCode() {
+        return this.code;
+    }
+
+    /**
+     * 错误消息
+     */
+    @SuppressWarnings("all")
+    public String getMessage() {
+        return this.message;
+    }
+
 }

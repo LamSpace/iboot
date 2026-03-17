@@ -32,12 +32,7 @@ import java.util.List;
  *
  * @author iBoot
  */
-@Mapper(
-    componentModel = "spring",
-    
-    
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface ConfigMapper {
 
     // ==================== 查询映射 ====================
@@ -46,6 +41,7 @@ public interface ConfigMapper {
      * 将配置实体转换为响应 DTO
      *
      * @param config 配置实体
+     *
      * @return 配置响应 DTO
      */
     ConfigResponse toResponse(Config config);
@@ -54,6 +50,7 @@ public interface ConfigMapper {
      * 将配置实体列表转换为响应 DTO 列表
      *
      * @param configs 配置实体列表
+     *
      * @return 配置响应 DTO 列表
      */
     List<ConfigResponse> toResponseList(List<Config> configs);
@@ -62,6 +59,7 @@ public interface ConfigMapper {
      * 将配置实体转换为导出 VO
      *
      * @param config 配置实体
+     *
      * @return 配置导出 VO
      */
     ConfigExportVO toExportVO(Config config);
@@ -70,6 +68,7 @@ public interface ConfigMapper {
      * 将配置实体列表转换为导出 VO 列表
      *
      * @param configs 配置实体列表
+     *
      * @return 配置导出 VO 列表
      */
     List<ConfigExportVO> toExportVOList(List<Config> configs);
@@ -80,6 +79,7 @@ public interface ConfigMapper {
      * 将配置请求转换为实体
      *
      * @param request 配置请求
+     *
      * @return 配置实体
      */
     @Mapping(target = "id", ignore = true)
@@ -105,4 +105,5 @@ public interface ConfigMapper {
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     void updateEntityFromRequest(ConfigRequest request, @MappingTarget Config config);
+
 }

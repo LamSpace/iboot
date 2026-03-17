@@ -120,7 +120,9 @@ public abstract class AbstractQuartzJob implements org.quartz.Job {
      *
      * @param context 工作执行上下文对象
      * @param job     系统计划任务
+     *
      * @throws Exception 执行过程中的异常
      */
     protected abstract void doExecute(JobExecutionContext context, Job job) throws Exception;
+
 }

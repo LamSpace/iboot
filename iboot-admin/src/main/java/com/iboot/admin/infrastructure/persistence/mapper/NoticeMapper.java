@@ -37,6 +37,7 @@ public interface NoticeMapper {
      * 插入公告记录
      *
      * @param noticePO 公告持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(NoticePO noticePO);
@@ -45,6 +46,7 @@ public interface NoticeMapper {
      * 更新公告记录
      *
      * @param noticePO 公告持久化对象
+     *
      * @return 影响的记录数
      */
     int update(NoticePO noticePO);
@@ -53,6 +55,7 @@ public interface NoticeMapper {
      * 根据 ID 删除公告
      *
      * @param id 公告 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -61,6 +64,7 @@ public interface NoticeMapper {
      * 根据 ID 查询公告
      *
      * @param id 公告 ID
+     *
      * @return 公告持久化对象
      */
     NoticePO selectById(@Param("id") Long id);
@@ -69,46 +73,47 @@ public interface NoticeMapper {
      * 按条件分页查询公告
      *
      * @param noticeTitle 公告标题（可选）
-     * @param noticeType 公告类型（可选）
-     * @param status 状态（可选）
-     * @param offset 偏移量
-     * @param limit 限制数量
+     * @param noticeType  公告类型（可选）
+     * @param status      状态（可选）
+     * @param offset      偏移量
+     * @param limit       限制数量
+     *
      * @return 公告列表
      */
     List<NoticePO> selectPageByCondition(@Param("noticeTitle") String noticeTitle,
-                                          @Param("noticeType") String noticeType,
-                                          @Param("status") String status,
-                                          @Param("offset") int offset,
-                                          @Param("limit") int limit);
+                                         @Param("noticeType") String noticeType,
+                                         @Param("status") String status, @Param("offset") int offset,
+                                         @Param("limit") int limit);
 
     /**
      * 按条件统计公告数量
      *
      * @param noticeTitle 公告标题（可选）
-     * @param noticeType 公告类型（可选）
-     * @param status 状态（可选）
+     * @param noticeType  公告类型（可选）
+     * @param status      状态（可选）
+     *
      * @return 公告数量
      */
-    long countByCondition(@Param("noticeTitle") String noticeTitle,
-                          @Param("noticeType") String noticeType,
+    long countByCondition(@Param("noticeTitle") String noticeTitle, @Param("noticeType") String noticeType,
                           @Param("status") String status);
 
     /**
      * 按条件查询所有公告（导出用）
      *
      * @param noticeTitle 公告标题（可选）
-     * @param noticeType 公告类型（可选）
-     * @param status 状态（可选）
+     * @param noticeType  公告类型（可选）
+     * @param status      状态（可选）
+     *
      * @return 公告列表
      */
     List<NoticePO> selectAllByCondition(@Param("noticeTitle") String noticeTitle,
-                                        @Param("noticeType") String noticeType,
-                                        @Param("status") String status);
+                                        @Param("noticeType") String noticeType, @Param("status") String status);
 
     /**
      * 查询已发布的公告列表
      *
      * @param limit 返回数量限制
+     *
      * @return 已发布公告列表
      */
     List<NoticePO> selectPublishedNotices(@Param("limit") int limit);
@@ -119,4 +124,5 @@ public interface NoticeMapper {
      * @return 已发布公告数量
      */
     long countTopPublishedNotices();
+
 }

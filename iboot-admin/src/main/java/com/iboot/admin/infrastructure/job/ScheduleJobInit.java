@@ -19,34 +19,33 @@ package com.iboot.admin.infrastructure.job;
 import com.iboot.admin.domain.job.model.Job;
 import com.iboot.admin.domain.job.repository.JobRepository;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.quartz.CronScheduleBuilder;
-import org.quartz.CronTrigger;
-import org.quartz.JobBuilder;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.TriggerBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
- * 定时任务调度初始化
- * 在应用启动时，将数据库中的任务加载到 Quartz 调度器
+ * 定时任务调度初始化 在应用启动时，将数据库中的任务加载到 Quartz 调度器
  *
  * @author iBoot
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class ScheduleJobInit {
 
+    private static final Logger log = LoggerFactory.getLogger(ScheduleJobInit.class);
+
     private final Scheduler scheduler;
+
     private final JobRepository jobRepository;
+
+    @SuppressWarnings("all")
+    public ScheduleJobInit(final Scheduler scheduler, final JobRepository jobRepository) {
+        this.scheduler = scheduler;
+        this.jobRepository = jobRepository;
+    }
 
     /**
      * 应用启动时初始化定时任务
@@ -56,17 +55,16 @@ public class ScheduleJobInit {
         try {
             // 清除已有的调度任务
             scheduler.clear();
-
             // 从数据库加载所有任务
             List<Job> jobList = jobRepository.findAll();
             for (Job job : jobList) {
                 ScheduleUtils.createScheduleJob(scheduler, job);
             }
             log.info("定时任务初始化完成，共加载 {} 个任务", jobList.size());
-
         } catch (SchedulerException e) {
             log.error("定时任务初始化失败", e);
             throw new RuntimeException("定时任务初始化失败", e);
         }
     }
+
 }

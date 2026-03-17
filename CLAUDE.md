@@ -56,6 +56,15 @@ Services: MySQL (3306), Redis (6379), MinIO (9000/9001), Prometheus (9090), Graf
 ### Testing & Verification
 
 ```bash
+# Run all tests
+mvn test
+
+# Run a single test class
+mvn test -Dtest=SecurityWhitelistConfigTest
+
+# Run tests matching a pattern
+mvn test -Dtest=*ConfigTest
+
 # Backend health check
 curl http://localhost:8080/actuator/health
 
@@ -65,6 +74,16 @@ http://localhost:8080/swagger-ui.html
 # Default credentials
 Username: admin
 Password: admin123
+```
+
+### Environment Variables
+
+Backend supports environment variable configuration:
+
+```bash
+MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root ./mvnw spring-boot:run
+REDIS_HOST=localhost REDIS_PORT=6379 REDIS_DATABASE=0 ./mvnw spring-boot:run
+ELASTICSEARCH_URIS=http://localhost:9200 ./mvnw spring-boot:run
 ```
 
 ## Architecture
@@ -125,6 +144,22 @@ iboot-portal/src/
 
 ### Common Development Patterns
 
+**Unified Response Format:**
+All API endpoints return responses wrapped in `Result<T>`:
+```java
+// Success with data
+return Result.success(userService.getUser(id));
+
+// Success with custom message
+return Result.success("创建成功", user);
+
+// Error response
+return Result.error("用户不存在");
+
+// Error with specific code
+return Result.error(403, "没有权限访问");
+```
+
 **Repository Pattern (DDD):**
 ```java
 // Domain layer: interface
@@ -169,3 +204,5 @@ pushService.sendToUser(userId, PushEvent.builder()
 - **Frontend**: API calls in `src/api/`, components in `src/components/`
 - **Migrations**: `V{version}__description.sql` for new migrations, `R__description.sql` for repeatable
 - **Config**: `application.yml` (base), `application-dev.yml` (dev), `application-prod.yml` (prod)
+- **Tests**: Test classes follow the pattern `*Test.java` in `src/test/java/com/iboot/admin/` mirroring the main source structure
+- **Mapper XML**: MyBatis mapper XML files in `src/main/resources/mapper/{module}/*.xml`

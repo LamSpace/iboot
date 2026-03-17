@@ -128,4 +128,5 @@ public class Constants {
      * 部门 ID
      */
     public static final String DEPT_ID = "deptId";
+
 }

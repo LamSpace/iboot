@@ -35,6 +35,7 @@ public interface ConfigRepository {
      * 保存配置
      *
      * @param config 配置实体
+     *
      * @return 保存后的配置
      */
     Config save(Config config);
@@ -43,6 +44,7 @@ public interface ConfigRepository {
      * 更新配置
      *
      * @param config 配置实体
+     *
      * @return 是否更新成功
      */
     boolean update(Config config);
@@ -51,6 +53,7 @@ public interface ConfigRepository {
      * 根据 ID 删除配置（逻辑删除）
      *
      * @param id 配置 ID
+     *
      * @return 是否删除成功
      */
     boolean deleteById(Long id);
@@ -59,6 +62,7 @@ public interface ConfigRepository {
      * 根据 ID 查询配置
      *
      * @param id 配置 ID
+     *
      * @return 配置实体，不存在则返回空
      */
     Optional<Config> findById(Long id);
@@ -67,6 +71,7 @@ public interface ConfigRepository {
      * 根据配置键查询配置
      *
      * @param configKey 配置键
+     *
      * @return 配置实体，不存在则返回空
      */
     Optional<Config> findByConfigKey(String configKey);
@@ -81,8 +86,9 @@ public interface ConfigRepository {
     /**
      * 分页查询配置
      *
-     * @param pageNum 页码
+     * @param pageNum  页码
      * @param pageSize 每页数量
+     *
      * @return 配置列表
      */
     List<Config> findPage(int pageNum, int pageSize);
@@ -98,20 +104,23 @@ public interface ConfigRepository {
      * 按条件分页查询配置
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param pageNum    页码
+     * @param pageSize   每页数量
+     *
      * @return 配置列表
      */
-    List<Config> findPageByCondition(String configName, String configKey, Integer configType, int pageNum, int pageSize);
+    List<Config> findPageByCondition(String configName, String configKey, Integer configType, int pageNum,
+                                     int pageSize);
 
     /**
      * 按条件统计配置总数
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
+     *
      * @return 配置总数
      */
     long countByCondition(String configName, String configKey, Integer configType);
@@ -120,8 +129,9 @@ public interface ConfigRepository {
      * 按条件查询所有配置（导出用）
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
+     *
      * @return 配置列表
      */
     List<Config> findAllByCondition(String configName, String configKey, Integer configType);
@@ -130,6 +140,7 @@ public interface ConfigRepository {
      * 检查配置键是否存在
      *
      * @param configKey 配置键
+     *
      * @return 是否存在
      */
     boolean existsByConfigKey(String configKey);
@@ -141,7 +152,9 @@ public interface ConfigRepository {
      * </p>
      *
      * @param configKey 配置键
+     *
      * @return 是否删除成功
      */
     boolean removeDeletedByConfigKey(String configKey);
+
 }

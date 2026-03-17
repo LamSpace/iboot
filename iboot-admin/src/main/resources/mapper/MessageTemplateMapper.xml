@@ -18,8 +18,10 @@
     </resultMap>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_message_template (template_code, template_name, template_content, message_type, status, create_by, create_time, deleted, remark)
-        VALUES (#{templateCode}, #{templateName}, #{templateContent}, #{messageType}, #{status}, #{createBy}, #{createTime}, 0, #{remark})
+        INSERT INTO sys_message_template (template_code, template_name, template_content, message_type, status,
+                                          create_by, create_time, deleted, remark)
+        VALUES (#{templateCode}, #{templateName}, #{templateContent}, #{messageType}, #{status}, #{createBy},
+                #{createTime}, 0, #{remark})
     </insert>
 
     <update id="update">
@@ -38,15 +40,25 @@
     </update>
 
     <update id="deleteById">
-        UPDATE sys_message_template SET deleted = 1, update_time = NOW() WHERE id = #{id} AND deleted = 0
+        UPDATE sys_message_template
+        SET deleted     = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
     </update>
 
     <select id="selectById" resultMap="MessageTemplateResultMap">
-        SELECT * FROM sys_message_template WHERE id = #{id} AND deleted = 0
+        SELECT *
+        FROM sys_message_template
+        WHERE id = #{id}
+          AND deleted = 0
     </select>
 
     <select id="selectByTemplateCode" resultMap="MessageTemplateResultMap">
-        SELECT * FROM sys_message_template WHERE template_code = #{templateCode} AND deleted = 0
+        SELECT *
+        FROM sys_message_template
+        WHERE template_code = #{templateCode}
+          AND deleted = 0
     </select>
 
     <select id="selectPageByCondition" resultMap="MessageTemplateResultMap">
@@ -80,15 +92,25 @@
     </select>
 
     <select id="countByTemplateCode" resultType="int">
-        SELECT COUNT(*) FROM sys_message_template WHERE template_code = #{templateCode} AND deleted = 0
+        SELECT COUNT(*)
+        FROM sys_message_template
+        WHERE template_code = #{templateCode}
+          AND deleted = 0
     </select>
 
     <delete id="removeDeletedByTemplateCode">
-        DELETE FROM sys_message_template WHERE template_code = #{templateCode} AND deleted = 1
+        DELETE
+        FROM sys_message_template
+        WHERE template_code = #{templateCode}
+          AND deleted = 1
     </delete>
 
     <select id="selectAllEnabled" resultMap="MessageTemplateResultMap">
-        SELECT * FROM sys_message_template WHERE status = 1 AND deleted = 0 ORDER BY create_time DESC
+        SELECT *
+        FROM sys_message_template
+        WHERE status = 1
+          AND deleted = 0
+        ORDER BY create_time DESC
     </select>
 
 </mapper>

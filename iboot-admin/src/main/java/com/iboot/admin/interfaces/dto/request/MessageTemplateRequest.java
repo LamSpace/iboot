@@ -19,14 +19,12 @@ package com.iboot.admin.interfaces.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
 
 /**
  * 消息模板请求 DTO
  *
  * @author iBoot
  */
-@Data
 @Schema(description = "消息模板请求")
 public class MessageTemplateRequest {
 
@@ -57,4 +55,157 @@ public class MessageTemplateRequest {
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;
+
+    @SuppressWarnings("all")
+    public MessageTemplateRequest() {
+    }
+
+    @SuppressWarnings("all")
+    public Long getId() {
+        return this.id;
+    }
+
+    @SuppressWarnings("all")
+    public void setId(final Long id) {
+        this.id = id;
+    }
+
+    @SuppressWarnings("all")
+    public String getTemplateCode() {
+        return this.templateCode;
+    }
+
+    @SuppressWarnings("all")
+    public void setTemplateCode(final String templateCode) {
+        this.templateCode = templateCode;
+    }
+
+    @SuppressWarnings("all")
+    public String getTemplateName() {
+        return this.templateName;
+    }
+
+    @SuppressWarnings("all")
+    public void setTemplateName(final String templateName) {
+        this.templateName = templateName;
+    }
+
+    @SuppressWarnings("all")
+    public String getTemplateContent() {
+        return this.templateContent;
+    }
+
+    @SuppressWarnings("all")
+    public void setTemplateContent(final String templateContent) {
+        this.templateContent = templateContent;
+    }
+
+    @SuppressWarnings("all")
+    public String getMessageType() {
+        return this.messageType;
+    }
+
+    @SuppressWarnings("all")
+    public void setMessageType(final String messageType) {
+        this.messageType = messageType;
+    }
+
+    @SuppressWarnings("all")
+    public Integer getStatus() {
+        return this.status;
+    }
+
+    @SuppressWarnings("all")
+    public void setStatus(final Integer status) {
+        this.status = status;
+    }
+
+    @SuppressWarnings("all")
+    public String getRemark() {
+        return this.remark;
+    }
+
+    @SuppressWarnings("all")
+    public void setRemark(final String remark) {
+        this.remark = remark;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings("all")
+    public boolean equals(final java.lang.Object o) {
+        if (o == this)
+            return true;
+        if (!(o instanceof MessageTemplateRequest))
+            return false;
+        final MessageTemplateRequest other = (MessageTemplateRequest) o;
+        if (!other.canEqual((java.lang.Object) this))
+            return false;
+        final java.lang.Object this$id = this.getId();
+        final java.lang.Object other$id = other.getId();
+        if (this$id == null ? other$id != null : !this$id.equals(other$id))
+            return false;
+        final java.lang.Object this$status = this.getStatus();
+        final java.lang.Object other$status = other.getStatus();
+        if (this$status == null ? other$status != null : !this$status.equals(other$status))
+            return false;
+        final java.lang.Object this$templateCode = this.getTemplateCode();
+        final java.lang.Object other$templateCode = other.getTemplateCode();
+        if (this$templateCode == null ? other$templateCode != null : !this$templateCode.equals(other$templateCode))
+            return false;
+        final java.lang.Object this$templateName = this.getTemplateName();
+        final java.lang.Object other$templateName = other.getTemplateName();
+        if (this$templateName == null ? other$templateName != null : !this$templateName.equals(other$templateName))
+            return false;
+        final java.lang.Object this$templateContent = this.getTemplateContent();
+        final java.lang.Object other$templateContent = other.getTemplateContent();
+        if (this$templateContent == null ? other$templateContent != null
+                : !this$templateContent.equals(other$templateContent))
+            return false;
+        final java.lang.Object this$messageType = this.getMessageType();
+        final java.lang.Object other$messageType = other.getMessageType();
+        if (this$messageType == null ? other$messageType != null : !this$messageType.equals(other$messageType))
+            return false;
+        final java.lang.Object this$remark = this.getRemark();
+        final java.lang.Object other$remark = other.getRemark();
+        if (this$remark == null ? other$remark != null : !this$remark.equals(other$remark))
+            return false;
+        return true;
+    }
+
+    @SuppressWarnings("all")
+    protected boolean canEqual(final java.lang.Object other) {
+        return other instanceof MessageTemplateRequest;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings("all")
+    public int hashCode() {
+        final int PRIME = 59;
+        int result = 1;
+        final java.lang.Object $id = this.getId();
+        result = result * PRIME + ($id == null ? 43 : $id.hashCode());
+        final java.lang.Object $status = this.getStatus();
+        result = result * PRIME + ($status == null ? 43 : $status.hashCode());
+        final java.lang.Object $templateCode = this.getTemplateCode();
+        result = result * PRIME + ($templateCode == null ? 43 : $templateCode.hashCode());
+        final java.lang.Object $templateName = this.getTemplateName();
+        result = result * PRIME + ($templateName == null ? 43 : $templateName.hashCode());
+        final java.lang.Object $templateContent = this.getTemplateContent();
+        result = result * PRIME + ($templateContent == null ? 43 : $templateContent.hashCode());
+        final java.lang.Object $messageType = this.getMessageType();
+        result = result * PRIME + ($messageType == null ? 43 : $messageType.hashCode());
+        final java.lang.Object $remark = this.getRemark();
+        result = result * PRIME + ($remark == null ? 43 : $remark.hashCode());
+        return result;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings("all")
+    public java.lang.String toString() {
+        return "MessageTemplateRequest(id=" + this.getId() + ", templateCode=" + this.getTemplateCode()
+                + ", templateName=" + this.getTemplateName() + ", templateContent=" + this.getTemplateContent()
+                + ", messageType=" + this.getMessageType() + ", status=" + this.getStatus() + ", remark="
+                + this.getRemark() + ")";
+    }
+
 }

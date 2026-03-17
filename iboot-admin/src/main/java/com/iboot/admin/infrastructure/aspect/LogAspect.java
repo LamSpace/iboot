@@ -21,8 +21,6 @@ import com.iboot.admin.application.service.OperateLogApplicationService;
 import com.iboot.admin.common.annotation.Log;
 import com.iboot.admin.domain.system.model.OperateLog;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
@@ -30,6 +28,8 @@ import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -45,16 +45,23 @@ import java.util.Map;
  *
  * @author iBoot
  */
-@Slf4j
 @Aspect
 @Component
-@RequiredArgsConstructor
 public class LogAspect {
 
-    private final OperateLogApplicationService operateLogApplicationService;
-    private final ObjectMapper objectMapper;
+    private static final Logger log = LoggerFactory.getLogger(LogAspect.class);
 
     private static final ThreadLocal<Long> START_TIME = new ThreadLocal<>();
+
+    private final OperateLogApplicationService operateLogApplicationService;
+
+    private final ObjectMapper objectMapper;
+
+    @SuppressWarnings("all")
+    public LogAspect(final OperateLogApplicationService operateLogApplicationService, final ObjectMapper objectMapper) {
+        this.operateLogApplicationService = operateLogApplicationService;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * 记录开始时间
@@ -86,12 +93,12 @@ public class LogAspect {
     protected void handleLog(final JoinPoint joinPoint, Log controllerLog, final Exception e, Object jsonResult) {
         try {
             // 获取请求
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder
+                    .getRequestAttributes();
             if (attributes == null) {
                 return;
             }
             HttpServletRequest request = attributes.getRequest();
-
             // 获取当前用户
             String operatorName = "";
             String deptName = "";
@@ -109,20 +116,17 @@ public class LogAspect {
                     log.debug("获取用户信息失败：{}", ex.getMessage());
                 }
             }
-
             // 获取方法信息
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
             Method method = signature.getMethod();
             String className = joinPoint.getTarget().getClass().getName();
             String methodName = method.getName();
-
             // 计算耗时
             long costTime = 0;
             if (START_TIME.get() != null) {
                 costTime = System.currentTimeMillis() - START_TIME.get();
                 START_TIME.remove();
             }
-
             // 构建日志对象
             OperateLog operateLog = OperateLog.builder()
                     .title(controllerLog.title())
@@ -138,26 +142,21 @@ public class LogAspect {
                     .costTime(costTime)
                     .operateTime(LocalDateTime.now())
                     .build();
-
             // 保存请求参数
             if (controllerLog.isSaveRequestData()) {
                 setRequestValue(joinPoint, operateLog);
             }
-
             // 保存响应数据
             if (controllerLog.isSaveResponseData() && jsonResult != null) {
                 String resultStr = objectMapper.writeValueAsString(jsonResult);
                 operateLog.setResult(StringUtils.substring(resultStr, 0, 2000));
             }
-
             // 保存异常信息
             if (e != null) {
                 operateLog.setErrorMsg(StringUtils.substring(e.getMessage(), 0, 2000));
             }
-
             // 异步保存日志
             operateLogApplicationService.recordOperateLog(operateLog);
-
         } catch (Exception ex) {
             log.error("记录操作日志异常：{}", ex.getMessage());
         }
@@ -204,4 +203,5 @@ public class LogAspect {
         }
         return ip;
     }
+
 }

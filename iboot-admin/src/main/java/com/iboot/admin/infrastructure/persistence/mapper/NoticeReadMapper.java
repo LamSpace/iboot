@@ -37,6 +37,7 @@ public interface NoticeReadMapper {
      * 插入公告已读记录
      *
      * @param noticeReadPO 公告已读记录持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(NoticeReadPO noticeReadPO);
@@ -45,7 +46,8 @@ public interface NoticeReadMapper {
      * 根据公告 ID 和用户 ID 统计数量
      *
      * @param noticeId 公告 ID
-     * @param userId 用户 ID
+     * @param userId   用户 ID
+     *
      * @return 数量
      */
     int countByNoticeIdAndUserId(@Param("noticeId") Long noticeId, @Param("userId") Long userId);
@@ -54,6 +56,7 @@ public interface NoticeReadMapper {
      * 统计用户未读公告数量
      *
      * @param userId 用户 ID
+     *
      * @return 未读公告数量
      */
     long countUnreadByUserId(@Param("userId") Long userId);
@@ -62,7 +65,8 @@ public interface NoticeReadMapper {
      * 查询用户未读的已发布公告 ID 列表
      *
      * @param userId 用户 ID
-     * @param limit 返回数量限制
+     * @param limit  返回数量限制
+     *
      * @return 未读公告 ID 列表
      */
     List<Long> selectUnreadPublishedNoticeIds(@Param("userId") Long userId, @Param("limit") int limit);
@@ -71,7 +75,9 @@ public interface NoticeReadMapper {
      * 根据公告 ID 删除已读记录
      *
      * @param noticeId 公告 ID
+     *
      * @return 影响的记录数
      */
     int deleteByNoticeId(@Param("noticeId") Long noticeId);
+
 }

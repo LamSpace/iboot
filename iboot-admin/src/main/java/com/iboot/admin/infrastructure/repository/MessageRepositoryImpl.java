@@ -20,7 +20,6 @@ import com.iboot.admin.domain.system.model.Message;
 import com.iboot.admin.domain.system.repository.MessageRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.MessageMapper;
 import com.iboot.admin.infrastructure.persistence.po.MessagePO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -36,10 +35,14 @@ import java.util.stream.Collectors;
  * @author iBoot
  */
 @Repository
-@RequiredArgsConstructor
 public class MessageRepositoryImpl implements MessageRepository {
 
     private final MessageMapper messageMapper;
+
+    @SuppressWarnings("all")
+    public MessageRepositoryImpl(final MessageMapper messageMapper) {
+        this.messageMapper = messageMapper;
+    }
 
     /**
      * 保存消息
@@ -48,6 +51,7 @@ public class MessageRepositoryImpl implements MessageRepository {
      * </p>
      *
      * @param message 消息实体
+     *
      * @return 保存后的消息
      */
     @Override
@@ -62,6 +66,7 @@ public class MessageRepositoryImpl implements MessageRepository {
      * 更新消息
      *
      * @param message 消息实体
+     *
      * @return 是否更新成功
      */
     @Override
@@ -74,6 +79,7 @@ public class MessageRepositoryImpl implements MessageRepository {
      * 根据 ID 删除消息（逻辑删除）
      *
      * @param id 消息 ID
+     *
      * @return 是否删除成功
      */
     @Override
@@ -85,6 +91,7 @@ public class MessageRepositoryImpl implements MessageRepository {
      * 根据 ID 查询消息
      *
      * @param id 消息 ID
+     *
      * @return 消息实体，不存在则返回空
      */
     @Override
@@ -96,15 +103,17 @@ public class MessageRepositoryImpl implements MessageRepository {
     /**
      * 按条件分页查询消息
      *
-     * @param title 消息标题（可选）
+     * @param title       消息标题（可选）
      * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
-     * @param pageNum 页码
-     * @param pageSize 每页数量
+     * @param status      状态（可选）
+     * @param pageNum     页码
+     * @param pageSize    每页数量
+     *
      * @return 消息列表
      */
     @Override
-    public List<Message> findPageByCondition(String title, String messageType, String status, int pageNum, int pageSize) {
+    public List<Message> findPageByCondition(String title, String messageType, String status, int pageNum,
+                                             int pageSize) {
         int offset = (pageNum - 1) * pageSize;
         return messageMapper.selectPageByCondition(title, messageType, status, offset, pageSize)
                 .stream()
@@ -115,9 +124,10 @@ public class MessageRepositoryImpl implements MessageRepository {
     /**
      * 按条件统计消息总数
      *
-     * @param title 消息标题（可选）
+     * @param title       消息标题（可选）
      * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
+     * @param status      状态（可选）
+     *
      * @return 消息总数
      */
     @Override
@@ -128,9 +138,10 @@ public class MessageRepositoryImpl implements MessageRepository {
     /**
      * 按条件查询所有消息（不分页，用于导出）
      *
-     * @param title 消息标题（可选）
+     * @param title       消息标题（可选）
      * @param messageType 消息类型（可选）
-     * @param status 状态（可选）
+     * @param status      状态（可选）
+     *
      * @return 消息列表
      */
     @Override
@@ -145,6 +156,7 @@ public class MessageRepositoryImpl implements MessageRepository {
      * 将持久化对象转换为领域对象
      *
      * @param po 消息持久化对象
+     *
      * @return 消息领域对象
      */
     private Message convertToDomain(MessagePO po) {
@@ -171,6 +183,7 @@ public class MessageRepositoryImpl implements MessageRepository {
      * 将领域对象转换为持久化对象
      *
      * @param domain 消息领域对象
+     *
      * @return 消息持久化对象
      */
     private MessagePO convertToPO(Message domain) {
@@ -192,4 +205,5 @@ public class MessageRepositoryImpl implements MessageRepository {
         po.setRemark(domain.getRemark());
         return po;
     }
+
 }

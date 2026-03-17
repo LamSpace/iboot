@@ -37,6 +37,7 @@ public interface MenuMapper {
      * 插入菜单记录
      *
      * @param menu 菜单持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(MenuPO menu);
@@ -45,6 +46,7 @@ public interface MenuMapper {
      * 更新菜单记录
      *
      * @param menu 菜单持久化对象
+     *
      * @return 影响的记录数
      */
     int update(MenuPO menu);
@@ -53,6 +55,7 @@ public interface MenuMapper {
      * 根据 ID 删除菜单记录
      *
      * @param id 菜单 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -61,6 +64,7 @@ public interface MenuMapper {
      * 根据 ID 查询菜单记录
      *
      * @param id 菜单 ID
+     *
      * @return 菜单持久化对象
      */
     MenuPO selectById(@Param("id") Long id);
@@ -69,6 +73,7 @@ public interface MenuMapper {
      * 根据权限标识查询菜单记录
      *
      * @param permission 权限标识
+     *
      * @return 菜单持久化对象
      */
     MenuPO selectByPermission(@Param("permission") String permission);
@@ -84,6 +89,7 @@ public interface MenuMapper {
      * 根据父菜单 ID 查询子菜单列表
      *
      * @param parentId 父菜单 ID
+     *
      * @return 菜单持久化对象列表
      */
     List<MenuPO> selectByParentId(@Param("parentId") Long parentId);
@@ -92,6 +98,7 @@ public interface MenuMapper {
      * 根据用户 ID 查询菜单列表
      *
      * @param userId 用户 ID
+     *
      * @return 菜单持久化对象列表
      */
     List<MenuPO> selectByUserId(@Param("userId") Long userId);
@@ -100,6 +107,7 @@ public interface MenuMapper {
      * 根据角色 ID 查询菜单列表
      *
      * @param roleId 角色 ID
+     *
      * @return 菜单持久化对象列表
      */
     List<MenuPO> selectByRoleId(@Param("roleId") Long roleId);
@@ -109,6 +117,7 @@ public interface MenuMapper {
      *
      * @param menuName 菜单名称
      * @param parentId 父菜单 ID
+     *
      * @return 存在返回 1，否则返回 0
      */
     int existsByMenuNameAndParentId(@Param("menuName") String menuName, @Param("parentId") Long parentId);
@@ -117,6 +126,7 @@ public interface MenuMapper {
      * 统计子菜单数量
      *
      * @param parentId 父菜单 ID
+     *
      * @return 子菜单数量
      */
     long countByParentId(@Param("parentId") Long parentId);
@@ -127,4 +137,5 @@ public interface MenuMapper {
      * @return 菜单总数
      */
     long count();
+
 }

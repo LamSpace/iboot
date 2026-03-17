@@ -37,6 +37,7 @@ public interface ConfigMapper {
      * 插入配置记录
      *
      * @param configPO 配置持久化对象
+     *
      * @return 影响的记录数
      */
     int insert(ConfigPO configPO);
@@ -45,6 +46,7 @@ public interface ConfigMapper {
      * 更新配置记录
      *
      * @param configPO 配置持久化对象
+     *
      * @return 影响的记录数
      */
     int update(ConfigPO configPO);
@@ -53,6 +55,7 @@ public interface ConfigMapper {
      * 根据 ID 删除配置
      *
      * @param id 配置 ID
+     *
      * @return 影响的记录数
      */
     int deleteById(@Param("id") Long id);
@@ -61,6 +64,7 @@ public interface ConfigMapper {
      * 根据 ID 查询配置
      *
      * @param id 配置 ID
+     *
      * @return 配置持久化对象
      */
     ConfigPO selectById(@Param("id") Long id);
@@ -69,6 +73,7 @@ public interface ConfigMapper {
      * 根据配置键查询配置
      *
      * @param configKey 配置键
+     *
      * @return 配置持久化对象
      */
     ConfigPO selectByConfigKey(@Param("configKey") String configKey);
@@ -84,7 +89,8 @@ public interface ConfigMapper {
      * 分页查询配置
      *
      * @param offset 偏移量
-     * @param limit 限制数量
+     * @param limit  限制数量
+     *
      * @return 配置列表
      */
     List<ConfigPO> selectPage(@Param("offset") int offset, @Param("limit") int limit);
@@ -100,46 +106,46 @@ public interface ConfigMapper {
      * 按条件分页查询配置记录
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
-     * @param offset 偏移量
-     * @param limit 限制数量
+     * @param offset     偏移量
+     * @param limit      限制数量
+     *
      * @return 配置列表
      */
-    List<ConfigPO> selectPageByCondition(@Param("configName") String configName,
-                                         @Param("configKey") String configKey,
+    List<ConfigPO> selectPageByCondition(@Param("configName") String configName, @Param("configKey") String configKey,
                                          @Param("configType") Integer configType,
-                                         @Param("offset") int offset,
-                                         @Param("limit") int limit);
+                                         @Param("offset") int offset, @Param("limit") int limit);
 
     /**
      * 按条件统计配置总数
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
+     *
      * @return 配置总数
      */
-    long countByCondition(@Param("configName") String configName,
-                          @Param("configKey") String configKey,
+    long countByCondition(@Param("configName") String configName, @Param("configKey") String configKey,
                           @Param("configType") Integer configType);
 
     /**
      * 按条件查询所有配置（导出用）
      *
      * @param configName 配置名称（可选）
-     * @param configKey 配置键（可选）
+     * @param configKey  配置键（可选）
      * @param configType 配置类型（可选）
+     *
      * @return 配置列表
      */
-    List<ConfigPO> selectAllByCondition(@Param("configName") String configName,
-                                        @Param("configKey") String configKey,
+    List<ConfigPO> selectAllByCondition(@Param("configName") String configName, @Param("configKey") String configKey,
                                         @Param("configType") Integer configType);
 
     /**
      * 根据配置键统计数量
      *
      * @param configKey 配置键
+     *
      * @return 数量
      */
     int countByConfigKey(@Param("configKey") String configKey);
@@ -151,7 +157,9 @@ public interface ConfigMapper {
      * </p>
      *
      * @param configKey 配置键
+     *
      * @return 影响的记录数
      */
     int removeDeletedByConfigKey(@Param("configKey") String configKey);
+
 }

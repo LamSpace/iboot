@@ -17,10 +17,6 @@
 package com.iboot.admin.interfaces.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -29,10 +25,6 @@ import java.time.LocalDateTime;
  *
  * @author iBoot
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "已发布公告响应")
 public class PublishedNoticeResponse {
 
@@ -59,4 +51,311 @@ public class PublishedNoticeResponse {
 
     @Schema(description = "当前用户是否已读")
     private Boolean isRead;
+
+    @SuppressWarnings("all")
+    public PublishedNoticeResponse() {
+    }
+
+    @SuppressWarnings("all")
+    public PublishedNoticeResponse(final Long id, final String noticeTitle, final String noticeType,
+                                   final String noticeContent, final Integer isTop, final String createBy, final LocalDateTime createTime,
+                                   final Boolean isRead) {
+        this.id = id;
+        this.noticeTitle = noticeTitle;
+        this.noticeType = noticeType;
+        this.noticeContent = noticeContent;
+        this.isTop = isTop;
+        this.createBy = createBy;
+        this.createTime = createTime;
+        this.isRead = isRead;
+    }
+
+    @SuppressWarnings("all")
+    public static PublishedNoticeResponse.PublishedNoticeResponseBuilder builder() {
+        return new PublishedNoticeResponse.PublishedNoticeResponseBuilder();
+    }
+
+    @SuppressWarnings("all")
+    public Long getId() {
+        return this.id;
+    }
+
+    @SuppressWarnings("all")
+    public void setId(final Long id) {
+        this.id = id;
+    }
+
+    @SuppressWarnings("all")
+    public String getNoticeTitle() {
+        return this.noticeTitle;
+    }
+
+    @SuppressWarnings("all")
+    public void setNoticeTitle(final String noticeTitle) {
+        this.noticeTitle = noticeTitle;
+    }
+
+    @SuppressWarnings("all")
+    public String getNoticeType() {
+        return this.noticeType;
+    }
+
+    @SuppressWarnings("all")
+    public void setNoticeType(final String noticeType) {
+        this.noticeType = noticeType;
+    }
+
+    @SuppressWarnings("all")
+    public String getNoticeContent() {
+        return this.noticeContent;
+    }
+
+    @SuppressWarnings("all")
+    public void setNoticeContent(final String noticeContent) {
+        this.noticeContent = noticeContent;
+    }
+
+    @SuppressWarnings("all")
+    public Integer getIsTop() {
+        return this.isTop;
+    }
+
+    @SuppressWarnings("all")
+    public void setIsTop(final Integer isTop) {
+        this.isTop = isTop;
+    }
+
+    @SuppressWarnings("all")
+    public String getCreateBy() {
+        return this.createBy;
+    }
+
+    @SuppressWarnings("all")
+    public void setCreateBy(final String createBy) {
+        this.createBy = createBy;
+    }
+
+    @SuppressWarnings("all")
+    public LocalDateTime getCreateTime() {
+        return this.createTime;
+    }
+
+    @SuppressWarnings("all")
+    public void setCreateTime(final LocalDateTime createTime) {
+        this.createTime = createTime;
+    }
+
+    @SuppressWarnings("all")
+    public Boolean getIsRead() {
+        return this.isRead;
+    }
+
+    @SuppressWarnings("all")
+    public void setIsRead(final Boolean isRead) {
+        this.isRead = isRead;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings("all")
+    public boolean equals(final java.lang.Object o) {
+        if (o == this)
+            return true;
+        if (!(o instanceof PublishedNoticeResponse))
+            return false;
+        final PublishedNoticeResponse other = (PublishedNoticeResponse) o;
+        if (!other.canEqual((java.lang.Object) this))
+            return false;
+        final java.lang.Object this$id = this.getId();
+        final java.lang.Object other$id = other.getId();
+        if (this$id == null ? other$id != null : !this$id.equals(other$id))
+            return false;
+        final java.lang.Object this$isTop = this.getIsTop();
+        final java.lang.Object other$isTop = other.getIsTop();
+        if (this$isTop == null ? other$isTop != null : !this$isTop.equals(other$isTop))
+            return false;
+        final java.lang.Object this$isRead = this.getIsRead();
+        final java.lang.Object other$isRead = other.getIsRead();
+        if (this$isRead == null ? other$isRead != null : !this$isRead.equals(other$isRead))
+            return false;
+        final java.lang.Object this$noticeTitle = this.getNoticeTitle();
+        final java.lang.Object other$noticeTitle = other.getNoticeTitle();
+        if (this$noticeTitle == null ? other$noticeTitle != null : !this$noticeTitle.equals(other$noticeTitle))
+            return false;
+        final java.lang.Object this$noticeType = this.getNoticeType();
+        final java.lang.Object other$noticeType = other.getNoticeType();
+        if (this$noticeType == null ? other$noticeType != null : !this$noticeType.equals(other$noticeType))
+            return false;
+        final java.lang.Object this$noticeContent = this.getNoticeContent();
+        final java.lang.Object other$noticeContent = other.getNoticeContent();
+        if (this$noticeContent == null ? other$noticeContent != null : !this$noticeContent.equals(other$noticeContent))
+            return false;
+        final java.lang.Object this$createBy = this.getCreateBy();
+        final java.lang.Object other$createBy = other.getCreateBy();
+        if (this$createBy == null ? other$createBy != null : !this$createBy.equals(other$createBy))
+            return false;
+        final java.lang.Object this$createTime = this.getCreateTime();
+        final java.lang.Object other$createTime = other.getCreateTime();
+        if (this$createTime == null ? other$createTime != null : !this$createTime.equals(other$createTime))
+            return false;
+        return true;
+    }
+
+    @SuppressWarnings("all")
+    protected boolean canEqual(final java.lang.Object other) {
+        return other instanceof PublishedNoticeResponse;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings("all")
+    public int hashCode() {
+        final int PRIME = 59;
+        int result = 1;
+        final java.lang.Object $id = this.getId();
+        result = result * PRIME + ($id == null ? 43 : $id.hashCode());
+        final java.lang.Object $isTop = this.getIsTop();
+        result = result * PRIME + ($isTop == null ? 43 : $isTop.hashCode());
+        final java.lang.Object $isRead = this.getIsRead();
+        result = result * PRIME + ($isRead == null ? 43 : $isRead.hashCode());
+        final java.lang.Object $noticeTitle = this.getNoticeTitle();
+        result = result * PRIME + ($noticeTitle == null ? 43 : $noticeTitle.hashCode());
+        final java.lang.Object $noticeType = this.getNoticeType();
+        result = result * PRIME + ($noticeType == null ? 43 : $noticeType.hashCode());
+        final java.lang.Object $noticeContent = this.getNoticeContent();
+        result = result * PRIME + ($noticeContent == null ? 43 : $noticeContent.hashCode());
+        final java.lang.Object $createBy = this.getCreateBy();
+        result = result * PRIME + ($createBy == null ? 43 : $createBy.hashCode());
+        final java.lang.Object $createTime = this.getCreateTime();
+        result = result * PRIME + ($createTime == null ? 43 : $createTime.hashCode());
+        return result;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings("all")
+    public java.lang.String toString() {
+        return "PublishedNoticeResponse(id=" + this.getId() + ", noticeTitle=" + this.getNoticeTitle() + ", noticeType="
+                + this.getNoticeType() + ", noticeContent=" + this.getNoticeContent() + ", isTop=" + this.getIsTop()
+                + ", createBy=" + this.getCreateBy() + ", createTime=" + this.getCreateTime() + ", isRead="
+                + this.getIsRead() + ")";
+    }
+
+    @SuppressWarnings("all")
+    public static class PublishedNoticeResponseBuilder {
+
+        @SuppressWarnings("all")
+        private Long id;
+
+        @SuppressWarnings("all")
+        private String noticeTitle;
+
+        @SuppressWarnings("all")
+        private String noticeType;
+
+        @SuppressWarnings("all")
+        private String noticeContent;
+
+        @SuppressWarnings("all")
+        private Integer isTop;
+
+        @SuppressWarnings("all")
+        private String createBy;
+
+        @SuppressWarnings("all")
+        private LocalDateTime createTime;
+
+        @SuppressWarnings("all")
+        private Boolean isRead;
+
+        @SuppressWarnings("all")
+        PublishedNoticeResponseBuilder() {
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public PublishedNoticeResponse.PublishedNoticeResponseBuilder id(final Long id) {
+            this.id = id;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public PublishedNoticeResponse.PublishedNoticeResponseBuilder noticeTitle(final String noticeTitle) {
+            this.noticeTitle = noticeTitle;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public PublishedNoticeResponse.PublishedNoticeResponseBuilder noticeType(final String noticeType) {
+            this.noticeType = noticeType;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public PublishedNoticeResponse.PublishedNoticeResponseBuilder noticeContent(final String noticeContent) {
+            this.noticeContent = noticeContent;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public PublishedNoticeResponse.PublishedNoticeResponseBuilder isTop(final Integer isTop) {
+            this.isTop = isTop;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public PublishedNoticeResponse.PublishedNoticeResponseBuilder createBy(final String createBy) {
+            this.createBy = createBy;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public PublishedNoticeResponse.PublishedNoticeResponseBuilder createTime(final LocalDateTime createTime) {
+            this.createTime = createTime;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public PublishedNoticeResponse.PublishedNoticeResponseBuilder isRead(final Boolean isRead) {
+            this.isRead = isRead;
+            return this;
+        }
+
+        @SuppressWarnings("all")
+        public PublishedNoticeResponse build() {
+            return new PublishedNoticeResponse(this.id, this.noticeTitle, this.noticeType, this.noticeContent,
+                    this.isTop, this.createBy, this.createTime, this.isRead);
+        }
+
+        @java.lang.Override
+        @SuppressWarnings("all")
+        public java.lang.String toString() {
+            return "PublishedNoticeResponse.PublishedNoticeResponseBuilder(id=" + this.id + ", noticeTitle="
+                    + this.noticeTitle + ", noticeType=" + this.noticeType + ", noticeContent=" + this.noticeContent
+                    + ", isTop=" + this.isTop + ", createBy=" + this.createBy + ", createTime=" + this.createTime
+                    + ", isRead=" + this.isRead + ")";
+        }
+
+    }
+
 }

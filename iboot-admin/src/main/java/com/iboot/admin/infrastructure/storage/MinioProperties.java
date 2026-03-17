@@ -17,36 +17,50 @@
 package com.iboot.admin.infrastructure.storage;
 
 import com.iboot.admin.application.service.ConfigApplicationService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * MinIO配置属性
- * 从sys_config表动态读取MinIO相关配置
+ * MinIO配置属性 从sys_config表动态读取MinIO相关配置
  *
  * @author iBoot
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class MinioProperties {
 
-    private final ConfigApplicationService configApplicationService;
+    private static final Logger log = LoggerFactory.getLogger(MinioProperties.class);
 
     private static final String CONFIG_KEY_STORAGE_TYPE = "sys.file.storageType";
+
     private static final String CONFIG_KEY_ENDPOINT = "sys.file.minio.endpoint";
+
     private static final String CONFIG_KEY_ACCESS_KEY = "sys.file.minio.accessKey";
+
     private static final String CONFIG_KEY_SECRET_KEY = "sys.file.minio.secretKey";
+
     private static final String CONFIG_KEY_BUCKET_NAME = "sys.file.minio.bucketName";
+
     private static final String CONFIG_KEY_URL_EXPIRE_SECONDS = "sys.file.minio.urlExpireSeconds";
+
     private static final String CONFIG_KEY_MONITOR_ENABLED = "sys.minio.monitor.enabled";
+
     private static final String CONFIG_KEY_CONSOLE_URL = "sys.minio.console.url";
 
     private static final String DEFAULT_STORAGE_TYPE = "local";
+
     private static final String DEFAULT_ENDPOINT = "http://localhost:9000";
+
     private static final String DEFAULT_BUCKET_NAME = "iboot-files";
+
     private static final int DEFAULT_URL_EXPIRE_SECONDS = 3600;
+
+    private final ConfigApplicationService configApplicationService;
+
+    @SuppressWarnings("all")
+    public MinioProperties(final ConfigApplicationService configApplicationService) {
+        this.configApplicationService = configApplicationService;
+    }
 
     /**
      * 获取存储类型
@@ -123,4 +137,5 @@ public class MinioProperties {
         String value = configApplicationService.getConfigValue(CONFIG_KEY_CONSOLE_URL);
         return value != null ? value : "http://localhost:9001";
     }
+
 }

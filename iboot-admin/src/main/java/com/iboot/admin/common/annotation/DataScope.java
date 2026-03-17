@@ -20,7 +20,7 @@ import java.lang.annotation.*;
 
 /**
  * 数据权限注解
- *
+ * <p>
  * 用于控制用户对数据的访问权限，根据用户的角色数据范围自动过滤查询结果
  *
  * @author iBoot
@@ -29,14 +29,15 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface DataScope {
-    
+
     /**
      * 部门表的别名
      */
     String deptAlias() default "d";
-    
+
     /**
      * 用户表的别名
      */
     String userAlias() default "u";
+
 }

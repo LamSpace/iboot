@@ -50,11 +50,9 @@ public class ElasticsearchConfig {
     public RestClient elasticsearchRestClient() {
         HttpHost httpHost = HttpHost.create(uris);
         RestClientBuilder builder = RestClient.builder(httpHost)
-                .setRequestConfigCallback(requestConfigBuilder ->
-                        requestConfigBuilder
-                                .setConnectTimeout((int) connectTimeout.toMillis())
-                                .setSocketTimeout((int) socketTimeout.toMillis())
-                );
+                .setRequestConfigCallback(
+                        requestConfigBuilder -> requestConfigBuilder.setConnectTimeout((int) connectTimeout.toMillis())
+                                .setSocketTimeout((int) socketTimeout.toMillis()));
         return builder.build();
     }
 
@@ -67,4 +65,5 @@ public class ElasticsearchConfig {
     public ElasticsearchClient elasticsearchClient(ElasticsearchTransport transport) {
         return new ElasticsearchClient(transport);
     }
+
 }
