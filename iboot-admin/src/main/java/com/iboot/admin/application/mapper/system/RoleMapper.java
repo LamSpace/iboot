@@ -44,6 +44,7 @@ public interface RoleMapper {
      *
      * @return 角色响应 DTO
      */
+    @Mapping(target = "orderNum", source = "roleSort")
     RoleResponse toResponse(Role role);
 
     /**
@@ -62,6 +63,7 @@ public interface RoleMapper {
      *
      * @return 角色导出 VO
      */
+    @Mapping(target = "orderNum", source = "roleSort")
     RoleExportVO toExportVO(Role role);
 
     /**
@@ -88,6 +90,7 @@ public interface RoleMapper {
     @Mapping(target = "createTime", ignore = true)
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "roleSort", source = "orderNum")
     Role toEntity(RoleRequest request);
 
     // ==================== 更新映射 ====================
@@ -104,6 +107,7 @@ public interface RoleMapper {
     @Mapping(target = "createTime", ignore = true)
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "roleSort", source = "orderNum")
     void updateEntityFromRequest(RoleRequest request, @MappingTarget Role role);
 
 }

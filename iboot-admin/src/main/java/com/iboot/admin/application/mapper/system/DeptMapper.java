@@ -62,6 +62,7 @@ public interface DeptMapper {
      *
      * @return 部门导出 VO
      */
+    @Mapping(target = "level", ignore = true)
     DeptExportVO toExportVO(Dept dept);
 
     /**
@@ -71,6 +72,7 @@ public interface DeptMapper {
      *
      * @return 部门导出 VO 列表
      */
+    @Mapping(target = "level", ignore = true)
     List<DeptExportVO> toExportVOList(List<Dept> depts);
 
     // ==================== 创建映射 ====================

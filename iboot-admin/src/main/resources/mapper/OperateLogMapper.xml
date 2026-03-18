@@ -139,11 +139,11 @@
     </delete>
 
     <select id="countByDate" resultType="java.util.Map">
-        SELECT DATE (operate_time) as date, COUNT (*) as count
+        SELECT DATE(operate_time) as date, COUNT(*) as count
         FROM sys_operate_log
         WHERE operate_time &gt;= #{startTime}
           AND operate_time &lt;= #{endTime}
-        GROUP BY DATE (operate_time)
+        GROUP BY DATE(operate_time)
         ORDER BY date
     </select>
 
@@ -166,11 +166,11 @@
     </select>
 
     <select id="countByHour" resultType="java.util.Map">
-        SELECT HOUR (operate_time) as hour, COUNT (*) as count
+        SELECT HOUR(operate_time) as hour, COUNT(*) as count
         FROM sys_operate_log
         WHERE operate_time &gt;= #{startTime}
           AND operate_time &lt;= #{endTime}
-        GROUP BY HOUR (operate_time)
+        GROUP BY HOUR(operate_time)
         ORDER BY hour
     </select>
 

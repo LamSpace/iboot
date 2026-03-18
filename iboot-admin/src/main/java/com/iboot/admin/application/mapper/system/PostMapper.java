@@ -44,6 +44,7 @@ public interface PostMapper {
      *
      * @return 岗位响应 DTO
      */
+    @Mapping(target = "orderNum", source = "postSort")
     PostResponse toResponse(Post post);
 
     /**
@@ -62,6 +63,7 @@ public interface PostMapper {
      *
      * @return 岗位导出 VO
      */
+    @Mapping(target = "orderNum", source = "postSort")
     PostExportVO toExportVO(Post post);
 
     /**
@@ -88,6 +90,7 @@ public interface PostMapper {
     @Mapping(target = "createTime", ignore = true)
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "postSort", source = "orderNum")
     Post toEntity(PostRequest request);
 
     // ==================== 更新映射 ====================
@@ -104,6 +107,7 @@ public interface PostMapper {
     @Mapping(target = "createTime", ignore = true)
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "postSort", source = "orderNum")
     void updateEntityFromRequest(PostRequest request, @MappingTarget Post post);
 
 }

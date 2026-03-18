@@ -14,6 +14,7 @@ iBoot is a modern management system built with Vue 3 + TypeScript (frontend) and
 - MySQL 8.x
 - Redis 7.x
 - Maven 3.9+
+- Mavenw配置文件i地址: /home/lam/repo/settings.xml
 
 ### Development
 

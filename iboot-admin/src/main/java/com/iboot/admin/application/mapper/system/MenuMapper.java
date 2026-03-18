@@ -41,6 +41,7 @@ public interface MenuMapper {
      *
      * @return 菜单响应 DTO
      */
+    @Mapping(target = "perms", source = "permission")
     @Mapping(target = "children", ignore = true)
     MenuResponse toResponse(Menu menu);
 
@@ -62,6 +63,8 @@ public interface MenuMapper {
      *
      * @return 菜单导出 VO
      */
+    @Mapping(target = "perms", source = "permission")
+    @Mapping(target = "level", ignore = true)
     MenuExportVO toExportVO(Menu menu);
 
     /**
@@ -71,6 +74,8 @@ public interface MenuMapper {
      *
      * @return 菜单导出 VO 列表
      */
+    @Mapping(target = "perms", source = "permission")
+    @Mapping(target = "level", ignore = true)
     List<MenuExportVO> toExportVOList(List<Menu> menus);
 
     // ==================== 创建映射 ====================
@@ -88,6 +93,7 @@ public interface MenuMapper {
     @Mapping(target = "createTime", ignore = true)
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "permission", source = "perms")
     @Mapping(target = "children", ignore = true)
     Menu toEntity(MenuRequest request);
 
@@ -105,6 +111,7 @@ public interface MenuMapper {
     @Mapping(target = "createTime", ignore = true)
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "permission", source = "perms")
     @Mapping(target = "children", ignore = true)
     void updateEntityFromRequest(MenuRequest request, @MappingTarget Menu menu);
 
