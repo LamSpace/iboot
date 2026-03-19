@@ -16,54 +16,19 @@
 
 package com.iboot.admin.infrastructure.config;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import co.elastic.clients.transport.ElasticsearchTransport;
-import co.elastic.clients.transport.rest_client.RestClientTransport;
-import org.apache.http.HttpHost;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.Duration;
-
 /**
- * Elasticsearch 客户端配置类
+ * Elasticsearch 配置类
+ * <p>
+ * 使用 Spring Boot 自动配置的 Elasticsearch 客户端
+ * 配置项位于 application.yml 的 spring.elasticsearch 节点
+ * </p>
  *
  * @author iBoot
  */
 @Configuration
 public class ElasticsearchConfig {
-
-    @Value("${elasticsearch.uris:http://localhost:9200}")
-    private String uris;
-
-    @Value("${elasticsearch.connect-timeout:5s}")
-    private Duration connectTimeout;
-
-    @Value("${elasticsearch.socket-timeout:30s}")
-    private Duration socketTimeout;
-
-    @Bean
-    public RestClient elasticsearchRestClient() {
-        HttpHost httpHost = HttpHost.create(uris);
-        RestClientBuilder builder = RestClient.builder(httpHost)
-                .setRequestConfigCallback(
-                        requestConfigBuilder -> requestConfigBuilder.setConnectTimeout((int) connectTimeout.toMillis())
-                                .setSocketTimeout((int) socketTimeout.toMillis()));
-        return builder.build();
-    }
-
-    @Bean
-    public ElasticsearchTransport elasticsearchTransport(RestClient restClient) {
-        return new RestClientTransport(restClient, new JacksonJsonpMapper());
-    }
-
-    @Bean
-    public ElasticsearchClient elasticsearchClient(ElasticsearchTransport transport) {
-        return new ElasticsearchClient(transport);
-    }
-
+    // 无需自定义 Bean，Spring Boot 已自动配置 ElasticsearchClient 和 ElasticsearchTemplate
+    // 超时配置通过 application.yml 中的 spring.elasticsearch 属性控制
 }

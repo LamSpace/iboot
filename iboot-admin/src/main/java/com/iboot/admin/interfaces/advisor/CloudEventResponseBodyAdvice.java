@@ -45,6 +45,12 @@ public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> 
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
+        // 排除 springdoc 相关的返回类型
+        String returnTypeName = returnType.getParameterType().getName();
+        if (returnTypeName.startsWith("io.swagger") || returnTypeName.startsWith("org.springdoc")) {
+            return false;
+        }
+
         // 拦截所有 Result 类型的响应（CloudEventBody 除外）
         return Result.class.isAssignableFrom(returnType.getParameterType())
                 && !CloudEventBody.class.isAssignableFrom(returnType.getParameterType());

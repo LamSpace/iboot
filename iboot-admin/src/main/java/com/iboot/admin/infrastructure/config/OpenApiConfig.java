@@ -16,12 +16,18 @@
 
 package com.iboot.admin.infrastructure.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * Springdoc OpenAPI 配置
@@ -31,13 +37,32 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
+    @Value("${server.port:8080}")
+    private int serverPort;
+
     @Bean
     public OpenAPI customOpenAPI() {
-        return new OpenAPI().info(new Info().title("iBoot 后台管理系统 API")
-                .version("1.0.0")
-                .description("基于 Spring Boot 3.3 + MyBatis 的后台管理系统")
-                .contact(new Contact().name("iBoot Team").email("support@iboot.com").url("https://iboot.com"))
-                .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")));
+        Server server = new Server();
+        server.setUrl("http://localhost:" + serverPort);
+        server.setDescription("本地开发环境");
+
+        return new OpenAPI()
+                .openapi("3.1.0")
+                .info(new Info().title("iBoot 后台管理系统 API")
+                        .version("1.0.0")
+                        .description("基于 Spring Boot 4.0 + MyBatis 的后台管理系统")
+                        .contact(new Contact().name("iBoot Team").email("support@iboot.com").url("https://iboot.com"))
+                        .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")))
+                .servers(List.of(server))
+                .components(new Components());
+    }
+
+    @Bean
+    public GroupedOpenApi allApi() {
+        return GroupedOpenApi.builder()
+                .group("all")
+                .pathsToMatch("/**")
+                .build();
     }
 
 }

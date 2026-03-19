@@ -19,6 +19,7 @@ package com.iboot.admin.infrastructure.config;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -71,6 +72,35 @@ public class RedisConfig {
     private static final long L2_CACHE_TTL_MINUTES = 30;
 
     /**
+     * 全局 ObjectMapper Bean，供 JWT 过滤器和其他组件使用
+     * <p>
+     * 不激活默认类型信息，避免影响 HTTP 请求/响应的 JSON 序列化
+     * <p>
+     * 忽略未知字段，避免因前端传递额外字段导致反序列化失败
+     */
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
+    }
+
+    /**
+     * 创建 Redis 专用的 ObjectMapper（不作为 Bean，避免影响全局）
+     */
+    private ObjectMapper createRedisObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY);
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
+    }
+
+    /**
      * RedisTemplate 配置
      */
     @Bean
@@ -82,15 +112,7 @@ public class RedisConfig {
         Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(
                 Object.class);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        // 指定要序列化的域，field,get 和 set，以及修饰符范围，ANY 是都有包括 private 和 public
-        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        // 指定序列化输入的类型，类必须是非 final 修饰的，final 修饰的类，比如 String,Integer 等会抛出异常
-        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
-        // 注册 JavaTimeModule 以支持 Java 8 时间类型
-        objectMapper.registerModule(new JavaTimeModule());
-
-        jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+        jackson2JsonRedisSerializer.setObjectMapper(createRedisObjectMapper());
 
         StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
 
@@ -127,13 +149,8 @@ public class RedisConfig {
     @Bean
     public RedisCacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
         // 配置 JSON 序列化器，支持类型信息
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY);
-        objectMapper.registerModule(new JavaTimeModule());
-
-        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(
+                createRedisObjectMapper());
 
         RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(L2_CACHE_TTL_MINUTES))

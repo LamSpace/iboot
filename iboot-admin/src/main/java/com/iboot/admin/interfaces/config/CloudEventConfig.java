@@ -20,9 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +34,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Configuration
-public class CloudEventConfig implements WebMvcConfigurer {
+public class CloudEventConfig {
 
     /**
      * CloudEvents JSON 消息转换器
@@ -51,20 +49,10 @@ public class CloudEventConfig implements WebMvcConfigurer {
     public MappingJackson2HttpMessageConverter cloudEventHttpMessageConverter(ObjectMapper objectMapper) {
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
         List<MediaType> supportedMediaTypes = new ArrayList<>();
-        // 设置 CloudEvents 特定的 Content-Type
+        // 只设置 CloudEvents 特定的 Content-Type，避免影响其他 JSON 响应（如 springdoc）
         supportedMediaTypes.add(MediaType.valueOf("application/cloudevents+json"));
-        // 同时也支持普通 JSON
-        supportedMediaTypes.add(MediaType.APPLICATION_JSON);
         converter.setSupportedMediaTypes(supportedMediaTypes);
         return converter;
-    }
-
-    @Override
-    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-        // 将 CloudEvents 转换器添加到最前面，确保优先匹配
-        ObjectMapper objectMapper = new ObjectMapper();
-        MappingJackson2HttpMessageConverter converter = cloudEventHttpMessageConverter(objectMapper);
-        converters.add(0, converter);
     }
 
 }

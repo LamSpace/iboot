@@ -2,29 +2,21 @@ server:
   port: 8080
   servlet:
     context-path: /
-    encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
 
 spring:
   application:
     name: iboot-admin
   banner:
     location: classpath:banner.txt
-  # JVM 系统属性配置
   jmx:
     enabled: false
   datasource:
-    # 使用 Druid 连接池
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
-      # Druid 数据库连接配置
       driver-class-name: com.mysql.cj.jdbc.Driver
       url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_admin?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
       username: ${MYSQL_USERNAME:root}
       password: ${MYSQL_PASSWORD:root}
-      # Druid 连接池配置
       initial-size: 5
       min-idle: 5
       max-active: 20
@@ -46,12 +38,10 @@ spring:
           result-set-open-after-log-enabled: true
           result-set-close-after-log-enabled: true
       connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
-      # WebStatFilter 配置，说明请参考 Druid Wiki
       web-stat-filter:
         enabled: true
         url-pattern: /*
         exclusions: '*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*'
-      # StatViewServlet 配置
       stat-view-servlet:
         enabled: true
         url-pattern: /druid/*
@@ -71,25 +61,38 @@ spring:
           max-idle: 8
           max-active: 8
           max-wait: -1ms
-  # 文件上传配置
+    elasticsearch:
+      repositories:
+        enabled: false
+  elasticsearch:
+    Uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+    connection-timeout: 5s
+    socket-timeout: 30s
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
   servlet:
     multipart:
       enabled: true
       max-file-size: 50MB
       max-request-size: 100MB
-  # Flyway 配置
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
   flyway:
     enabled: true
     locations:
       - classpath:db/migration
     baseline-on-migrate: true
+    baseline-version: 0
     validate-on-migrate: false
+    clean-disabled: true
   security:
     user:
       name: actuator
       password: actuator123
       roles: ACTUATOR
-  # Quartz 定时任务配置
   quartz:
     job-store-type: jdbc
     jdbc:
@@ -102,6 +105,18 @@ spring:
       org.quartz.jobStore.isClustered: false
       org.quartz.jobStore.misfireThreshold: 60000
       org.quartz.threadPool.threadCount: 10
+  boot:
+    admin:
+      client:
+        enabled: false
+        url: http://localhost:8080/sba
+        instance:
+          service-base-url: http://localhost:8080
+          name: iboot-admin
+          metadata:
+            tags:
+              environment: development
+      context-path: /sba
 
 mybatis:
   type-aliases-package: com.iboot.admin.infrastructure.persistence.po
@@ -121,14 +136,16 @@ springdoc:
   api-docs:
     enabled: true
     path: /v3/api-docs
+    version: OPENAPI_3_1
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
+    url: /v3/api-docs
     tags-sorter: alpha
     operations-sorter: alpha
-    # 允许匿名访问
-    csrf:
-      enabled: false
+  # 禁用缓存以便调试
+  cache:
+    disabled: true
 
 management:
   endpoints:
@@ -139,9 +156,11 @@ management:
   endpoint:
     health:
       show-details: always
-      roles: ADMIN
     logfile:
       external-file: logs/iboot-admin.log
+  health:
+    elasticsearch:
+      enabled: false
   info:
     git:
       mode: full
@@ -172,28 +191,10 @@ management:
   #   port: 8081
   #   address: 0.0.0.0
 
-# Spring Boot Admin
-spring.boot.admin:
-  client:
-    url: http://localhost:8080/sba
-    instance:
-      service-base-url: http://localhost:8080
-      name: iboot-admin
-      metadata:
-        tags:
-          environment: development
-  context-path: /sba
-
 jwt:
   secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
-  expiration: 604800      # JWT 签名兜底过期（秒），7天
-  session-timeout: 30     # Redis 滑动过期（分钟），实际控制会话时长
-
-# Elasticsearch 配置
-elasticsearch:
-  uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
-  connect-timeout: 5s
-  socket-timeout: 30s
+  expiration: 604800
+  session-timeout: 30
 
 # SSE 推送配置
 iboot:
@@ -212,5 +213,3 @@ iboot:
     broadcaster: local       # local | redis
     redis:
       channel: iboot:push:events
-
-
