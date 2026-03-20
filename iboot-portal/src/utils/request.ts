@@ -16,6 +16,8 @@ service.interceptors.request.use(
     if (userStore.token) {
       config.headers.Authorization = `Bearer ${userStore.token}`
     }
+    // 添加 API 版本头
+    config.headers['Accept-Version'] = '1'
     return config
   },
   (error: any) => {

@@ -51,7 +51,7 @@ public class OnlineUserController {
     }
 
     @Operation(summary = "查询在线用户列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('online:list')")
     public Result<PageResult<OnlineUserResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                        @RequestParam(defaultValue = "10") Integer pageSize,
@@ -68,14 +68,14 @@ public class OnlineUserController {
     }
 
     @Operation(summary = "获取在线用户总数")
-    @GetMapping("/count")
+    @GetMapping(version = "1", value = "/count")
     @PreAuthorize("hasAuthority('online:list')")
     public Result<Long> count() {
         return Result.success(onlineUserApplicationService.getOnlineUserCount());
     }
 
     @Operation(summary = "强制退出用户")
-    @DeleteMapping("/{tokenId}")
+    @DeleteMapping(version = "1", value = "/{tokenId}")
     @PreAuthorize("hasAuthority('online:forceLogout')")
     @Log(title = "在线用户", businessType = BusinessTypeEnum.FORCE_LOGOUT)
     public Result<Void> forceLogout(@PathVariable String tokenId) {
@@ -84,7 +84,7 @@ public class OnlineUserController {
     }
 
     @Operation(summary = "导出在线用户列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('online:export')")
     @Log(title = "在线用户", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String username,

@@ -68,7 +68,7 @@ public class FileController {
     }
 
     @Operation(summary = "上传文件")
-    @PostMapping("/upload")
+    @PostMapping(version = "1", value = "/upload")
     @PreAuthorize("hasAuthority('file:upload')")
     @Log(title = "文件管理", businessType = BusinessTypeEnum.INSERT)
     public Result<FileResponse> upload(@RequestParam("file") MultipartFile file,
@@ -79,7 +79,7 @@ public class FileController {
     }
 
     @Operation(summary = "查询文件列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('file:list')")
     public Result<PageResult<FileResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                  @RequestParam(defaultValue = "10") Integer pageSize,
@@ -101,7 +101,7 @@ public class FileController {
     }
 
     @Operation(summary = "查询文件详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('file:list')")
     public Result<FileResponse> getById(@PathVariable Long id) {
         FileInfo fileInfo = fileApplicationService.getFileById(id);
@@ -109,7 +109,7 @@ public class FileController {
     }
 
     @Operation(summary = "获取文件下载URL", description = "MinIO模式返回预签名URL，本地模式返回下载接口路径")
-    @GetMapping("/download-url/{id}")
+    @GetMapping(version = "1", value = "/download-url/{id}")
     @PreAuthorize("hasAuthority('file:download')")
     public Result<Map<String, String>> getDownloadUrl(@PathVariable Long id) {
         String downloadUrl = fileApplicationService.getFileDownloadUrl(id);
@@ -122,7 +122,7 @@ public class FileController {
     }
 
     @Operation(summary = "下载文件")
-    @GetMapping("/download/{id}")
+    @GetMapping(version = "1", value = "/download/{id}")
     @PreAuthorize("hasAuthority('file:download')")
     @Log(title = "文件管理", businessType = BusinessTypeEnum.EXPORT)
     public ResponseEntity<?> download(@PathVariable Long id) throws IOException {
@@ -162,7 +162,7 @@ public class FileController {
     }
 
     @Operation(summary = "删除文件")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('file:remove')")
     @Log(title = "文件管理", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {
@@ -171,7 +171,7 @@ public class FileController {
     }
 
     @Operation(summary = "导出文件列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('file:export')")
     @Log(title = "文件管理", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String fileName,

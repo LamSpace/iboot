@@ -68,7 +68,7 @@ spring:
     Uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
     connection-timeout: 5s
     socket-timeout: 30s
-  jackson:
+  Jackson:
     deserialization:
       fail-on-unknown-properties: false
   servlet:

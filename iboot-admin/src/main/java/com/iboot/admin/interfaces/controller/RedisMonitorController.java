@@ -55,7 +55,7 @@ public class RedisMonitorController {
     }
 
     @Operation(summary = "查询缓存键列表", description = "使用SCAN命令分页查询缓存键，支持通配符匹配")
-    @GetMapping("/keys")
+    @GetMapping(version = "1", value = "/keys")
     @PreAuthorize("hasAuthority('redis:list')")
     public Result<PageResult<CacheKeyInfo>> getCacheKeys(@RequestParam(defaultValue = "*") String pattern,
                                                          @RequestParam(defaultValue = "1") Integer pageNum,
@@ -65,7 +65,7 @@ public class RedisMonitorController {
     }
 
     @Operation(summary = "获取缓存键值", description = "获取指定缓存键的类型、TTL和值详情")
-    @GetMapping("/key/{key}")
+    @GetMapping(version = "1", value = "/key/{key}")
     @PreAuthorize("hasAuthority('redis:query')")
     public Result<CacheKeyDetail> getCacheKeyValue(@PathVariable String key) {
         CacheKeyDetail detail = redisMonitorApplicationService.getCacheKeyValue(key);
@@ -76,7 +76,7 @@ public class RedisMonitorController {
     }
 
     @Operation(summary = "删除缓存键", description = "删除指定的缓存键")
-    @DeleteMapping("/key/{key}")
+    @DeleteMapping(version = "1", value = "/key/{key}")
     @PreAuthorize("hasAuthority('redis:delete')")
     @Log(title = "Redis缓存监控", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> deleteCacheKey(@PathVariable String key) {
@@ -85,7 +85,7 @@ public class RedisMonitorController {
     }
 
     @Operation(summary = "清空所有缓存", description = "清空当前数据库所有缓存键（危险操作）")
-    @DeleteMapping("/keys")
+    @DeleteMapping(version = "1", value = "/keys")
     @PreAuthorize("hasAuthority('redis:clear')")
     @Log(title = "Redis缓存监控", businessType = BusinessTypeEnum.CLEAN)
     public Result<Void> clearAllKeys() {

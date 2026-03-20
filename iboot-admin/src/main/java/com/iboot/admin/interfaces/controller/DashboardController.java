@@ -43,7 +43,7 @@ public class DashboardController {
     }
 
     @Operation(summary = "获取 Dashboard 汇总数据")
-    @GetMapping("/summary")
+    @GetMapping(version = "1", value = "/summary")
     public Result<DashboardSummaryResponse> summary() {
         DashboardSummaryResponse data = dashboardApplicationService.getDashboardSummary();
         return Result.success(data);

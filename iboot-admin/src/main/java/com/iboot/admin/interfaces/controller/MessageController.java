@@ -60,7 +60,7 @@ public class MessageController {
 
     // ==================== 后台管理接口 ====================
     @Operation(summary = "查询消息列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('message:list')")
     public Result<PageResult<MessageResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                     @RequestParam(defaultValue = "10") Integer pageSize,
@@ -76,7 +76,7 @@ public class MessageController {
     }
 
     @Operation(summary = "查询消息详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('message:query')")
     public Result<MessageResponse> getById(@PathVariable Long id) {
         Message message = messageApplicationService.getMessageById(id);
@@ -105,7 +105,7 @@ public class MessageController {
     }
 
     @Operation(summary = "删除消息")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('message:remove')")
     @Log(title = "消息管理", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {
@@ -114,7 +114,7 @@ public class MessageController {
     }
 
     @Operation(summary = "发送消息")
-    @PostMapping("/send")
+    @PostMapping(version = "1", value = "/send")
     @PreAuthorize("hasAuthority('message:send')")
     @Log(title = "消息管理", businessType = BusinessTypeEnum.OTHER)
     public Result<Void> send(@Valid @RequestBody MessageSendRequest request) {
@@ -123,7 +123,7 @@ public class MessageController {
     }
 
     @Operation(summary = "撤回消息")
-    @PutMapping("/{id}/revoke")
+    @PutMapping(version = "1", value = "/{id}/revoke")
     @PreAuthorize("hasAuthority('message:send')")
     @Log(title = "消息管理", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> revoke(@PathVariable Long id) {
@@ -132,7 +132,7 @@ public class MessageController {
     }
 
     @Operation(summary = "导出消息列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('message:export')")
     @Log(title = "消息管理", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String title,
@@ -146,7 +146,7 @@ public class MessageController {
 
     // ==================== 用户端接口 ====================
     @Operation(summary = "获取用户收件箱")
-    @GetMapping("/inbox")
+    @GetMapping(version = "1", value = "/inbox")
     public Result<PageResult<UserMessageResponse>> inbox(@RequestParam(defaultValue = "1") Integer pageNum,
                                                          @RequestParam(defaultValue = "10") Integer pageSize,
                                                          @RequestParam(required = false) String messageType,
@@ -163,7 +163,7 @@ public class MessageController {
     }
 
     @Operation(summary = "获取未读消息数量")
-    @GetMapping("/unread/count")
+    @GetMapping(version = "1", value = "/unread/count")
     public Result<Long> unreadCount() {
         Long userId = SecurityUtils.getCurrentUserId();
         long count = messageApplicationService.getUnreadCount(userId);
@@ -171,7 +171,7 @@ public class MessageController {
     }
 
     @Operation(summary = "标记消息已读")
-    @PutMapping("/{id}/read")
+    @PutMapping(version = "1", value = "/{id}/read")
     public Result<Void> markAsRead(@PathVariable Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
         messageApplicationService.markAsRead(id, userId);
@@ -179,7 +179,7 @@ public class MessageController {
     }
 
     @Operation(summary = "全部标记已读")
-    @PutMapping("/read/all")
+    @PutMapping(version = "1", value = "/read/all")
     public Result<Void> markAllAsRead() {
         Long userId = SecurityUtils.getCurrentUserId();
         messageApplicationService.markAllAsRead(userId);
@@ -187,7 +187,7 @@ public class MessageController {
     }
 
     @Operation(summary = "用户删除消息")
-    @DeleteMapping("/inbox/{id}")
+    @DeleteMapping(version = "1", value = "/inbox/{id}")
     public Result<Void> deleteUserMessage(@PathVariable Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
         messageApplicationService.deleteUserMessage(id, userId);

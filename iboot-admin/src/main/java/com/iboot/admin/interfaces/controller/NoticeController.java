@@ -58,7 +58,7 @@ public class NoticeController {
 
     // ==================== 后台管理接口 ====================
     @Operation(summary = "查询公告列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('notice:list')")
     public Result<PageResult<NoticeResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                    @RequestParam(defaultValue = "10") Integer pageSize,
@@ -74,7 +74,7 @@ public class NoticeController {
     }
 
     @Operation(summary = "查询公告详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('notice:query')")
     public Result<NoticeResponse> getById(@PathVariable Long id) {
         Notice notice = noticeApplicationService.getNoticeById(id);
@@ -103,7 +103,7 @@ public class NoticeController {
     }
 
     @Operation(summary = "删除公告")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('notice:remove')")
     @Log(title = "系统公告", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {
@@ -112,7 +112,7 @@ public class NoticeController {
     }
 
     @Operation(summary = "发布公告")
-    @PutMapping("/{id}/publish")
+    @PutMapping(version = "1", value = "/{id}/publish")
     @PreAuthorize("hasAuthority('notice:publish')")
     @Log(title = "系统公告", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> publish(@PathVariable Long id) {
@@ -121,7 +121,7 @@ public class NoticeController {
     }
 
     @Operation(summary = "撤回公告")
-    @PutMapping("/{id}/revoke")
+    @PutMapping(version = "1", value = "/{id}/revoke")
     @PreAuthorize("hasAuthority('notice:publish')")
     @Log(title = "系统公告", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> revoke(@PathVariable Long id) {
@@ -130,7 +130,7 @@ public class NoticeController {
     }
 
     @Operation(summary = "导出公告列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('notice:export')")
     @Log(title = "系统公告", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String noticeTitle,
@@ -143,7 +143,7 @@ public class NoticeController {
 
     // ==================== 用户端接口 ====================
     @Operation(summary = "获取已发布公告列表")
-    @GetMapping("/published")
+    @GetMapping(version = "1", value = "/published")
     public Result<List<PublishedNoticeResponse>> published() {
         Long userId = SecurityUtils.getCurrentUserId();
         List<Notice> notices = noticeApplicationService.getPublishedNotices();
@@ -154,7 +154,7 @@ public class NoticeController {
     }
 
     @Operation(summary = "获取未读公告数量")
-    @GetMapping("/unread/count")
+    @GetMapping(version = "1", value = "/unread/count")
     public Result<Long> unreadCount() {
         Long userId = SecurityUtils.getCurrentUserId();
         long count = noticeApplicationService.getUnreadCount(userId);
@@ -162,7 +162,7 @@ public class NoticeController {
     }
 
     @Operation(summary = "标记公告已读")
-    @PutMapping("/{id}/read")
+    @PutMapping(version = "1", value = "/{id}/read")
     public Result<Void> markAsRead(@PathVariable Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
         noticeApplicationService.markAsRead(id, userId);

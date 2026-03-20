@@ -25,15 +25,17 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 mvn clean package -DskipTests
 ```
 
+Maven配置文件地址：/home/lam/repo/settings.xml。任何Maven命令行均可以使用该配置文件。
+
 ### Frontend (iboot-portal)
 
 ```bash
 cd iboot-portal
 
 # Install dependencies (use cnpm for faster download in China)
-npm install
+cnpm install
 # or
-cnpm install --registry=https://registry.npmmirror.com
+npm install --registry=https://registry.npmmirror.com
 
 # Development server
 cnpm run dev
@@ -45,7 +47,7 @@ cnpm run build
 cnpm run type-check
 
 # Format
-npm run format
+cnpm run format
 ```
 
 ### Docker Deployment

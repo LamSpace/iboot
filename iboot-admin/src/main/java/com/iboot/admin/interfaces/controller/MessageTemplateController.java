@@ -51,7 +51,7 @@ public class MessageTemplateController {
     }
 
     @Operation(summary = "查询消息模板列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('message:template:list')")
     public Result<PageResult<MessageTemplateResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                             @RequestParam(defaultValue = "10") Integer pageSize,
@@ -69,7 +69,7 @@ public class MessageTemplateController {
     }
 
     @Operation(summary = "查询消息模板详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('message:template:query')")
     public Result<MessageTemplateResponse> getById(@PathVariable Long id) {
         MessageTemplate template = messageTemplateApplicationService.getTemplateById(id);
@@ -77,7 +77,7 @@ public class MessageTemplateController {
     }
 
     @Operation(summary = "获取所有启用的消息模板")
-    @GetMapping("/all")
+    @GetMapping(version = "1", value = "/all")
     @PreAuthorize("hasAuthority('message:template:list')")
     public Result<List<MessageTemplateResponse>> all() {
         List<MessageTemplate> templates = messageTemplateApplicationService.getAllEnabledTemplates();
@@ -109,7 +109,7 @@ public class MessageTemplateController {
     }
 
     @Operation(summary = "删除消息模板")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('message:template:remove')")
     @Log(title = "消息模板", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {

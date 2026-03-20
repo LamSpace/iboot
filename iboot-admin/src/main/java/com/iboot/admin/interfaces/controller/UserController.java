@@ -84,7 +84,7 @@ public class UserController {
     }
 
     @Operation(summary = "查询用户列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('user:list')")
     public Result<PageResult<UserResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                  @RequestParam(defaultValue = "10") Integer pageSize,
@@ -106,7 +106,7 @@ public class UserController {
     }
 
     @Operation(summary = "获取当前用户信息")
-    @GetMapping("/profile")
+    @GetMapping(version = "1", value = "/profile")
     public Result<ProfileResponse> getProfile() {
         Long userId = SecurityUtils.getCurrentUserId();
         User user = userApplicationService.getUserById(userId);
@@ -114,7 +114,7 @@ public class UserController {
     }
 
     @Operation(summary = "更新当前用户信息")
-    @PutMapping("/profile")
+    @PutMapping(version = "1", value = "/profile")
     @Log(title = "个人中心", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
         Long userId = SecurityUtils.getCurrentUserId();
@@ -130,7 +130,7 @@ public class UserController {
     }
 
     @Operation(summary = "修改当前用户密码")
-    @PutMapping("/profile/password")
+    @PutMapping(version = "1", value = "/profile/password")
     @Log(title = "个人中心", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> updatePassword(@Valid @RequestBody UpdatePasswordRequest request) {
         Long userId = SecurityUtils.getCurrentUserId();
@@ -139,7 +139,7 @@ public class UserController {
     }
 
     @Operation(summary = "查询用户详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('user:query')")
     public Result<UserResponse> getById(@PathVariable Long id) {
         User user = userApplicationService.getUserById(id);
@@ -173,7 +173,7 @@ public class UserController {
     }
 
     @Operation(summary = "删除用户")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('user:remove')")
     @Log(title = "用户管理", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {
@@ -186,7 +186,7 @@ public class UserController {
     }
 
     @Operation(summary = "修改用户状态")
-    @PutMapping("/changeStatus")
+    @PutMapping(version = "1", value = "/changeStatus")
     @PreAuthorize("hasAuthority('user:edit')")
     @Log(title = "用户管理", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> changeStatus(@RequestParam Long id, @RequestParam Integer status) {
@@ -201,7 +201,7 @@ public class UserController {
     }
 
     @Operation(summary = "重置密码")
-    @PutMapping("/resetPassword")
+    @PutMapping(version = "1", value = "/resetPassword")
     @PreAuthorize("hasAuthority('user:resetPwd')")
     @Log(title = "用户管理", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> resetPassword(@RequestParam Long id, @RequestParam(required = false) String newPassword) {
@@ -218,7 +218,7 @@ public class UserController {
     }
 
     @Operation(summary = "导出用户列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('user:export')")
     @Log(title = "用户管理", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String username,

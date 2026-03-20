@@ -45,7 +45,7 @@ public class MinioMonitorController {
     }
 
     @Operation(summary = "获取MinIO监控信息", description = "获取MinIO集群状态、存储桶列表、存储使用情况等")
-    @GetMapping
+    @GetMapping(version = "1")
     @PreAuthorize("hasAuthority('minio:query')")
     public Result<Map<String, Object>> getMinioStatus() {
         Map<String, Object> status = minioAdminService.getMinioStatus();
@@ -53,7 +53,7 @@ public class MinioMonitorController {
     }
 
     @Operation(summary = "检查MinIO服务状态", description = "检查MinIO服务是否在线")
-    @GetMapping("/ping")
+    @GetMapping(version = "1", value = "/ping")
     @PreAuthorize("hasAuthority('minio:query')")
     public Result<Boolean> pingMinio() {
         boolean online = minioAdminService.pingMinio();

@@ -51,7 +51,7 @@ public class StatisticsController {
     }
 
     @Operation(summary = "获取数据统计报表")
-    @GetMapping("/report")
+    @GetMapping(version = "1", value = "/report")
     public Result<ReportResponse> getReport(
             @Parameter(description = "开始日期") @RequestParam(required = false) @DateTimeFormat(
                     pattern = "yyyy-MM-dd") LocalDate startDate,
@@ -71,7 +71,7 @@ public class StatisticsController {
     }
 
     @Operation(summary = "获取系统使用分析")
-    @GetMapping("/usage")
+    @GetMapping(version = "1", value = "/usage")
     public Result<UsageResponse> getUsageAnalysis(
             @Parameter(description = "开始日期") @RequestParam(required = false) @DateTimeFormat(
                     pattern = "yyyy-MM-dd") LocalDate startDate,

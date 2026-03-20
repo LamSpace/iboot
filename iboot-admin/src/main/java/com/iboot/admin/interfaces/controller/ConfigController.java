@@ -62,7 +62,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "获取公开系统配置", description = "获取系统名称、注册开关等公开配置，无需登录")
-    @GetMapping("/public")
+    @GetMapping(version = "1", value = "/public")
     public Result<PublicConfigResponse> getPublicConfig() {
         String systemName = configApplicationService.getConfigValue(CONFIG_KEY_SYSTEM_NAME);
         String registerEnabled = configApplicationService.getConfigValue(CONFIG_KEY_REGISTER_USER);
@@ -73,7 +73,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "查询参数配置列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('config:list')")
     public Result<PageResult<ConfigResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                    @RequestParam(defaultValue = "10") Integer pageSize,
@@ -96,7 +96,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "查询所有参数配置")
-    @GetMapping("/all")
+    @GetMapping(version = "1", value = "/all")
     @PreAuthorize("hasAuthority('config:list')")
     public Result<List<ConfigResponse>> all() {
         List<Config> configs = configApplicationService.getAllConfigs();
@@ -105,7 +105,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "查询参数配置详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('config:query')")
     public Result<ConfigResponse> getById(@PathVariable Long id) {
         Config config = configApplicationService.getConfigById(id);
@@ -113,7 +113,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "根据配置键查询配置值")
-    @GetMapping("/key/{configKey}")
+    @GetMapping(version = "1", value = "/key/{configKey}")
     public Result<String> getByKey(@PathVariable String configKey) {
         String value = configApplicationService.getConfigValue(configKey);
         return Result.success(value);
@@ -141,7 +141,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "删除参数配置")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('config:remove')")
     @Log(title = "参数配置", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {
@@ -150,7 +150,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "刷新配置缓存")
-    @DeleteMapping("/refreshCache")
+    @DeleteMapping(version = "1", value = "/refreshCache")
     @PreAuthorize("hasAuthority('config:remove')")
     @Log(title = "参数配置", businessType = BusinessTypeEnum.CLEAN)
     public Result<Void> refreshCache() {
@@ -159,7 +159,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "导出配置列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('config:export')")
     @Log(title = "参数配置", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String configName,

@@ -63,7 +63,7 @@ public class JobController {
 
     // ==================== 任务管理接口 ====================
     @Operation(summary = "查询定时任务列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('job:list')")
     public Result<PageResult<JobResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                 @RequestParam(defaultValue = "10") Integer pageSize,
@@ -85,7 +85,7 @@ public class JobController {
     }
 
     @Operation(summary = "获取定时任务详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('job:query')")
     public Result<JobResponse> getInfo(@PathVariable Long id) {
         Job job = jobApplicationService.getJobById(id).orElseThrow(() -> new BusinessException("任务不存在"));
@@ -118,7 +118,7 @@ public class JobController {
     }
 
     @Operation(summary = "删除定时任务")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('job:remove')")
     @Log(title = "定时任务", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> remove(@PathVariable Long id) {
@@ -127,7 +127,7 @@ public class JobController {
     }
 
     @Operation(summary = "修改任务状态")
-    @PutMapping("/{id}/status")
+    @PutMapping(version = "1", value = "/{id}/status")
     @PreAuthorize("hasAuthority('job:changeStatus')")
     @Log(title = "定时任务", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> changeStatus(@PathVariable Long id, @RequestParam Integer status) {
@@ -136,7 +136,7 @@ public class JobController {
     }
 
     @Operation(summary = "立即执行一次任务")
-    @PostMapping("/{id}/run")
+    @PostMapping(version = "1", value = "/{id}/run")
     @PreAuthorize("hasAuthority('job:run')")
     @Log(title = "定时任务", businessType = BusinessTypeEnum.OTHER)
     public Result<Void> run(@PathVariable Long id) {
@@ -145,7 +145,7 @@ public class JobController {
     }
 
     @Operation(summary = "导出定时任务列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('job:export')")
     @Log(title = "定时任务", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String jobName,
@@ -162,14 +162,14 @@ public class JobController {
     }
 
     @Operation(summary = "校验cron表达式")
-    @GetMapping("/checkCron")
+    @GetMapping(version = "1", value = "/checkCron")
     public Result<Boolean> checkCronExpression(@RequestParam String cronExpression) {
         return Result.success(ScheduleUtils.isValidCronExpression(cronExpression));
     }
 
     // ==================== 任务日志接口 ====================
     @Operation(summary = "查询任务执行日志列表")
-    @GetMapping("/log/list")
+    @GetMapping(version = "1", value = "/log/list")
     @PreAuthorize("hasAuthority('job:log')")
     public Result<PageResult<JobLogResponse>> logList(@RequestParam(defaultValue = "1") Integer pageNum,
                                                       @RequestParam(defaultValue = "10") Integer pageSize,
@@ -200,7 +200,7 @@ public class JobController {
     }
 
     @Operation(summary = "获取任务日志详情")
-    @GetMapping("/log/{id}")
+    @GetMapping(version = "1", value = "/log/{id}")
     @PreAuthorize("hasAuthority('job:log')")
     public Result<JobLogResponse> getLogInfo(@PathVariable Long id) {
         JobLog log = jobApplicationService.getJobLogById(id).orElseThrow(() -> new BusinessException("任务日志不存在"));
@@ -208,7 +208,7 @@ public class JobController {
     }
 
     @Operation(summary = "清理任务执行日志")
-    @DeleteMapping("/log/clean")
+    @DeleteMapping(version = "1", value = "/log/clean")
     @PreAuthorize("hasAuthority('job:log')")
     @Log(title = "定时任务日志", businessType = BusinessTypeEnum.CLEAN)
     public Result<Integer> cleanLog(@RequestParam(required = false) Long jobId,

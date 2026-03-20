@@ -60,7 +60,7 @@ public class DictController {
 
     // ==================== 字典类型接口 ====================
     @Operation(summary = "查询字典类型列表")
-    @GetMapping("/type/list")
+    @GetMapping(version = "1", value = "/type/list")
     @PreAuthorize("hasAuthority('dict:list')")
     public Result<PageResult<DictTypeResponse>> typeList(@RequestParam(defaultValue = "1") Integer pageNum,
                                                          @RequestParam(defaultValue = "10") Integer pageSize) {
@@ -72,7 +72,7 @@ public class DictController {
     }
 
     @Operation(summary = "查询所有字典类型")
-    @GetMapping("/type/all")
+    @GetMapping(version = "1", value = "/type/all")
     @PreAuthorize("hasAuthority('dict:list')")
     public Result<List<DictTypeResponse>> typeAll() {
         List<DictType> types = dictApplicationService.getAllDictTypes();
@@ -81,7 +81,7 @@ public class DictController {
     }
 
     @Operation(summary = "查询字典类型详情")
-    @GetMapping("/type/{id}")
+    @GetMapping(version = "1", value = "/type/{id}")
     @PreAuthorize("hasAuthority('dict:query')")
     public Result<DictTypeResponse> typeGetById(@PathVariable Long id) {
         DictType dictType = dictApplicationService.getDictTypeById(id);
@@ -89,7 +89,7 @@ public class DictController {
     }
 
     @Operation(summary = "新增字典类型")
-    @PostMapping("/type")
+    @PostMapping(version = "1", value = "/type")
     @PreAuthorize("hasAuthority('dict:add')")
     @Log(title = "数据字典", businessType = BusinessTypeEnum.INSERT)
     public Result<DictTypeResponse> typeAdd(@Valid @RequestBody DictTypeRequest request) {
@@ -99,7 +99,7 @@ public class DictController {
     }
 
     @Operation(summary = "修改字典类型")
-    @PutMapping("/type")
+    @PutMapping(version = "1", value = "/type")
     @PreAuthorize("hasAuthority('dict:edit')")
     @Log(title = "数据字典", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> typeUpdate(@Valid @RequestBody DictTypeRequest request) {
@@ -110,7 +110,7 @@ public class DictController {
     }
 
     @Operation(summary = "删除字典类型")
-    @DeleteMapping("/type/{id}")
+    @DeleteMapping(version = "1", value = "/type/{id}")
     @PreAuthorize("hasAuthority('dict:remove')")
     @Log(title = "数据字典", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> typeDelete(@PathVariable Long id) {
@@ -119,7 +119,7 @@ public class DictController {
     }
 
     @Operation(summary = "导出字典类型列表")
-    @GetMapping("/type/export")
+    @GetMapping(version = "1", value = "/type/export")
     @PreAuthorize("hasAuthority('dict:export')")
     @Log(title = "数据字典", businessType = BusinessTypeEnum.EXPORT)
     public void exportType(HttpServletResponse response) throws IOException {
@@ -132,7 +132,7 @@ public class DictController {
 
     // ==================== 字典数据接口 ====================
     @Operation(summary = "根据字典类型查询字典数据")
-    @GetMapping("/data/type/{dictType}")
+    @GetMapping(version = "1", value = "/data/type/{dictType}")
     public Result<List<DictDataResponse>> dataByType(@PathVariable String dictType) {
         List<DictData> dataList = dictApplicationService.getDictDataByType(dictType);
         List<DictDataResponse> responses = dataList.stream()
@@ -142,7 +142,7 @@ public class DictController {
     }
 
     @Operation(summary = "查询字典数据详情")
-    @GetMapping("/data/{id}")
+    @GetMapping(version = "1", value = "/data/{id}")
     @PreAuthorize("hasAuthority('dict:query')")
     public Result<DictDataResponse> dataGetById(@PathVariable Long id) {
         DictData dictData = dictApplicationService.getDictDataById(id);
@@ -150,7 +150,7 @@ public class DictController {
     }
 
     @Operation(summary = "新增字典数据")
-    @PostMapping("/data")
+    @PostMapping(version = "1", value = "/data")
     @PreAuthorize("hasAuthority('dict:add')")
     @Log(title = "数据字典", businessType = BusinessTypeEnum.INSERT)
     public Result<DictDataResponse> dataAdd(@Valid @RequestBody DictDataRequest request) {
@@ -160,7 +160,7 @@ public class DictController {
     }
 
     @Operation(summary = "修改字典数据")
-    @PutMapping("/data")
+    @PutMapping(version = "1", value = "/data")
     @PreAuthorize("hasAuthority('dict:edit')")
     @Log(title = "数据字典", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> dataUpdate(@Valid @RequestBody DictDataRequest request) {
@@ -171,7 +171,7 @@ public class DictController {
     }
 
     @Operation(summary = "删除字典数据")
-    @DeleteMapping("/data/{id}")
+    @DeleteMapping(version = "1", value = "/data/{id}")
     @PreAuthorize("hasAuthority('dict:remove')")
     @Log(title = "数据字典", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> dataDelete(@PathVariable Long id) {
@@ -180,7 +180,7 @@ public class DictController {
     }
 
     @Operation(summary = "导出字典数据列表")
-    @GetMapping("/data/export")
+    @GetMapping(version = "1", value = "/data/export")
     @PreAuthorize("hasAuthority('dict:export')")
     @Log(title = "数据字典", businessType = BusinessTypeEnum.EXPORT)
     public void exportData(HttpServletResponse response, @RequestParam(required = false) String dictType)
@@ -198,7 +198,7 @@ public class DictController {
     }
 
     @Operation(summary = "获取字典标签")
-    @GetMapping("/label")
+    @GetMapping(version = "1", value = "/label")
     public Result<String> getDictLabel(@RequestParam String dictType, @RequestParam String dictValue) {
         String label = dictApplicationService.getDictLabel(dictType, dictValue);
         return Result.success(label);

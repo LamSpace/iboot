@@ -55,7 +55,7 @@ public class PostController {
     }
 
     @Operation(summary = "查询岗位列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('post:list')")
     public Result<PageResult<PostResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                  @RequestParam(defaultValue = "10") Integer pageSize,
@@ -77,7 +77,7 @@ public class PostController {
     }
 
     @Operation(summary = "查询所有岗位")
-    @GetMapping("/all")
+    @GetMapping(version = "1", value = "/all")
     @PreAuthorize("hasAuthority('post:list')")
     public Result<List<PostResponse>> all() {
         List<Post> posts = postApplicationService.getAllPosts();
@@ -86,7 +86,7 @@ public class PostController {
     }
 
     @Operation(summary = "查询岗位详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('post:query')")
     public Result<PostResponse> getById(@PathVariable Long id) {
         Post post = postApplicationService.getPostById(id);
@@ -115,7 +115,7 @@ public class PostController {
     }
 
     @Operation(summary = "删除岗位")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('post:remove')")
     @Log(title = "岗位管理", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {
@@ -124,7 +124,7 @@ public class PostController {
     }
 
     @Operation(summary = "修改岗位状态")
-    @PutMapping("/changeStatus")
+    @PutMapping(version = "1", value = "/changeStatus")
     @PreAuthorize("hasAuthority('post:edit')")
     @Log(title = "岗位管理", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> changeStatus(@RequestParam Long id, @RequestParam Integer status) {
@@ -133,7 +133,7 @@ public class PostController {
     }
 
     @Operation(summary = "导出岗位列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('post:export')")
     @Log(title = "岗位管理", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String postName,

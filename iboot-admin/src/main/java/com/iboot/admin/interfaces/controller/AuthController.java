@@ -51,7 +51,7 @@ public class AuthController {
     }
 
     @Operation(summary = "用户登录")
-    @PostMapping("/login")
+    @PostMapping(version = "1", value = "/login")
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         String loginIp = getClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
@@ -61,7 +61,7 @@ public class AuthController {
     }
 
     @Operation(summary = "用户登出")
-    @PostMapping("/logout")
+    @PostMapping(version = "1", value = "/logout")
     public Result<Void> logout(HttpServletRequest request) {
         String token = getTokenFromRequest(request);
         authApplicationService.logout(token);
@@ -69,7 +69,7 @@ public class AuthController {
     }
 
     @Operation(summary = "用户注册", description = "用户自主注册账号，需要系统开启注册功能")
-    @PostMapping("/register")
+    @PostMapping(version = "1", value = "/register")
     public Result<Void> register(@Valid @RequestBody RegisterRequest request) {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new BusinessException("两次输入的密码不一致");

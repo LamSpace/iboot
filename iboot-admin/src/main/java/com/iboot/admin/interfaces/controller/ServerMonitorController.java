@@ -44,7 +44,7 @@ public class ServerMonitorController {
     }
 
     @Operation(summary = "获取服务器监控信息", description = "获取CPU、内存、JVM、磁盘、操作系统信息及服务健康检查结果")
-    @GetMapping
+    @GetMapping(version = "1")
     @PreAuthorize("hasAuthority('server:list')")
     public Result<ServerInfoResponse> getServerInfo() {
         ServerInfoResponse serverInfo = serverMonitorApplicationService.getServerInfo();

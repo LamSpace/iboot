@@ -55,7 +55,7 @@ public class RoleController {
     }
 
     @Operation(summary = "查询角色列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('role:list')")
     public Result<PageResult<RoleResponse>> list(@RequestParam(defaultValue = "1") Integer pageNum,
                                                  @RequestParam(defaultValue = "10") Integer pageSize,
@@ -77,7 +77,7 @@ public class RoleController {
     }
 
     @Operation(summary = "查询所有角色")
-    @GetMapping("/all")
+    @GetMapping(version = "1", value = "/all")
     @PreAuthorize("hasAuthority('role:list')")
     public Result<List<RoleResponse>> all() {
         List<Role> roles = roleApplicationService.getAllRoles();
@@ -86,7 +86,7 @@ public class RoleController {
     }
 
     @Operation(summary = "查询角色详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('role:query')")
     public Result<RoleResponse> getById(@PathVariable Long id) {
         Role role = roleApplicationService.getRoleById(id);
@@ -132,7 +132,7 @@ public class RoleController {
     }
 
     @Operation(summary = "删除角色")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('role:remove')")
     @Log(title = "角色管理", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {
@@ -141,7 +141,7 @@ public class RoleController {
     }
 
     @Operation(summary = "修改角色状态")
-    @PutMapping("/changeStatus")
+    @PutMapping(version = "1", value = "/changeStatus")
     @PreAuthorize("hasAuthority('role:edit')")
     @Log(title = "角色管理", businessType = BusinessTypeEnum.UPDATE)
     public Result<Void> changeStatus(@RequestParam Long id, @RequestParam Integer status) {
@@ -150,7 +150,7 @@ public class RoleController {
     }
 
     @Operation(summary = "设置数据权限")
-    @PutMapping("/dataScope")
+    @PutMapping(version = "1", value = "/dataScope")
     @PreAuthorize("hasAuthority('role:edit')")
     @Log(title = "角色管理", businessType = BusinessTypeEnum.GRANT)
     public Result<Void> dataScope(@RequestBody RoleRequest request) {
@@ -159,7 +159,7 @@ public class RoleController {
     }
 
     @Operation(summary = "导出角色列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('role:export')")
     @Log(title = "角色管理", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String roleName,

@@ -59,7 +59,7 @@ public class MenuController {
     }
 
     @Operation(summary = "查询菜单树形结构")
-    @GetMapping("/tree")
+    @GetMapping(version = "1", value = "/tree")
     @PreAuthorize("hasAuthority('menu:list')")
     public Result<List<MenuResponse>> tree() {
         List<Menu> menus = menuApplicationService.getMenuTree();
@@ -68,7 +68,7 @@ public class MenuController {
     }
 
     @Operation(summary = "查询菜单列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('menu:list')")
     public Result<List<MenuResponse>> list() {
         List<Menu> menus = menuApplicationService.getAllMenus();
@@ -77,7 +77,7 @@ public class MenuController {
     }
 
     @Operation(summary = "查询菜单详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('menu:query')")
     public Result<MenuResponse> getById(@PathVariable Long id) {
         Menu menu = menuApplicationService.getMenuById(id);
@@ -85,7 +85,7 @@ public class MenuController {
     }
 
     @Operation(summary = "获取当前用户菜单树")
-    @GetMapping("/user/tree")
+    @GetMapping(version = "1", value = "/user/tree")
     public Result<List<MenuResponse>> userMenuTree() {
         Long userId = getCurrentUserId();
         List<Menu> menus = menuApplicationService.getUserMenuTree(userId);
@@ -94,7 +94,7 @@ public class MenuController {
     }
 
     @Operation(summary = "获取当前用户权限列表")
-    @GetMapping("/user/perms")
+    @GetMapping(version = "1", value = "/user/perms")
     public Result<Set<String>> userPermissions() {
         Long userId = getCurrentUserId();
         List<String> permsList = menuApplicationService.getUserPermissions(userId);
@@ -124,7 +124,7 @@ public class MenuController {
     }
 
     @Operation(summary = "删除菜单")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('menu:remove')")
     @Log(title = "菜单管理", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {
@@ -133,7 +133,7 @@ public class MenuController {
     }
 
     @Operation(summary = "导出菜单列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('menu:export')")
     @Log(title = "菜单管理", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String menuName,

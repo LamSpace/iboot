@@ -56,7 +56,7 @@ public class DeptController {
     }
 
     @Operation(summary = "查询部门树形结构")
-    @GetMapping("/tree")
+    @GetMapping(version = "1", value = "/tree")
     @PreAuthorize("hasAuthority('dept:list')")
     public Result<List<DeptResponse>> tree() {
         List<Dept> depts = deptApplicationService.getDeptTree();
@@ -65,7 +65,7 @@ public class DeptController {
     }
 
     @Operation(summary = "查询组织架构图")
-    @GetMapping("/orgChart")
+    @GetMapping(version = "1", value = "/orgChart")
     @PreAuthorize("hasAuthority('dept:list')")
     public Result<List<OrgChartResponse>> orgChart() {
         List<Dept> depts = deptApplicationService.getOrgChart();
@@ -76,7 +76,7 @@ public class DeptController {
     }
 
     @Operation(summary = "查询部门列表")
-    @GetMapping("/list")
+    @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('dept:list')")
     public Result<List<DeptResponse>> list() {
         List<Dept> depts = deptApplicationService.getAllDepts();
@@ -85,7 +85,7 @@ public class DeptController {
     }
 
     @Operation(summary = "查询部门详情")
-    @GetMapping("/{id}")
+    @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('dept:query')")
     public Result<DeptResponse> getById(@PathVariable Long id) {
         Dept dept = deptApplicationService.getDeptById(id);
@@ -114,7 +114,7 @@ public class DeptController {
     }
 
     @Operation(summary = "删除部门")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('dept:remove')")
     @Log(title = "部门管理", businessType = BusinessTypeEnum.DELETE)
     public Result<Void> delete(@PathVariable Long id) {
@@ -123,7 +123,7 @@ public class DeptController {
     }
 
     @Operation(summary = "导出部门列表")
-    @GetMapping("/export")
+    @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('dept:export')")
     @Log(title = "部门管理", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String deptName,

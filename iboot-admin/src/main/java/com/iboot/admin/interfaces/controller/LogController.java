@@ -70,7 +70,7 @@ public class LogController {
 
     // ==================== 登录日志接口 ====================
     @Operation(summary = "查询登录日志列表")
-    @GetMapping("/login/list")
+    @GetMapping(version = "1", value = "/login/list")
     @PreAuthorize("hasAuthority('loginlog:list')")
     public Result<PageResult<LoginLogResponse>> loginLogList(@RequestParam(defaultValue = "1") Integer pageNum,
                                                              @RequestParam(defaultValue = "10") Integer pageSize,
@@ -102,7 +102,7 @@ public class LogController {
     }
 
     @Operation(summary = "清空登录日志")
-    @DeleteMapping("/login/clean")
+    @DeleteMapping(version = "1", value = "/login/clean")
     @PreAuthorize("hasAuthority('loginlog:remove')")
     @Log(title = "登录日志", businessType = BusinessTypeEnum.CLEAN)
     public Result<Void> cleanLoginLog() {
@@ -111,7 +111,7 @@ public class LogController {
     }
 
     @Operation(summary = "导出登录日志")
-    @GetMapping("/login/export")
+    @GetMapping(version = "1", value = "/login/export")
     @PreAuthorize("hasAuthority('loginlog:export')")
     @Log(title = "登录日志", businessType = BusinessTypeEnum.EXPORT)
     public void exportLoginLog(HttpServletResponse response, @RequestParam(required = false) String username,
@@ -132,7 +132,7 @@ public class LogController {
 
     // ==================== 操作日志接口 ====================
     @Operation(summary = "查询操作日志列表")
-    @GetMapping("/operate/list")
+    @GetMapping(version = "1", value = "/operate/list")
     @PreAuthorize("hasAuthority('operatelog:list')")
     public Result<PageResult<OperateLogResponse>> operateLogList(@RequestParam(defaultValue = "1") Integer pageNum,
                                                                  @RequestParam(defaultValue = "10") Integer pageSize,
@@ -166,7 +166,7 @@ public class LogController {
     }
 
     @Operation(summary = "查询操作日志详情")
-    @GetMapping("/operate/{id}")
+    @GetMapping(version = "1", value = "/operate/{id}")
     @PreAuthorize("hasAuthority('operatelog:query')")
     public Result<OperateLogResponse> operateLogDetail(@PathVariable Long id) {
         OperateLog log = operateLogApplicationService.getOperateLogById(id)
@@ -175,7 +175,7 @@ public class LogController {
     }
 
     @Operation(summary = "清空操作日志")
-    @DeleteMapping("/operate/clean")
+    @DeleteMapping(version = "1", value = "/operate/clean")
     @PreAuthorize("hasAuthority('operatelog:remove')")
     @Log(title = "操作日志", businessType = BusinessTypeEnum.CLEAN)
     public Result<Void> cleanOperateLog() {
@@ -184,7 +184,7 @@ public class LogController {
     }
 
     @Operation(summary = "导出操作日志")
-    @GetMapping("/operate/export")
+    @GetMapping(version = "1", value = "/operate/export")
     @PreAuthorize("hasAuthority('operatelog:export')")
     @Log(title = "操作日志", businessType = BusinessTypeEnum.EXPORT)
     public void exportOperateLog(HttpServletResponse response, @RequestParam(required = false) String title,
@@ -206,7 +206,7 @@ public class LogController {
 
     // ==================== 运行日志接口 ====================
     @Operation(summary = "查询运行日志列表")
-    @GetMapping("/run/list")
+    @GetMapping(version = "1", value = "/run/list")
     @PreAuthorize("hasAuthority('auditlog:list')")
     public Result<PageResult<RunLogResponse>> runLogList(@RequestParam(defaultValue = "1") Integer pageNum,
                                                          @RequestParam(defaultValue = "20") Integer pageSize,
@@ -228,7 +228,7 @@ public class LogController {
     }
 
     @Operation(summary = "查询运行日志详情")
-    @GetMapping("/run/{id}")
+    @GetMapping(version = "1", value = "/run/{id}")
     @PreAuthorize("hasAuthority('auditlog:query')")
     public Result<RunLogResponse> runLogDetail(@PathVariable String id) {
         RunLogResponse log = runLogApplicationService.getRunLogById(id)
