@@ -251,7 +251,7 @@ public class RunLogApplicationService {
      */
     private String getTextValue(ObjectNode node, String field) {
         var value = node.get(field);
-        return value != null && !value.isNull() ? value.asText() : null;
+        return value != null && !value.isNull() ? value.toString() : null;
     }
 
 }

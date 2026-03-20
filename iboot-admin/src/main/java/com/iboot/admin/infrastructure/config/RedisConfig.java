@@ -17,12 +17,11 @@
 package com.iboot.admin.infrastructure.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iboot.admin.application.service.BusinessMetricsService;
 import com.iboot.admin.infrastructure.config.cache.CacheEvictMessageListener;
@@ -38,8 +37,7 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -89,15 +87,22 @@ public class RedisConfig {
     }
 
     /**
-     * 创建 Redis 专用的 ObjectMapper（不作为 Bean，避免影响全局）
+     * 创建 Redis 专用的 JsonMapper（Jackson 3，不作为 Bean，避免影响全局）
+     * <p>
+     * 激活默认类型信息以支持多态序列化
+     * <p>
+     * 忽略未知字段，避免因前端传递额外字段导致反序列化失败
      */
-    private ObjectMapper createRedisObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY);
-        mapper.registerModule(new JavaTimeModule());
-        return mapper;
+    private JsonMapper createRedisJsonMapper() {
+        return JsonMapper.builder()
+                .activateDefaultTypingAsProperty(
+                        tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator.builder()
+                                .allowIfBaseType(Object.class)
+                                .build(),
+                        tools.jackson.databind.DefaultTyping.NON_FINAL,
+                        "@class")
+                .configure(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .build();
     }
 
     /**
@@ -108,11 +113,13 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
-        // 使用 Jackson2JsonRedisSerializer 来序列化和反序列化 redis 的 value 值
-        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(
-                Object.class);
-
-        jackson2JsonRedisSerializer.setObjectMapper(createRedisObjectMapper());
+        // 使用 GenericJacksonJsonRedisSerializer 来序列化和反序列化 redis 的 value 值（Jackson 3 API）
+        GenericJacksonJsonRedisSerializer jsonSerializer = GenericJacksonJsonRedisSerializer.builder()
+                .enableDefaultTyping(
+                        tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator.builder()
+                                .allowIfBaseType(Object.class)
+                                .build())
+                .build();
 
         StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
 
@@ -121,9 +128,9 @@ public class RedisConfig {
         // hash 的 key 也采用 String 的序列化方式
         template.setHashKeySerializer(stringRedisSerializer);
         // value 序列化方式采用 jackson
-        template.setValueSerializer(jackson2JsonRedisSerializer);
+        template.setValueSerializer(jsonSerializer);
         // hash 的 value 序列化方式采用 jackson
-        template.setHashValueSerializer(jackson2JsonRedisSerializer);
+        template.setHashValueSerializer(jsonSerializer);
 
         template.afterPropertiesSet();
         return template;
@@ -148,9 +155,13 @@ public class RedisConfig {
      */
     @Bean
     public RedisCacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
-        // 配置 JSON 序列化器，支持类型信息
-        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(
-                createRedisObjectMapper());
+        // 配置 JSON 序列化器，支持类型信息（Jackson 3 API）
+        GenericJacksonJsonRedisSerializer jsonSerializer = GenericJacksonJsonRedisSerializer.builder()
+                .enableDefaultTyping(
+                        tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator.builder()
+                                .allowIfBaseType(Object.class)
+                                .build())
+                .build();
 
         RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(L2_CACHE_TTL_MINUTES))

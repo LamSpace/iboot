@@ -16,11 +16,10 @@
 
 package com.iboot.admin.interfaces.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,13 +40,11 @@ public class CloudEventConfig {
      * <p>
      * 为 CloudEventBody 类型设置特定的 Content-Type
      *
-     * @param objectMapper Jackson ObjectMapper
-     *
      * @return HttpMessageConverter
      */
     @Bean
-    public MappingJackson2HttpMessageConverter cloudEventHttpMessageConverter(ObjectMapper objectMapper) {
-        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
+    public JacksonJsonHttpMessageConverter cloudEventHttpMessageConverter() {
+        JacksonJsonHttpMessageConverter converter = new JacksonJsonHttpMessageConverter();
         List<MediaType> supportedMediaTypes = new ArrayList<>();
         // 只设置 CloudEvents 特定的 Content-Type，避免影响其他 JSON 响应（如 springdoc）
         supportedMediaTypes.add(MediaType.valueOf("application/cloudevents+json"));
