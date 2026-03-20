@@ -4,206 +4,156 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-iBoot is a modern management system built with Vue 3 + TypeScript (frontend) and Spring Boot 3.5.9 + JDK 25 (backend). The project follows DDD (Domain-Driven Design) architecture with RBAC-based permission control.
+iBoot is a management system based on Vue 3 and Spring Boot 4.0.3, following DDD (Domain-Driven Design) architecture. It provides RBAC-based user/role/menu management, organizational structure management, file management, monitoring, and more.
 
-## Commands
+**Tech Stack:**
+- **Backend**: Spring Boot 4.0.3, JDK 25, MyBatis, Redis, MySQL 8, Flyway
+- **Frontend**: Vue 3, TypeScript 5, Element Plus, Vite 5, Pinia
+- **Infrastructure**: Docker, Prometheus, Grafana, ELK Stack, MinIO
 
-### Prerequisites
-- JDK 25 (minimum 21)
-- Node.js 20 LTS
-- MySQL 8.x
-- Redis 7.x
-- Maven 3.9+
-- Mavenw配置文件i地址: /home/lam/repo/settings.xml
+## Build & Run Commands
 
-### Development
+### Backend (iboot-admin)
 
 ```bash
-# Install dependencies (Node.js, cnpm, Maven)
-./scripts/install-dependencies.sh
-
-# Frontend development
-cd iboot-portal
-npm install              # Install dependencies (or: cnpm install)
-npm run dev              # Start dev server at http://localhost:3000
-npm run build            # Production build
-npm run lint             # ESLint check
-npm run format           # Prettier format
-
-# Backend development
 cd iboot-admin
-mvn clean install -DskipTests
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
-# Or run IbootAdminApplication.java directly from IDE
 
-# Build both
-./scripts/build.sh all
-./scripts/build.sh frontend    # Frontend only
-./scripts/build.sh backend     # Backend only
+# Run with Maven (dev profile)
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Skip tests during build
+mvn clean package -DskipTests
+```
+
+### Frontend (iboot-portal)
+
+```bash
+cd iboot-portal
+
+# Install dependencies (use cnpm for faster download in China)
+npm install
+# or
+cnpm install --registry=https://registry.npmmirror.com
+
+# Development server
+cnpm run dev
+
+# Build production
+cnpm run build
+
+# Type check
+cnpm run type-check
+
+# Format
+npm run format
 ```
 
 ### Docker Deployment
 
 ```bash
 cd docker
-docker-compose up -d       # Start all services
-docker-compose ps          # Check service status
-docker-compose down        # Stop all services
-docker-compose logs -f     # View logs
+
+# Start all services (MySQL, Redis, MinIO, Prometheus, Grafana, ELK, etc.)
+docker compose up -d --pull=never
+
+# Check status
+docker compose ps
+
+# View logs
+docker compose logs -f
+
+# Stop all
+docker compose down
 ```
 
-Services: MySQL (3306), Redis (6379), MinIO (9000/9001), Prometheus (9090), Grafana (3000), Elasticsearch (9200), Kibana (5601)
+## Architecture Overview
 
-### Testing & Verification
-
-```bash
-# Run all tests
-mvn test
-
-# Run a single test class
-mvn test -Dtest=SecurityWhitelistConfigTest
-
-# Run tests matching a pattern
-mvn test -Dtest=*ConfigTest
-
-# Backend health check
-curl http://localhost:8080/actuator/health
-
-# Access Swagger UI
-http://localhost:8080/swagger-ui.html
-
-# Default credentials
-Username: admin
-Password: admin123
-```
-
-### Environment Variables
-
-Backend supports environment variable configuration:
-
-```bash
-MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root ./mvnw spring-boot:run
-REDIS_HOST=localhost REDIS_PORT=6379 REDIS_DATABASE=0 ./mvnw spring-boot:run
-ELASTICSEARCH_URIS=http://localhost:9200 ./mvnw spring-boot:run
-```
-
-## Architecture
-
-### DDD Layer Structure
+### Backend DDD Layers (iboot-admin)
 
 ```
-com.iboot.admin/
-├── interfaces/           # REST controllers, DTOs, VOs
-├── application/          # Application services, transaction management
-├── domain/               # Domain models, repository interfaces, domain services
-└── infrastructure/       # Repository implementations, security, config, persistence
+com.iboot.admin
+├── application/           # Application Layer - business flow orchestration
+│   ├── service/         # Application services (@Service)
+│   └── dto/             # Application DTOs and commands
+├── domain/               # Domain Layer - core business logic (no external deps)
+│   ├── model/           # Domain models
+│   │   ├── entity/      # Entities (User, Role, Menu, Dept, etc.)
+│   │   └── vo/          # Value Objects
+│   ├── repository/      # Repository interfaces
+│   └── service/         # Domain services
+├── infrastructure/       # Infrastructure Layer - persistence & external services
+│   ├── persistence/     # MyBatis mappers, POs
+│   ├── repository/      # Repository implementations
+│   ├── security/        # Spring Security, JWT
+│   └── cache/           # L1 (Caffeine) + L2 (Redis) cache
+├── interfaces/           # Interface Layer - controllers, request/response DTOs
+│   ├── controller/      # REST controllers
+│   └── dto/             # Request/Response DTOs
+└── common/               # Shared utilities
+    ├── exception/       # Global exception handling
+    ├── constant/        # Constants
+    ├── enums/           # Enumerations
+    └── util/            # Utility classes
 ```
 
-**Key Packages:**
-- `interfaces/controller` - REST API endpoints
-- `application/service` - Business logic orchestration
-- `domain/*/model` - Domain entities (User, Role, Menu, Dept, etc.)
-- `domain/*/repository` - Repository interfaces (DDD style)
-- `infrastructure/persistence` - MyBatis mappers, POs, repository implementations
-- `infrastructure/security` - JWT auth, Spring Security config
-- `common/` - Shared utilities, exceptions, result wrappers, enums
+**Layer Dependencies:**
+- `interfaces` → `application` → `domain` ← `infrastructure` (implements domain interfaces)
+- Domain layer is pure (no Spring/MyBatis dependencies)
 
-### Frontend Structure
+### Frontend Structure (iboot-portal)
 
 ```
-iboot-portal/src/
-├── api/             # API client modules
-├── components/      # Reusable Vue components
-├── views/           # Page components
-├── router/          # Vue Router config
-├── stores/          # Pinia state management
-├── utils/           # Utilities (axios wrapper, SSE client)
-└── assets/          # Static resources
+src/
+├── api/          # API封装
+├── components/   # Vue components
+├── composables/  # Composition API functions
+├── directives/   # Custom directives (e.g., v-permission)
+├── router/       # Vue Router config
+├── stores/       # Pinia stores (user, permission, dict)
+├── types/        # TypeScript types
+├── utils/        # Utilities (request.ts for Axios)
+└── views/        # Page components
 ```
 
-### Core Technologies
+## Key Technologies
 
-| Layer | Technology |
-|-------|------------|
-| Backend | Spring Boot 3.5.9, JDK 25, MyBatis-Plus, Redis, Caffeine (L2 cache) |
-| Security | Spring Security 6.x, JWT (JJWT 0.12.5), BCrypt |
-| Frontend | Vue 3, TypeScript 5.4, Element Plus, Pinia, Vite 5 |
-| Database | MySQL 8.x, Flyway (migrations), Druid (connection pool) |
-| Storage | MinIO (object storage), Elasticsearch 8.17 |
-| Messaging | SSE (Server-Sent Events), Redis Pub/Sub (cluster) |
-| Monitoring | Micrometer, Prometheus, Grafana, ELK Stack |
-| Tools | MapStruct 1.6 (object mapping), Lombok |
+### Backend
+- **Security**: Spring Security 7 + JWT (JJWT 0.13.0)
+- **ORM**: MyBatis 3.5 + PageHelper
+- **Cache**: Caffeine (L1) + Redis (L2) with Pub/Sub for invalidation
+- **DB Migration**: Flyway (scripts in `src/main/resources/db/migration/`)
+- **API Docs**: SpringDoc OpenAPI (Swagger UI at `/swagger-ui.html`)
+- **Monitoring**: Micrometer + Prometheus + Spring Boot Admin
+- **Object Storage**: MinIO
+- **Logging**: Logback + Logstash → Elasticsearch → Kibana
 
-### Key Features
+### Frontend
+- **HTTP**: Axios with interceptors (token injection, error handling)
+- **State**: Pinia for global state
+- **UI**: Element Plus components
+- **3D**: Three.js for visual effects
 
-- **RBAC Permission Model**: User-Role-Menu hierarchy with data scope control
-- **Two-Level Cache**: Caffeine (L1) + Redis (L2) with distributed invalidation via Redis Pub/Sub
-- **SSE Push**: Real-time notifications, message read status sync, cluster support
-- **CloudEvents**: Event-driven architecture for decoupled business logic
-- **Flyway Migrations**: Database version control in `src/main/resources/db/migration/`
-- **MapStruct**: Compile-time object mapping between DTOs and entities
+## Database
 
-### Common Development Patterns
-
-**Unified Response Format:**
-All API endpoints return responses wrapped in `Result<T>`:
-```java
-// Success with data
-return Result.success(userService.getUser(id));
-
-// Success with custom message
-return Result.success("创建成功", user);
-
-// Error response
-return Result.error("用户不存在");
-
-// Error with specific code
-return Result.error(403, "没有权限访问");
+Flyway migration scripts location:
+```
+iboot-admin/src/main/resources/db/migration/
+├── V1__initial_schema.sql
+├── V2__initial_data.sql
+├── V3__add_minio_config.sql
+├── V4__add_operate_log_cost_time.sql
+├── V5__add_minio_monitor_menu.sql
+├── V6__add_export_permissions.sql
+├── V7__add_observability_monitor_menus.sql
+├── V8__add_alertmanager_menu.sql
+├── V9__add_dept_id_to_logs.sql
+├── V10__add_dept_id_to_post.sql
+├── V11__add_dept_id_to_job_and_file.sql
+├── V12__add_deleted_column_to_logs.sql
+├── V13__add_minio_monitor_enhanced.sql
+└── V14__add_thanos_query_menu.sql
 ```
 
-**Repository Pattern (DDD):**
-```java
-// Domain layer: interface
-public interface UserRepository {
-    User findById(Long id);
-    void save(User user);
-    boolean existsByUsername(String username);
-}
-
-// Infrastructure layer: implementation
-@Repository
-public class UserRepositoryImpl implements UserRepository {
-    @Autowired private UserMapper userMapper;
-    // ...
-}
-```
-
-**MapStruct Mapping:**
-```java
-@Mapper(componentModel = "spring")
-public interface UserMapper {
-    User toEntity(CreateUserRequest request);
-    UserResponse toResponse(User user);
-    List<UserResponse> toResponseList(List<User> users);
-}
-```
-
-**SSE Push (Cluster-Aware):**
-```java
-@Autowired private PushEventService pushService;
-
-// Send to specific user
-pushService.sendToUser(userId, PushEvent.builder()
-    .eventType("com.iboot.push.new.message")
-    .data(messageDTO)
-    .build());
-```
-
-## File Conventions
-
-- **Backend**: Java entities in `domain/*/model`, POs in `infrastructure/persistence/po`
-- **Frontend**: API calls in `src/api/`, components in `src/components/`
-- **Migrations**: `V{version}__description.sql` for new migrations, `R__description.sql` for repeatable
-- **Config**: `application.yml` (base), `application-dev.yml` (dev), `application-prod.yml` (prod)
-- **Tests**: Test classes follow the pattern `*Test.java` in `src/test/java/com/iboot/admin/` mirroring the main source structure
-- **Mapper XML**: MyBatis mapper XML files in `src/main/resources/mapper/{module}/*.xml`
+**Default admin account:**
+- Username: `admin`
+- Password: `admin123456`
