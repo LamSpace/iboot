@@ -39,15 +39,124 @@ iBoot 后端 API 遵循 RESTful 设计风格，使用 HTTP 方法表达对资源
 /api/user-roles     # 用户角色（而非 /api/getUserRoles）
 ```
 
-### 6.3 版本控制
+### 6.3 细粒度 API 版本控制
 
-API 版本通过 URL 路径前缀管理：
-```
-/api/v1/users
-/api/v2/users
+#### 版本控制方式
+
+iBoot 项目采用 Spring Framework 7.0+ 的细粒度 API 版本控制，通过请求头指定 API 版本号：
+
+| 特性 | 说明 |
+|------|------|
+| 版本请求头 | `Accept-Version: 1` |
+| 注解方式 | `@GetMapping(version = "1", ...)` |
+| 版本解析器 | `HeaderApiVersionResolver` |
+| 版本可选 | 支持无版本号请求（如 SSE 端点） |
+
+**请求示例：**
+```bash
+# 使用 Accept-Version 请求头指定版本号
+GET /api/user/list
+Accept-Version: 1
+Authorization: Bearer <token>
+
+# 无版本号请求（兼容旧版本）
+GET /api/user/list
+Authorization: Bearer <token>
 ```
 
-当前项目默认使用 v1 版本。
+#### 与传统 URL 路径版本控制的对比
+
+| 方式 | 示例 | 优点 | 缺点 |
+|------|------|------|------|
+| 请求头版本控制 | `Accept-Version: 1` + `/api/users` | URL 简洁，便于维护 | 调试不够直观 |
+| URL 路径版本控制 | `/api/v1/users` | 直观可见 | URL 冗余，版本升级需改路由 |
+
+iBoot 采用请求头版本控制方式，保持 URL 的稳定性。
+
+#### 版本控制配置
+
+```java
+@Configuration
+public class ApiVersionConfig implements WebMvcConfigurer {
+    @Override
+    public void configureApiVersioning(ApiVersionConfigurer configurer) {
+        configurer
+            .useVersionResolver(new HeaderApiVersionResolver("Accept-Version"))
+            .setVersionRequired(false);  // 不强制要求版本号，允许没有版本号的请求（如 SSE 连接）
+    }
+}
+```
+
+配置说明：
+- `HeaderApiVersionResolver("Accept-Version")`：通过 `Accept-Version` 请求头解析版本号
+- `setVersionRequired(false)`：允许无版本号的请求，用于兼容旧版本或特殊端点（如 SSE）
+
+#### Controller 实现示例
+
+```java
+@RestController
+@RequestMapping("/api/user")
+public class UserController {
+
+    // API v1 版本 - 用户列表查询
+    @GetMapping(version = "1", value = "/list")
+    public Result<PageResult<UserResponse>> list(...) {
+        // API v1 版本实现
+    }
+
+    // API v2 版本 - 用户列表查询（扩展的数据结构）
+    @GetMapping(version = "2", value = "/list")
+    public Result<PageResult<UserResponseV2>> listV2(...) {
+        // API v2 版本实现（返回扩展的数据结构）
+    }
+
+    // 无版本号接口 - 适用于所有版本
+    @PostMapping
+    public Result<UserResponse> create(@Valid @RequestBody CreateUserRequest request) {
+        // 不指定版本号，适用于所有版本
+    }
+}
+```
+
+#### 多版本共存策略
+
+当需要升级 API 时，可以保留旧版本接口并同时提供新版本接口：
+
+```java
+@RestController
+@RequestMapping("/api/user")
+public class UserController {
+
+    // v1 版本：返回基础用户信息
+    @GetMapping(version = "1", value = "/{id}")
+    public Result<UserResponseV1> getByIdV1(@PathVariable Long id) {
+        User user = userApplicationService.getUserById(id);
+        return Result.success(userMapper.toResponseV1(user));
+    }
+
+    // v2 版本：返回扩展用户信息（包含部门、岗位详情）
+    @GetMapping(version = "2", value = "/{id}")
+    public Result<UserResponseV2> getByIdV2(@PathVariable Long id) {
+        User user = userApplicationService.getUserById(id);
+        return Result.success(userMapper.toResponseV2(user));
+    }
+}
+```
+
+**请求示例：**
+```bash
+# 请求 v1 版本
+curl -H "Accept-Version: 1" http://localhost:8080/api/user/1
+
+# 请求 v2 版本
+curl -H "Accept-Version: 2" http://localhost:8080/api/user/1
+```
+
+#### 版本兼容性说明
+
+- **向后兼容**：新版本的接口应尽量保持向后兼容
+- **默认版本**：未指定版本号时，使用最新版本接口
+- **废弃策略**：旧版本接口应提前公告废弃时间，建议至少保留 3 个月
 
 ### 6.4 查询参数
 
