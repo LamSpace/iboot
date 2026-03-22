@@ -47,6 +47,8 @@ ENV JAVA_MAX_MEM_RATIO=50
 # 应用名称 (用于进程识别)
 ENV JAVA_APP_JAR=/app/app.jar
 ENV JAVA_APP_NAME=iboot-admin
+# 启用 Native Access (Netty 4.2.x 在 JDK 25 上需要)
+ENV JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
 
 # 使用 run-java.sh 启动应用 (自动根据容器资源优化 JVM 参数)
 ENTRYPOINT ["/app/run-java.sh"]
