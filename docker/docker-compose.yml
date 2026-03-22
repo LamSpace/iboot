@@ -28,8 +28,9 @@ services:
   #     - ELASTICSEARCH_URIS=http://elasticsearch:9200
   #     # Logstash 配置
   #     - LOGSTASH_HOST=logstash
-  #     # JVM 配置
-  #     - JAVA_MAX_MEM_RATIO=75
+  #     # JVM 配置 - 优化启动性能，减少频繁 GC
+  #     # 固定堆内存大小，避免运行时动态扩展导致 GC
+  #     - JAVA_OPTIONS=-Xms1024m -Xmx1024m -XX:MaxGCPauseMillis=500 -XX:G1HeapRegionSize=2m -XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=512m -XX:+UseG1GC --enable-native-access=ALL-UNNAMED
   #     - JAVA_DIAGNOSTICS=true
   #     # SSE 推送配置
   #     - IBOOT_PUSH_SSE_HEARTBEAT_INTERVAL=30000

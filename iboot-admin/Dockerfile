@@ -36,7 +36,8 @@ EXPOSE 8080
 
 # 环境变量配置 (基于容器资源自动优化 JVM)
 # 最大堆内存比例 (默认 50%，容器内存小于 300MB 时为 25%)
-ENV JAVA_MAX_MEM_RATIO=50
+# 注意：如果在 docker-compose.yml 中设置了 JAVA_OPTIONS，此处将被覆盖
+# ENV JAVA_MAX_MEM_RATIO=50
 # 初始堆内存比例 (默认不设置，如需设置取消注释)
 # ENV JAVA_INIT_MEM_RATIO=25
 # 启用 GC 诊断 (可选)
@@ -48,6 +49,7 @@ ENV JAVA_MAX_MEM_RATIO=50
 ENV JAVA_APP_JAR=/app/app.jar
 ENV JAVA_APP_NAME=iboot-admin
 # 启用 Native Access (Netty 4.2.x 在 JDK 25 上需要)
+# 基础 JVM 参数，内存相关参数由 docker-compose.yml 或运行时环境变量控制
 ENV JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
 
 # 使用 run-java.sh 启动应用 (自动根据容器资源优化 JVM 参数)
