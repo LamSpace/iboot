@@ -2,9 +2,6 @@
 
 1. GraalVM编译
 2. 国际化支持
-3. 升级到Spring Boot 4.X版本
-4. 接口添加统一版本管理 —— Spring Boot 4.X版本新特性
-5. 开启虚拟线程
 
 ---
 
@@ -31,3 +28,4 @@
     - 数字人
     - langchain4j集成、AgentScope集成、Spring AI alibaba集成
     - 智能对话，智能体编排
+16. 集成ShardingSphere和ElasticJob
