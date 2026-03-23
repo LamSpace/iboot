@@ -2,10 +2,18 @@ server:
   port: 8080
   servlet:
     context-path: /
+  tomcat:
+    threads:
+      virtual:
+        enabled: true
+    max-connections: 10000
 
 spring:
   application:
     name: iboot-admin
+  threads:
+    virtual:
+      enabled: true
   banner:
     location: classpath:banner.txt
   jmx:

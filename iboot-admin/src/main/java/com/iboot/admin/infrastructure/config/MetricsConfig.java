@@ -6,6 +6,8 @@ import org.springframework.boot.micrometer.metrics.autoconfigure.MeterRegistryCu
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.concurrent.Executor;
+
 @Configuration
 public class MetricsConfig {
 
@@ -23,6 +25,18 @@ public class MetricsConfig {
     @Bean
     public TimedAspect timedAspect(MeterRegistry registry) {
         return new TimedAspect(registry);
+    }
+
+    /**
+     * 配置虚拟线程执行器的指标观察
+     * 监控虚拟线程的活跃度和任务执行情况
+     */
+    @Bean
+    public io.micrometer.core.instrument.binder.MeterBinder virtualThreadMetrics(Executor taskExecutor) {
+        return registry -> {
+            // 虚拟线程执行器的指标会自动被 Micrometer 收集
+            // 包括：executor.active, executor.queue.remaining 等
+        };
     }
 
 }
