@@ -361,6 +361,44 @@ export function deleteUser(id) {
 | /auth/refresh | POST | 刷新 Token |
 | /auth/captcha | GET | 获取验证码 |
 
+### 6.11.1 国际化接口
+
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| /i18n/locale | GET | 获取当前语言 |
+| /i18n/locale | POST | 切换语言 |
+
+**切换语言请求示例：**
+```bash
+POST /api/i18n/locale?locale=en-US
+```
+
+**切换语言响应示例：**
+```json
+{
+  "code": 200,
+  "message": "Language changed successfully",
+  "data": {
+    "locale": "en-US"
+  }
+}
+```
+
+**获取当前语言响应示例：**
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": "zh-CN"
+}
+```
+
+**说明：**
+- 该接口无需认证，可在未登录状态下切换语言
+- 语言设置会通过 Cookie 持久化（有效期 1 年）
+- 前端同时会将语言偏好保存到 localStorage
+- 支持的語言：`zh-CN`（简体中文）、`en-US`（英文）
+
 **登录请求示例：**
 ```bash
 POST /api/auth/login
@@ -612,9 +650,59 @@ export function uploadFile(file) {
 | 字段 | 类型 | 描述 |
 |------|------|------|
 | code | integer | 业务状态码，200 表示成功 |
-| message | string | 响应消息 |
+| message | string | 响应消息（支持国际化，根据 `Accept-Language` 头返回对应语言） |
 | data | any | 响应数据 |
 | timestamp | long | 时间戳 |
+
+### 6.19.1 消息码响应
+
+后端支持使用消息码返回响应，消息内容会根据用户语言自动国际化：
+
+**请求示例：**
+```java
+// 后端代码示例
+return Result.success("user.login.success", data);
+```
+
+**响应示例（中文环境）：**
+```json
+{
+  "code": 200,
+  "message": "登录成功",
+  "data": {...},
+  "timestamp": 1699999999999
+}
+```
+
+**响应示例（英文环境）：**
+```json
+{
+  "code": 200,
+  "message": "Login successful",
+  "data": {...},
+  "timestamp": 1699999999999
+}
+```
+
+**错误响应示例（中文环境）：**
+```json
+{
+  "code": 500,
+  "message": "用户不存在",
+  "data": null,
+  "timestamp": 1699999999999
+}
+```
+
+**错误响应示例（英文环境）：**
+```json
+{
+  "code": 500,
+  "message": "User not found",
+  "data": null,
+  "timestamp": 1699999999999
+}
+```
 
 ### 6.20 分页响应格式
 
