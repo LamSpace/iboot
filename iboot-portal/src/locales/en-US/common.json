@@ -1,0 +1,56 @@
+{
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "search": "Search",
+  "reset": "Reset",
+  "add": "Add",
+  "view": "View",
+  "export": "Export",
+  "import": "Import",
+  "action": "Action",
+  "status": "Status",
+  "create_time": "Created At",
+  "update_time": "Updated At",
+  "remark": "Remark",
+  "order": "Sort",
+  "enable": "Enable",
+  "disable": "Disable",
+  "yes": "Yes",
+  "no": "No",
+  "all": "All",
+  "select": "Please select",
+  "input": "Please enter",
+  "upload": "Upload",
+  "download": "Download",
+  "close": "Close",
+  "open": "Open",
+  "setting": "Settings",
+  "manage": "Manage",
+  "detail": "Details",
+  "back": "Back",
+  "submit": "Submit",
+  "confirm_delete": "Are you sure you want to delete this record?",
+  "confirm_batch_delete": "Are you sure you want to delete the selected records?",
+  "operation": {
+    "success": "Operation successful",
+    "failed": "Operation failed",
+    "loading": "Loading..."
+  },
+  "pagination": {
+    "total": "Total {total} items",
+    "page": "Page {page}",
+    "size": "{size} per page"
+  },
+  "times": "times",
+  "locale": {
+    "zh-CN": "简体中文",
+    "en-US": "English",
+    "label": "Language"
+  },
+  "messages": {
+    "locale_changed": "Language changed"
+  }
+}

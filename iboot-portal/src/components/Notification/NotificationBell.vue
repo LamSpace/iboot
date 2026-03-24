@@ -1,7 +1,14 @@
 <template>
   <div class="notification-bell" @click="toggleDropdown">
-    <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="bell-badge">
-      <el-tooltip content="消息中心" placement="bottom">
+    <el-badge
+      :value="unreadCount"
+      :hidden="unreadCount === 0"
+      class="bell-badge"
+    >
+      <el-tooltip
+        :content="t('message.messageCenter.notification.title')"
+        placement="bottom"
+      >
         <el-icon :size="20" class="bell-icon">
           <Bell />
         </el-icon>
@@ -11,13 +18,20 @@
     <!-- 消息列表下拉框 -->
     <div v-if="showDropdown" class="notification-dropdown" @click.stop>
       <div class="dropdown-header">
-        <span class="header-title">消息中心</span>
+        <span class="header-title">{{
+          t("message.messageCenter.notification.title")
+        }}</span>
         <div class="header-actions">
-          <el-link type="primary" :underline="false" @click="markAllAsRead" v-if="hasUnread">
-            全部已读
+          <el-link
+            type="primary"
+            :underline="false"
+            @click="markAllAsRead"
+            v-if="hasUnread"
+          >
+            {{ t("message.messageCenter.notification.mark_all_read") }}
           </el-link>
           <el-link type="info" :underline="false" @click="closeDropdown">
-            关闭
+            {{ t("message.messageCenter.notification.close") }}
           </el-link>
         </div>
       </div>
@@ -30,7 +44,9 @@
             <el-icon :size="48" color="#dcdfe6">
               <Bell />
             </el-icon>
-            <p class="empty-text">暂无消息</p>
+            <p class="empty-text">
+              {{ t("message.messageCenter.notification.no_message") }}
+            </p>
           </div>
         </template>
 
@@ -45,9 +61,23 @@
               <div class="notification-title">{{ notification.title }}</div>
               <div class="notification-content">{{ notification.content }}</div>
               <div class="notification-meta">
-                <span class="notification-time">{{ formatTime(notification.sentAt) }}</span>
-                <el-tag v-if="notification.priority === '2'" size="small" type="danger">紧急</el-tag>
-                <el-tag v-else-if="notification.priority === '1'" size="small" type="warning">重要</el-tag>
+                <span class="notification-time">{{
+                  formatTime(notification.sentAt)
+                }}</span>
+                <el-tag
+                  v-if="notification.priority === '2'"
+                  size="small"
+                  type="danger"
+                  >{{ t("message.messageCenter.notification.urgent") }}</el-tag
+                >
+                <el-tag
+                  v-else-if="notification.priority === '1'"
+                  size="small"
+                  type="warning"
+                  >{{
+                    t("message.messageCenter.notification.important")
+                  }}</el-tag
+                >
               </div>
             </div>
             <div class="notification-actions">
@@ -57,7 +87,7 @@
                 size="small"
                 @click.stop="removeNotification(notification.id)"
               >
-                删除
+                {{ t("message.messageCenter.notification.delete") }}
               </el-button>
             </div>
           </div>
@@ -66,7 +96,7 @@
 
       <div v-if="notifications.length > 0" class="dropdown-footer">
         <el-link type="primary" :underline="false" @click="viewAll">
-          查看全部消息
+          {{ t("message.messageCenter.notification.view_all") }}
         </el-link>
       </div>
     </div>
@@ -74,110 +104,130 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Bell } from '@element-plus/icons-vue'
-import { usePush } from '@/composables/usePush'
-import { useRouter } from 'vue-router'
-import type { Notification } from '@/stores/push'
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { Bell } from "@element-plus/icons-vue";
+import { usePush } from "@/composables/usePush";
+import { useRouter } from "vue-router";
+import type { Notification } from "@/stores/push";
 
-const router = useRouter()
-const { unreadCount, notifications, hasUnread, connect, markAsRead, removeNotification, clearUnread } = usePush()
+const { t } = useI18n();
 
-const showDropdown = ref(false)
+const router = useRouter();
+const {
+  unreadCount,
+  notifications,
+  hasUnread,
+  connect,
+  markAsRead,
+  removeNotification,
+  clearUnread,
+} = usePush();
+
+const showDropdown = ref(false);
 
 // 最多显示 10 条消息
-const MAX_DISPLAY = 10
+const MAX_DISPLAY = 10;
 const displayNotifications = computed(() => {
-  return notifications.value.slice(0, MAX_DISPLAY)
-})
+  return notifications.value.slice(0, MAX_DISPLAY);
+});
 
 // 切换下拉框
 const toggleDropdown = () => {
-  showDropdown.value = !showDropdown.value
-}
+  showDropdown.value = !showDropdown.value;
+};
 
 // 关闭下拉框
 const closeDropdown = () => {
-  showDropdown.value = false
-}
+  showDropdown.value = false;
+};
 
 // 标记全部已读
 const markAllAsRead = () => {
-  clearUnread()
+  clearUnread();
   // TODO: 调用 API 更新后端状态
-}
+};
 
 // 查看消息详情
 const handleNotificationClick = (notification: Notification) => {
   if (!notification.read) {
-    markAsRead(notification.id)
+    markAsRead(notification.id);
   }
   // 跳转到消息中心或消息详情
-  router.push('/message/messages')
-  closeDropdown()
-}
+  router.push("/message/messages");
+  closeDropdown();
+};
 
 // 删除消息
 const handleRemoveNotification = (notificationId: string) => {
-  removeNotification(notificationId)
-}
+  removeNotification(notificationId);
+};
 
 // 查看全部
 const viewAll = () => {
-  router.push('/message/messages')
-  closeDropdown()
-}
+  router.push("/message/messages");
+  closeDropdown();
+};
 
 // 格式化时间
 const formatTime = (timeString: string) => {
-  if (!timeString) return ''
-  const date = new Date(timeString)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
+  if (!timeString) return "";
+  const date = new Date(timeString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
 
   // 1 分钟内
   if (diff < 60 * 1000) {
-    return '刚刚'
+    return t("message.messageCenter.notification.time.just_now");
   }
   // 1 小时内
   if (diff < 60 * 60 * 1000) {
-    return `${Math.floor(diff / (60 * 1000))}分钟前`
+    const minutes = Math.floor(diff / (60 * 1000));
+    return t("message.messageCenter.notification.time.minutes_ago").replace(
+      "{0}",
+      String(minutes),
+    );
   }
   // 24 小时内
   if (diff < 24 * 60 * 60 * 1000) {
-    return `${Math.floor(diff / (60 * 60 * 1000))}小时前`
+    const hours = Math.floor(diff / (60 * 60 * 1000));
+    return t("message.messageCenter.notification.time.hours_ago").replace(
+      "{0}",
+      String(hours),
+    );
   }
   // 更久
-  return date.toLocaleDateString('zh-CN', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+  const locale = document.documentElement.lang || "zh-CN";
+  return date.toLocaleDateString(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 // 点击外部关闭下拉框
 const handleClickOutside = (event: MouseEvent) => {
   if (showDropdown.value) {
-    showDropdown.value = false
+    showDropdown.value = false;
   }
-}
+};
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
+  document.addEventListener("click", handleClickOutside);
   // 连接推送服务
-  connect()
-})
+  connect();
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener("click", handleClickOutside);
   // 断开连接（可选，通常页面关闭时会自动断开）
   // disconnect()
-})
+});
 
 defineExpose({
-  handleRemoveNotification
-})
+  handleRemoveNotification,
+});
 </script>
 
 <style scoped>

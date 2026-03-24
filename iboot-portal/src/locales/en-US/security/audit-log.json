@@ -1,0 +1,30 @@
+{
+  "title": "Audit Log",
+  "search": "Search",
+  "reset": "Reset",
+  "detail": "Details",
+  "action": "Action",
+  "level": "Log Level",
+  "keyword": "Keyword",
+  "logger": "Logger",
+  "thread": "Thread",
+  "message": "Message",
+  "timestamp": "Time",
+  "time_range": "Time Range",
+  "date_range_separator": "to",
+  "start_time": "Start Time",
+  "end_time": "End Time",
+  "detail_title": "Run Log Details",
+  "please_select": "Please select",
+  "placeholder": {
+    "keyword": "Search message content",
+    "logger": "e.g. com.iboot.admin"
+  },
+  "level_options": {
+    "ERROR": "ERROR",
+    "WARN": "WARN",
+    "INFO": "INFO",
+    "DEBUG": "DEBUG",
+    "TRACE": "TRACE"
+  }
+}

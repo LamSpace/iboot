@@ -1,32 +1,32 @@
-import request from '@/utils/request'
+import request from "@/utils/request";
 
 export interface LoginParams {
-  username: string
-  password: string
+  username: string;
+  password: string;
 }
 
 export interface LoginResult {
-  token: string
-  userId: number
-  username: string
-  nickname: string
-  avatar: string
-  permissions: string[]
-  roles: string[]
+  token: string;
+  userId: number;
+  username: string;
+  nickname: string;
+  avatar: string;
+  permissions: string[];
+  roles: string[];
 }
 
 export interface RegisterParams {
-  username: string
-  password: string
-  confirmPassword: string
-  nickname?: string
+  username: string;
+  password: string;
+  confirmPassword: string;
+  nickname?: string;
 }
 
 export interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-  timestamp: number
+  code: number;
+  message: string;
+  data: T;
+  timestamp: number;
 }
 
 /**
@@ -37,31 +37,31 @@ export interface CloudEvent<T> {
   /**
    * CloudEvents 规范版本
    */
-  specversion: string
+  specversion: string;
   /**
    * 事件 ID，确保唯一性
    */
-  id: string
+  id: string;
   /**
    * 事件类型，格式如 com.iboot.user.created
    */
-  type: string
+  type: string;
   /**
    * 事件源，通常是请求路径
    */
-  source: string
+  source: string;
   /**
    * 事件发生时间，ISO 8601 格式
    */
-  time: string
+  time: string;
   /**
    * 数据内容类型
    */
-  datacontenttype: string
+  datacontenttype: string;
   /**
    * 实际的业务数据（原有的 ApiResponse 响应）
    */
-  data: ApiResponse<T>
+  data: ApiResponse<T>;
 }
 
 /**
@@ -69,10 +69,10 @@ export interface CloudEvent<T> {
  */
 export function login(data: LoginParams): Promise<ApiResponse<LoginResult>> {
   return request({
-    url: '/auth/login',
-    method: 'post',
-    data
-  })
+    url: "/auth/login",
+    method: "post",
+    data,
+  });
 }
 
 /**
@@ -80,9 +80,9 @@ export function login(data: LoginParams): Promise<ApiResponse<LoginResult>> {
  */
 export function logout(): Promise<ApiResponse<void>> {
   return request({
-    url: '/auth/logout',
-    method: 'post'
-  })
+    url: "/auth/logout",
+    method: "post",
+  });
 }
 
 /**
@@ -90,8 +90,8 @@ export function logout(): Promise<ApiResponse<void>> {
  */
 export function register(data: RegisterParams): Promise<ApiResponse<void>> {
   return request({
-    url: '/auth/register',
-    method: 'post',
-    data
-  })
+    url: "/auth/register",
+    method: "post",
+    data,
+  });
 }

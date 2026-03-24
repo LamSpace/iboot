@@ -1,0 +1,51 @@
+{
+  "title": "Role Management",
+  "add": "Add Role",
+  "edit": "Edit Role",
+  "delete": "Delete Role",
+  "export": "Export Excel",
+  "search": "Search",
+  "reset": "Reset",
+  "roleName": "Role Name",
+  "roleCode": "Role Code",
+  "orderNum": "Sort Order",
+  "dataScope": "Data Scope",
+  "status": "Status",
+  "remark": "Remark",
+  "createTime": "Created At",
+  "action": "Action",
+  "edit_action": "Edit",
+  "menu_permission": "Menu Permissions",
+  "data_permission": "Data Permissions",
+  "assign_menu_permission": "Assign Menu Permissions",
+  "assign_data_permission": "Set Data Permissions",
+  "confirm_delete": "Are you sure you want to delete this role?",
+  "confirm_delete_title": "Warning",
+  "delete_success": "Deleted successfully",
+  "add_success": "Added successfully",
+  "edit_success": "Updated successfully",
+  "status_change_success": "Status changed successfully",
+  "menu_permission_success": "Menu permissions assigned successfully",
+  "data_permission_success": "Data permissions set successfully",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "please_select": "Please select",
+  "please_input": "Please enter",
+  "placeholder": {
+    "roleName": "Please enter role name",
+    "roleCode": "Please enter role code",
+    "orderNum": "Please enter sort order",
+    "remark": "Please enter remark"
+  },
+  "validation": {
+    "roleCode_required": "Please enter role code",
+    "roleName_required": "Please enter role name"
+  },
+  "data_scope_types": {
+    "all": "All Data Permissions",
+    "custom": "Custom Data Permissions",
+    "dept": "This Department Data Permissions",
+    "dept_below": "This Department and Below Data Permissions",
+    "self": "Only Self Data Permissions"
+  }
+}

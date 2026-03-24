@@ -4,16 +4,25 @@
       <!-- 统计信息 -->
       <div class="stats-bar">
         <el-tag type="success" size="large" effect="dark">
-          当前在线用户: {{ total }} 人
+          {{ t("monitor.onlineUser.current_online_users") }}: {{ total }}
+          {{ t("monitor.onlineUser.users_count") }}
         </el-tag>
         <div class="stats-actions">
-          <el-button type="success" :loading="exportLoading" @click="handleExport">导出Excel</el-button>
-          <el-tooltip content="刷新" placement="top">
+          <el-button
+            type="success"
+            :loading="exportLoading"
+            @click="handleExport"
+            >{{ t("monitor.onlineUser.export") }}</el-button
+          >
+          <el-tooltip
+            :content="t('monitor.onlineUser.refresh')"
+            placement="top"
+          >
             <el-button :icon="Refresh" circle @click="loadData" />
           </el-tooltip>
           <el-switch
             v-model="autoRefresh"
-            active-text="自动刷新"
+            :active-text="t('monitor.onlineUser.auto_refresh')"
             inactive-text=""
             style="margin-left: 12px"
             @change="toggleAutoRefresh"
@@ -23,53 +32,115 @@
 
       <!-- 搜索表单 -->
       <el-form :inline="true" :model="queryParams" class="search-form">
-        <el-form-item label="用户名">
-          <el-input v-model="queryParams.username" placeholder="请输入用户名" clearable @keyup.enter="handleSearch" />
+        <el-form-item :label="t('monitor.onlineUser.username')">
+          <el-input
+            v-model="queryParams.username"
+            :placeholder="t('monitor.onlineUser.placeholder.username')"
+            clearable
+            @keyup.enter="handleSearch"
+          />
         </el-form-item>
-        <el-form-item label="登录IP">
-          <el-input v-model="queryParams.loginIp" placeholder="请输入登录IP" clearable @keyup.enter="handleSearch" />
+        <el-form-item :label="t('monitor.onlineUser.loginIp')">
+          <el-input
+            v-model="queryParams.loginIp"
+            :placeholder="t('monitor.onlineUser.placeholder.loginIp')"
+            clearable
+            @keyup.enter="handleSearch"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleSearch">{{
+            t("monitor.onlineUser.search")
+          }}</el-button>
+          <el-button @click="handleReset">{{
+            t("monitor.onlineUser.reset")
+          }}</el-button>
         </el-form-item>
       </el-form>
 
       <!-- 在线用户表格 -->
-      <el-table :data="userList" style="width: 100%" v-loading="loading" row-key="tokenId">
-        <el-table-column prop="tokenId" label="会话ID" width="200" show-overflow-tooltip />
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="nickname" label="昵称" width="120" />
-        <el-table-column prop="deptName" label="部门" width="120" />
-        <el-table-column prop="loginIp" label="登录IP" width="140" />
-        <el-table-column prop="browser" label="浏览器" width="120">
+      <el-table
+        :data="userList"
+        style="width: 100%"
+        v-loading="loading"
+        row-key="tokenId"
+      >
+        <el-table-column
+          prop="tokenId"
+          :label="t('monitor.onlineUser.tokenId')"
+          width="200"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="username"
+          :label="t('monitor.onlineUser.username')"
+          width="120"
+        />
+        <el-table-column
+          prop="nickname"
+          :label="t('monitor.onlineUser.nickname')"
+          width="120"
+        />
+        <el-table-column
+          prop="deptName"
+          :label="t('monitor.onlineUser.dept')"
+          width="120"
+        />
+        <el-table-column
+          prop="loginIp"
+          :label="t('monitor.onlineUser.loginIp')"
+          width="140"
+        />
+        <el-table-column
+          prop="browser"
+          :label="t('monitor.onlineUser.browser')"
+          width="120"
+        >
           <template #default="{ row }">
             <el-tag
               v-if="row.browser"
-              :type="dictStore.getDictListClass('sys_browser_type', row.browser) || 'info'"
+              :type="
+                dictStore.getDictListClass('sys_browser_type', row.browser) ||
+                'info'
+              "
               size="small"
             >
               {{ row.browser }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="os" label="操作系统" width="120">
+        <el-table-column
+          prop="os"
+          :label="t('monitor.onlineUser.os')"
+          width="120"
+        >
           <template #default="{ row }">
             <el-tag
               v-if="row.os"
-              :type="dictStore.getDictListClass('sys_os_type', row.os) || 'info'"
+              :type="
+                dictStore.getDictListClass('sys_os_type', row.os) || 'info'
+              "
               size="small"
             >
               {{ row.os }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="loginTime" label="登录时间" width="180">
+        <el-table-column
+          prop="loginTime"
+          :label="t('monitor.onlineUser.loginTime')"
+          width="180"
+        >
           <template #default="{ row }">
             {{ formatTime(row.loginTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center" fixed="right">
+        <el-table-column
+          :label="t('monitor.onlineUser.action')"
+          width="100"
+          align="center"
+          fixed="right"
+        >
           <template #default="{ row }">
             <el-button
               v-permission="'online:forceLogout'"
@@ -78,7 +149,7 @@
               size="small"
               @click="handleForceLogout(row)"
             >
-              强退
+              {{ t("monitor.onlineUser.force_logout") }}
             </el-button>
           </template>
         </el-table-column>
@@ -100,139 +171,142 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { ref, reactive, onMounted, onUnmounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { Refresh } from "@element-plus/icons-vue";
 import {
   getOnlineUserList,
   forceLogout,
   getConfigByKey,
   exportOnlineUserList,
   type OnlineUser,
-  type OnlineUserQuery
-} from '@/api/system'
-import { useDictStore } from '@/stores/dict'
-import { useExport } from '@/composables/useExport'
+  type OnlineUserQuery,
+} from "@/api/system";
+import { useDictStore } from "@/stores/dict";
+import { useExport } from "@/composables/useExport";
 
-const dictStore = useDictStore()
-const { exportLoading, handleExport: performExport } = useExport()
+const { t } = useI18n();
+const dictStore = useDictStore();
+const { exportLoading, handleExport: performExport } = useExport();
 
 const handleExport = () => {
   performExport(
-    () => exportOnlineUserList({
-      username: queryParams.username,
-      loginIp: queryParams.loginIp
-    }),
-    '在线用户'
-  )
-}
+    () =>
+      exportOnlineUserList({
+        username: queryParams.username,
+        loginIp: queryParams.loginIp,
+      }),
+    t("monitor.onlineUser.title"),
+  );
+};
 
-const loading = ref(false)
-const userList = ref<OnlineUser[]>([])
-const total = ref(0)
-const autoRefresh = ref(false)
-let refreshTimer: ReturnType<typeof setInterval> | null = null
-const refreshInterval = ref(30)
+const loading = ref(false);
+const userList = ref<OnlineUser[]>([]);
+const total = ref(0);
+const autoRefresh = ref(false);
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
+const refreshInterval = ref(30);
 
 const queryParams = reactive<OnlineUserQuery>({
   pageNum: 1,
   pageSize: 10,
-  username: '',
-  loginIp: ''
-})
+  username: "",
+  loginIp: "",
+});
 
 const loadData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getOnlineUserList(queryParams)
+    const res = await getOnlineUserList(queryParams);
     if (res.code === 200) {
-      userList.value = res.data.data
-      total.value = res.data.total
+      userList.value = res.data.data;
+      total.value = res.data.total;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleSearch = () => {
-  queryParams.pageNum = 1
-  loadData()
-}
+  queryParams.pageNum = 1;
+  loadData();
+};
 
 const handleReset = () => {
-  queryParams.username = ''
-  queryParams.loginIp = ''
-  handleSearch()
-}
+  queryParams.username = "";
+  queryParams.loginIp = "";
+  handleSearch();
+};
 
 const handleForceLogout = (row: OnlineUser) => {
   ElMessageBox.confirm(
-    `确认要强制退出用户 "${row.username}" 吗？`,
-    '强制退出确认',
-    { type: 'warning' }
+    t("monitor.onlineUser.force_logout_confirm", { username: row.username }),
+    t("monitor.onlineUser.force_logout_title"),
+    { type: "warning" },
   )
     .then(async () => {
-      if (!row.tokenId) return
-      await forceLogout(row.tokenId)
-      ElMessage.success('强退成功')
-      loadData()
+      if (!row.tokenId) return;
+      await forceLogout(row.tokenId);
+      ElMessage.success(t("monitor.onlineUser.force_logout_success"));
+      loadData();
     })
-    .catch(() => {})
-}
+    .catch(() => {});
+};
 
 const formatTime = (timeStr?: string) => {
-  if (!timeStr) return ''
+  if (!timeStr) return "";
   // ISO format: 2024-01-01T12:00:00 -> 2024-01-01 12:00:00
-  return timeStr.replace('T', ' ').substring(0, 19)
-}
+  return timeStr.replace("T", " ").substring(0, 19);
+};
 
 const toggleAutoRefresh = (val: boolean | string | number) => {
   if (val) {
-    startAutoRefresh()
+    startAutoRefresh();
   } else {
-    stopAutoRefresh()
+    stopAutoRefresh();
   }
-}
+};
 
 const startAutoRefresh = () => {
-  stopAutoRefresh()
+  stopAutoRefresh();
   if (refreshInterval.value > 0) {
     refreshTimer = setInterval(() => {
-      loadData()
-    }, refreshInterval.value * 1000)
+      loadData();
+    }, refreshInterval.value * 1000);
   }
-}
+};
 
 const stopAutoRefresh = () => {
   if (refreshTimer) {
-    clearInterval(refreshTimer)
-    refreshTimer = null
+    clearInterval(refreshTimer);
+    refreshTimer = null;
   }
-}
+};
 
 const loadRefreshConfig = async () => {
   try {
-    const res = await getConfigByKey('sys.online.refreshInterval')
+    const res = await getConfigByKey("sys.online.refreshInterval");
     if (res.code === 200 && res.data) {
-      const val = parseInt(res.data as unknown as string, 10)
+      const val = parseInt(res.data as unknown as string, 10);
       if (!isNaN(val) && val > 0) {
-        refreshInterval.value = val
+        refreshInterval.value = val;
       }
     }
   } catch {
     // use default
   }
-}
+};
 
 onMounted(async () => {
-  await dictStore.loadDicts('sys_browser_type', 'sys_os_type')
-  await loadRefreshConfig()
-  loadData()
-})
+  await dictStore.loadDicts("sys_browser_type", "sys_os_type");
+  await loadRefreshConfig();
+  loadData();
+});
 
 onUnmounted(() => {
-  stopAutoRefresh()
-})
+  stopAutoRefresh();
+});
 </script>
 
 <style scoped>

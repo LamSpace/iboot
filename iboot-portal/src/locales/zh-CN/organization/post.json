@@ -1,0 +1,36 @@
+{
+  "title": "岗位管理",
+  "add": "新增岗位",
+  "edit": "编辑岗位",
+  "delete": "删除岗位",
+  "export": "导出 Excel",
+  "search": "搜索",
+  "reset": "重置",
+  "postName": "岗位名称",
+  "postCode": "岗位编码",
+  "orderNum": "排序",
+  "status": "状态",
+  "remark": "备注",
+  "createTime": "创建时间",
+  "action": "操作",
+  "edit_action": "编辑",
+  "please_select": "请选择",
+  "please_input": "请输入",
+  "confirm_delete": "确认删除该岗位吗？",
+  "confirm_delete_title": "提示",
+  "delete_success": "删除成功",
+  "add_success": "新增成功",
+  "edit_success": "修改成功",
+  "status_change_success": "状态修改成功",
+  "cancel": "取消",
+  "confirm": "确定",
+  "placeholder": {
+    "postName": "请输入岗位名称",
+    "postCode": "请输入岗位编码",
+    "remark": "请输入备注"
+  },
+  "validation": {
+    "postName_required": "请输入岗位名称",
+    "postCode_required": "请输入岗位编码"
+  }
+}

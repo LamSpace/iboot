@@ -3,19 +3,35 @@
     <div class="monitor-toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><Histogram /></el-icon>
-        <span class="toolbar-title">Grafana看板</span>
-        <el-tag type="success" size="small" effect="plain">Grafana</el-tag>
+        <span class="toolbar-title">{{ t("monitor.grafana.title") }}</span>
+        <el-tag type="success" size="small" effect="plain">{{
+          t("monitor.grafana.grafana")
+        }}</el-tag>
       </div>
       <div class="toolbar-right">
-        <el-tooltip content="在新窗口中打开" placement="top">
-          <el-button :icon="TopRight" circle size="small" @click="openInNewWindow" />
+        <el-tooltip :content="t('monitor.grafana.open_in_new')" placement="top">
+          <el-button
+            :icon="TopRight"
+            circle
+            size="small"
+            @click="openInNewWindow"
+          />
         </el-tooltip>
-        <el-tooltip content="刷新监控页面" placement="top">
-          <el-button :icon="Refresh" circle size="small" @click="refreshIframe" />
+        <el-tooltip :content="t('monitor.grafana.refresh')" placement="top">
+          <el-button
+            :icon="Refresh"
+            circle
+            size="small"
+            @click="refreshIframe"
+          />
         </el-tooltip>
       </div>
     </div>
-    <div class="monitor-iframe-container" v-loading="loading" element-loading-text="加载监控页面中...">
+    <div
+      class="monitor-iframe-container"
+      v-loading="loading"
+      :element-loading-text="t('monitor.grafana.loading_text')"
+    >
       <iframe
         ref="grafanaIframe"
         :src="grafanaUrl"
@@ -28,20 +44,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Histogram, TopRight, Refresh } from '@element-plus/icons-vue'
-import { getConfigByKey } from '@/api/system'
+import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { Histogram, TopRight, Refresh } from "@element-plus/icons-vue";
+import { getConfigByKey } from "@/api/system";
 
-const defaultUrl = 'http://localhost:3000'
-const grafanaUrl = ref(defaultUrl)
-const loading = ref(true)
-const grafanaIframe = ref<HTMLIFrameElement>()
+const { t } = useI18n();
+
+const defaultUrl = "http://localhost:3000";
+const grafanaUrl = ref(defaultUrl);
+const loading = ref(true);
+const grafanaIframe = ref<HTMLIFrameElement>();
 
 async function loadUrl() {
   try {
-    const res = await getConfigByKey('sys.grafana.monitor.url')
+    const res = await getConfigByKey("sys.grafana.monitor.url");
     if (res.code === 200 && res.data) {
-      grafanaUrl.value = res.data
+      grafanaUrl.value = res.data;
     }
   } catch {
     // 配置不存在时使用默认值
@@ -49,24 +68,24 @@ async function loadUrl() {
 }
 
 function onIframeLoad() {
-  loading.value = false
+  loading.value = false;
 }
 
 function openInNewWindow() {
-  window.open(grafanaUrl.value, '_blank')
+  window.open(grafanaUrl.value, "_blank");
 }
 
 function refreshIframe() {
-  loading.value = true
+  loading.value = true;
   if (grafanaIframe.value) {
-    grafanaIframe.value.src = grafanaUrl.value
+    grafanaIframe.value.src = grafanaUrl.value;
   }
 }
 
 onMounted(async () => {
-  loading.value = true
-  await loadUrl()
-})
+  loading.value = true;
+  await loadUrl();
+});
 </script>
 
 <style scoped>

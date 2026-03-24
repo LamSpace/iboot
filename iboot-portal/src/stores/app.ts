@@ -1,22 +1,28 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { getPublicConfig } from '@/api/system'
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import { getPublicConfig } from "@/api/system";
 
-export const useAppStore = defineStore('app', () => {
-  const systemName = ref<string>('iBoot 后台管理系统')
-  const registerEnabled = ref<boolean>(false)
-  const configLoaded = ref<boolean>(false)
+export const useAppStore = defineStore("app", () => {
+  const systemName = ref<string>("iBoot 后台管理系统");
+  const registerEnabled = ref<boolean>(false);
+  const configLoaded = ref<boolean>(false);
+  const locale = ref<string>(localStorage.getItem("locale") || "zh-CN");
+
+  function setLocale(newLocale: string) {
+    locale.value = newLocale;
+    localStorage.setItem("locale", newLocale);
+  }
 
   async function loadPublicConfig() {
-    if (configLoaded.value) return
-    
+    if (configLoaded.value) return;
+
     try {
-      const res = await getPublicConfig()
-      systemName.value = res.data.systemName
-      registerEnabled.value = res.data.registerEnabled
-      configLoaded.value = true
+      const res = await getPublicConfig();
+      systemName.value = res.data.systemName;
+      registerEnabled.value = res.data.registerEnabled;
+      configLoaded.value = true;
     } catch (error) {
-      console.error('Failed to load public config:', error)
+      console.error("Failed to load public config:", error);
     }
   }
 
@@ -24,6 +30,8 @@ export const useAppStore = defineStore('app', () => {
     systemName,
     registerEnabled,
     configLoaded,
-    loadPublicConfig
-  }
-})
+    locale,
+    setLocale,
+    loadPublicConfig,
+  };
+});

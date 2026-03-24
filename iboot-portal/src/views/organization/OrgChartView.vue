@@ -5,14 +5,14 @@
       <div class="header-left">
         <h2 class="page-title">
           <el-icon><OfficeBuilding /></el-icon>
-          组织架构图
+          {{ t("organization.orgChart.title") }}
         </h2>
       </div>
       <div class="header-right">
         <!-- 搜索框 -->
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索部门"
+          :placeholder="t('organization.orgChart.search_placeholder')"
           clearable
           style="width: 160px"
           @keyup.enter="handleSearch"
@@ -25,41 +25,52 @@
         <el-button @click="handleSearch" type="primary">
           <el-icon><Search /></el-icon>
         </el-button>
-        
+
         <!-- 展开/折叠按钮 -->
         <el-button-group>
-          <el-button @click="expandAll" title="展开全部">
+          <el-button
+            @click="expandAll"
+            :title="t('organization.orgChart.expand_all')"
+          >
             <el-icon><ArrowDown /></el-icon>
           </el-button>
-          <el-button @click="collapseAll" title="折叠全部">
+          <el-button
+            @click="collapseAll"
+            :title="t('organization.orgChart.collapse_all')"
+          >
             <el-icon><ArrowRight /></el-icon>
           </el-button>
         </el-button-group>
-        
+
         <!-- 缩放控制 -->
         <el-button-group class="zoom-controls">
           <el-button @click="zoomOut" :disabled="scale <= 0.3">
             <el-icon><Minus /></el-icon>
           </el-button>
-          <el-button class="zoom-value">{{ Math.round(scale * 100) }}%</el-button>
+          <el-button class="zoom-value"
+            >{{ Math.round(scale * 100) }}%</el-button
+          >
           <el-button @click="zoomIn" :disabled="scale >= 1.5">
             <el-icon><Plus /></el-icon>
           </el-button>
         </el-button-group>
         <el-button @click="resetView">
           <el-icon><FullScreen /></el-icon>
-          重置
+          {{ t("organization.orgChart.reset") }}
         </el-button>
         <el-button type="primary" @click="loadData" :loading="loading">
           <el-icon><Refresh /></el-icon>
-          刷新
+          {{ t("organization.orgChart.refresh") }}
         </el-button>
       </div>
     </div>
 
     <!-- 组织架构图主体 -->
     <div class="chart-container">
-      <div class="chart-scroll" :style="{ transform: `scale(${scale})`, transformOrigin: 'top center' }">
+      <div
+        class="chart-scroll"
+        :style="{ transform: `scale(${scale})`, transformOrigin: 'top center' }"
+      >
         <div class="org-chart" v-loading="loading">
           <ul v-if="orgData.length > 0" class="org-tree">
             <OrgTreeNode
@@ -73,15 +84,25 @@
               @toggle="toggleNode"
             />
           </ul>
-          <el-empty v-else-if="!loading" description="暂无组织架构数据">
-            <el-button type="primary" @click="loadData">重新加载</el-button>
+          <el-empty
+            v-else-if="!loading"
+            :description="t('organization.orgChart.empty_description')"
+          >
+            <el-button type="primary" @click="loadData">{{
+              t("organization.orgChart.reload")
+            }}</el-button>
           </el-empty>
         </div>
       </div>
     </div>
 
     <!-- 部门详情面板 -->
-    <el-drawer v-model="drawerVisible" title="部门详情" direction="rtl" :size="380">
+    <el-drawer
+      v-model="drawerVisible"
+      :title="t('organization.orgChart.dept_detail')"
+      direction="rtl"
+      :size="380"
+    >
       <template v-if="selectedNode">
         <div class="drawer-content">
           <div class="dept-header">
@@ -92,43 +113,69 @@
               <h3>{{ selectedNode.deptName }}</h3>
               <span class="dept-code">{{ selectedNode.deptCode }}</span>
             </div>
-            <el-tag :type="selectedNode.status === 1 ? 'success' : 'danger'" effect="dark" size="small">
-              {{ selectedNode.status === 1 ? '正常' : '停用' }}
+            <el-tag
+              :type="selectedNode.status === 1 ? 'success' : 'danger'"
+              effect="dark"
+              size="small"
+            >
+              {{
+                selectedNode.status === 1
+                  ? t("organization.orgChart.status_normal")
+                  : t("organization.orgChart.status_disabled")
+              }}
             </el-tag>
           </div>
 
           <div class="stats-row">
             <div class="stat-card">
               <div class="stat-value">{{ selectedNode.memberCount }}</div>
-              <div class="stat-label">成员数量</div>
+              <div class="stat-label">
+                {{ t("organization.orgChart.member_count") }}
+              </div>
             </div>
             <div class="stat-card">
-              <div class="stat-value">{{ selectedNode.children?.length || 0 }}</div>
-              <div class="stat-label">下级部门</div>
+              <div class="stat-value">
+                {{ selectedNode.children?.length || 0 }}
+              </div>
+              <div class="stat-label">
+                {{ t("organization.orgChart.child_depts") }}
+              </div>
             </div>
           </div>
 
-          <el-divider content-position="left">联系信息</el-divider>
+          <el-divider content-position="left">{{
+            t("organization.orgChart.contact_info")
+          }}</el-divider>
           <div class="info-list">
             <div class="info-item">
               <el-icon><User /></el-icon>
-              <span class="label">负责人</span>
-              <span class="value">{{ selectedNode.leader || '未设置' }}</span>
+              <span class="label">{{ t("organization.orgChart.leader") }}</span>
+              <span class="value">{{
+                selectedNode.leader || t("organization.orgChart.not_set")
+              }}</span>
             </div>
             <div class="info-item">
               <el-icon><Phone /></el-icon>
-              <span class="label">电话</span>
-              <span class="value">{{ selectedNode.phone || '未设置' }}</span>
+              <span class="label">{{ t("organization.orgChart.phone") }}</span>
+              <span class="value">{{
+                selectedNode.phone || t("organization.orgChart.not_set")
+              }}</span>
             </div>
             <div class="info-item">
               <el-icon><Message /></el-icon>
-              <span class="label">邮箱</span>
-              <span class="value">{{ selectedNode.email || '未设置' }}</span>
+              <span class="label">{{ t("organization.orgChart.email") }}</span>
+              <span class="value">{{
+                selectedNode.email || t("organization.orgChart.not_set")
+              }}</span>
             </div>
           </div>
 
-          <template v-if="selectedNode.children && selectedNode.children.length > 0">
-            <el-divider content-position="left">下级部门</el-divider>
+          <template
+            v-if="selectedNode.children && selectedNode.children.length > 0"
+          >
+            <el-divider content-position="left">{{
+              t("organization.orgChart.child_depts")
+            }}</el-divider>
             <div class="sub-dept-list">
               <div
                 v-for="child in selectedNode.children"
@@ -138,7 +185,10 @@
               >
                 <el-icon><FolderOpened /></el-icon>
                 <span>{{ child.deptName }}</span>
-                <el-tag size="small" type="info">{{ child.memberCount }}人</el-tag>
+                <el-tag size="small" type="info"
+                  >{{ child.memberCount
+                  }}{{ t("organization.orgChart.people") }}</el-tag
+                >
               </div>
             </div>
           </template>
@@ -149,162 +199,179 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted, nextTick } from "vue";
+import { useI18n } from "vue-i18n";
+import { ElMessage } from "element-plus";
 import {
-  OfficeBuilding, User, Phone, Message, FolderOpened,
-  Refresh, Plus, Minus, FullScreen, Search, ArrowDown, ArrowRight
-} from '@element-plus/icons-vue'
-import { getOrgChart, type OrgChartNode } from '@/api/system'
-import OrgTreeNode from '@/components/OrgTreeNode.vue'
+  OfficeBuilding,
+  User,
+  Phone,
+  Message,
+  FolderOpened,
+  Refresh,
+  Plus,
+  Minus,
+  FullScreen,
+  Search,
+  ArrowDown,
+  ArrowRight,
+} from "@element-plus/icons-vue";
+import { getOrgChart, type OrgChartNode } from "@/api/system";
+import OrgTreeNode from "@/components/OrgTreeNode.vue";
 
-const loading = ref(false)
-const orgData = ref<OrgChartNode[]>([])
-const scale = ref(0.75)
-const drawerVisible = ref(false)
-const selectedNode = ref<OrgChartNode | null>(null)
+const { t } = useI18n();
+const loading = ref(false);
+const orgData = ref<OrgChartNode[]>([]);
+const scale = ref(0.75);
+const drawerVisible = ref(false);
+const selectedNode = ref<OrgChartNode | null>(null);
 
 // 搜索相关状态
-const searchKeyword = ref('')
-const matchedNodeIds = ref<Set<number>>(new Set())
+const searchKeyword = ref("");
+const matchedNodeIds = ref<Set<number>>(new Set());
 
 // 展开/折叠相关状态
-const collapsedNodeIds = ref<Set<number>>(new Set())
+const collapsedNodeIds = ref<Set<number>>(new Set());
 
 const loadData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getOrgChart()
+    const res = await getOrgChart();
     if (res.code === 200) {
-      orgData.value = res.data
+      orgData.value = res.data;
     } else {
-      ElMessage.error(res.message || '加载失败')
+      ElMessage.error(
+        res.message || t("organization.orgChart.empty_description"),
+      );
     }
   } catch {
-    ElMessage.error('加载组织架构数据失败')
+    ElMessage.error(t("organization.orgChart.empty_description"));
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleSelectNode = (node: OrgChartNode) => {
-  selectedNode.value = node
-  drawerVisible.value = true
-}
+  selectedNode.value = node;
+  drawerVisible.value = true;
+};
 
 const zoomIn = () => {
-  scale.value = Math.min(scale.value + 0.1, 1.5)
-}
+  scale.value = Math.min(scale.value + 0.1, 1.5);
+};
 
 const zoomOut = () => {
-  scale.value = Math.max(scale.value - 0.1, 0.3)
-}
+  scale.value = Math.max(scale.value - 0.1, 0.3);
+};
 
 const resetView = () => {
-  scale.value = 0.75
-}
+  scale.value = 0.75;
+};
 
 // ==================== 搜索功能 ====================
 
 // 递归搜索匹配节点
-const findMatchingNodes = (nodes: OrgChartNode[], keyword: string): number[] => {
-  const result: number[] = []
+const findMatchingNodes = (
+  nodes: OrgChartNode[],
+  keyword: string,
+): number[] => {
+  const result: number[] = [];
   const search = (node: OrgChartNode) => {
     if (node.deptName.includes(keyword)) {
-      result.push(node.id)
+      result.push(node.id);
     }
-    node.children?.forEach(search)
-  }
-  nodes.forEach(search)
-  return result
-}
+    node.children?.forEach(search);
+  };
+  nodes.forEach(search);
+  return result;
+};
 
 // 展开到匹配节点的路径
 const expandToMatchedNodes = () => {
-  const ancestorIds = new Set<number>()
+  const ancestorIds = new Set<number>();
   const findAncestors = (nodes: OrgChartNode[], parentIds: number[] = []) => {
-    nodes.forEach(node => {
-      const currentPath = [...parentIds]
+    nodes.forEach((node) => {
+      const currentPath = [...parentIds];
       if (matchedNodeIds.value.has(node.id)) {
-        parentIds.forEach(id => ancestorIds.add(id))
+        parentIds.forEach((id) => ancestorIds.add(id));
       }
       if (node.children?.length) {
-        findAncestors(node.children, [...currentPath, node.id])
+        findAncestors(node.children, [...currentPath, node.id]);
       }
-    })
-  }
-  findAncestors(orgData.value)
-  
+    });
+  };
+  findAncestors(orgData.value);
+
   // 从 collapsedNodeIds 中移除祖先节点
-  ancestorIds.forEach(id => collapsedNodeIds.value.delete(id))
-  collapsedNodeIds.value = new Set(collapsedNodeIds.value)
-}
+  ancestorIds.forEach((id) => collapsedNodeIds.value.delete(id));
+  collapsedNodeIds.value = new Set(collapsedNodeIds.value);
+};
 
 // 执行搜索
 const handleSearch = () => {
   if (!searchKeyword.value.trim()) {
-    matchedNodeIds.value = new Set()
-    return
+    matchedNodeIds.value = new Set();
+    return;
   }
-  const ids = findMatchingNodes(orgData.value, searchKeyword.value.trim())
-  matchedNodeIds.value = new Set(ids)
-  
+  const ids = findMatchingNodes(orgData.value, searchKeyword.value.trim());
+  matchedNodeIds.value = new Set(ids);
+
   if (ids.length === 0) {
-    ElMessage.warning('未找到匹配的部门')
-    return
+    ElMessage.warning(t("organization.orgChart.search_not_found"));
+    return;
   }
-  
+
   // 自动展开包含匹配节点的路径
-  expandToMatchedNodes()
-  
+  expandToMatchedNodes();
+
   // 滚动到第一个匹配节点
   nextTick(() => {
-    const firstMatch = document.querySelector('.org-card.is-matched')
-    firstMatch?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  })
-}
+    const firstMatch = document.querySelector(".org-card.is-matched");
+    firstMatch?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+};
 
 // 清除搜索
 const clearSearch = () => {
-  searchKeyword.value = ''
-  matchedNodeIds.value = new Set()
-}
+  searchKeyword.value = "";
+  matchedNodeIds.value = new Set();
+};
 
 // ==================== 展开/折叠功能 ====================
 
 // 切换节点展开状态
 const toggleNode = (nodeId: number) => {
   if (collapsedNodeIds.value.has(nodeId)) {
-    collapsedNodeIds.value.delete(nodeId)
+    collapsedNodeIds.value.delete(nodeId);
   } else {
-    collapsedNodeIds.value.add(nodeId)
+    collapsedNodeIds.value.add(nodeId);
   }
-  collapsedNodeIds.value = new Set(collapsedNodeIds.value)
-}
+  collapsedNodeIds.value = new Set(collapsedNodeIds.value);
+};
 
 // 展开全部
 const expandAll = () => {
-  collapsedNodeIds.value = new Set()
-}
+  collapsedNodeIds.value = new Set();
+};
 
 // 折叠全部
 const collapseAll = () => {
-  const allIds = new Set<number>()
+  const allIds = new Set<number>();
   const collectIds = (nodes: OrgChartNode[]) => {
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       if (node.children?.length) {
-        allIds.add(node.id)
-        collectIds(node.children)
+        allIds.add(node.id);
+        collectIds(node.children);
       }
-    })
-  }
-  collectIds(orgData.value)
-  collapsedNodeIds.value = allIds
-}
+    });
+  };
+  collectIds(orgData.value);
+  collapsedNodeIds.value = allIds;
+};
 
 onMounted(() => {
-  loadData()
-})
+  loadData();
+});
 </script>
 
 <style>
@@ -331,7 +398,7 @@ onMounted(() => {
 
 /* 父节点到子节点列表的垂直连接线 */
 .org-tree ul::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 50%;
@@ -356,7 +423,7 @@ onMounted(() => {
 
 /* 子节点上方的垂直连接线 */
 .org-tree li li::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -30px;
   left: 50%;
@@ -367,7 +434,7 @@ onMounted(() => {
 
 /* 子节点之间的水平连接线 */
 .org-tree li li::after {
-  content: '';
+  content: "";
   position: absolute;
   top: -30px;
   width: 100%;
@@ -476,7 +543,7 @@ onMounted(() => {
 .dept-avatar {
   width: 50px;
   height: 50px;
-  background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -518,7 +585,7 @@ onMounted(() => {
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  color: #409EFF;
+  color: #409eff;
 }
 
 .stat-label {
@@ -579,7 +646,7 @@ onMounted(() => {
 }
 
 .sub-dept-item .el-icon {
-  color: #409EFF;
+  color: #409eff;
 }
 
 .sub-dept-item span {

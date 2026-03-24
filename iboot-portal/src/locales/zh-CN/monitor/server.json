@@ -1,0 +1,8 @@
+{
+  "title": "服务监控",
+  "subtitle": "服务监控检查",
+  "spring_boot_admin": "Spring Boot Admin",
+  "open_in_new": "在新窗口中打开",
+  "refresh": "刷新监控页面",
+  "loading_text": "加载监控页面中..."
+}

@@ -4,22 +4,29 @@
     <div class="toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><PieChart /></el-icon>
-        <span class="toolbar-title">系统使用分析</span>
+        <span class="toolbar-title">{{ t("analysis.usage.title") }}</span>
       </div>
       <div class="toolbar-right">
         <el-date-picker
           v-model="dateRange"
           type="daterange"
-          range-separator="至"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+          :range-separator="t('analysis.usage.date_range.separator')"
+          :start-placeholder="t('analysis.usage.date_range.start')"
+          :end-placeholder="t('analysis.usage.date_range.end')"
           format="YYYY-MM-DD"
           value-format="YYYY-MM-DD"
           :shortcuts="dateShortcuts"
           style="width: 260px"
           @change="loadData"
         />
-        <el-button :icon="Refresh" circle size="small" @click="loadData" :loading="loading" style="margin-left: 12px" />
+        <el-button
+          :icon="Refresh"
+          circle
+          size="small"
+          @click="loadData"
+          :loading="loading"
+          style="margin-left: 12px"
+        />
       </div>
     </div>
 
@@ -27,21 +34,45 @@
       <!-- 活跃度概览卡片 -->
       <el-row :gutter="16" class="stats-cards" v-if="usageData">
         <el-col :xs="12" :sm="8">
-          <el-card shadow="hover" class="stat-card" style="border-top: 3px solid #409eff">
-            <div class="stat-label">今日活跃用户</div>
-            <div class="stat-value" style="color: #409eff">{{ usageData.activityStats.todayActiveUsers }}</div>
+          <el-card
+            shadow="hover"
+            class="stat-card"
+            style="border-top: 3px solid #409eff"
+          >
+            <div class="stat-label">
+              {{ t("analysis.usage.overview.today_active") }}
+            </div>
+            <div class="stat-value" style="color: #409eff">
+              {{ usageData.activityStats.todayActiveUsers }}
+            </div>
           </el-card>
         </el-col>
         <el-col :xs="12" :sm="8">
-          <el-card shadow="hover" class="stat-card" style="border-top: 3px solid #67c23a">
-            <div class="stat-label">本周活跃用户</div>
-            <div class="stat-value" style="color: #67c23a">{{ usageData.activityStats.weekActiveUsers }}</div>
+          <el-card
+            shadow="hover"
+            class="stat-card"
+            style="border-top: 3px solid #67c23a"
+          >
+            <div class="stat-label">
+              {{ t("analysis.usage.overview.week_active") }}
+            </div>
+            <div class="stat-value" style="color: #67c23a">
+              {{ usageData.activityStats.weekActiveUsers }}
+            </div>
           </el-card>
         </el-col>
         <el-col :xs="12" :sm="8">
-          <el-card shadow="hover" class="stat-card" style="border-top: 3px solid #e6a23c">
-            <div class="stat-label">本月活跃用户</div>
-            <div class="stat-value" style="color: #e6a23c">{{ usageData.activityStats.monthActiveUsers }}</div>
+          <el-card
+            shadow="hover"
+            class="stat-card"
+            style="border-top: 3px solid #e6a23c"
+          >
+            <div class="stat-label">
+              {{ t("analysis.usage.overview.month_active") }}
+            </div>
+            <div class="stat-value" style="color: #e6a23c">
+              {{ usageData.activityStats.monthActiveUsers }}
+            </div>
           </el-card>
         </el-col>
       </el-row>
@@ -53,20 +84,28 @@
           <el-card shadow="hover" class="analysis-card">
             <template #header>
               <div class="card-header">
-                <span class="card-title">活跃用户排行</span>
-                <el-tag type="info" size="small">TOP 10</el-tag>
+                <span class="card-title">{{
+                  t("analysis.usage.active_user_rank.title")
+                }}</span>
+                <el-tag type="info" size="small"
+                  >{{ t("analysis.usage.active_user_rank.top") }} 10</el-tag
+                >
               </div>
             </template>
-            <el-table 
-              :data="usageData.activityStats.topActiveUsers" 
-              size="small" 
-              stripe 
+            <el-table
+              :data="usageData.activityStats.topActiveUsers"
+              size="small"
+              stripe
               max-height="320"
             >
-              <el-table-column label="排名" width="60" align="center">
+              <el-table-column
+                :label="t('analysis.usage.active_user_rank.rank')"
+                width="60"
+                align="center"
+              >
                 <template #default="{ $index }">
-                  <el-tag 
-                    :type="$index < 3 ? 'warning' : 'info'" 
+                  <el-tag
+                    :type="$index < 3 ? 'warning' : 'info'"
                     size="small"
                     effect="dark"
                   >
@@ -74,23 +113,38 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="username" label="用户名" min-width="120" />
-              <el-table-column prop="count" label="操作次数" width="100" align="right">
+              <el-table-column
+                prop="username"
+                :label="t('analysis.usage.active_user_rank.username')"
+                min-width="120"
+              />
+              <el-table-column
+                prop="count"
+                :label="t('analysis.usage.active_user_rank.operation_count')"
+                width="100"
+                align="right"
+              >
                 <template #default="{ row }">
                   <span class="stat-num">{{ row.count }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="活跃度" width="150">
+              <el-table-column
+                :label="t('analysis.usage.active_user_rank.activity')"
+                width="150"
+              >
                 <template #default="{ row }">
-                  <el-progress 
-                    :percentage="getActivePercent(row.count)" 
+                  <el-progress
+                    :percentage="getActivePercent(row.count)"
                     :stroke-width="10"
                     :show-text="false"
                   />
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty v-if="usageData.activityStats.topActiveUsers.length === 0" description="暂无数据" />
+            <el-empty
+              v-if="usageData.activityStats.topActiveUsers.length === 0"
+              :description="t('analysis.usage.empty.no_data')"
+            />
           </el-card>
         </el-col>
 
@@ -99,20 +153,28 @@
           <el-card shadow="hover" class="analysis-card">
             <template #header>
               <div class="card-header">
-                <span class="card-title">功能模块使用排行</span>
-                <el-tag type="success" size="small">使用频率</el-tag>
+                <span class="card-title">{{
+                  t("analysis.usage.feature_module.title")
+                }}</span>
+                <el-tag type="success" size="small">{{
+                  t("analysis.usage.feature_module.frequency")
+                }}</el-tag>
               </div>
             </template>
-            <el-table 
-              :data="usageData.featureUsageStats.moduleRanking" 
-              size="small" 
-              stripe 
+            <el-table
+              :data="usageData.featureUsageStats.moduleRanking"
+              size="small"
+              stripe
               max-height="320"
             >
-              <el-table-column label="排名" width="60" align="center">
+              <el-table-column
+                :label="t('analysis.usage.feature_module.rank')"
+                width="60"
+                align="center"
+              >
                 <template #default="{ $index }">
-                  <el-tag 
-                    :type="$index < 3 ? 'success' : 'info'" 
+                  <el-tag
+                    :type="$index < 3 ? 'success' : 'info'"
                     size="small"
                     effect="dark"
                   >
@@ -120,16 +182,28 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="name" label="模块名称" min-width="120" />
-              <el-table-column prop="value" label="使用次数" width="100" align="right">
+              <el-table-column
+                prop="name"
+                :label="t('analysis.usage.feature_module.module_name')"
+                min-width="120"
+              />
+              <el-table-column
+                prop="value"
+                :label="t('analysis.usage.feature_module.usage_count')"
+                width="100"
+                align="right"
+              >
                 <template #default="{ row }">
                   <span class="stat-num">{{ row.value }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="占比" width="150">
+              <el-table-column
+                :label="t('analysis.usage.feature_module.percentage')"
+                width="150"
+              >
                 <template #default="{ row }">
-                  <el-progress 
-                    :percentage="getModulePercent(row.value)" 
+                  <el-progress
+                    :percentage="getModulePercent(row.value)"
                     :stroke-width="10"
                     status="success"
                     :show-text="false"
@@ -137,7 +211,10 @@
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty v-if="usageData.featureUsageStats.moduleRanking.length === 0" description="暂无数据" />
+            <el-empty
+              v-if="usageData.featureUsageStats.moduleRanking.length === 0"
+              :description="t('analysis.usage.empty.no_data')"
+            />
           </el-card>
         </el-col>
       </el-row>
@@ -148,31 +225,37 @@
           <el-card shadow="hover" class="analysis-card">
             <template #header>
               <div class="card-header">
-                <span class="card-title">24小时访问分布</span>
+                <span class="card-title">{{
+                  t("analysis.usage.time_distribution.title")
+                }}</span>
                 <el-tag type="warning" size="small">
-                  高峰时段: {{ usageData.timeDistributionStats.peakHours }}
+                  {{ t("analysis.usage.time_distribution.peak_hours") }}:
+                  {{ usageData.timeDistributionStats.peakHours }}
                 </el-tag>
               </div>
             </template>
             <div class="hour-chart">
               <div class="hour-bars">
-                <div 
-                  v-for="item in usageData.timeDistributionStats.hourlyDistribution" 
+                <div
+                  v-for="item in usageData.timeDistributionStats
+                    .hourlyDistribution"
                   :key="item.hour"
                   class="hour-bar-wrapper"
                 >
-                  <div 
+                  <div
                     class="hour-bar"
                     :style="{ height: getHourBarHeight(item.value) + '%' }"
-                    :class="{ 'peak': isPeakHour(item.hour) }"
-                    :title="`${item.hour}:00 - ${item.value}次访问`"
+                    :class="{ peak: isPeakHour(item.hour) }"
+                    :title="`${item.hour}:00 - ${item.value}${t('analysis.usage.active_user_rank.operation_count')}`"
                   ></div>
                 </div>
               </div>
               <div class="hour-labels">
                 <span v-for="h in 24" :key="h - 1">{{ h - 1 }}</span>
               </div>
-              <div class="hour-axis-label">时段 (小时)</div>
+              <div class="hour-axis-label">
+                {{ t("analysis.usage.time_distribution.hour_label") }}
+              </div>
             </div>
           </el-card>
         </el-col>
@@ -183,27 +266,38 @@
         <el-col :span="24">
           <el-card shadow="hover" class="analysis-card">
             <template #header>
-              <span class="card-title">用户活跃趋势</span>
+              <span class="card-title">{{
+                t("analysis.usage.activity_trend.title")
+              }}</span>
             </template>
-            <div class="trend-container" v-if="usageData.activityStats.activeUserTrend.length > 0">
+            <div
+              class="trend-container"
+              v-if="usageData.activityStats.activeUserTrend.length > 0"
+            >
               <div class="trend-chart-large">
-                <div 
-                  v-for="item in usageData.activityStats.activeUserTrend" 
-                  :key="item.date" 
+                <div
+                  v-for="item in usageData.activityStats.activeUserTrend"
+                  :key="item.date"
                   class="trend-bar-large"
                   :style="{ height: getTrendBarHeight(item.value) + '%' }"
-                  :title="`${item.date}: ${item.value}次登录`"
+                  :title="`${item.date}: ${item.value}${t('analysis.usage.active_user_rank.operation_count')}`"
                 >
                   <span class="trend-value">{{ item.value }}</span>
                 </div>
               </div>
               <div class="trend-labels-large">
-                <span v-for="item in usageData.activityStats.activeUserTrend" :key="item.date">
+                <span
+                  v-for="item in usageData.activityStats.activeUserTrend"
+                  :key="item.date"
+                >
                   {{ formatDateLabel(item.date) }}
                 </span>
               </div>
             </div>
-            <el-empty v-else description="暂无趋势数据" />
+            <el-empty
+              v-else
+              :description="t('analysis.usage.empty.no_trend_data')"
+            />
           </el-card>
         </el-col>
       </el-row>
@@ -212,137 +306,150 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { PieChart, Refresh } from '@element-plus/icons-vue'
-import { getUsageAnalysis, type UsageResponse } from '@/api/system'
+import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { PieChart, Refresh } from "@element-plus/icons-vue";
+import { getUsageAnalysis, type UsageResponse } from "@/api/system";
 
-const loading = ref(false)
-const usageData = ref<UsageResponse | null>(null)
+const { t } = useI18n();
+const loading = ref(false);
+const usageData = ref<UsageResponse | null>(null);
 
 // 日期范围
-const dateRange = ref<[string, string] | null>(null)
+const dateRange = ref<[string, string] | null>(null);
 
 // 日期快捷选项
 const dateShortcuts = [
   {
-    text: '最近7天',
+    text: t("analysis.usage.date_range.shortcuts.last_7_days"),
     value: () => {
-      const end = new Date()
-      const start = new Date()
-      start.setTime(start.getTime() - 6 * 24 * 60 * 60 * 1000)
-      return [start, end]
-    }
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 6 * 24 * 60 * 60 * 1000);
+      return [start, end];
+    },
   },
   {
-    text: '最近30天',
+    text: t("analysis.usage.date_range.shortcuts.last_30_days"),
     value: () => {
-      const end = new Date()
-      const start = new Date()
-      start.setTime(start.getTime() - 29 * 24 * 60 * 60 * 1000)
-      return [start, end]
-    }
+      const end = new Date();
+      const start = new Date();
+      start.setTime(start.getTime() - 29 * 24 * 60 * 60 * 1000);
+      return [start, end];
+    },
   },
   {
-    text: '本月',
+    text: t("analysis.usage.date_range.shortcuts.this_month"),
     value: () => {
-      const end = new Date()
-      const start = new Date(end.getFullYear(), end.getMonth(), 1)
-      return [start, end]
-    }
-  }
-]
+      const end = new Date();
+      const start = new Date(end.getFullYear(), end.getMonth(), 1);
+      return [start, end];
+    },
+  },
+];
 
 // 最大活跃度
 const maxActiveCount = computed(() => {
-  if (!usageData.value) return 1
-  const counts = usageData.value.activityStats.topActiveUsers.map(u => u.count)
-  return Math.max(...counts, 1)
-})
+  if (!usageData.value) return 1;
+  const counts = usageData.value.activityStats.topActiveUsers.map(
+    (u) => u.count,
+  );
+  return Math.max(...counts, 1);
+});
 
 // 模块使用总数
 const totalModuleUsage = computed(() => {
-  if (!usageData.value) return 1
-  return usageData.value.featureUsageStats.moduleRanking.reduce((sum, m) => sum + m.value, 0) || 1
-})
+  if (!usageData.value) return 1;
+  return (
+    usageData.value.featureUsageStats.moduleRanking.reduce(
+      (sum, m) => sum + m.value,
+      0,
+    ) || 1
+  );
+});
 
 // 小时分布最大值
 const maxHourValue = computed(() => {
-  if (!usageData.value) return 1
-  const values = usageData.value.timeDistributionStats.hourlyDistribution.map(h => h.value)
-  return Math.max(...values, 1)
-})
+  if (!usageData.value) return 1;
+  const values = usageData.value.timeDistributionStats.hourlyDistribution.map(
+    (h) => h.value,
+  );
+  return Math.max(...values, 1);
+});
 
 // 活跃趋势最大值
 const maxTrendValue = computed(() => {
-  if (!usageData.value) return 1
-  const values = usageData.value.activityStats.activeUserTrend.map(t => t.value)
-  return Math.max(...values, 1)
-})
+  if (!usageData.value) return 1;
+  const values = usageData.value.activityStats.activeUserTrend.map(
+    (t) => t.value,
+  );
+  return Math.max(...values, 1);
+});
 
 // 高峰时段数组
 const peakHours = computed(() => {
-  if (!usageData.value) return []
-  const peakStr = usageData.value.timeDistributionStats.peakHours
-  return peakStr.split(',').map(s => parseInt(s.trim().split(':')[0]))
-})
+  if (!usageData.value) return [];
+  const peakStr = usageData.value.timeDistributionStats.peakHours;
+  return peakStr.split(",").map((s) => parseInt(s.trim().split(":")[0]));
+});
 
 // 获取活跃度百分比
 const getActivePercent = (count: number) => {
-  return Math.round((count / maxActiveCount.value) * 100)
-}
+  return Math.round((count / maxActiveCount.value) * 100);
+};
 
 // 获取模块占比
 const getModulePercent = (value: number) => {
-  return Math.round((value / totalModuleUsage.value) * 100)
-}
+  return Math.round((value / totalModuleUsage.value) * 100);
+};
 
 // 获取小时柱状图高度
 const getHourBarHeight = (value: number) => {
-  return Math.round((value / maxHourValue.value) * 100)
-}
+  return Math.round((value / maxHourValue.value) * 100);
+};
 
 // 获取趋势柱状图高度
 const getTrendBarHeight = (value: number) => {
-  return Math.max(Math.round((value / maxTrendValue.value) * 100), 5)
-}
+  return Math.max(Math.round((value / maxTrendValue.value) * 100), 5);
+};
 
 // 判断是否高峰时段
 const isPeakHour = (hour: number) => {
-  return peakHours.value.includes(hour)
-}
+  return peakHours.value.includes(hour);
+};
 
 // 格式化日期标签
 const formatDateLabel = (date: string) => {
-  return date.substring(5) // MM-DD
-}
+  return date.substring(5); // MM-DD
+};
 
 // 加载数据
 const loadData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const params: { startDate?: string; endDate?: string } = {}
+    const params: { startDate?: string; endDate?: string } = {};
     if (dateRange.value && dateRange.value.length === 2) {
-      params.startDate = dateRange.value[0]
-      params.endDate = dateRange.value[1]
+      params.startDate = dateRange.value[0];
+      params.endDate = dateRange.value[1];
     }
-    const res = await getUsageAnalysis(params)
+    const res = await getUsageAnalysis(params);
     if (res.code === 200) {
-      usageData.value = res.data
+      usageData.value = res.data;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 onMounted(() => {
-  // 默认最近30天
-  const end = new Date()
-  const start = new Date()
-  start.setTime(start.getTime() - 29 * 24 * 60 * 60 * 1000)
-  const formatDate = (d: Date) => d.toISOString().split('T')[0]
-  dateRange.value = [formatDate(start), formatDate(end)]
-  loadData()
-})
+  // 默认最近 30 天
+  const end = new Date();
+  const start = new Date();
+  start.setTime(start.getTime() - 29 * 24 * 60 * 60 * 1000);
+  const formatDate = (d: Date) => d.toISOString().split("T")[0];
+  dateRange.value = [formatDate(start), formatDate(end)];
+  loadData();
+});
 </script>
 
 <style scoped>
@@ -421,7 +528,7 @@ onMounted(() => {
   color: #303133;
 }
 
-/* 24小时分布图 */
+/* 24 小时分布图 */
 .hour-chart {
   padding: 16px 0;
 }

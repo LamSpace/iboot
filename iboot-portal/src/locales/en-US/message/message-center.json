@@ -1,0 +1,159 @@
+{
+  "title": "Message Center",
+  "tabs": {
+    "message": "Message Management",
+    "template": "Message Template"
+  },
+  "actions": {
+    "add": "Add Message",
+    "export": "Export Excel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "send": "Send",
+    "revoke": "Revoke",
+    "search": "Search",
+    "reset": "Reset"
+  },
+  "search": {
+    "title": "Message Title",
+    "type": "Message Type",
+    "status": "Status",
+    "placeholder": "Enter message title"
+  },
+  "table": {
+    "id": "ID",
+    "title": "Message Title",
+    "type": "Message Type",
+    "priority": "Priority",
+    "receiver_type": "Receiver Type",
+    "status": "Status",
+    "create_by": "Creator",
+    "create_time": "Create Time",
+    "actions": "Actions"
+  },
+  "dialog": {
+    "add_title": "Add Message",
+    "edit_title": "Edit Message",
+    "title_label": "Message Title",
+    "title_placeholder": "Enter message title",
+    "type_label": "Message Type",
+    "type_placeholder": "Select message type",
+    "priority_label": "Priority",
+    "receiver_type_label": "Receiver Type",
+    "receiver_type_placeholder": "Select receiver type",
+    "target_user_label": "Target Users",
+    "target_user_placeholder": "Search and select users",
+    "content_label": "Message Content",
+    "content_placeholder": "Enter message content",
+    "remark_label": "Remark",
+    "remark_placeholder": "Enter remark",
+    "cancel": "Cancel",
+    "save_draft": "Save Draft",
+    "save_and_send": "Save and Send",
+    "confirm": "Confirm"
+  },
+  "send_dialog": {
+    "title": "Send Message",
+    "receiver_type_label": "Receiver Type",
+    "target_user_label": "Target Users",
+    "target_user_placeholder": "Search and select users",
+    "cancel": "Cancel",
+    "confirm": "Confirm Send"
+  },
+  "messages": {
+    "delete_confirm": "Are you sure you want to delete this message?",
+    "revoke_confirm": "Are you sure you want to revoke this message? Unread users will no longer receive it.",
+    "delete_success": "Deleted successfully",
+    "revoke_success": "Revoked successfully",
+    "save_success": "Added successfully",
+    "update_success": "Updated successfully",
+    "send_success": "Sent successfully",
+    "send_warning": "Message saved but failed to send, please send manually from the list",
+    "select_user_warning": "Please select target users"
+  },
+  "validation": {
+    "title_required": "Please enter message title",
+    "type_required": "Please select message type",
+    "receiver_type_required": "Please select receiver type",
+    "content_required": "Please enter message content"
+  },
+  "notification": {
+    "title": "Message Center",
+    "no_message": "No messages",
+    "mark_all_read": "Mark all as read",
+    "close": "Close",
+    "view_all": "View all messages",
+    "delete": "Delete",
+    "urgent": "Urgent",
+    "important": "Important",
+    "unread": "Unread",
+    "time": {
+      "just_now": "Just now",
+      "minutes_ago": "{0} minutes ago",
+      "hours_ago": "{0} hours ago"
+    },
+    "filter": {
+      "all": "All",
+      "notification": "Notification",
+      "system": "System",
+      "important": "Important"
+    }
+  },
+  "inbox": {
+    "title": "My Messages",
+    "filter": {
+      "all": "All",
+      "unread": "Unread",
+      "read": "Read"
+    },
+    "no_message": "No messages",
+    "delete_confirm": "Are you sure you want to delete this message?",
+    "delete_success": "Deleted successfully",
+    "mark_all_read_success": "All marked as read",
+    "delete": "Delete",
+    "close": "Close",
+    "urgent": "Urgent",
+    "important": "Important",
+    "messages": {
+      "delete_confirm": "Are you sure you want to delete this message?",
+      "delete_success": "Deleted successfully",
+      "mark_all_read_success": "All marked as read",
+      "delete_title": "Confirm"
+    }
+  },
+  "template": {
+    "add": "Add Template",
+    "edit": "Edit Template",
+    "delete": "Delete Template",
+    "search": "Search",
+    "reset": "Reset",
+    "template_code": "Template Code",
+    "template_name": "Template Name",
+    "template_content": "Template Content",
+    "status": "Status",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "placeholder": {
+      "template_code": "Enter template code",
+      "template_name": "Enter template name",
+      "template_content": "Enter template content, ${variable} supported"
+    },
+    "dialog": {
+      "add_title": "Add Message Template",
+      "edit_title": "Edit Message Template",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "messages": {
+      "delete_confirm": "Are you sure you want to delete this template?",
+      "delete_success": "Deleted successfully",
+      "save_success": "Added successfully",
+      "update_success": "Updated successfully"
+    },
+    "validation": {
+      "template_code_required": "Please enter template code",
+      "template_name_required": "Please enter template name",
+      "template_content_required": "Please enter template content"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "title": "MinIO Object Storage Monitor",
+  "minio": "MinIO",
+  "open_in_new": "Open MinIO Console in new window",
+  "refresh": "Refresh monitoring data",
+  "loading_text": "Loading monitoring data...",
+  "status": {
+    "enabled": "Running",
+    "disabled": "Disabled",
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "stats": {
+    "buckets": "Total Buckets",
+    "uptime": "Uptime",
+    "console": "MinIO Console"
+  },
+  "service_info": {
+    "title": "Service Information",
+    "status": "Service Status",
+    "endpoint": "API Endpoint",
+    "console_url": "Console Address",
+    "version": "Version"
+  },
+  "bucket_list": {
+    "title": "Bucket List",
+    "count": "",
+    "name": "Name",
+    "object_count": "Objects",
+    "size": "Size"
+  },
+  "actions": {
+    "open_console": "Open MinIO Console in new window",
+    "config": "Configure MinIO Parameters"
+  },
+  "messages": {
+    "minio_disabled": "MinIO Disabled",
+    "minio_disabled_subtitle": "Current system uses local file storage, MinIO object storage is not enabled",
+    "open_console": "Open MinIO Console",
+    "connection_error": "Failed to connect to MinIO server"
+  }
+}

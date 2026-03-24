@@ -2,14 +2,30 @@
   <div class="content-wrapper">
     <!-- 统计卡片 -->
     <el-row :gutter="16" class="stats-row">
-      <el-col :xs="12" :sm="8" :md="4" v-for="item in statsCards" :key="item.label">
-        <el-card shadow="hover" class="stat-card" :style="{ borderTop: `3px solid ${item.color}` }">
+      <el-col
+        :xs="12"
+        :sm="8"
+        :md="4"
+        v-for="item in statsCards"
+        :key="item.label"
+      >
+        <el-card
+          shadow="hover"
+          class="stat-card"
+          :style="{ borderTop: `3px solid ${item.color}` }"
+        >
           <div class="stat-card-body">
             <div class="stat-info">
               <div class="stat-label">{{ item.label }}</div>
-              <div class="stat-value" :style="{ color: item.color }">{{ item.value }}</div>
+              <div class="stat-value" :style="{ color: item.color }">
+                {{ item.value }}
+              </div>
             </div>
-            <el-icon class="stat-icon" :style="{ color: item.color }" :size="36">
+            <el-icon
+              class="stat-icon"
+              :style="{ color: item.color }"
+              :size="36"
+            >
               <component :is="item.icon" />
             </el-icon>
           </div>
@@ -24,7 +40,7 @@
         <el-card shadow="hover" class="health-card">
           <template #header>
             <div class="card-header">
-              <span>系统健康状态</span>
+              <span>{{ t("dashboard.system_health") }}</span>
               <el-tag :type="systemHealthType" size="small" effect="dark">
                 {{ systemHealthLabel }}
               </el-tag>
@@ -34,10 +50,10 @@
             <div class="health-item">
               <div class="health-label">
                 <el-icon><Cpu /></el-icon>
-                <span>CPU</span>
+                <span>{{ t("dashboard.cpu") }}</span>
               </div>
-              <el-progress 
-                :percentage="Math.round(serverInfo.cpu.totalUsage)" 
+              <el-progress
+                :percentage="Math.round(serverInfo.cpu.totalUsage)"
                 :status="getProgressStatus(serverInfo.cpu.status)"
                 :stroke-width="12"
               />
@@ -45,10 +61,10 @@
             <div class="health-item">
               <div class="health-label">
                 <el-icon><Coin /></el-icon>
-                <span>内存</span>
+                <span>{{ t("dashboard.memory") }}</span>
               </div>
-              <el-progress 
-                :percentage="Math.round(serverInfo.memory.usageRate)" 
+              <el-progress
+                :percentage="Math.round(serverInfo.memory.usageRate)"
                 :status="getProgressStatus(serverInfo.memory.status)"
                 :stroke-width="12"
               />
@@ -56,10 +72,10 @@
             <div class="health-item">
               <div class="health-label">
                 <el-icon><Box /></el-icon>
-                <span>JVM</span>
+                <span>{{ t("dashboard.jvm") }}</span>
               </div>
-              <el-progress 
-                :percentage="Math.round(serverInfo.jvm.usageRate)" 
+              <el-progress
+                :percentage="Math.round(serverInfo.jvm.usageRate)"
                 :status="getProgressStatus(serverInfo.jvm.status)"
                 :stroke-width="12"
               />
@@ -76,21 +92,22 @@
         <el-card shadow="hover" class="trend-card">
           <template #header>
             <div class="card-header">
-              <span>最近7天登录趋势</span>
+              <span>{{ t("dashboard.login_trend") }}</span>
               <el-tag type="info" size="small">
-                累计 {{ totalLoginCount }} 次
+                {{ t("dashboard.login_trend_total") }} {{ totalLoginCount }}
+                {{ t("common.times") }}
               </el-tag>
             </div>
           </template>
           <div class="trend-chart" v-if="loginTrend.length > 0">
             <div class="trend-bars">
-              <div 
-                v-for="item in loginTrend" 
-                :key="item.date" 
+              <div
+                v-for="item in loginTrend"
+                :key="item.date"
                 class="trend-bar-wrapper"
               >
                 <div class="trend-value">{{ item.value }}</div>
-                <div 
+                <div
                   class="trend-bar"
                   :style="{ height: getTrendBarHeight(item.value) + '%' }"
                 ></div>
@@ -103,7 +120,10 @@
             </div>
           </div>
           <div v-else class="trend-empty">
-            <el-empty description="暂无趋势数据" :image-size="60" />
+            <el-empty
+              :description="t('dashboard.login_trend_no_data')"
+              :image-size="60"
+            />
           </div>
         </el-card>
       </el-col>
@@ -115,21 +135,55 @@
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
-              <span>最近登录日志</span>
-              <el-button link type="primary" @click="router.push('/dashboard/login-log')">查看全部</el-button>
+              <span>{{ t("dashboard.recent_login_logs") }}</span>
+              <el-button
+                link
+                type="primary"
+                @click="router.push('/dashboard/login-log')"
+                >{{ t("dashboard.view_all") }}</el-button
+              >
             </div>
           </template>
-          <el-table :data="summary?.recentLoginLogs ?? []" style="width: 100%" v-loading="loading" size="small">
-            <el-table-column prop="username" label="用户名" min-width="100" />
-            <el-table-column prop="ipAddress" label="登录IP" min-width="120" />
-            <el-table-column prop="status" label="状态" width="80" align="center">
+          <el-table
+            :data="summary?.recentLoginLogs ?? []"
+            style="width: 100%"
+            v-loading="loading"
+            size="small"
+          >
+            <el-table-column
+              prop="username"
+              :label="t('dashboard.username')"
+              min-width="100"
+            />
+            <el-table-column
+              prop="ipAddress"
+              :label="t('dashboard.login_ip')"
+              min-width="120"
+            />
+            <el-table-column
+              prop="status"
+              :label="t('dashboard.status')"
+              width="80"
+              align="center"
+            >
               <template #default="{ row }">
-                <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
-                  {{ row.status === 1 ? '成功' : '失败' }}
+                <el-tag
+                  :type="row.status === 1 ? 'success' : 'danger'"
+                  size="small"
+                >
+                  {{
+                    row.status === 1
+                      ? t("dashboard.success")
+                      : t("dashboard.failure")
+                  }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="loginTime" label="时间" min-width="160" />
+            <el-table-column
+              prop="loginTime"
+              :label="t('dashboard.time')"
+              min-width="160"
+            />
           </el-table>
         </el-card>
       </el-col>
@@ -137,22 +191,61 @@
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
-              <span>最近操作日志</span>
-              <el-button link type="primary" @click="router.push('/dashboard/operate-log')">查看全部</el-button>
+              <span>{{ t("dashboard.recent_operate_logs") }}</span>
+              <el-button
+                link
+                type="primary"
+                @click="router.push('/dashboard/operate-log')"
+                >{{ t("dashboard.view_all") }}</el-button
+              >
             </div>
           </template>
-          <el-table :data="summary?.recentOperateLogs ?? []" style="width: 100%" v-loading="loading" size="small">
-            <el-table-column prop="operatorName" label="操作人" min-width="100" />
-            <el-table-column prop="title" label="模块" min-width="100" />
-            <el-table-column prop="requestMethod" label="方式" width="70" align="center" />
-            <el-table-column prop="status" label="状态" width="80" align="center">
+          <el-table
+            :data="summary?.recentOperateLogs ?? []"
+            style="width: 100%"
+            v-loading="loading"
+            size="small"
+          >
+            <el-table-column
+              prop="operatorName"
+              :label="t('dashboard.operator')"
+              min-width="100"
+            />
+            <el-table-column
+              prop="title"
+              :label="t('dashboard.module')"
+              min-width="100"
+            />
+            <el-table-column
+              prop="requestMethod"
+              :label="t('dashboard.method')"
+              width="70"
+              align="center"
+            />
+            <el-table-column
+              prop="status"
+              :label="t('dashboard.status')"
+              width="80"
+              align="center"
+            >
               <template #default="{ row }">
-                <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
-                  {{ row.status === 1 ? '成功' : '失败' }}
+                <el-tag
+                  :type="row.status === 1 ? 'success' : 'danger'"
+                  size="small"
+                >
+                  {{
+                    row.status === 1
+                      ? t("dashboard.success")
+                      : t("dashboard.failure")
+                  }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="operTime" label="时间" min-width="160" />
+            <el-table-column
+              prop="operTime"
+              :label="t('dashboard.time')"
+              min-width="160"
+            />
           </el-table>
         </el-card>
       </el-col>
@@ -161,11 +254,14 @@
     <!-- 快捷导航 -->
     <el-card shadow="hover" class="shortcuts-card">
       <template #header>
-        <span>快捷导航</span>
+        <span>{{ t("dashboard.shortcuts") }}</span>
       </template>
       <el-row :gutter="16">
         <el-col :span="4" v-for="item in shortcuts" :key="item.path">
-          <div class="shortcut-item" @click="router.push(`/dashboard/${item.path}`)">
+          <div
+            class="shortcut-item"
+            @click="router.push(`/dashboard/${item.path}`)"
+          >
             <el-icon :size="28" :style="{ color: item.color }">
               <component :is="item.icon" />
             </el-icon>
@@ -178,166 +274,239 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'
-import { useRouter } from 'vue-router'
-import { 
-  User, Avatar, OfficeBuilding, Briefcase, Tickets, Operation, 
-  Setting, Document, UserFilled, Monitor, Cpu, Coin, Box 
-} from '@element-plus/icons-vue'
-import { 
-  getDashboardSummary, 
+import { ref, computed, onMounted, onUnmounted, type Component } from "vue";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import {
+  User,
+  Avatar,
+  OfficeBuilding,
+  Briefcase,
+  Tickets,
+  Operation,
+  Setting,
+  Document,
+  UserFilled,
+  Monitor,
+  Cpu,
+  Coin,
+  Box,
+} from "@element-plus/icons-vue";
+import {
+  getDashboardSummary,
   getOnlineUserCount,
   getServerMonitorInfo,
   getStatisticsReport,
   type DashboardSummary,
   type ServerInfoResponse,
-  type TrendData
-} from '@/api/system'
+  type TrendData,
+} from "@/api/system";
 
-const router = useRouter()
-const loading = ref(false)
-const summary = ref<DashboardSummary | null>(null)
-const onlineCount = ref(0)
-const serverInfo = ref<ServerInfoResponse | null>(null)
-const loginTrend = ref<TrendData[]>([])
-const todayActiveUsers = ref(0)
+const router = useRouter();
+const { t } = useI18n();
+const loading = ref(false);
+const summary = ref<DashboardSummary | null>(null);
+const onlineCount = ref(0);
+const serverInfo = ref<ServerInfoResponse | null>(null);
+const loginTrend = ref<TrendData[]>([]);
+const todayActiveUsers = ref(0);
 
 // 自动刷新定时器
-let refreshTimer: ReturnType<typeof setInterval> | null = null
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 interface StatCard {
-  label: string
-  value: number
-  icon: Component
-  color: string
+  label: string;
+  value: number;
+  icon: Component;
+  color: string;
 }
 
 const statsCards = computed<StatCard[]>(() => [
-  { label: '用户总数', value: summary.value?.userCount ?? 0, icon: User, color: '#409eff' },
-  { label: '今日活跃', value: todayActiveUsers.value, icon: UserFilled, color: '#67c23a' },
-  { label: '在线用户', value: onlineCount.value, icon: Monitor, color: '#e6a23c' },
-  { label: '部门数', value: summary.value?.deptCount ?? 0, icon: OfficeBuilding, color: '#f56c6c' },
-  { label: '登录日志', value: summary.value?.loginLogCount ?? 0, icon: Tickets, color: '#909399' },
-  { label: '操作日志', value: summary.value?.operateLogCount ?? 0, icon: Operation, color: '#8e44ad' },
-])
+  {
+    label: t("dashboard.user_count"),
+    value: summary.value?.userCount ?? 0,
+    icon: User,
+    color: "#409eff",
+  },
+  {
+    label: t("dashboard.today_active"),
+    value: todayActiveUsers.value,
+    icon: UserFilled,
+    color: "#67c23a",
+  },
+  {
+    label: t("dashboard.online_users"),
+    value: onlineCount.value,
+    icon: Monitor,
+    color: "#e6a23c",
+  },
+  {
+    label: t("dashboard.dept_count"),
+    value: summary.value?.deptCount ?? 0,
+    icon: OfficeBuilding,
+    color: "#f56c6c",
+  },
+  {
+    label: t("dashboard.login_log_count"),
+    value: summary.value?.loginLogCount ?? 0,
+    icon: Tickets,
+    color: "#909399",
+  },
+  {
+    label: t("dashboard.operate_log_count"),
+    value: summary.value?.operateLogCount ?? 0,
+    icon: Operation,
+    color: "#8e44ad",
+  },
+]);
 
-const shortcuts = [
-  { label: '用户管理', path: 'user', icon: User, color: '#409eff' },
-  { label: '角色管理', path: 'role', icon: Avatar, color: '#67c23a' },
-  { label: '部门管理', path: 'dept', icon: OfficeBuilding, color: '#e6a23c' },
-  { label: '岗位管理', path: 'post', icon: Briefcase, color: '#f56c6c' },
-  { label: '菜单管理', path: 'menu', icon: Setting, color: '#909399' },
-  { label: '操作日志', path: 'operate-log', icon: Document, color: '#8e44ad' },
-]
+const shortcuts = computed(() => [
+  {
+    label: t("dashboard.user_management"),
+    path: "user",
+    icon: User,
+    color: "#409eff",
+  },
+  {
+    label: t("dashboard.role_management"),
+    path: "role",
+    icon: Avatar,
+    color: "#67c23a",
+  },
+  {
+    label: t("dashboard.dept_management"),
+    path: "dept",
+    icon: OfficeBuilding,
+    color: "#e6a23c",
+  },
+  {
+    label: t("dashboard.post_management"),
+    path: "post",
+    icon: Briefcase,
+    color: "#f56c6c",
+  },
+  {
+    label: t("dashboard.menu_management"),
+    path: "menu",
+    icon: Setting,
+    color: "#909399",
+  },
+  {
+    label: t("dashboard.operate_log"),
+    path: "operate-log",
+    icon: Document,
+    color: "#8e44ad",
+  },
+]);
 
 // 系统健康状态类型
 const systemHealthType = computed(() => {
-  if (!serverInfo.value) return 'info'
+  if (!serverInfo.value) return "info";
   const statuses = [
     serverInfo.value.cpu.status,
     serverInfo.value.memory.status,
-    serverInfo.value.jvm.status
-  ]
-  if (statuses.includes('DOWN')) return 'danger'
-  if (statuses.includes('WARN')) return 'warning'
-  return 'success'
-})
+    serverInfo.value.jvm.status,
+  ];
+  if (statuses.includes("DOWN")) return "danger";
+  if (statuses.includes("WARN")) return "warning";
+  return "success";
+});
 
 // 系统健康状态标签
 const systemHealthLabel = computed(() => {
-  if (!serverInfo.value) return '加载中'
-  const type = systemHealthType.value
-  if (type === 'danger') return '异常'
-  if (type === 'warning') return '警告'
-  return '正常'
-})
+  if (!serverInfo.value) return t("dashboard.system_health_loading");
+  const type = systemHealthType.value;
+  if (type === "danger") return t("dashboard.system_health_error");
+  if (type === "warning") return t("dashboard.system_health_warning");
+  return t("dashboard.system_health_normal");
+});
 
 // 登录趋势总数
 const totalLoginCount = computed(() => {
-  return loginTrend.value.reduce((sum, item) => sum + item.value, 0)
-})
+  return loginTrend.value.reduce((sum, item) => sum + item.value, 0);
+});
 
 // 登录趋势最大值
 const maxTrendValue = computed(() => {
-  if (loginTrend.value.length === 0) return 1
-  return Math.max(...loginTrend.value.map(t => t.value), 1)
-})
+  if (loginTrend.value.length === 0) return 1;
+  return Math.max(...loginTrend.value.map((t) => t.value), 1);
+});
 
 // 获取进度条状态
 const getProgressStatus = (status: string) => {
-  if (status === 'DOWN') return 'exception'
-  if (status === 'WARN') return 'warning'
-  return 'success'
-}
+  if (status === "DOWN") return "exception";
+  if (status === "WARN") return "warning";
+  return "success";
+};
 
 // 获取趋势柱状图高度
 const getTrendBarHeight = (value: number) => {
-  return Math.max(Math.round((value / maxTrendValue.value) * 100), 5)
-}
+  return Math.max(Math.round((value / maxTrendValue.value) * 100), 5);
+};
 
 // 格式化日期标签
 const formatDateLabel = (date: string) => {
-  return date.substring(5) // MM-DD
-}
+  return date.substring(5); // MM-DD
+};
 
 // 加载基础数据
 const loadData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getDashboardSummary()
+    const res = await getDashboardSummary();
     if (res.code === 200) {
-      summary.value = res.data
+      summary.value = res.data;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 加载在线用户数
 const loadOnlineCount = async () => {
   try {
-    const res = await getOnlineUserCount()
+    const res = await getOnlineUserCount();
     if (res.code === 200) {
-      onlineCount.value = res.data
+      onlineCount.value = res.data;
     }
   } catch {
     // 忽略错误
   }
-}
+};
 
 // 加载服务器状态
 const loadServerInfo = async () => {
   try {
-    const res = await getServerMonitorInfo()
+    const res = await getServerMonitorInfo();
     if (res.code === 200) {
-      serverInfo.value = res.data
+      serverInfo.value = res.data;
     }
   } catch {
     // 忽略错误
   }
-}
+};
 
 // 加载统计数据（趋势 + 活跃用户）
 const loadStatistics = async () => {
   try {
     // 最近7天
-    const end = new Date()
-    const start = new Date()
-    start.setTime(start.getTime() - 6 * 24 * 60 * 60 * 1000)
-    const formatDate = (d: Date) => d.toISOString().split('T')[0]
-    
+    const end = new Date();
+    const start = new Date();
+    start.setTime(start.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const formatDate = (d: Date) => d.toISOString().split("T")[0];
+
     const res = await getStatisticsReport({
       startDate: formatDate(start),
-      endDate: formatDate(end)
-    })
+      endDate: formatDate(end),
+    });
     if (res.code === 200) {
-      loginTrend.value = res.data.logStats.loginTrend
-      todayActiveUsers.value = res.data.userStats.activeUsersToday
+      loginTrend.value = res.data.logStats.loginTrend;
+      todayActiveUsers.value = res.data.userStats.activeUsersToday;
     }
   } catch {
     // 忽略错误
   }
-}
+};
 
 // 加载所有数据
 const loadAllData = async () => {
@@ -345,35 +514,35 @@ const loadAllData = async () => {
     loadData(),
     loadOnlineCount(),
     loadServerInfo(),
-    loadStatistics()
-  ])
-}
+    loadStatistics(),
+  ]);
+};
 
 // 启动定时刷新
 const startAutoRefresh = () => {
   // 每30秒刷新在线用户和服务器状态
   refreshTimer = setInterval(() => {
-    loadOnlineCount()
-    loadServerInfo()
-  }, 30000)
-}
+    loadOnlineCount();
+    loadServerInfo();
+  }, 30000);
+};
 
 // 停止定时刷新
 const stopAutoRefresh = () => {
   if (refreshTimer) {
-    clearInterval(refreshTimer)
-    refreshTimer = null
+    clearInterval(refreshTimer);
+    refreshTimer = null;
   }
-}
+};
 
 onMounted(() => {
-  loadAllData()
-  startAutoRefresh()
-})
+  loadAllData();
+  startAutoRefresh();
+});
 
 onUnmounted(() => {
-  stopAutoRefresh()
-})
+  stopAutoRefresh();
+});
 </script>
 
 <style scoped>

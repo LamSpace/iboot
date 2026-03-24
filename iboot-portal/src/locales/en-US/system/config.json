@@ -1,0 +1,43 @@
+{
+  "title": "System Config",
+  "add": "Add Config",
+  "edit": "Edit Config",
+  "delete": "Delete Config",
+  "export": "Export Excel",
+  "search": "Search",
+  "reset": "Reset",
+  "refresh_cache": "Refresh Cache",
+  "configName": "Config Name",
+  "configKey": "Config Key",
+  "configValue": "Config Value",
+  "configType": "Config Type",
+  "type": "Type",
+  "sort": "Sort Order",
+  "remark": "Remark",
+  "createTime": "Created At",
+  "action": "Action",
+  "yes": "Yes",
+  "no": "No",
+  "please_select": "Please select",
+  "please_input": "Please enter",
+  "confirm_delete": "Are you sure you want to delete this config?",
+  "confirm_delete_title": "Warning",
+  "delete_success": "Deleted successfully",
+  "add_success": "Added successfully",
+  "edit_success": "Updated successfully",
+  "refresh_cache_success": "Cache refreshed successfully",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "placeholder": {
+    "name": "Please enter config name",
+    "key": "Please enter config key",
+    "value": "Please enter config value",
+    "sort": "Please enter sort order",
+    "remark": "Please enter remark"
+  },
+  "validation": {
+    "name_required": "Please enter config name",
+    "key_required": "Please enter config key",
+    "value_required": "Please enter config value"
+  }
+}

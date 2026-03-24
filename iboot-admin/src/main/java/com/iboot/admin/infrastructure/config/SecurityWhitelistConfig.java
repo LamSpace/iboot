@@ -36,6 +36,9 @@ public class SecurityWhitelistConfig {
             // 公开配置接口
             "/api/config/public",
 
+            // 国际化相关接口
+            "/api/i18n/**",
+
             // Swagger UI 相关路径
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs", "/v3/api-docs.yaml",
             "/v3/api-docs/swagger-config", "/swagger-resources/**", "/webjars/**", "/doc.html",

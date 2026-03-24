@@ -3,28 +3,43 @@
     <div class="monitor-toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><Box /></el-icon>
-        <span class="toolbar-title">MinIO 对象存储</span>
-        <el-tag :type="statusTagType" size="small" effect="plain">{{ statusText }}</el-tag>
+        <span class="toolbar-title">{{ t("monitor.minio.title") }}</span>
+        <el-tag :type="statusTagType" size="small" effect="plain">{{
+          statusText
+        }}</el-tag>
       </div>
       <div class="toolbar-right">
-        <el-tooltip content="在新窗口中打开MinIO控制台" placement="top">
-          <el-button :icon="TopRight" circle size="small" @click="openConsole" />
+        <el-tooltip :content="t('monitor.minio.open_in_new')" placement="top">
+          <el-button
+            :icon="TopRight"
+            circle
+            size="small"
+            @click="openConsole"
+          />
         </el-tooltip>
-        <el-tooltip content="刷新监控数据" placement="top">
-          <el-button :icon="Refresh" circle size="small" @click="loadData" :loading="loading" />
+        <el-tooltip :content="t('monitor.minio.refresh')" placement="top">
+          <el-button
+            :icon="Refresh"
+            circle
+            size="small"
+            @click="loadData"
+            :loading="loading"
+          />
         </el-tooltip>
       </div>
     </div>
 
-    <!-- MinIO未启用状态 -->
+    <!-- MinIO 未启用状态 -->
     <el-card v-if="!minioStatus.minioEnabled" class="info-card">
       <el-result
         icon="info"
-        title="MinIO 未启用"
-        sub-title="当前系统使用本地文件存储，未启用MinIO对象存储"
+        :title="t('monitor.minio.messages.minio_disabled')"
+        :sub-title="t('monitor.minio.messages.minio_disabled_subtitle')"
       >
         <template #extra>
-          <el-button type="primary" @click="openConsole">打开MinIO Console</el-button>
+          <el-button type="primary" @click="openConsole">{{
+            t("monitor.minio.messages.open_console")
+          }}</el-button>
         </template>
       </el-result>
     </el-card>
@@ -38,8 +53,12 @@
             <div class="stat-item">
               <el-icon :size="32" color="#00C853"><Box /></el-icon>
               <div class="stat-info">
-                <div class="stat-value">{{ minioStatus.totalBuckets || 0 }}</div>
-                <div class="stat-label">存储桶数量</div>
+                <div class="stat-value">
+                  {{ minioStatus.totalBuckets || 0 }}
+                </div>
+                <div class="stat-label">
+                  {{ t("monitor.minio.stats.buckets") }}
+                </div>
               </div>
             </div>
           </el-card>
@@ -49,8 +68,10 @@
             <div class="stat-item">
               <el-icon :size="32" color="#FF9800"><Cpu /></el-icon>
               <div class="stat-info">
-                <div class="stat-value">{{ minioStatus.uptime || '-' }}</div>
-                <div class="stat-label">运行时间</div>
+                <div class="stat-value">{{ minioStatus.uptime || "-" }}</div>
+                <div class="stat-label">
+                  {{ t("monitor.minio.stats.uptime") }}
+                </div>
               </div>
             </div>
           </el-card>
@@ -61,11 +82,17 @@
               <el-icon :size="32" color="#2196F3"><Link /></el-icon>
               <div class="stat-info">
                 <div class="stat-value">
-                  <el-link type="primary" :href="minioStatus.consoleUrl" target="_blank">
-                    打开控制台
+                  <el-link
+                    type="primary"
+                    :href="minioStatus.consoleUrl"
+                    target="_blank"
+                  >
+                    {{ t("monitor.minio.actions.open_console") }}
                   </el-link>
                 </div>
-                <div class="stat-label">MinIO Console</div>
+                <div class="stat-label">
+                  {{ t("monitor.minio.stats.console") }}
+                </div>
               </div>
             </div>
           </el-card>
@@ -78,22 +105,43 @@
           <el-card shadow="hover">
             <template #header>
               <div class="card-header">
-                <span>服务信息</span>
+                <span>{{ t("monitor.minio.service_info.title") }}</span>
               </div>
             </template>
             <el-descriptions :column="1" border>
-              <el-descriptions-item label="服务状态">
-                <el-tag :type="minioStatus.status === 'online' ? 'success' : 'danger'" size="small">
-                  {{ minioStatus.status === 'online' ? '在线' : '离线' }}
+              <el-descriptions-item
+                :label="t('monitor.minio.service_info.status')"
+              >
+                <el-tag
+                  :type="minioStatus.status === 'online' ? 'success' : 'danger'"
+                  size="small"
+                >
+                  {{
+                    minioStatus.status === "online"
+                      ? t("monitor.minio.status.online")
+                      : t("monitor.minio.status.offline")
+                  }}
                 </el-tag>
               </el-descriptions-item>
-              <el-descriptions-item label="API端点">{{ minioStatus.endpoint }}</el-descriptions-item>
-              <el-descriptions-item label="控制台地址">
-                <el-link type="primary" :href="minioStatus.consoleUrl" target="_blank">
+              <el-descriptions-item
+                :label="t('monitor.minio.service_info.endpoint')"
+                >{{ minioStatus.endpoint }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.minio.service_info.console_url')"
+              >
+                <el-link
+                  type="primary"
+                  :href="minioStatus.consoleUrl"
+                  target="_blank"
+                >
                   {{ minioStatus.consoleUrl }}
                 </el-link>
               </el-descriptions-item>
-              <el-descriptions-item label="版本">{{ minioStatus.version || '-' }}</el-descriptions-item>
+              <el-descriptions-item
+                :label="t('monitor.minio.service_info.version')"
+                >{{ minioStatus.version || "-" }}</el-descriptions-item
+              >
             </el-descriptions>
           </el-card>
         </el-col>
@@ -101,18 +149,34 @@
           <el-card shadow="hover">
             <template #header>
               <div class="card-header">
-                <span>存储桶列表</span>
-                <el-tag size="small">{{ minioStatus.buckets?.length || 0 }} 个</el-tag>
+                <span>{{ t("monitor.minio.bucket_list.title") }}</span>
+                <el-tag size="small"
+                  >{{ minioStatus.buckets?.length || 0 }}
+                  {{ t("monitor.minio.bucket_list.count") }}</el-tag
+                >
               </div>
             </template>
             <el-table :data="bucketList" size="small" max-height="200">
-              <el-table-column prop="name" label="名称" />
-              <el-table-column prop="objectCount" label="对象数" width="100" align="center">
+              <el-table-column
+                prop="name"
+                :label="t('monitor.minio.bucket_list.name')"
+              />
+              <el-table-column
+                prop="objectCount"
+                :label="t('monitor.minio.bucket_list.object_count')"
+                width="100"
+                align="center"
+              >
                 <template #default="{ row }">
                   {{ formatNumber(row.objectCount) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="totalSize" label="大小" width="100" align="right">
+              <el-table-column
+                prop="totalSize"
+                :label="t('monitor.minio.bucket_list.size')"
+                width="100"
+                align="right"
+              >
                 <template #default="{ row }">
                   {{ formatSize(row.totalSize) }}
                 </template>
@@ -126,10 +190,10 @@
       <el-card shadow="hover" class="action-card">
         <div class="action-buttons">
           <el-button type="primary" :icon="Link" @click="openConsole">
-            在新窗口打开MinIO控制台
+            {{ t("monitor.minio.actions.open_console") }}
           </el-button>
           <el-button :icon="Setting" @click="openConfig">
-            配置MinIO参数
+            {{ t("monitor.minio.actions.config") }}
           </el-button>
         </div>
       </el-card>
@@ -138,7 +202,9 @@
     <!-- 错误提示 -->
     <el-alert
       v-if="minioStatus.status === 'error'"
-      :title="minioStatus.message || '连接MinIO服务器失败'"
+      :title="
+        minioStatus.message || t('monitor.minio.messages.connection_error')
+      "
       type="error"
       show-icon
       closable
@@ -148,87 +214,101 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Box, TopRight, Refresh, Files, Cpu, DataLine, Link, Setting } from '@element-plus/icons-vue'
-import { getMinioStatus, type MinioStatus } from '@/api/system'
-import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import {
+  Box,
+  TopRight,
+  Refresh,
+  Files,
+  Cpu,
+  DataLine,
+  Link,
+  Setting,
+} from "@element-plus/icons-vue";
+import { getMinioStatus, type MinioStatus } from "@/api/system";
+import { ElMessage } from "element-plus";
+import { useRouter } from "vue-router";
 
-const router = useRouter()
-const loading = ref(false)
+const { t } = useI18n();
+const router = useRouter();
+const loading = ref(false);
 const minioStatus = ref<MinioStatus>({
   monitorEnabled: true,
-  storageType: 'local',
+  storageType: "local",
   minioEnabled: false,
-  consoleUrl: 'http://localhost:9001',
-  endpoint: '',
-  bucketName: '',
-  status: 'offline'
-})
+  consoleUrl: "http://localhost:9001",
+  endpoint: "",
+  bucketName: "",
+  status: "offline",
+});
 
 const statusTagType = computed(() => {
-  if (!minioStatus.value.minioEnabled) return 'info'
-  return minioStatus.value.status === 'online' ? 'success' : 'danger'
-})
+  if (!minioStatus.value.minioEnabled) return "info";
+  return minioStatus.value.status === "online" ? "success" : "danger";
+});
 
 const statusText = computed(() => {
-  if (!minioStatus.value.minioEnabled) return '未启用'
-  return minioStatus.value.status === 'online' ? '运行中' : '离线'
-})
+  if (!minioStatus.value.minioEnabled)
+    return t("monitor.minio.status.disabled");
+  return minioStatus.value.status === "online"
+    ? t("monitor.minio.status.enabled")
+    : t("monitor.minio.status.offline");
+});
 
-// 将buckets对象转换为数组
+// 将 buckets 对象转换为数组
 const bucketList = computed(() => {
-  const buckets = minioStatus.value.buckets
-  if (!buckets) return []
+  const buckets = minioStatus.value.buckets;
+  if (!buckets) return [];
   return Object.entries(buckets).map(([name, stats]: [string, any]) => ({
     name,
     objectCount: stats?.objectCount || 0,
-    totalSize: stats?.totalSize || 0
-  }))
-})
+    totalSize: stats?.totalSize || 0,
+  }));
+});
 
 async function loadData() {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getMinioStatus()
+    const res = await getMinioStatus();
     if (res.code === 200 && res.data) {
-      minioStatus.value = res.data
+      minioStatus.value = res.data;
     }
   } catch (error) {
-    ElMessage.error('获取MinIO状态失败')
+    ElMessage.error(t("monitor.minio.messages.connection_error"));
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function openConsole() {
-  window.open(minioStatus.value.consoleUrl, '_blank')
+  window.open(minioStatus.value.consoleUrl, "_blank");
 }
 
 function openConfig() {
-  router.push({ path: '/dashboard/config' })
+  router.push({ path: "/dashboard/config" });
 }
 
 function formatNumber(num: number): string {
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M'
+    return (num / 1000000).toFixed(1) + "M";
   } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K'
+    return (num / 1000).toFixed(1) + "K";
   }
-  return num.toString()
+  return num.toString();
 }
 
 function formatSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const k = 1024
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + units[i]
+  if (bytes === 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const k = 1024;
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
 }
 
 onMounted(() => {
-  loadData()
-})
+  loadData();
+});
 </script>
 
 <style scoped>

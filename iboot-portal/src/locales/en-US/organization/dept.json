@@ -1,0 +1,43 @@
+{
+  "title": "Department Management",
+  "add": "Add Department",
+  "edit": "Edit Department",
+  "delete": "Delete Department",
+  "add_child": "Add Child Department",
+  "export": "Export Excel",
+  "search": "Search",
+  "reset": "Reset",
+  "deptName": "Department Name",
+  "deptCode": "Department Code",
+  "parent": "Parent Department",
+  "orderNum": "Sort Order",
+  "leader": "Leader",
+  "phone": "Phone Number",
+  "email": "Email",
+  "status": "Status",
+  "createTime": "Created At",
+  "action": "Action",
+  "edit_action": "Edit",
+  "please_select": "Please select",
+  "please_input": "Please enter",
+  "confirm_delete": "Are you sure you want to delete this department?",
+  "confirm_delete_title": "Warning",
+  "delete_success": "Deleted successfully",
+  "add_success": "Added successfully",
+  "edit_success": "Updated successfully",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "placeholder": {
+    "deptName": "Please enter department name",
+    "deptCode": "Please enter department code",
+    "parent": "Please select parent department",
+    "leader": "Please enter leader",
+    "phone": "Please enter phone number",
+    "email": "Please enter email"
+  },
+  "validation": {
+    "deptName_required": "Please enter department name",
+    "deptCode_required": "Please enter department code"
+  },
+  "top_level": "Top Level Department"
+}

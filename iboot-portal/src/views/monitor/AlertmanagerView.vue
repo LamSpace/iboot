@@ -3,19 +3,41 @@
     <div class="monitor-toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><WarningFilled /></el-icon>
-        <span class="toolbar-title">Alertmanager 告警管理</span>
-        <el-tag type="danger" size="small" effect="plain">Alertmanager</el-tag>
+        <span class="toolbar-title">{{ t("monitor.alertmanager.title") }}</span>
+        <el-tag type="danger" size="small" effect="plain">{{
+          t("monitor.alertmanager.alertmanager")
+        }}</el-tag>
       </div>
       <div class="toolbar-right">
-        <el-tooltip content="在新窗口中打开" placement="top">
-          <el-button :icon="TopRight" circle size="small" @click="openInNewWindow" />
+        <el-tooltip
+          :content="t('monitor.alertmanager.open_in_new')"
+          placement="top"
+        >
+          <el-button
+            :icon="TopRight"
+            circle
+            size="small"
+            @click="openInNewWindow"
+          />
         </el-tooltip>
-        <el-tooltip content="刷新监控页面" placement="top">
-          <el-button :icon="Refresh" circle size="small" @click="refreshIframe" />
+        <el-tooltip
+          :content="t('monitor.alertmanager.refresh')"
+          placement="top"
+        >
+          <el-button
+            :icon="Refresh"
+            circle
+            size="small"
+            @click="refreshIframe"
+          />
         </el-tooltip>
       </div>
     </div>
-    <div class="monitor-iframe-container" v-loading="loading" element-loading-text="加载告警管理页面中...">
+    <div
+      class="monitor-iframe-container"
+      v-loading="loading"
+      :element-loading-text="t('monitor.alertmanager.loading_text')"
+    >
       <iframe
         ref="alertmanagerIframe"
         :src="alertmanagerUrl"
@@ -28,20 +50,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { WarningFilled, TopRight, Refresh } from '@element-plus/icons-vue'
-import { getConfigByKey } from '@/api/system'
+import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { WarningFilled, TopRight, Refresh } from "@element-plus/icons-vue";
+import { getConfigByKey } from "@/api/system";
 
-const defaultUrl = 'http://localhost:9093'
-const alertmanagerUrl = ref(defaultUrl)
-const loading = ref(true)
-const alertmanagerIframe = ref<HTMLIFrameElement>()
+const { t } = useI18n();
+
+const defaultUrl = "http://localhost:9093";
+const alertmanagerUrl = ref(defaultUrl);
+const loading = ref(true);
+const alertmanagerIframe = ref<HTMLIFrameElement>();
 
 async function loadUrl() {
   try {
-    const res = await getConfigByKey('sys.alertmanager.monitor.url')
+    const res = await getConfigByKey("sys.alertmanager.monitor.url");
     if (res.code === 200 && res.data) {
-      alertmanagerUrl.value = res.data
+      alertmanagerUrl.value = res.data;
     }
   } catch {
     // 配置不存在时使用默认值
@@ -49,24 +74,24 @@ async function loadUrl() {
 }
 
 function onIframeLoad() {
-  loading.value = false
+  loading.value = false;
 }
 
 function openInNewWindow() {
-  window.open(alertmanagerUrl.value, '_blank')
+  window.open(alertmanagerUrl.value, "_blank");
 }
 
 function refreshIframe() {
-  loading.value = true
+  loading.value = true;
   if (alertmanagerIframe.value) {
-    alertmanagerIframe.value.src = alertmanagerUrl.value
+    alertmanagerIframe.value.src = alertmanagerUrl.value;
   }
 }
 
 onMounted(async () => {
-  loading.value = true
-  await loadUrl()
-})
+  loading.value = true;
+  await loadUrl();
+});
 </script>
 
 <style scoped>

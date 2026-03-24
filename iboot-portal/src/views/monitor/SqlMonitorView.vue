@@ -3,19 +3,35 @@
     <div class="monitor-toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><DataAnalysis /></el-icon>
-        <span class="toolbar-title">SQL执行监控</span>
-        <el-tag type="primary" size="small" effect="plain">Druid Monitor</el-tag>
+        <span class="toolbar-title">{{ t("monitor.sql.subtitle") }}</span>
+        <el-tag type="primary" size="small" effect="plain">{{
+          t("monitor.sql.druid_monitor")
+        }}</el-tag>
       </div>
       <div class="toolbar-right">
-        <el-tooltip content="在新窗口中打开" placement="top">
-          <el-button :icon="TopRight" circle size="small" @click="openInNewWindow" />
+        <el-tooltip :content="t('monitor.sql.open_in_new')" placement="top">
+          <el-button
+            :icon="TopRight"
+            circle
+            size="small"
+            @click="openInNewWindow"
+          />
         </el-tooltip>
-        <el-tooltip content="刷新监控页面" placement="top">
-          <el-button :icon="Refresh" circle size="small" @click="refreshIframe" />
+        <el-tooltip :content="t('monitor.sql.refresh')" placement="top">
+          <el-button
+            :icon="Refresh"
+            circle
+            size="small"
+            @click="refreshIframe"
+          />
         </el-tooltip>
       </div>
     </div>
-    <div class="monitor-iframe-container" v-loading="loading" element-loading-text="加载监控页面中...">
+    <div
+      class="monitor-iframe-container"
+      v-loading="loading"
+      :element-loading-text="t('monitor.sql.loading_text')"
+    >
       <iframe
         ref="druidIframe"
         :src="druidUrl"
@@ -28,9 +44,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { DataAnalysis, TopRight, Refresh } from '@element-plus/icons-vue'
-import { getConfigByKey } from '@/api/system'
+import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { DataAnalysis, TopRight, Refresh } from "@element-plus/icons-vue";
+import { getConfigByKey } from "@/api/system";
+
+const { t } = useI18n();
 
 /**
  * Druid 监控地址：
@@ -38,16 +57,18 @@ import { getConfigByKey } from '@/api/system'
  * - 开发环境默认：前端 localhost:3000、后端 localhost:8080，iframe 必须直连后端
  * - 生产环境默认：前后端同源，使用相对路径即可
  */
-const defaultDruidUrl = import.meta.env.DEV ? 'http://localhost:8080/druid' : '/druid'
-const druidUrl = ref(defaultDruidUrl)
-const loading = ref(true)
-const druidIframe = ref<HTMLIFrameElement>()
+const defaultDruidUrl = import.meta.env.DEV
+  ? "http://localhost:8080/druid"
+  : "/druid";
+const druidUrl = ref(defaultDruidUrl);
+const loading = ref(true);
+const druidIframe = ref<HTMLIFrameElement>();
 
 async function loadDruidUrl() {
   try {
-    const res = await getConfigByKey('sys.druid.monitor.url')
+    const res = await getConfigByKey("sys.druid.monitor.url");
     if (res.code === 200 && res.data) {
-      druidUrl.value = res.data
+      druidUrl.value = res.data;
     }
   } catch {
     // 配置不存在时使用默认值
@@ -55,24 +76,24 @@ async function loadDruidUrl() {
 }
 
 function onIframeLoad() {
-  loading.value = false
+  loading.value = false;
 }
 
 function openInNewWindow() {
-  window.open(druidUrl.value, '_blank')
+  window.open(druidUrl.value, "_blank");
 }
 
 function refreshIframe() {
-  loading.value = true
+  loading.value = true;
   if (druidIframe.value) {
-    druidIframe.value.src = druidUrl.value
+    druidIframe.value.src = druidUrl.value;
   }
 }
 
 onMounted(async () => {
-  loading.value = true
-  await loadDruidUrl()
-})
+  loading.value = true;
+  await loadDruidUrl();
+});
 </script>
 
 <style scoped>

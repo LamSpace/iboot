@@ -1,0 +1,27 @@
+{
+  "title": "登录日志",
+  "export": "导出 Excel",
+  "clean": "清空日志",
+  "search": "搜索",
+  "reset": "重置",
+  "username": "用户名",
+  "ipAddress": "登录 IP",
+  "status": "状态",
+  "loginTime": "登录时间",
+  "loginLocation": "登录地点",
+  "browser": "浏览器",
+  "os": "操作系统",
+  "msg": "消息",
+  "please_select": "请选择",
+  "please_input": "请输入",
+  "date_range_separator": "至",
+  "start_time": "开始时间",
+  "end_time": "结束时间",
+  "confirm_clean": "确认清空所有登录日志吗？此操作不可恢复！",
+  "confirm_clean_title": "警告",
+  "clean_success": "清空成功",
+  "placeholder": {
+    "username": "请输入用户名",
+    "ipAddress": "请输入登录 IP"
+  }
+}

@@ -3,19 +3,38 @@
     <div class="content-body">
       <!-- 操作按钮 -->
       <div class="action-bar">
-        <el-button type="primary" @click="handleAdd">新增用户</el-button>
-        <el-button type="success" :loading="exportLoading" @click="handleExport">导出Excel</el-button>
+        <el-button type="primary" @click="handleAdd">{{
+          t("system.user.add")
+        }}</el-button>
+        <el-button
+          type="success"
+          :loading="exportLoading"
+          @click="handleExport"
+          >{{ t("system.user.export") }}</el-button
+        >
       </div>
       <!-- 搜索表单 -->
       <el-form :inline="true" :model="queryParams" class="search-form">
-        <el-form-item label="用户名">
-          <el-input v-model="queryParams.username" placeholder="请输入用户名" clearable />
+        <el-form-item :label="t('system.user.username')">
+          <el-input
+            v-model="queryParams.username"
+            :placeholder="t('system.user.placeholder.username')"
+            clearable
+          />
         </el-form-item>
-        <el-form-item label="手机号">
-          <el-input v-model="queryParams.phone" placeholder="请输入手机号" clearable />
+        <el-form-item :label="t('system.user.phone')">
+          <el-input
+            v-model="queryParams.phone"
+            :placeholder="t('system.user.placeholder.phone')"
+            clearable
+          />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="queryParams.status" placeholder="请选择" clearable>
+        <el-form-item :label="t('system.user.status')">
+          <el-select
+            v-model="queryParams.status"
+            :placeholder="t('system.user.please_select')"
+            clearable
+          >
             <el-option
               v-for="item in dictStore.getDict('sys_normal_disable')"
               :key="item.dictValue"
@@ -25,25 +44,59 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleSearch">{{
+            t("system.user.search")
+          }}</el-button>
+          <el-button @click="handleReset">{{
+            t("system.user.reset")
+          }}</el-button>
         </el-form-item>
       </el-form>
 
       <el-table :data="userList" style="width: 100%" v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="nickname" label="昵称" width="120" />
-        <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="phone" label="手机号" width="130" />
-        <el-table-column prop="gender" label="性别" width="80" align="center">
+        <el-table-column
+          prop="username"
+          :label="t('system.user.username')"
+          width="120"
+        />
+        <el-table-column
+          prop="nickname"
+          :label="t('system.user.nickname')"
+          width="120"
+        />
+        <el-table-column
+          prop="email"
+          :label="t('system.user.email')"
+          min-width="180"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="phone"
+          :label="t('system.user.phone')"
+          width="130"
+        />
+        <el-table-column
+          prop="gender"
+          :label="t('system.user.sex')"
+          width="80"
+          align="center"
+        >
           <template #default="{ row }">
-            <el-tag :type="dictStore.getDictListClass('sys_user_gender', row.gender)" size="small">
-              {{ dictStore.getDictLabel('sys_user_gender', row.gender) }}
+            <el-tag
+              :type="dictStore.getDictListClass('sys_user_gender', row.gender)"
+              size="small"
+            >
+              {{ dictStore.getDictLabel("sys_user_gender", row.gender) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column
+          prop="status"
+          :label="t('system.user.status')"
+          width="100"
+          align="center"
+        >
           <template #default="{ row }">
             <el-switch
               v-model="row.status"
@@ -54,12 +107,30 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="300" fixed="right">
+        <el-table-column
+          prop="createTime"
+          :label="t('system.user.create_time')"
+          width="180"
+        />
+        <el-table-column
+          :label="t('system.user.action')"
+          width="300"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="warning" link @click="handleResetPwd(row)">重置密码</el-button>
-            <el-button type="danger" link @click="handleDelete(row)" :disabled="row.userType === 1">删除</el-button>
+            <el-button type="primary" link @click="handleEdit(row)">{{
+              t("system.user.edit")
+            }}</el-button>
+            <el-button type="warning" link @click="handleResetPwd(row)">{{
+              t("system.user.reset_password")
+            }}</el-button>
+            <el-button
+              type="danger"
+              link
+              @click="handleDelete(row)"
+              :disabled="row.userType === 1"
+              >{{ t("system.user.delete") }}</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -79,116 +150,206 @@
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" :disabled="!!form.id" />
+        <el-form-item :label="t('system.user.username')" prop="username">
+          <el-input
+            v-model="form.username"
+            :placeholder="t('system.user.placeholder.username')"
+            :disabled="!!form.id"
+          />
         </el-form-item>
-        <el-form-item v-if="!form.id" label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
+        <el-form-item
+          v-if="!form.id"
+          :label="t('system.user.password')"
+          prop="password"
+        >
+          <el-input
+            v-model="form.password"
+            type="password"
+            :placeholder="t('system.user.placeholder.new_password')"
+            show-password
+          />
         </el-form-item>
-        <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="form.nickname" placeholder="请输入昵称" />
+        <el-form-item :label="t('system.user.nickname')" prop="nickname">
+          <el-input
+            v-model="form.nickname"
+            :placeholder="t('system.user.placeholder.nickname')"
+          />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="请输入邮箱" />
+        <el-form-item :label="t('system.user.email')" prop="email">
+          <el-input
+            v-model="form.email"
+            :placeholder="t('system.user.placeholder.email')"
+          />
         </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="form.phone" placeholder="请输入手机号" />
+        <el-form-item :label="t('system.user.phone')" prop="phone">
+          <el-input
+            v-model="form.phone"
+            :placeholder="t('system.user.placeholder.phone')"
+          />
         </el-form-item>
-        <el-form-item label="性别">
+        <el-form-item :label="t('system.user.sex')">
           <el-radio-group v-model="form.gender">
             <el-radio
               v-for="item in dictStore.getDict('sys_user_gender')"
               :key="item.dictValue"
               :value="Number(item.dictValue)"
-            >{{ item.dictLabel }}</el-radio>
+              >{{ item.dictLabel }}</el-radio
+            >
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="所属部门">
+        <el-form-item :label="t('system.user.dept')">
           <el-tree-select
             v-model="form.deptId"
             :data="deptTree"
             :props="{ label: 'deptName', value: 'id', children: 'children' }"
-            placeholder="请选择部门"
+            :placeholder="t('system.user.placeholder.dept')"
             clearable
             check-strictly
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="岗位">
-          <el-select v-model="form.postIds" multiple placeholder="请选择岗位" style="width: 100%">
-            <el-option v-for="item in postList" :key="item.id" :label="item.postName" :value="item.id!" />
+        <el-form-item :label="t('system.user.post')">
+          <el-select
+            v-model="form.postIds"
+            multiple
+            :placeholder="t('system.user.placeholder.post')"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in postList"
+              :key="item.id"
+              :label="item.postName"
+              :value="item.id!"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="角色">
-          <el-select v-model="form.roleIds" multiple placeholder="请选择角色" style="width: 100%">
-            <el-option v-for="item in roleList" :key="item.id" :label="item.roleName" :value="item.id!" />
+        <el-form-item :label="t('system.user.role')">
+          <el-select
+            v-model="form.roleIds"
+            multiple
+            :placeholder="t('system.user.placeholder.role')"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in roleList"
+              :key="item.id"
+              :label="item.roleName"
+              :value="item.id!"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item :label="t('system.user.status')">
           <el-radio-group v-model="form.status">
             <el-radio
               v-for="item in dictStore.getDict('sys_normal_disable')"
               :key="item.dictValue"
               :value="Number(item.dictValue)"
-            >{{ item.dictLabel }}</el-radio>
+              >{{ item.dictLabel }}</el-radio
+            >
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入备注" />
+        <el-form-item :label="t('system.user.remark')">
+          <el-input
+            v-model="form.remark"
+            type="textarea"
+            :placeholder="t('system.user.placeholder.remark')"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button @click="dialogVisible = false">{{
+          t("system.user.cancel")
+        }}</el-button>
+        <el-button type="primary" @click="handleSubmit">{{
+          t("system.user.confirm")
+        }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 重置密码对话框 -->
-    <el-dialog v-model="resetPwdDialogVisible" title="重置密码" width="400px">
-      <el-form ref="resetPwdFormRef" :model="resetPwdForm" :rules="resetPwdRules" label-width="100px">
-        <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="resetPwdForm.newPassword" type="password" placeholder="请输入新密码" show-password />
+    <el-dialog
+      v-model="resetPwdDialogVisible"
+      :title="t('system.user.reset_password')"
+      width="400px"
+    >
+      <el-form
+        ref="resetPwdFormRef"
+        :model="resetPwdForm"
+        :rules="resetPwdRules"
+        label-width="100px"
+      >
+        <el-form-item :label="t('system.user.password')" prop="newPassword">
+          <el-input
+            v-model="resetPwdForm.newPassword"
+            type="password"
+            :placeholder="t('system.user.placeholder.new_password')"
+            show-password
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="resetPwdDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmitResetPwd">确定</el-button>
+        <el-button @click="resetPwdDialogVisible = false">{{
+          t("system.user.cancel")
+        }}</el-button>
+        <el-button type="primary" @click="handleSubmitResetPwd">{{
+          t("system.user.confirm")
+        }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { ref, reactive, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import {
-  getUserList, addUser, updateUser, deleteUser, changeUserStatus, resetUserPassword,
-  getDeptTree, getAllPosts, getAllRoles, exportUserList,
-  type User, type UserQuery, type Dept, type Post, type Role
-} from '@/api/system'
-import { useDictStore } from '@/stores/dict'
-import { useExport } from '@/composables/useExport'
+  ElMessage,
+  ElMessageBox,
+  type FormInstance,
+  type FormRules,
+} from "element-plus";
+import {
+  getUserList,
+  addUser,
+  updateUser,
+  deleteUser,
+  changeUserStatus,
+  resetUserPassword,
+  getDeptTree,
+  getAllPosts,
+  getAllRoles,
+  exportUserList,
+  type User,
+  type UserQuery,
+  type Dept,
+  type Post,
+  type Role,
+} from "@/api/system";
+import { useDictStore } from "@/stores/dict";
+import { useExport } from "@/composables/useExport";
 
-const dictStore = useDictStore()
-const { exportLoading, handleExport: performExport } = useExport()
+const { t } = useI18n();
+const dictStore = useDictStore();
+const { exportLoading, handleExport: performExport } = useExport();
 
 const handleExport = () => {
   performExport(
-    () => exportUserList({
-      username: queryParams.username,
-      phone: queryParams.phone,
-      status: queryParams.status
-    }),
-    '用户列表'
-  )
-}
+    () =>
+      exportUserList({
+        username: queryParams.username,
+        phone: queryParams.phone,
+        status: queryParams.status,
+      }),
+    t("system.user.title"),
+  );
+};
 
-const loading = ref(false)
-const userList = ref<User[]>([])
-const total = ref(0)
-const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const formRef = ref<FormInstance>()
+const loading = ref(false);
+const userList = ref<User[]>([]);
+const total = ref(0);
+const dialogVisible = ref(false);
+const dialogTitle = ref("");
+const formRef = ref<FormInstance>();
 
 // 搜索参数
 const queryParams = reactive<UserQuery>({
@@ -196,173 +357,203 @@ const queryParams = reactive<UserQuery>({
   pageSize: 10,
   username: undefined,
   phone: undefined,
-  status: undefined
-})
+  status: undefined,
+});
 
 // 关联数据
-const deptTree = ref<Dept[]>([])
-const postList = ref<Post[]>([])
-const roleList = ref<Role[]>([])
+const deptTree = ref<Dept[]>([]);
+const postList = ref<Post[]>([]);
+const roleList = ref<Role[]>([]);
 
 // 重置密码
-const resetPwdDialogVisible = ref(false)
-const resetPwdFormRef = ref<FormInstance>()
-const resetPwdUserId = ref<number>()
-const resetPwdForm = reactive({ newPassword: '' })
+const resetPwdDialogVisible = ref(false);
+const resetPwdFormRef = ref<FormInstance>();
+const resetPwdUserId = ref<number>();
+const resetPwdForm = reactive({ newPassword: "" });
 const resetPwdRules: FormRules = {
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度必须在6-20之间', trigger: 'blur' }
-  ]
-}
+    {
+      required: true,
+      message: t("system.user.validation.new_password_required"),
+      trigger: "blur",
+    },
+    { min: 6, max: 20, message: "密码长度必须在6-20之间", trigger: "blur" },
+  ],
+};
 
 const defaultForm: User = {
-  username: '',
-  password: '',
-  nickname: '',
-  email: '',
-  phone: '',
+  username: "",
+  password: "",
+  nickname: "",
+  email: "",
+  phone: "",
   gender: 0,
   deptId: undefined,
   postIds: [],
   roleIds: [],
   status: 1,
-  remark: ''
-}
+  remark: "",
+};
 
-const form = reactive<User>({ ...defaultForm })
+const form = reactive<User>({ ...defaultForm });
 
 const rules: FormRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 2, max: 30, message: '用户名长度必须在2-30之间', trigger: 'blur' }
+    {
+      required: true,
+      message: t("system.user.validation.username_required"),
+      trigger: "blur",
+    },
+    { min: 2, max: 30, message: "用户名长度必须在2-30之间", trigger: "blur" },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度必须在6-20之间', trigger: 'blur' }
+    {
+      required: true,
+      message: t("system.user.validation.password_required"),
+      trigger: "blur",
+    },
+    { min: 6, max: 20, message: "密码长度必须在6-20之间", trigger: "blur" },
   ],
   email: [
-    { type: 'email', message: '请输入正确的邮箱', trigger: 'blur' }
+    {
+      type: "email",
+      message: t("system.user.validation.email_invalid"),
+      trigger: "blur",
+    },
   ],
   phone: [
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
-  ]
-}
+    {
+      pattern: /^1[3-9]\d{9}$/,
+      message: t("system.user.validation.phone_invalid"),
+      trigger: "blur",
+    },
+  ],
+};
 
 const loadData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getUserList(queryParams)
+    const res = await getUserList(queryParams);
     if (res.code === 200) {
-      userList.value = res.data.data
-      total.value = res.data.total
+      userList.value = res.data.data;
+      total.value = res.data.total;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const loadRelatedData = async () => {
   const [deptRes, postRes, roleRes] = await Promise.all([
     getDeptTree(),
     getAllPosts(),
-    getAllRoles()
-  ])
-  if (deptRes.code === 200) deptTree.value = deptRes.data
-  if (postRes.code === 200) postList.value = postRes.data
-  if (roleRes.code === 200) roleList.value = roleRes.data
-}
+    getAllRoles(),
+  ]);
+  if (deptRes.code === 200) deptTree.value = deptRes.data;
+  if (postRes.code === 200) postList.value = postRes.data;
+  if (roleRes.code === 200) roleList.value = roleRes.data;
+};
 
 const handleSearch = () => {
-  queryParams.pageNum = 1
-  loadData()
-}
+  queryParams.pageNum = 1;
+  loadData();
+};
 
 const handleReset = () => {
-  queryParams.username = undefined
-  queryParams.phone = undefined
-  queryParams.status = undefined
-  handleSearch()
-}
+  queryParams.username = undefined;
+  queryParams.phone = undefined;
+  queryParams.status = undefined;
+  handleSearch();
+};
 
 const resetForm = () => {
-  Object.assign(form, defaultForm)
-  form.id = undefined
-  form.postIds = []
-  form.roleIds = []
-}
+  Object.assign(form, defaultForm);
+  form.id = undefined;
+  form.postIds = [];
+  form.roleIds = [];
+};
 
 const handleAdd = () => {
-  resetForm()
-  dialogTitle.value = '新增用户'
-  dialogVisible.value = true
-}
+  resetForm();
+  dialogTitle.value = t("system.user.add");
+  dialogVisible.value = true;
+};
 
 const handleEdit = (row: User) => {
-  resetForm()
-  Object.assign(form, { ...row, password: undefined })
-  dialogTitle.value = '编辑用户'
-  dialogVisible.value = true
-}
+  resetForm();
+  Object.assign(form, { ...row, password: undefined });
+  dialogTitle.value = t("system.user.edit");
+  dialogVisible.value = true;
+};
 
 const handleSubmit = async () => {
-  await formRef.value?.validate()
+  await formRef.value?.validate();
   if (form.id) {
-    await updateUser(form)
-    ElMessage.success('修改成功')
+    await updateUser(form);
+    ElMessage.success(t("system.user.edit_success"));
   } else {
-    await addUser(form)
-    ElMessage.success('新增成功')
+    await addUser(form);
+    ElMessage.success(t("system.user.add_success"));
   }
-  dialogVisible.value = false
-  loadData()
-}
+  dialogVisible.value = false;
+  loadData();
+};
 
 const handleDelete = (row: User) => {
-  ElMessageBox.confirm('确认删除该用户吗？', '提示', { type: 'warning' })
+  ElMessageBox.confirm(
+    t("system.user.confirm_delete"),
+    t("system.user.confirm_delete_title"),
+    { type: "warning" },
+  )
     .then(async () => {
-      await deleteUser(row.id!)
-      ElMessage.success('删除成功')
-      loadData()
+      await deleteUser(row.id!);
+      ElMessage.success(t("system.user.delete_success"));
+      loadData();
     })
-    .catch(() => {})
-}
+    .catch(() => {});
+};
 
 const handleStatusChange = async (row: User) => {
-  await changeUserStatus(row.id!, row.status!)
-  ElMessage.success('状态修改成功')
-}
+  await changeUserStatus(row.id!, row.status!);
+  ElMessage.success(t("system.user.status_change_success"));
+};
 
 const handleResetPwd = (row: User) => {
   if (row.userType === 1) {
-    ElMessageBox.confirm('该用户为系统内置管理员，确认要重置其密码吗？', '安全提示', {
-      type: 'warning',
-      confirmButtonText: '确认重置',
-      cancelButtonText: '取消'
-    }).then(() => {
-      resetPwdUserId.value = row.id
-      resetPwdForm.newPassword = ''
-      resetPwdDialogVisible.value = true
-    }).catch(() => {})
+    ElMessageBox.confirm(
+      t("system.user.reset_password_confirm"),
+      t("system.user.security_prompt"),
+      {
+        type: "warning",
+        confirmButtonText: t("system.user.confirm_reset"),
+        cancelButtonText: t("system.user.cancel"),
+      },
+    )
+      .then(() => {
+        resetPwdUserId.value = row.id;
+        resetPwdForm.newPassword = "";
+        resetPwdDialogVisible.value = true;
+      })
+      .catch(() => {});
   } else {
-    resetPwdUserId.value = row.id
-    resetPwdForm.newPassword = ''
-    resetPwdDialogVisible.value = true
+    resetPwdUserId.value = row.id;
+    resetPwdForm.newPassword = "";
+    resetPwdDialogVisible.value = true;
   }
-}
+};
 
 const handleSubmitResetPwd = async () => {
-  await resetPwdFormRef.value?.validate()
-  await resetUserPassword(resetPwdUserId.value!, resetPwdForm.newPassword)
-  ElMessage.success('密码重置成功')
-  resetPwdDialogVisible.value = false
-}
+  await resetPwdFormRef.value?.validate();
+  await resetUserPassword(resetPwdUserId.value!, resetPwdForm.newPassword);
+  ElMessage.success(t("system.user.reset_password_success"));
+  resetPwdDialogVisible.value = false;
+};
 
 onMounted(() => {
-  dictStore.loadDicts('sys_user_gender', 'sys_normal_disable')
-  loadData()
-  loadRelatedData()
-})
+  dictStore.loadDicts("sys_user_gender", "sys_normal_disable");
+  loadData();
+  loadRelatedData();
+});
 </script>
 
 <style scoped>

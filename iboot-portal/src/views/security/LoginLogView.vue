@@ -3,19 +3,38 @@
     <div class="content-body">
       <!-- 操作按钮 -->
       <div class="action-bar">
-        <el-button type="success" :loading="exportLoading" @click="handleExport">导出Excel</el-button>
-        <el-button type="danger" @click="handleClean">清空日志</el-button>
+        <el-button
+          type="success"
+          :loading="exportLoading"
+          @click="handleExport"
+          >{{ t("security.loginLog.export") }}</el-button
+        >
+        <el-button type="danger" @click="handleClean">{{
+          t("security.loginLog.clean")
+        }}</el-button>
       </div>
       <!-- 搜索表单 -->
       <el-form :inline="true" :model="queryParams" class="search-form">
-        <el-form-item label="用户名">
-          <el-input v-model="queryParams.username" placeholder="请输入用户名" clearable />
+        <el-form-item :label="t('security.loginLog.username')">
+          <el-input
+            v-model="queryParams.username"
+            :placeholder="t('security.loginLog.placeholder.username')"
+            clearable
+          />
         </el-form-item>
-        <el-form-item label="登录IP">
-          <el-input v-model="queryParams.ipAddress" placeholder="请输入登录IP" clearable />
+        <el-form-item :label="t('security.loginLog.ipAddress')">
+          <el-input
+            v-model="queryParams.ipAddress"
+            :placeholder="t('security.loginLog.placeholder.ipAddress')"
+            clearable
+          />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="queryParams.status" placeholder="请选择" clearable>
+        <el-form-item :label="t('security.loginLog.status')">
+          <el-select
+            v-model="queryParams.status"
+            :placeholder="t('security.loginLog.please_select')"
+            clearable
+          >
             <el-option
               v-for="item in dictStore.getDict('sys_common_status')"
               :key="item.dictValue"
@@ -24,38 +43,79 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="登录时间">
+        <el-form-item :label="t('security.loginLog.loginTime')">
           <el-date-picker
             v-model="dateRange"
             type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :range-separator="t('security.loginLog.date_range_separator')"
+            :start-placeholder="t('security.loginLog.start_time')"
+            :end-placeholder="t('security.loginLog.end_time')"
             value-format="YYYY-MM-DD HH:mm:ss"
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleSearch">{{
+            t("security.loginLog.search")
+          }}</el-button>
+          <el-button @click="handleReset">{{
+            t("security.loginLog.reset")
+          }}</el-button>
         </el-form-item>
       </el-form>
 
       <el-table :data="logList" style="width: 100%" v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="ipAddress" label="登录IP" width="150" />
-        <el-table-column prop="loginLocation" label="登录地点" width="150" />
-        <el-table-column prop="browser" label="浏览器" width="150" />
-        <el-table-column prop="os" label="操作系统" width="150" />
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column
+          prop="username"
+          :label="t('security.loginLog.username')"
+          width="120"
+        />
+        <el-table-column
+          prop="ipAddress"
+          :label="t('security.loginLog.ipAddress')"
+          width="150"
+        />
+        <el-table-column
+          prop="loginLocation"
+          :label="t('security.loginLog.loginLocation')"
+          width="150"
+        />
+        <el-table-column
+          prop="browser"
+          :label="t('security.loginLog.browser')"
+          width="150"
+        />
+        <el-table-column
+          prop="os"
+          :label="t('security.loginLog.os')"
+          width="150"
+        />
+        <el-table-column
+          prop="status"
+          :label="t('security.loginLog.status')"
+          width="100"
+          align="center"
+        >
           <template #default="{ row }">
-            <el-tag :type="dictStore.getDictListClass('sys_common_status', row.status)">
-              {{ dictStore.getDictLabel('sys_common_status', row.status) }}
+            <el-tag
+              :type="
+                dictStore.getDictListClass('sys_common_status', row.status)
+              "
+            >
+              {{ dictStore.getDictLabel("sys_common_status", row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="msg" label="消息" show-overflow-tooltip />
-        <el-table-column prop="loginTime" label="登录时间" width="180" />
+        <el-table-column
+          prop="msg"
+          :label="t('security.loginLog.msg')"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="loginTime"
+          :label="t('security.loginLog.loginTime')"
+          width="180"
+        />
       </el-table>
 
       <el-pagination
@@ -73,88 +133,101 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getLoginLogList, cleanLoginLog, exportLoginLogList, type LoginLog, type LoginLogQuery } from '@/api/system'
-import { useDictStore } from '@/stores/dict'
-import { useExport } from '@/composables/useExport'
+import { ref, reactive, onMounted, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  getLoginLogList,
+  cleanLoginLog,
+  exportLoginLogList,
+  type LoginLog,
+  type LoginLogQuery,
+} from "@/api/system";
+import { useDictStore } from "@/stores/dict";
+import { useExport } from "@/composables/useExport";
 
-const dictStore = useDictStore()
-const { exportLoading, handleExport: performExport } = useExport()
+const { t } = useI18n();
+const dictStore = useDictStore();
+const { exportLoading, handleExport: performExport } = useExport();
 
 const handleExport = () => {
   performExport(
-    () => exportLoginLogList({
-      username: queryParams.username,
-      ipAddress: queryParams.ipAddress,
-      status: queryParams.status,
-      beginTime: queryParams.beginTime,
-      endTime: queryParams.endTime
-    }),
-    '登录日志'
-  )
-}
+    () =>
+      exportLoginLogList({
+        username: queryParams.username,
+        ipAddress: queryParams.ipAddress,
+        status: queryParams.status,
+        beginTime: queryParams.beginTime,
+        endTime: queryParams.endTime,
+      }),
+    t("security.loginLog.title"),
+  );
+};
 
-const loading = ref(false)
-const logList = ref<LoginLog[]>([])
-const total = ref(0)
-const dateRange = ref<string[]>([])
+const loading = ref(false);
+const logList = ref<LoginLog[]>([]);
+const total = ref(0);
+const dateRange = ref<string[]>([]);
 
 const queryParams = reactive<LoginLogQuery>({
   pageNum: 1,
   pageSize: 10,
-  username: '',
-  ipAddress: '',
+  username: "",
+  ipAddress: "",
   status: undefined,
-  beginTime: '',
-  endTime: ''
-})
+  beginTime: "",
+  endTime: "",
+});
 
 watch(dateRange, (val) => {
-  queryParams.beginTime = val?.[0] || ''
-  queryParams.endTime = val?.[1] || ''
-})
+  queryParams.beginTime = val?.[0] || "";
+  queryParams.endTime = val?.[1] || "";
+});
 
 const loadData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getLoginLogList(queryParams)
+    const res = await getLoginLogList(queryParams);
     if (res.code === 200) {
-      logList.value = res.data.data
-      total.value = res.data.total
+      logList.value = res.data.data;
+      total.value = res.data.total;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleSearch = () => {
-  queryParams.pageNum = 1
-  loadData()
-}
+  queryParams.pageNum = 1;
+  loadData();
+};
 
 const handleReset = () => {
-  queryParams.username = ''
-  queryParams.ipAddress = ''
-  queryParams.status = undefined
-  dateRange.value = []
-  handleSearch()
-}
+  queryParams.username = "";
+  queryParams.ipAddress = "";
+  queryParams.status = undefined;
+  dateRange.value = [];
+  handleSearch();
+};
 
 const handleClean = () => {
-  ElMessageBox.confirm('确认清空所有登录日志吗？此操作不可恢复！', '警告', { type: 'warning' })
+  ElMessageBox.confirm(
+    t("security.loginLog.confirm_clean"),
+    t("security.loginLog.confirm_clean_title"),
+    { type: "warning" },
+  )
     .then(async () => {
-      await cleanLoginLog()
-      ElMessage.success('清空成功')
-      loadData()
+      await cleanLoginLog();
+      ElMessage.success(t("security.loginLog.clean_success"));
+      loadData();
     })
-    .catch(() => {})
-}
+    .catch(() => {});
+};
 
 onMounted(() => {
-  dictStore.loadDicts('sys_common_status')
-  loadData()
-})
+  dictStore.loadDicts("sys_common_status");
+  loadData();
+});
 </script>
 
 <style scoped>

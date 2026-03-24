@@ -2,23 +2,37 @@
   <el-dialog
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
-    title="我的消息"
+    :title="t('message.messageCenter.inbox.title')"
     width="700px"
     :close-on-click-modal="false"
   >
     <!-- 筛选栏 -->
     <div class="inbox-toolbar">
       <el-radio-group v-model="filter" size="small" @change="loadMessages">
-        <el-radio-button value="all">全部</el-radio-button>
-        <el-radio-button value="unread">未读</el-radio-button>
-        <el-radio-button value="read">已读</el-radio-button>
+        <el-radio-button value="all">{{
+          t("message.messageCenter.inbox.filter.all")
+        }}</el-radio-button>
+        <el-radio-button value="unread">{{
+          t("message.messageCenter.inbox.filter.unread")
+        }}</el-radio-button>
+        <el-radio-button value="read">{{
+          t("message.messageCenter.inbox.filter.read")
+        }}</el-radio-button>
       </el-radio-group>
-      <el-button size="small" @click="handleMarkAllRead" :disabled="messages.length === 0">全部已读</el-button>
+      <el-button
+        size="small"
+        @click="handleMarkAllRead"
+        :disabled="messages.length === 0"
+        >{{ t("message.messageCenter.inbox.mark_all_read") }}</el-button
+      >
     </div>
 
-    <div v-if="loading" v-loading="true" style="min-height: 200px;"></div>
+    <div v-if="loading" v-loading="true" style="min-height: 200px"></div>
     <div v-else-if="messages.length === 0" class="empty-message">
-      <el-empty description="暂无消息" :image-size="80" />
+      <el-empty
+        :description="t('message.messageCenter.inbox.no_message')"
+        :image-size="80"
+      />
     </div>
     <div v-else class="message-list">
       <div
@@ -31,19 +45,23 @@
           <div class="message-title-row">
             <span v-if="msg.isRead === 0" class="unread-dot"></span>
             <el-tag
-              :type="dictStore.getDictListClass('sys_message_type', msg.messageType)"
+              :type="
+                dictStore.getDictListClass('sys_message_type', msg.messageType)
+              "
               size="small"
-            >{{ dictStore.getDictLabel('sys_message_type', msg.messageType) }}</el-tag>
-            <el-tag
-              v-if="msg.priority === '2'"
-              type="danger"
-              size="small"
-            >紧急</el-tag>
+              >{{
+                dictStore.getDictLabel("sys_message_type", msg.messageType)
+              }}</el-tag
+            >
+            <el-tag v-if="msg.priority === '2'" type="danger" size="small">{{
+              t("message.messageCenter.inbox.urgent")
+            }}</el-tag>
             <el-tag
               v-else-if="msg.priority === '1'"
               type="warning"
               size="small"
-            >重要</el-tag>
+              >{{ t("message.messageCenter.inbox.important") }}</el-tag
+            >
             <span class="message-title">{{ msg.title }}</span>
           </div>
           <div class="message-meta">
@@ -53,7 +71,13 @@
         <div v-if="expandedId === msg.id" class="message-content">
           <div class="message-text">{{ msg.content }}</div>
           <div class="message-actions">
-            <el-button type="danger" link size="small" @click.stop="handleDeleteMsg(msg)">删除</el-button>
+            <el-button
+              type="danger"
+              link
+              size="small"
+              @click.stop="handleDeleteMsg(msg)"
+              >{{ t("message.messageCenter.inbox.delete") }}</el-button
+            >
           </div>
         </div>
       </div>
@@ -72,108 +96,126 @@
     />
 
     <template #footer>
-      <el-button type="primary" @click="$emit('update:modelValue', false)">关闭</el-button>
+      <el-button type="primary" @click="$emit('update:modelValue', false)">{{
+        t("message.messageCenter.inbox.close")
+      }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
   getUserInbox,
   markMessageAsRead,
   markAllMessagesAsRead,
   deleteUserMessage,
-  type UserMessage
-} from '@/api/system'
-import { useDictStore } from '@/stores/dict'
+  type UserMessage,
+} from "@/api/system";
+import { useDictStore } from "@/stores/dict";
 
-const dictStore = useDictStore()
+const { t } = useI18n();
+const dictStore = useDictStore();
 
 const props = defineProps<{
-  modelValue: boolean
-}>()
+  modelValue: boolean;
+}>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'read-change': []
-}>()
+  "update:modelValue": [value: boolean];
+  "read-change": [];
+}>();
 
-const loading = ref(false)
-const messages = ref<UserMessage[]>([])
-const expandedId = ref<number | undefined>()
-const filter = ref('all')
-const pageNum = ref(1)
-const pageSize = 10
-const totalMsg = ref(0)
+const loading = ref(false);
+const messages = ref<UserMessage[]>([]);
+const expandedId = ref<number | undefined>();
+const filter = ref("all");
+const pageNum = ref(1);
+const pageSize = 10;
+const totalMsg = ref(0);
 
 const loadMessages = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    await dictStore.loadDicts('sys_message_type')
-    const isRead = filter.value === 'unread' ? 0 : filter.value === 'read' ? 1 : undefined
+    await dictStore.loadDicts("sys_message_type");
+    const isRead =
+      filter.value === "unread" ? 0 : filter.value === "read" ? 1 : undefined;
     const res = await getUserInbox({
       pageNum: pageNum.value,
       pageSize,
-      isRead
-    })
+      isRead,
+    });
     if (res.code === 200) {
-      messages.value = res.data.data || []
-      totalMsg.value = res.data.total
+      messages.value = res.data.data || [];
+      totalMsg.value = res.data.total;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const toggleExpand = async (msg: UserMessage) => {
   if (expandedId.value === msg.id) {
-    expandedId.value = undefined
-    return
+    expandedId.value = undefined;
+    return;
   }
-  expandedId.value = msg.id
+  expandedId.value = msg.id;
   if (msg.isRead === 0 && msg.id) {
     try {
-      await markMessageAsRead(msg.id)
-      msg.isRead = 1
-      emit('read-change')
+      await markMessageAsRead(msg.id);
+      msg.isRead = 1;
+      emit("read-change");
     } catch {
       // ignore
     }
   }
-}
+};
 
 const handleMarkAllRead = async () => {
   try {
-    await markAllMessagesAsRead()
-    messages.value.forEach(m => { m.isRead = 1 })
-    ElMessage.success('已全部标记为已读')
-    emit('read-change')
+    await markAllMessagesAsRead();
+    messages.value.forEach((m) => {
+      m.isRead = 1;
+    });
+    ElMessage.success(
+      t("message.messageCenter.inbox.messages.mark_all_read_success"),
+    );
+    emit("read-change");
   } catch {
     // ignore
   }
-}
+};
 
 const handleDeleteMsg = (msg: UserMessage) => {
-  ElMessageBox.confirm('确认删除该消息吗？', '提示', { type: 'warning' })
+  ElMessageBox.confirm(
+    t("message.messageCenter.inbox.messages.delete_confirm"),
+    t("message.messageCenter.inbox.messages.delete_title"),
+    { type: "warning" },
+  )
     .then(async () => {
-      await deleteUserMessage(msg.id!)
-      ElMessage.success('删除成功')
-      loadMessages()
-      emit('read-change')
+      await deleteUserMessage(msg.id!);
+      ElMessage.success(
+        t("message.messageCenter.inbox.messages.delete_success"),
+      );
+      loadMessages();
+      emit("read-change");
     })
-    .catch(() => {})
-}
+    .catch(() => {});
+};
 
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    expandedId.value = undefined
-    filter.value = 'all'
-    pageNum.value = 1
-    loadMessages()
-  }
-})
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      expandedId.value = undefined;
+      filter.value = "all";
+      pageNum.value = 1;
+      loadMessages();
+    }
+  },
+);
 </script>
 
 <style scoped>

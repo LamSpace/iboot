@@ -1,0 +1,66 @@
+{
+  "title": "系统公告",
+  "actions": {
+    "add": "新增公告",
+    "export": "导出 Excel",
+    "edit": "编辑",
+    "delete": "删除",
+    "publish": "发布",
+    "revoke": "撤回",
+    "search": "搜索",
+    "reset": "重置"
+  },
+  "search": {
+    "title": "公告标题",
+    "type": "公告类型",
+    "status": "公告状态",
+    "placeholder": "请输入公告标题"
+  },
+  "table": {
+    "id": "ID",
+    "title": "公告标题",
+    "type": "公告类型",
+    "status": "状态",
+    "is_top": "置顶",
+    "create_by": "创建人",
+    "create_time": "创建时间",
+    "actions": "操作"
+  },
+  "dialog": {
+    "add_title": "新增公告",
+    "edit_title": "编辑公告",
+    "title_label": "公告标题",
+    "title_placeholder": "请输入公告标题",
+    "type_label": "公告类型",
+    "content_label": "公告内容",
+    "content_placeholder": "请输入公告内容",
+    "is_top_label": "是否置顶",
+    "remark_label": "备注",
+    "remark_placeholder": "请输入备注",
+    "cancel": "取消",
+    "confirm": "确定"
+  },
+  "messages": {
+    "delete_confirm": "确认删除该公告吗？",
+    "publish_confirm": "确认发布该公告吗？发布后所有用户可见。",
+    "revoke_confirm": "确认撤回该公告吗？撤回后用户将不可见。",
+    "delete_success": "删除成功",
+    "publish_success": "发布成功",
+    "revoke_success": "撤回成功",
+    "save_success": "新增成功",
+    "update_success": "修改成功",
+    "mark_all_read_success": "已全部标记为已读"
+  },
+  "validation": {
+    "title_required": "请输入公告标题",
+    "type_required": "请选择公告类型",
+    "content_required": "请输入公告内容"
+  },
+  "popup": {
+    "title": "系统公告",
+    "no_notice": "暂无未读公告",
+    "top": "置顶",
+    "mark_all_read": "全部已读",
+    "close": "关闭"
+  }
+}

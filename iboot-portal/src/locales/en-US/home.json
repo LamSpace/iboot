@@ -1,0 +1,19 @@
+{
+  "title": "Home",
+  "register": "Register",
+  "login": "Login",
+  "start_using": "Get Started",
+  "learn_more": "Learn More",
+  "system_title": "Next-Generation Enterprise Management Platform",
+  "system_description": "A modern solution built with Vue 3 and Spring Boot,<br>providing efficient, secure, and reliable technical support for your business.",
+  "features_title": "Core Features",
+  "feature_permission_title": "Permission Management",
+  "feature_permission_desc": "RBAC-based fine-grained permission control with flexible user, role, and menu configuration",
+  "feature_architecture_title": "Modern Architecture",
+  "feature_architecture_desc": "Frontend-backend separation design, RESTful API standards, microservice-ready",
+  "feature_security_title": "Security & Reliability",
+  "feature_security_desc": "JWT authentication, XSS/CSRF protection, SQL injection prevention, comprehensive security",
+  "feature_efficiency_title": "Efficient Development",
+  "feature_efficiency_desc": "Complete code generator, rich component library, significantly improve development efficiency",
+  "tech_stack_title": "Technology Stack"
+}

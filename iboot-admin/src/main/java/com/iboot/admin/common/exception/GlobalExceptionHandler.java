@@ -16,6 +16,7 @@
 
 package com.iboot.admin.common.exception;
 
+import com.iboot.admin.common.i18n.I18nUtil;
 import com.iboot.admin.common.result.Result;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
@@ -164,7 +165,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.OK)
     public Result<Void> handleDuplicateKeyException(DuplicateKeyException e) {
         log.error("数据库唯一键冲突: {}", e.getMessage(), e);
-        return Result.error(400, "数据已存在，请勿重复提交");
+        return Result.error(400, I18nUtil.getMessage("dict.value.exists"));
     }
 
     /**
@@ -180,7 +181,7 @@ public class GlobalExceptionHandler {
     public Result<Void> handleAccessDeniedException(AccessDeniedException e, HttpServletResponse response) {
         log.warn("权限拒绝: {}", e.getMessage());
         resetContentTypeToJson(response);
-        return Result.error(403, "无权限访问");
+        return Result.error(403, I18nUtil.getMessage("result.forbidden"));
     }
 
     /**
@@ -194,7 +195,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public Result<Void> handleAuthenticationException(AuthenticationException e) {
         log.warn("认证失败: {}", e.getMessage());
-        return Result.error(401, "认证失败，请重新登录");
+        return Result.error(401, I18nUtil.getMessage("result.unauthorized"));
     }
 
     /**

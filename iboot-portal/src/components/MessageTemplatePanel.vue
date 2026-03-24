@@ -2,71 +2,137 @@
   <div>
     <!-- 操作按钮 -->
     <div class="action-bar">
-      <el-button type="primary" v-permission="'message:template:add'" @click="handleAdd">新增模板</el-button>
+      <el-button
+        type="primary"
+        v-permission="'message:template:add'"
+        @click="handleAdd"
+        >{{ t("message.messageCenter.template.add") }}</el-button
+      >
     </div>
 
     <!-- 搜索表单 -->
     <el-form :inline="true" :model="queryParams" class="search-form">
-      <el-form-item label="模板名称">
-        <el-input v-model="queryParams.templateName" placeholder="请输入模板名称" clearable />
+      <el-form-item :label="t('message.messageCenter.template.template_code')">
+        <el-input
+          v-model="queryParams.templateCode"
+          :placeholder="
+            t('message.messageCenter.template.placeholder.template_code')
+          "
+          clearable
+        />
       </el-form-item>
-      <el-form-item label="消息类型">
-        <el-select v-model="queryParams.messageType" placeholder="请选择" clearable>
+      <el-form-item :label="t('message.messageCenter.template.template_name')">
+        <el-input
+          v-model="queryParams.templateName"
+          :placeholder="
+            t('message.messageCenter.template.placeholder.template_name')
+          "
+          clearable
+        />
+      </el-form-item>
+      <el-form-item :label="t('message.messageCenter.template.status')">
+        <el-select
+          v-model="queryParams.status"
+          :placeholder="t('common.please_select')"
+          clearable
+        >
           <el-option
-            v-for="item in dictStore.getDict('sys_message_type')"
-            :key="item.dictValue"
-            :label="item.dictLabel"
-            :value="item.dictValue"
+            :label="t('message.messageCenter.template.enabled')"
+            :value="1"
+          />
+          <el-option
+            :label="t('message.messageCenter.template.disabled')"
+            :value="0"
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="状态">
-        <el-select v-model="queryParams.status" placeholder="请选择" clearable>
-          <el-option label="启用" :value="1" />
-          <el-option label="停用" :value="0" />
-        </el-select>
-      </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="handleReset">重置</el-button>
+        <el-button type="primary" @click="handleSearch">{{
+          t("message.messageCenter.template.search")
+        }}</el-button>
+        <el-button @click="handleReset">{{
+          t("message.messageCenter.template.reset")
+        }}</el-button>
       </el-form-item>
     </el-form>
 
     <!-- 数据表格 -->
     <el-table :data="templateList" style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" align="center" />
-      <el-table-column prop="templateCode" label="模板编码" width="160" show-overflow-tooltip />
-      <el-table-column prop="templateName" label="模板名称" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="messageType" label="消息类型" width="100" align="center">
+      <el-table-column
+        prop="templateCode"
+        :label="t('message.messageCenter.template.template_code')"
+        width="160"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="templateName"
+        :label="t('message.messageCenter.template.template_name')"
+        min-width="180"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="messageType"
+        :label="t('message.messageCenter.table.type')"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="dictStore.getDictListClass('sys_message_type', row.messageType)">
-            {{ dictStore.getDictLabel('sys_message_type', row.messageType) }}
+          <el-tag
+            :type="
+              dictStore.getDictListClass('sys_message_type', row.messageType)
+            "
+          >
+            {{ dictStore.getDictLabel("sys_message_type", row.messageType) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="80" align="center">
+      <el-table-column
+        prop="status"
+        :label="t('message.messageCenter.template.status')"
+        width="80"
+        align="center"
+      >
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '启用' : '停用' }}
+            {{
+              row.status === 1
+                ? t("message.messageCenter.template.enabled")
+                : t("message.messageCenter.template.disabled")
+            }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createBy" label="创建人" width="120" />
-      <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column
+        prop="createBy"
+        :label="t('message.messageCenter.table.create_by')"
+        width="120"
+      />
+      <el-table-column
+        prop="createTime"
+        :label="t('message.messageCenter.table.create_time')"
+        width="180"
+      />
+      <el-table-column
+        :label="t('message.messageCenter.table.actions')"
+        width="200"
+        fixed="right"
+      >
         <template #default="{ row }">
           <el-button
             v-permission="'message:template:edit'"
             type="primary"
             link
             @click="handleEdit(row)"
-          >编辑</el-button>
+            >{{ t("message.messageCenter.template.edit") }}</el-button
+          >
           <el-button
             v-permission="'message:template:remove'"
             type="danger"
             link
             @click="handleDelete(row)"
-          >删除</el-button>
+            >{{ t("message.messageCenter.template.delete") }}</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
@@ -86,14 +152,40 @@
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="模板编码" prop="templateCode">
-          <el-input v-model="form.templateCode" placeholder="请输入模板编码" maxlength="100" show-word-limit />
+        <el-form-item
+          :label="t('message.messageCenter.template.template_code')"
+          prop="templateCode"
+        >
+          <el-input
+            v-model="form.templateCode"
+            :placeholder="
+              t('message.messageCenter.template.placeholder.template_code')
+            "
+            maxlength="100"
+            show-word-limit
+          />
         </el-form-item>
-        <el-form-item label="模板名称" prop="templateName">
-          <el-input v-model="form.templateName" placeholder="请输入模板名称" maxlength="200" show-word-limit />
+        <el-form-item
+          :label="t('message.messageCenter.template.template_name')"
+          prop="templateName"
+        >
+          <el-input
+            v-model="form.templateName"
+            :placeholder="
+              t('message.messageCenter.template.placeholder.template_name')
+            "
+            maxlength="200"
+            show-word-limit
+          />
         </el-form-item>
-        <el-form-item label="消息类型" prop="messageType">
-          <el-select v-model="form.messageType" placeholder="请选择消息类型">
+        <el-form-item
+          :label="t('message.messageCenter.table.type')"
+          prop="messageType"
+        >
+          <el-select
+            v-model="form.messageType"
+            :placeholder="t('message.messageCenter.dialog.type_placeholder')"
+          >
             <el-option
               v-for="item in dictStore.getDict('sys_message_type')"
               :key="item.dictValue"
@@ -102,147 +194,216 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
+        <el-form-item :label="t('message.messageCenter.template.status')">
+          <el-switch
+            v-model="form.status"
+            :active-value="1"
+            :inactive-value="0"
+          />
         </el-form-item>
-        <el-form-item label="模板内容" prop="templateContent">
+        <el-form-item
+          :label="t('message.messageCenter.template.template_content')"
+          prop="templateContent"
+        >
           <el-input
             v-model="form.templateContent"
             type="textarea"
             :rows="6"
-            placeholder="请输入模板内容，支持 ${变量名} 占位符"
+            :placeholder="
+              t('message.messageCenter.template.placeholder.template_content')
+            "
           />
         </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="请输入备注" maxlength="500" show-word-limit />
+        <el-form-item :label="t('message.messageCenter.dialog.remark_label')">
+          <el-input
+            v-model="form.remark"
+            type="textarea"
+            :rows="2"
+            :placeholder="t('message.messageCenter.dialog.remark_placeholder')"
+            maxlength="500"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button @click="dialogVisible = false">{{
+          t("message.messageCenter.template.dialog.cancel")
+        }}</el-button>
+        <el-button type="primary" @click="handleSubmit">{{
+          t("message.messageCenter.template.dialog.confirm")
+        }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { ref, reactive, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import {
+  ElMessage,
+  ElMessageBox,
+  type FormInstance,
+  type FormRules,
+} from "element-plus";
 import {
   getMessageTemplateList,
   addMessageTemplate,
   updateMessageTemplate,
   deleteMessageTemplate,
   type MessageTemplate,
-  type MessageTemplateQuery
-} from '@/api/system'
-import { useDictStore } from '@/stores/dict'
+  type MessageTemplateQuery,
+} from "@/api/system";
+import { useDictStore } from "@/stores/dict";
 
-const dictStore = useDictStore()
+const { t } = useI18n();
+const dictStore = useDictStore();
 
-const loading = ref(false)
-const templateList = ref<MessageTemplate[]>([])
-const total = ref(0)
-const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const formRef = ref<FormInstance>()
+const loading = ref(false);
+const templateList = ref<MessageTemplate[]>([]);
+const total = ref(0);
+const dialogVisible = ref(false);
+const dialogTitle = ref("");
+const formRef = ref<FormInstance>();
 
 const queryParams = reactive<MessageTemplateQuery>({
   pageNum: 1,
   pageSize: 10,
+  templateCode: undefined,
   templateName: undefined,
   messageType: undefined,
-  status: undefined
-})
+  status: undefined,
+});
 
 const defaultForm: MessageTemplate = {
-  templateCode: '',
-  templateName: '',
-  templateContent: '',
-  messageType: '1',
+  templateCode: "",
+  templateName: "",
+  templateContent: "",
+  messageType: "1",
   status: 1,
-  remark: ''
-}
+  remark: "",
+};
 
-const form = reactive<MessageTemplate>({ ...defaultForm })
+const form = reactive<MessageTemplate>({ ...defaultForm });
 
 const rules: FormRules = {
-  templateCode: [{ required: true, message: '请输入模板编码', trigger: 'blur' }],
-  templateName: [{ required: true, message: '请输入模板名称', trigger: 'blur' }],
-  messageType: [{ required: true, message: '请选择消息类型', trigger: 'change' }],
-  templateContent: [{ required: true, message: '请输入模板内容', trigger: 'blur' }]
-}
+  templateCode: [
+    {
+      required: true,
+      message: t(
+        "message.messageCenter.template.validation.template_code_required",
+      ),
+      trigger: "blur",
+    },
+  ],
+  templateName: [
+    {
+      required: true,
+      message: t(
+        "message.messageCenter.template.validation.template_name_required",
+      ),
+      trigger: "blur",
+    },
+  ],
+  messageType: [
+    {
+      required: true,
+      message: t("message.messageCenter.validation.type_required"),
+      trigger: "change",
+    },
+  ],
+  templateContent: [
+    {
+      required: true,
+      message: t(
+        "message.messageCenter.template.validation.template_content_required",
+      ),
+      trigger: "blur",
+    },
+  ],
+};
 
 const loadData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getMessageTemplateList(queryParams)
+    const res = await getMessageTemplateList(queryParams);
     if (res.code === 200) {
-      templateList.value = res.data.data
-      total.value = res.data.total
+      templateList.value = res.data.data;
+      total.value = res.data.total;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleSearch = () => {
-  queryParams.pageNum = 1
-  loadData()
-}
+  queryParams.pageNum = 1;
+  loadData();
+};
 
 const handleReset = () => {
-  queryParams.templateName = undefined
-  queryParams.messageType = undefined
-  queryParams.status = undefined
-  handleSearch()
-}
+  queryParams.templateCode = undefined;
+  queryParams.templateName = undefined;
+  queryParams.messageType = undefined;
+  queryParams.status = undefined;
+  handleSearch();
+};
 
 const resetForm = () => {
-  Object.assign(form, defaultForm)
-  form.id = undefined
-}
+  Object.assign(form, defaultForm);
+  form.id = undefined;
+};
 
 const handleAdd = () => {
-  resetForm()
-  dialogTitle.value = '新增消息模板'
-  dialogVisible.value = true
-}
+  resetForm();
+  dialogTitle.value = t("message.messageCenter.template.dialog.add_title");
+  dialogVisible.value = true;
+};
 
 const handleEdit = (row: MessageTemplate) => {
-  resetForm()
-  Object.assign(form, row)
-  dialogTitle.value = '编辑消息模板'
-  dialogVisible.value = true
-}
+  resetForm();
+  Object.assign(form, row);
+  dialogTitle.value = t("message.messageCenter.template.dialog.edit_title");
+  dialogVisible.value = true;
+};
 
 const handleSubmit = async () => {
-  await formRef.value?.validate()
+  await formRef.value?.validate();
   if (form.id) {
-    await updateMessageTemplate(form)
-    ElMessage.success('修改成功')
+    await updateMessageTemplate(form);
+    ElMessage.success(
+      t("message.messageCenter.template.messages.update_success"),
+    );
   } else {
-    await addMessageTemplate(form)
-    ElMessage.success('新增成功')
+    await addMessageTemplate(form);
+    ElMessage.success(
+      t("message.messageCenter.template.messages.save_success"),
+    );
   }
-  dialogVisible.value = false
-  loadData()
-}
+  dialogVisible.value = false;
+  loadData();
+};
 
 const handleDelete = (row: MessageTemplate) => {
-  ElMessageBox.confirm('确认删除该消息模板吗？', '提示', { type: 'warning' })
+  ElMessageBox.confirm(
+    t("message.messageCenter.template.messages.delete_confirm"),
+    t("common.confirm"),
+    { type: "warning" },
+  )
     .then(async () => {
-      await deleteMessageTemplate(row.id!)
-      ElMessage.success('删除成功')
-      loadData()
+      await deleteMessageTemplate(row.id!);
+      ElMessage.success(
+        t("message.messageCenter.template.messages.delete_success"),
+      );
+      loadData();
     })
-    .catch(() => {})
-}
+    .catch(() => {});
+};
 
 onMounted(() => {
-  dictStore.loadDicts('sys_message_type')
-  loadData()
-})
+  dictStore.loadDicts("sys_message_type");
+  loadData();
+});
 </script>
 
 <style scoped>

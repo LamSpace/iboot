@@ -2,15 +2,21 @@
   <div class="home">
     <!-- 背景动画 -->
     <canvas id="three-home-bg" class="three-home-bg"></canvas>
-    
+
     <!-- 导航栏 -->
     <header class="navbar">
       <div class="navbar-brand">
         <span class="brand-text">{{ systemName }}</span>
       </div>
       <nav class="navbar-links">
-        <router-link v-if="registerEnabled" to="/register" class="nav-link">注册</router-link>
-        <router-link to="/login" class="nav-link nav-link-primary">登录</router-link>
+        <router-link v-if="registerEnabled" to="/register" class="nav-link">{{
+          t("home.register")
+        }}</router-link>
+        <router-link to="/login" class="nav-link nav-link-primary">{{
+          t("home.login")
+        }}</router-link>
+        <!-- 语言切换 -->
+        <LocalePicker class="locale-picker" />
       </nav>
     </header>
 
@@ -21,27 +27,40 @@
         <h1 class="hero-title">
           <span class="gradient-text">{{ systemName }}</span>
         </h1>
-        <p class="hero-subtitle">新一代企业级管理平台</p>
-        <p class="hero-description">
-          基于 Vue 3 与 Spring Boot 构建的现代化解决方案，<br>
-          为您的业务提供高效、安全、可靠的技术支撑。
-        </p>
+        <p class="hero-subtitle">{{ t("home.system_title") }}</p>
+        <p class="hero-description" v-html="t('home.system_description')"></p>
         <div class="hero-actions">
           <router-link to="/login" class="btn btn-primary">
-            <span>开始使用</span>
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            <span>{{ t("home.start_using") }}</span>
+            <svg
+              class="btn-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
             </svg>
           </router-link>
-          <a href="#features" class="btn btn-secondary">了解更多</a>
+          <a href="#features" class="btn btn-secondary">{{
+            t("home.learn_more")
+          }}</a>
         </div>
       </section>
 
       <!-- 特性展示 -->
       <section id="features" class="features">
-        <h2 class="section-title">核心特性</h2>
+        <h2 class="section-title">{{ t("home.features_title") }}</h2>
         <div class="features-grid">
-          <div class="feature-card" v-for="(feature, index) in features" :key="index">
+          <div
+            class="feature-card"
+            v-for="(feature, index) in features"
+            :key="index"
+          >
             <div class="feature-icon" :style="{ background: feature.gradient }">
               <component :is="feature.icon" />
             </div>
@@ -53,9 +72,13 @@
 
       <!-- 技术栈展示 -->
       <section class="tech-stack">
-        <h2 class="section-title">技术栈</h2>
+        <h2 class="section-title">{{ t("home.tech_stack_title") }}</h2>
         <div class="tech-grid">
-          <div class="tech-item" v-for="(tech, index) in techStack" :key="index">
+          <div
+            class="tech-item"
+            v-for="(tech, index) in techStack"
+            :key="index"
+          >
             <span class="tech-name">{{ tech }}</span>
           </div>
         </div>
@@ -70,75 +93,144 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, h } from 'vue'
-import * as THREE from 'three'
-import { useAppStore } from '@/stores/app'
+import { onMounted, onUnmounted, computed, h } from "vue";
+import { useI18n } from "vue-i18n";
+import * as THREE from "three";
+import { useAppStore } from "@/stores/app";
+import LocalePicker from "@/components/LocalePicker.vue";
 
-const appStore = useAppStore()
-const systemName = computed(() => appStore.systemName)
-const registerEnabled = computed(() => appStore.registerEnabled)
-const currentYear = new Date().getFullYear()
+const { t } = useI18n();
+const appStore = useAppStore();
+const systemName = computed(() => appStore.systemName);
+const registerEnabled = computed(() => appStore.registerEnabled);
+const currentYear = new Date().getFullYear();
 
 // 特性数据
-const features = [
+const features = computed(() => [
   {
-    title: '权限管理',
-    description: '基于 RBAC 的细粒度权限控制，支持用户、角色、菜单的灵活配置',
-    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    icon: h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' })
-    ])
+    title: t("home.feature_permission_title"),
+    description: t("home.feature_permission_desc"),
+    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    icon: h(
+      "svg",
+      {
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": 2,
+      },
+      [
+        h("path", {
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          d: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z",
+        }),
+      ],
+    ),
   },
   {
-    title: '现代架构',
-    description: '前后端分离设计，RESTful API 接口规范，支持微服务扩展',
-    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    icon: h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' })
-    ])
+    title: t("home.feature_architecture_title"),
+    description: t("home.feature_architecture_desc"),
+    gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    icon: h(
+      "svg",
+      {
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": 2,
+      },
+      [
+        h("path", {
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          d: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
+        }),
+      ],
+    ),
   },
   {
-    title: '安全可靠',
-    description: 'JWT 身份认证，XSS/CSRF 防护，SQL 注入防御，全方位安全保障',
-    gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-    icon: h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' })
-    ])
+    title: t("home.feature_security_title"),
+    description: t("home.feature_security_desc"),
+    gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    icon: h(
+      "svg",
+      {
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": 2,
+      },
+      [
+        h("path", {
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          d: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
+        }),
+      ],
+    ),
   },
   {
-    title: '高效开发',
-    description: '完善的代码生成器，丰富的组件库，大幅提升开发效率',
-    gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-    icon: h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M13 10V3L4 14h7v7l9-11h-7z' })
-    ])
-  }
-]
+    title: t("home.feature_efficiency_title"),
+    description: t("home.feature_efficiency_desc"),
+    gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+    icon: h(
+      "svg",
+      {
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": 2,
+      },
+      [
+        h("path", {
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          d: "M13 10V3L4 14h7v7l9-11h-7z",
+        }),
+      ],
+    ),
+  },
+]);
 
 // 技术栈数据
-const techStack = ['Vue 3', 'TypeScript', 'Vite', 'Element Plus', 'Spring Boot', 'MyBatis-Plus', 'Redis', 'MySQL']
+const techStack = [
+  "Vue 3",
+  "TypeScript",
+  "Vite",
+  "Element Plus",
+  "Spring Boot",
+  "MyBatis-Plus",
+  "Redis",
+  "MySQL",
+];
 
 // Three.js 背景
-let scene: THREE.Scene
-let camera: THREE.PerspectiveCamera
-let renderer: THREE.WebGLRenderer
-let particles: THREE.Points
-let animationId: number
+let scene: THREE.Scene;
+let camera: THREE.PerspectiveCamera;
+let renderer: THREE.WebGLRenderer;
+let particles: THREE.Points;
+let animationId: number;
 
 const initThree = () => {
-  scene = new THREE.Scene()
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-  camera.position.z = 50
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000,
+  );
+  camera.position.z = 50;
 
-  const canvas = document.getElementById('three-home-bg') as HTMLCanvasElement
-  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
-  renderer.setSize(window.innerWidth, window.innerHeight)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  const canvas = document.getElementById("three-home-bg") as HTMLCanvasElement;
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   // 创建粒子系统
-  const particleCount = 1500
-  const positions = new Float32Array(particleCount * 3)
-  const colors = new Float32Array(particleCount * 3)
+  const particleCount = 1500;
+  const positions = new Float32Array(particleCount * 3);
+  const colors = new Float32Array(particleCount * 3);
 
   const colorPalette = [
     new THREE.Color(0x667eea),
@@ -148,64 +240,64 @@ const initThree = () => {
     new THREE.Color(0x4facfe),
     new THREE.Color(0x00f2fe),
     new THREE.Color(0xfa709a),
-    new THREE.Color(0xfee140)
-  ]
+    new THREE.Color(0xfee140),
+  ];
 
   for (let i = 0; i < particleCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 200
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 200
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 200
+    positions[i * 3] = (Math.random() - 0.5) * 200;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
 
-    const color = colorPalette[Math.floor(Math.random() * colorPalette.length)]
-    colors[i * 3] = color.r
-    colors[i * 3 + 1] = color.g
-    colors[i * 3 + 2] = color.b
+    const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+    colors[i * 3] = color.r;
+    colors[i * 3 + 1] = color.g;
+    colors[i * 3 + 2] = color.b;
   }
 
-  const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
   const material = new THREE.PointsMaterial({
     size: 0.5,
     vertexColors: true,
     transparent: true,
     opacity: 0.8,
-    sizeAttenuation: true
-  })
+    sizeAttenuation: true,
+  });
 
-  particles = new THREE.Points(geometry, material)
-  scene.add(particles)
+  particles = new THREE.Points(geometry, material);
+  scene.add(particles);
 
-  animate()
-}
+  animate();
+};
 
 const animate = () => {
-  animationId = requestAnimationFrame(animate)
+  animationId = requestAnimationFrame(animate);
 
-  particles.rotation.x += 0.0003
-  particles.rotation.y += 0.0005
+  particles.rotation.x += 0.0003;
+  particles.rotation.y += 0.0005;
 
-  renderer.render(scene, camera)
-}
+  renderer.render(scene, camera);
+};
 
 const handleResize = () => {
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth, window.innerHeight)
-}
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+};
 
 onMounted(() => {
-  appStore.loadPublicConfig()
-  initThree()
-  window.addEventListener('resize', handleResize)
-})
+  appStore.loadPublicConfig();
+  initThree();
+  window.addEventListener("resize", handleResize);
+});
 
 onUnmounted(() => {
-  cancelAnimationFrame(animationId)
-  window.removeEventListener('resize', handleResize)
-  renderer.dispose()
-})
+  cancelAnimationFrame(animationId);
+  window.removeEventListener("resize", handleResize);
+  renderer.dispose();
+});
 </script>
 
 <style scoped>
@@ -264,6 +356,10 @@ onUnmounted(() => {
   gap: 1.5rem;
 }
 
+.locale-picker {
+  margin-left: 0.5rem;
+}
+
 .nav-link {
   text-decoration: none;
   color: rgba(255, 255, 255, 0.8);
@@ -314,7 +410,14 @@ onUnmounted(() => {
 }
 
 .gradient-text {
-  background: linear-gradient(90deg, #667eea, #f093fb, #f5576c, #4facfe, #fee140);
+  background: linear-gradient(
+    90deg,
+    #667eea,
+    #f093fb,
+    #f5576c,
+    #4facfe,
+    #fee140
+  );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -323,8 +426,13 @@ onUnmounted(() => {
 }
 
 @keyframes gradient-flow {
-  0%, 100% { background-position: 0% center; }
-  50% { background-position: 100% center; }
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
 }
 
 .hero-subtitle {

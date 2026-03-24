@@ -1,0 +1,8 @@
+{
+  "title": "Server Monitor",
+  "subtitle": "Server Health Check",
+  "spring_boot_admin": "Spring Boot Admin",
+  "open_in_new": "Open in new window",
+  "refresh": "Refresh monitor page",
+  "loading_text": "Loading monitor page..."
+}

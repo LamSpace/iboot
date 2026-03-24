@@ -1,0 +1,46 @@
+{
+  "title": "系统使用分析",
+  "date_range": {
+    "start": "开始日期",
+    "end": "结束日期",
+    "separator": "至",
+    "shortcuts": {
+      "last_7_days": "最近 7 天",
+      "last_30_days": "最近 30 天",
+      "this_month": "本月"
+    }
+  },
+  "overview": {
+    "today_active": "今日活跃用户",
+    "week_active": "本周活跃用户",
+    "month_active": "本月活跃用户"
+  },
+  "active_user_rank": {
+    "title": "活跃用户排行",
+    "top": "TOP",
+    "rank": "排名",
+    "username": "用户名",
+    "operation_count": "操作次数",
+    "activity": "活跃度"
+  },
+  "feature_module": {
+    "title": "功能模块使用排行",
+    "frequency": "使用频率",
+    "rank": "排名",
+    "module_name": "模块名称",
+    "usage_count": "使用次数",
+    "percentage": "占比"
+  },
+  "time_distribution": {
+    "title": "24 小时访问分布",
+    "peak_hours": "高峰时段",
+    "hour_label": "时段 (小时)"
+  },
+  "activity_trend": {
+    "title": "用户活跃趋势"
+  },
+  "empty": {
+    "no_data": "暂无数据",
+    "no_trend_data": "暂无趋势数据"
+  }
+}

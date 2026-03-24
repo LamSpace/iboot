@@ -1,0 +1,66 @@
+{
+  "title": "System Notice",
+  "actions": {
+    "add": "Add Notice",
+    "export": "Export Excel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "publish": "Publish",
+    "revoke": "Revoke",
+    "search": "Search",
+    "reset": "Reset"
+  },
+  "search": {
+    "title": "Notice Title",
+    "type": "Notice Type",
+    "status": "Notice Status",
+    "placeholder": "Enter notice title"
+  },
+  "table": {
+    "id": "ID",
+    "title": "Notice Title",
+    "type": "Notice Type",
+    "status": "Status",
+    "is_top": "Sticky",
+    "create_by": "Creator",
+    "create_time": "Create Time",
+    "actions": "Actions"
+  },
+  "dialog": {
+    "add_title": "Add Notice",
+    "edit_title": "Edit Notice",
+    "title_label": "Notice Title",
+    "title_placeholder": "Enter notice title",
+    "type_label": "Notice Type",
+    "content_label": "Notice Content",
+    "content_placeholder": "Enter notice content",
+    "is_top_label": "Sticky",
+    "remark_label": "Remark",
+    "remark_placeholder": "Enter remark",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "messages": {
+    "delete_confirm": "Are you sure you want to delete this notice?",
+    "publish_confirm": "Are you sure you want to publish this notice? It will be visible to all users.",
+    "revoke_confirm": "Are you sure you want to revoke this notice? It will no longer be visible to users.",
+    "delete_success": "Deleted successfully",
+    "publish_success": "Published successfully",
+    "revoke_success": "Revoked successfully",
+    "save_success": "Added successfully",
+    "update_success": "Updated successfully",
+    "mark_all_read_success": "All marked as read"
+  },
+  "validation": {
+    "title_required": "Please enter notice title",
+    "type_required": "Please select notice type",
+    "content_required": "Please enter notice content"
+  },
+  "popup": {
+    "title": "System Notice",
+    "no_notice": "No unread notices",
+    "top": "Sticky",
+    "mark_all_read": "Mark all as read",
+    "close": "Close"
+  }
+}

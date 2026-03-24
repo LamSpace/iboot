@@ -3,19 +3,35 @@
     <div class="monitor-toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><Monitor /></el-icon>
-        <span class="toolbar-title">服务监控检查</span>
-        <el-tag type="success" size="small" effect="plain">Spring Boot Admin</el-tag>
+        <span class="toolbar-title">{{ t("monitor.server.subtitle") }}</span>
+        <el-tag type="success" size="small" effect="plain">{{
+          t("monitor.server.spring_boot_admin")
+        }}</el-tag>
       </div>
       <div class="toolbar-right">
-        <el-tooltip content="在新窗口中打开" placement="top">
-          <el-button :icon="TopRight" circle size="small" @click="openInNewWindow" />
+        <el-tooltip :content="t('monitor.server.open_in_new')" placement="top">
+          <el-button
+            :icon="TopRight"
+            circle
+            size="small"
+            @click="openInNewWindow"
+          />
         </el-tooltip>
-        <el-tooltip content="刷新监控页面" placement="top">
-          <el-button :icon="Refresh" circle size="small" @click="refreshIframe" />
+        <el-tooltip :content="t('monitor.server.refresh')" placement="top">
+          <el-button
+            :icon="Refresh"
+            circle
+            size="small"
+            @click="refreshIframe"
+          />
         </el-tooltip>
       </div>
     </div>
-    <div class="monitor-iframe-container" v-loading="loading" element-loading-text="加载监控页面中...">
+    <div
+      class="monitor-iframe-container"
+      v-loading="loading"
+      :element-loading-text="t('monitor.server.loading_text')"
+    >
       <iframe
         ref="sbaIframe"
         :src="sbaUrl"
@@ -28,9 +44,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Monitor, TopRight, Refresh } from '@element-plus/icons-vue'
-import { getConfigByKey } from '@/api/system'
+import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { Monitor, TopRight, Refresh } from "@element-plus/icons-vue";
+import { getConfigByKey } from "@/api/system";
+
+const { t } = useI18n();
 
 /**
  * SBA 监控地址：
@@ -38,16 +57,18 @@ import { getConfigByKey } from '@/api/system'
  * - 开发环境默认：前端 localhost:3000、后端 localhost:8080，iframe 必须直连后端
  * - 生产环境默认：前后端同源，使用相对路径即可
  */
-const defaultSbaUrl = import.meta.env.DEV ? 'http://localhost:8080/sba' : '/sba'
-const sbaUrl = ref(defaultSbaUrl)
-const loading = ref(true)
-const sbaIframe = ref<HTMLIFrameElement>()
+const defaultSbaUrl = import.meta.env.DEV
+  ? "http://localhost:8080/sba"
+  : "/sba";
+const sbaUrl = ref(defaultSbaUrl);
+const loading = ref(true);
+const sbaIframe = ref<HTMLIFrameElement>();
 
 async function loadSbaUrl() {
   try {
-    const res = await getConfigByKey('monitor.sba.url')
+    const res = await getConfigByKey("monitor.sba.url");
     if (res.code === 200 && res.data) {
-      sbaUrl.value = res.data
+      sbaUrl.value = res.data;
     }
   } catch {
     // 配置不存在时使用默认值
@@ -55,24 +76,24 @@ async function loadSbaUrl() {
 }
 
 function onIframeLoad() {
-  loading.value = false
+  loading.value = false;
 }
 
 function openInNewWindow() {
-  window.open(sbaUrl.value, '_blank')
+  window.open(sbaUrl.value, "_blank");
 }
 
 function refreshIframe() {
-  loading.value = true
+  loading.value = true;
   if (sbaIframe.value) {
-    sbaIframe.value.src = sbaUrl.value
+    sbaIframe.value.src = sbaUrl.value;
   }
 }
 
 onMounted(async () => {
-  loading.value = true
-  await loadSbaUrl()
-})
+  loading.value = true;
+  await loadSbaUrl();
+});
 </script>
 
 <style scoped>

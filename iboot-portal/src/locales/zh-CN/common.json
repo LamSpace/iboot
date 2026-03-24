@@ -1,0 +1,56 @@
+{
+  "confirm": "确定",
+  "cancel": "取消",
+  "save": "保存",
+  "delete": "删除",
+  "edit": "编辑",
+  "search": "搜索",
+  "reset": "重置",
+  "add": "新增",
+  "view": "查看",
+  "export": "导出",
+  "import": "导入",
+  "action": "操作",
+  "status": "状态",
+  "create_time": "创建时间",
+  "update_time": "更新时间",
+  "remark": "备注",
+  "order": "排序",
+  "enable": "启用",
+  "disable": "禁用",
+  "yes": "是",
+  "no": "否",
+  "all": "全部",
+  "select": "请选择",
+  "input": "请输入",
+  "upload": "上传",
+  "download": "下载",
+  "close": "关闭",
+  "open": "打开",
+  "setting": "设置",
+  "manage": "管理",
+  "detail": "详情",
+  "back": "返回",
+  "submit": "提交",
+  "confirm_delete": "确认删除该记录吗？",
+  "confirm_batch_delete": "确认批量删除选中的记录吗？",
+  "operation": {
+    "success": "操作成功",
+    "failed": "操作失败",
+    "loading": "加载中..."
+  },
+  "pagination": {
+    "total": "共 {total} 条",
+    "page": "第 {page} 页",
+    "size": "每页 {size} 条"
+  },
+  "times": "次",
+  "locale": {
+    "zh-CN": "简体中文",
+    "en-US": "English",
+    "label": "语言"
+  },
+  "messages": {
+    "locale_changed": "语言已切换"
+  }
+}

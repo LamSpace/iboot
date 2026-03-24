@@ -1,0 +1,70 @@
+{
+  "title": "数据统计报表",
+  "date_range": {
+    "start": "开始日期",
+    "end": "结束日期",
+    "separator": "至",
+    "shortcuts": {
+      "last_7_days": "最近 7 天",
+      "last_30_days": "最近 30 天",
+      "this_month": "本月"
+    }
+  },
+  "overview": {
+    "user_count": "用户数",
+    "role_count": "角色数",
+    "dept_count": "部门数",
+    "post_count": "岗位数",
+    "menu_count": "菜单数",
+    "config_count": "配置数"
+  },
+  "tabs": {
+    "user": "用户统计",
+    "log": "日志统计",
+    "overview": "系统概览"
+  },
+  "user_stats": {
+    "overview": "用户概览",
+    "total_users": "用户总数",
+    "active_today": "今日活跃用户",
+    "new_today": "今日新增用户",
+    "activity_description": "用户活跃度说明",
+    "activity_note": "活跃用户：指在选定时间范围内成功登录系统的独立用户数。",
+    "dept_distribution": "部门分布：展示各部门的用户数量占比（暂未启用）。"
+  },
+  "log_stats": {
+    "login_title": "登录日志统计",
+    "total_logins": "总登录次数",
+    "success_rate": "成功率",
+    "success_count": "成功次数",
+    "fail_count": "失败次数",
+    "login_trend": "登录趋势 (近期)",
+    "operate_title": "操作日志统计",
+    "total_operations": "总操作次数",
+    "operate_trend": "操作趋势 (近期)"
+  },
+  "module_stats": {
+    "title": "模块操作统计",
+    "module_name": "模块名称",
+    "operation_count": "操作次数",
+    "percentage": "占比"
+  },
+  "overview_stats": {
+    "title": "系统资源统计",
+    "category": "资源类别",
+    "count": "数量",
+    "description": "说明",
+    "user_management": "用户管理",
+    "role_management": "角色管理",
+    "dept_management": "部门管理",
+    "post_management": "岗位管理",
+    "menu_management": "菜单管理",
+    "system_config": "系统配置",
+    "user_desc": "系统注册用户总数",
+    "role_desc": "权限角色总数",
+    "dept_desc": "组织架构部门总数",
+    "post_desc": "岗位设置总数",
+    "menu_desc": "系统菜单和权限总数",
+    "config_desc": "系统参数配置总数"
+  }
+}

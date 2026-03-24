@@ -1,29 +1,19 @@
-<!--
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-  SPDX-License-Identifier: Apache-2.0
--->
 <template>
   <div class="register-container">
     <canvas id="three-bg" class="three-bg"></canvas>
     <div class="register-form">
       <h2>{{ systemName }}</h2>
-      <p class="register-subtitle">用户注册</p>
-      <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef" @submit.prevent="handleRegister">
+      <p class="register-subtitle">{{ t("register.title") }}</p>
+      <el-form
+        :model="registerForm"
+        :rules="registerRules"
+        ref="registerFormRef"
+        @submit.prevent="handleRegister"
+      >
         <el-form-item prop="username">
           <el-input
             v-model="registerForm.username"
-            placeholder="用户名"
+            :placeholder="t('register.username_placeholder')"
             prefix-icon="User"
           />
         </el-form-item>
@@ -31,7 +21,7 @@
           <el-input
             v-model="registerForm.password"
             type="password"
-            placeholder="密码"
+            :placeholder="t('register.password_placeholder')"
             prefix-icon="Lock"
           />
         </el-form-item>
@@ -39,7 +29,7 @@
           <el-input
             v-model="registerForm.confirmPassword"
             type="password"
-            placeholder="确认密码"
+            :placeholder="t('register.confirm_password_placeholder')"
             prefix-icon="Lock"
             @keyup.enter="handleRegister"
           />
@@ -47,7 +37,7 @@
         <el-form-item prop="nickname">
           <el-input
             v-model="registerForm.nickname"
-            placeholder="昵称（选填）"
+            :placeholder="t('register.nickname_placeholder')"
             prefix-icon="UserFilled"
           />
         </el-form-item>
@@ -58,11 +48,11 @@
             :loading="loading"
             style="width: 100%"
           >
-            注册
+            {{ t("register.submit") }}
           </el-button>
         </el-form-item>
         <div class="register-links">
-          <router-link to="/login">已有账号？返回登录</router-link>
+          <router-link to="/login">{{ t("register.has_account") }}</router-link>
         </div>
       </el-form>
     </div>
@@ -77,188 +67,218 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
-import * as THREE from 'three'
-import { register } from '@/api/auth'
-import { useAppStore } from '@/stores/app'
-import SliderCaptcha from '@/components/SliderCaptcha.vue'
+import { reactive, ref, onMounted, onUnmounted, computed } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import type { FormInstance, FormRules } from "element-plus";
+import { useI18n } from "vue-i18n";
+import * as THREE from "three";
+import { register } from "@/api/auth";
+import { useAppStore } from "@/stores/app";
+import SliderCaptcha from "@/components/SliderCaptcha.vue";
 
 interface RegisterForm {
-  username: string
-  password: string
-  confirmPassword: string
-  nickname: string
+  username: string;
+  password: string;
+  confirmPassword: string;
+  nickname: string;
 }
 
-const router = useRouter()
-const appStore = useAppStore()
-const loading = ref(false)
-const registerFormRef = ref<FormInstance>()
-const showCaptcha = ref(false)
+const router = useRouter();
+const appStore = useAppStore();
+const { t } = useI18n();
+const loading = ref(false);
+const registerFormRef = ref<FormInstance>();
+const showCaptcha = ref(false);
 
-const systemName = computed(() => appStore.systemName)
+const systemName = computed(() => appStore.systemName);
 
 const registerForm = reactive<RegisterForm>({
-  username: '',
-  password: '',
-  confirmPassword: '',
-  nickname: ''
-})
+  username: "",
+  password: "",
+  confirmPassword: "",
+  nickname: "",
+});
 
 const validateConfirmPassword = (_rule: any, value: string, callback: any) => {
   if (value !== registerForm.password) {
-    callback(new Error('两次输入的密码不一致'))
+    callback(new Error(t("register.password_not_match")));
   } else {
-    callback()
+    callback();
   }
-}
+};
 
 const registerRules: FormRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 2, max: 30, message: '用户名长度必须在2-30之间', trigger: 'blur' }
+    {
+      required: true,
+      message: t("register.username_placeholder"),
+      trigger: "blur",
+    },
+    {
+      min: 2,
+      max: 30,
+      message: t("register.username_length"),
+      trigger: "blur",
+    },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度必须在6-20之间', trigger: 'blur' }
+    {
+      required: true,
+      message: t("register.password_placeholder"),
+      trigger: "blur",
+    },
+    {
+      min: 6,
+      max: 20,
+      message: t("register.password_length"),
+      trigger: "blur",
+    },
   ],
   confirmPassword: [
-    { required: true, message: '请确认密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: 'blur' }
+    {
+      required: true,
+      message: t("register.confirm_password_placeholder"),
+      trigger: "blur",
+    },
+    { validator: validateConfirmPassword, trigger: "blur" },
   ],
   nickname: [
-    { max: 30, message: '昵称长度不能超过30', trigger: 'blur' }
-  ]
-}
+    { max: 30, message: t("register.nickname_length"), trigger: "blur" },
+  ],
+};
 
-// Three.js 3D背景
-let scene: THREE.Scene
-let camera: THREE.PerspectiveCamera
-let renderer: THREE.WebGLRenderer
-let particles: THREE.Points
-let animationId: number
+// Three.js 3D 背景
+let scene: THREE.Scene;
+let camera: THREE.PerspectiveCamera;
+let renderer: THREE.WebGLRenderer;
+let particles: THREE.Points;
+let animationId: number;
 
 const initThree = () => {
-  scene = new THREE.Scene()
+  scene = new THREE.Scene();
 
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-  camera.position.z = 5
+  camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000,
+  );
+  camera.position.z = 5;
 
-  const canvas = document.getElementById('three-bg') as HTMLCanvasElement
-  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
-  renderer.setSize(window.innerWidth, window.innerHeight)
-  renderer.setPixelRatio(window.devicePixelRatio)
+  const canvas = document.getElementById("three-bg") as HTMLCanvasElement;
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
 
-  const particleCount = 2000
-  const positions = new Float32Array(particleCount * 3)
+  const particleCount = 2000;
+  const positions = new Float32Array(particleCount * 3);
 
   for (let i = 0; i < particleCount * 3; i += 3) {
-    positions[i] = (Math.random() - 0.5) * 20
-    positions[i + 1] = (Math.random() - 0.5) * 20
-    positions[i + 2] = (Math.random() - 0.5) * 20
+    positions[i] = (Math.random() - 0.5) * 20;
+    positions[i + 1] = (Math.random() - 0.5) * 20;
+    positions[i + 2] = (Math.random() - 0.5) * 20;
   }
 
-  const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
   const material = new THREE.PointsMaterial({
     color: 0x409eff,
     size: 0.05,
     transparent: true,
-    opacity: 0.8
-  })
+    opacity: 0.8,
+  });
 
-  particles = new THREE.Points(geometry, material)
-  scene.add(particles)
+  particles = new THREE.Points(geometry, material);
+  scene.add(particles);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-  scene.add(ambientLight)
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4)
-  directionalLight.position.set(1, 1, 1)
-  scene.add(directionalLight)
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+  directionalLight.position.set(1, 1, 1);
+  scene.add(directionalLight);
 
-  animate()
-}
+  animate();
+};
 
 const animate = () => {
-  animationId = requestAnimationFrame(animate)
+  animationId = requestAnimationFrame(animate);
 
-  const positions = particles.geometry.attributes.position.array as Float32Array
+  const positions = particles.geometry.attributes.position
+    .array as Float32Array;
   for (let i = 0; i < positions.length; i += 3) {
-    positions[i + 1] += 0.01
+    positions[i + 1] += 0.01;
     if (positions[i + 1] > 10) {
-      positions[i + 1] = -10
+      positions[i + 1] = -10;
     }
   }
-  particles.geometry.attributes.position.needsUpdate = true
+  particles.geometry.attributes.position.needsUpdate = true;
 
-  particles.rotation.x += 0.001
-  particles.rotation.y += 0.001
+  particles.rotation.x += 0.001;
+  particles.rotation.y += 0.001;
 
-  renderer.render(scene, camera)
-}
+  renderer.render(scene, camera);
+};
 
 const handleResize = () => {
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth, window.innerHeight)
-}
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+};
 
 const handleRegister = async () => {
-  if (!registerFormRef.value) return
+  if (!registerFormRef.value) return;
 
-  const valid = await registerFormRef.value.validate().catch(() => false)
-  if (!valid) return
+  const valid = await registerFormRef.value.validate().catch(() => false);
+  if (!valid) return;
 
-  showCaptcha.value = true
-}
+  showCaptcha.value = true;
+};
 
 const handleCaptchaSuccess = async () => {
-  loading.value = true
+  loading.value = true;
   try {
     await register({
       username: registerForm.username,
       password: registerForm.password,
       confirmPassword: registerForm.confirmPassword,
-      nickname: registerForm.nickname || undefined
-    })
+      nickname: registerForm.nickname || undefined,
+    });
 
-    ElMessage.success('注册成功，请登录')
-    router.push('/login')
+    ElMessage.success(t("register.success"));
+    router.push("/login");
   } catch (error: any) {
-    ElMessage.error(error.message || '注册失败')
+    ElMessage.error(error.message || t("register.failed"));
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleCaptchaCancel = () => {
   // 取消验证，不做任何操作
-}
+};
 
 onMounted(() => {
-  appStore.loadPublicConfig()
+  appStore.loadPublicConfig();
   // 如果注册未开启，跳转回登录页
   if (appStore.configLoaded && !appStore.registerEnabled) {
-    ElMessage.warning('系统未开启注册功能')
-    router.push('/login')
-    return
+    ElMessage.warning(t("register.not_enabled"));
+    router.push("/login");
+    return;
   }
-  initThree()
-  window.addEventListener('resize', handleResize)
-})
+  initThree();
+  window.addEventListener("resize", handleResize);
+});
 
 onUnmounted(() => {
-  cancelAnimationFrame(animationId)
-  window.removeEventListener('resize', handleResize)
+  cancelAnimationFrame(animationId);
+  window.removeEventListener("resize", handleResize);
   if (renderer) {
-    renderer.dispose()
+    renderer.dispose();
   }
-})
+});
 </script>
 
 <style scoped>

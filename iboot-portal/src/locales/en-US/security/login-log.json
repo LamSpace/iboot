@@ -1,0 +1,27 @@
+{
+  "title": "Login Log",
+  "export": "Export Excel",
+  "clean": "Clear Logs",
+  "search": "Search",
+  "reset": "Reset",
+  "username": "Username",
+  "ipAddress": "Login IP",
+  "status": "Status",
+  "loginTime": "Login Time",
+  "loginLocation": "Login Location",
+  "browser": "Browser",
+  "os": "Operating System",
+  "msg": "Message",
+  "please_select": "Please select",
+  "please_input": "Please enter",
+  "date_range_separator": "to",
+  "start_time": "Start Time",
+  "end_time": "End Time",
+  "confirm_clean": "Are you sure you want to clear all login logs? This action cannot be undone!",
+  "confirm_clean_title": "Warning",
+  "clean_success": "Cleared successfully",
+  "placeholder": {
+    "username": "Please enter username",
+    "ipAddress": "Please enter login IP"
+  }
+}

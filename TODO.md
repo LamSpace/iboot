@@ -1,7 +1,6 @@
 # 近期待实现
 
 1. GraalVM编译
-2. 国际化支持
 
 ---
 
@@ -29,3 +28,4 @@
     - langchain4j集成、AgentScope集成、Spring AI alibaba集成
     - 智能对话，智能体编排
 16. 集成ShardingSphere和ElasticJob
+17. 业务数据全面国际化（即同一条记录包含中英文关键信息）

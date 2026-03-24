@@ -3,18 +3,37 @@
     <div class="content-body">
       <!-- 操作按钮 -->
       <div class="action-bar">
-        <el-button type="primary" @click="handleAdd">新增岗位</el-button>
-        <el-button type="success" :loading="exportLoading" @click="handleExport">导出Excel</el-button>
+        <el-button type="primary" @click="handleAdd">{{
+          t("organization.post.add")
+        }}</el-button>
+        <el-button
+          type="success"
+          :loading="exportLoading"
+          @click="handleExport"
+          >{{ t("organization.post.export") }}</el-button
+        >
       </div>
       <el-form :inline="true" :model="queryParams" class="search-form">
-        <el-form-item label="岗位名称">
-          <el-input v-model="queryParams.postName" placeholder="请输入岗位名称" clearable />
+        <el-form-item :label="t('organization.post.postName')">
+          <el-input
+            v-model="queryParams.postName"
+            :placeholder="t('organization.post.placeholder.postName')"
+            clearable
+          />
         </el-form-item>
-        <el-form-item label="岗位编码">
-          <el-input v-model="queryParams.postCode" placeholder="请输入岗位编码" clearable />
+        <el-form-item :label="t('organization.post.postCode')">
+          <el-input
+            v-model="queryParams.postCode"
+            :placeholder="t('organization.post.placeholder.postCode')"
+            clearable
+          />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="queryParams.status" placeholder="请选择" clearable>
+        <el-form-item :label="t('organization.post.status')">
+          <el-select
+            v-model="queryParams.status"
+            :placeholder="t('organization.post.please_select')"
+            clearable
+          >
             <el-option
               v-for="item in dictStore.getDict('sys_normal_disable')"
               :key="item.dictValue"
@@ -24,17 +43,39 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleSearch">{{
+            t("organization.post.search")
+          }}</el-button>
+          <el-button @click="handleReset">{{
+            t("organization.post.reset")
+          }}</el-button>
         </el-form-item>
       </el-form>
 
       <el-table :data="postList" style="width: 100%" v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="postCode" label="岗位编码" width="150" />
-        <el-table-column prop="postName" label="岗位名称" width="150" />
-        <el-table-column prop="orderNum" label="排序" width="80" align="center" />
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column
+          prop="postCode"
+          :label="t('organization.post.postCode')"
+          width="150"
+        />
+        <el-table-column
+          prop="postName"
+          :label="t('organization.post.postName')"
+          width="150"
+        />
+        <el-table-column
+          prop="orderNum"
+          :label="t('organization.post.orderNum')"
+          width="80"
+          align="center"
+        />
+        <el-table-column
+          prop="status"
+          :label="t('organization.post.status')"
+          width="100"
+          align="center"
+        >
           <template #default="{ row }">
             <el-switch
               v-model="row.status"
@@ -44,12 +85,28 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="300" fixed="right">
+        <el-table-column
+          prop="remark"
+          :label="t('organization.post.remark')"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="createTime"
+          :label="t('organization.post.createTime')"
+          width="180"
+        />
+        <el-table-column
+          :label="t('organization.post.action')"
+          width="300"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <el-button type="primary" link @click="handleEdit(row)">{{
+              t("organization.post.edit_action")
+            }}</el-button>
+            <el-button type="danger" link @click="handleDelete(row)">{{
+              t("organization.post.delete")
+            }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -69,162 +126,209 @@
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="岗位编码" prop="postCode">
-          <el-input v-model="form.postCode" placeholder="请输入岗位编码" />
+        <el-form-item :label="t('organization.post.postCode')" prop="postCode">
+          <el-input
+            v-model="form.postCode"
+            :placeholder="t('organization.post.placeholder.postCode')"
+          />
         </el-form-item>
-        <el-form-item label="岗位名称" prop="postName">
-          <el-input v-model="form.postName" placeholder="请输入岗位名称" />
+        <el-form-item :label="t('organization.post.postName')" prop="postName">
+          <el-input
+            v-model="form.postName"
+            :placeholder="t('organization.post.placeholder.postName')"
+          />
         </el-form-item>
-        <el-form-item label="显示顺序">
+        <el-form-item :label="t('organization.post.orderNum')">
           <el-input-number v-model="form.orderNum" :min="0" />
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item :label="t('organization.post.status')">
           <el-radio-group v-model="form.status">
             <el-radio
               v-for="item in dictStore.getDict('sys_normal_disable')"
               :key="item.dictValue"
               :value="Number(item.dictValue)"
-            >{{ item.dictLabel }}</el-radio>
+              >{{ item.dictLabel }}</el-radio
+            >
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入备注" />
+        <el-form-item :label="t('organization.post.remark')">
+          <el-input
+            v-model="form.remark"
+            type="textarea"
+            :placeholder="t('organization.post.placeholder.remark')"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button @click="dialogVisible = false">{{
+          t("organization.post.cancel")
+        }}</el-button>
+        <el-button type="primary" @click="handleSubmit">{{
+          t("organization.post.confirm")
+        }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { getPostList, addPost, updatePost, deletePost, changePostStatus, exportPostList, type Post } from '@/api/system'
-import { useDictStore } from '@/stores/dict'
-import { useExport } from '@/composables/useExport'
+import { ref, reactive, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import {
+  ElMessage,
+  ElMessageBox,
+  type FormInstance,
+  type FormRules,
+} from "element-plus";
+import {
+  getPostList,
+  addPost,
+  updatePost,
+  deletePost,
+  changePostStatus,
+  exportPostList,
+  type Post,
+} from "@/api/system";
+import { useDictStore } from "@/stores/dict";
+import { useExport } from "@/composables/useExport";
 
-const dictStore = useDictStore()
-const { exportLoading, handleExport: performExport } = useExport()
+const { t } = useI18n();
+const dictStore = useDictStore();
+const { exportLoading, handleExport: performExport } = useExport();
 
 const handleExport = () => {
   performExport(
-    () => exportPostList({
-      postName: queryParams.postName,
-      postCode: queryParams.postCode,
-      status: queryParams.status
-    }),
-    '岗位列表'
-  )
-}
+    () =>
+      exportPostList({
+        postName: queryParams.postName,
+        postCode: queryParams.postCode,
+        status: queryParams.status,
+      }),
+    t("organization.post.title"),
+  );
+};
 
-const loading = ref(false)
-const postList = ref<Post[]>([])
-const total = ref(0)
-const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const formRef = ref<FormInstance>()
+const loading = ref(false);
+const postList = ref<Post[]>([]);
+const total = ref(0);
+const dialogVisible = ref(false);
+const dialogTitle = ref("");
+const formRef = ref<FormInstance>();
 
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
   postName: undefined as string | undefined,
   postCode: undefined as string | undefined,
-  status: undefined as number | undefined
-})
+  status: undefined as number | undefined,
+});
 
 const defaultForm: Post = {
-  postCode: '',
-  postName: '',
+  postCode: "",
+  postName: "",
   orderNum: 0,
   status: 1,
-  remark: ''
-}
+  remark: "",
+};
 
-const form = reactive<Post>({ ...defaultForm })
+const form = reactive<Post>({ ...defaultForm });
 
 const rules: FormRules = {
-  postCode: [{ required: true, message: '请输入岗位编码', trigger: 'blur' }],
-  postName: [{ required: true, message: '请输入岗位名称', trigger: 'blur' }]
-}
+  postCode: [
+    {
+      required: true,
+      message: t("organization.post.validation.postCode_required"),
+      trigger: "blur",
+    },
+  ],
+  postName: [
+    {
+      required: true,
+      message: t("organization.post.validation.postName_required"),
+      trigger: "blur",
+    },
+  ],
+};
 
 const loadData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getPostList(queryParams)
+    const res = await getPostList(queryParams);
     if (res.code === 200) {
-      postList.value = res.data.data
-      total.value = res.data.total
+      postList.value = res.data.data;
+      total.value = res.data.total;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleSearch = () => {
-  queryParams.pageNum = 1
-  loadData()
-}
+  queryParams.pageNum = 1;
+  loadData();
+};
 
 const handleReset = () => {
-  queryParams.postName = undefined
-  queryParams.postCode = undefined
-  queryParams.status = undefined
-  handleSearch()
-}
+  queryParams.postName = undefined;
+  queryParams.postCode = undefined;
+  queryParams.status = undefined;
+  handleSearch();
+};
 
 const resetForm = () => {
-  Object.assign(form, defaultForm)
-  form.id = undefined
-}
+  Object.assign(form, defaultForm);
+  form.id = undefined;
+};
 
 const handleAdd = () => {
-  resetForm()
-  dialogTitle.value = '新增岗位'
-  dialogVisible.value = true
-}
+  resetForm();
+  dialogTitle.value = t("organization.post.add");
+  dialogVisible.value = true;
+};
 
 const handleEdit = (row: Post) => {
-  resetForm()
-  Object.assign(form, row)
-  dialogTitle.value = '编辑岗位'
-  dialogVisible.value = true
-}
+  resetForm();
+  Object.assign(form, row);
+  dialogTitle.value = t("organization.post.edit");
+  dialogVisible.value = true;
+};
 
 const handleSubmit = async () => {
-  await formRef.value?.validate()
+  await formRef.value?.validate();
   if (form.id) {
-    await updatePost(form)
-    ElMessage.success('修改成功')
+    await updatePost(form);
+    ElMessage.success(t("organization.post.edit_success"));
   } else {
-    await addPost(form)
-    ElMessage.success('新增成功')
+    await addPost(form);
+    ElMessage.success(t("organization.post.add_success"));
   }
-  dialogVisible.value = false
-  loadData()
-}
+  dialogVisible.value = false;
+  loadData();
+};
 
 const handleDelete = (row: Post) => {
-  ElMessageBox.confirm('确认删除该岗位吗？', '提示', { type: 'warning' })
+  ElMessageBox.confirm(
+    t("organization.post.confirm_delete"),
+    t("organization.post.confirm_delete_title"),
+    { type: "warning" },
+  )
     .then(async () => {
-      await deletePost(row.id!)
-      ElMessage.success('删除成功')
-      loadData()
+      await deletePost(row.id!);
+      ElMessage.success(t("organization.post.delete_success"));
+      loadData();
     })
-    .catch(() => {})
-}
+    .catch(() => {});
+};
 
 const handleStatusChange = async (row: Post) => {
-  await changePostStatus(row.id!, row.status!)
-  ElMessage.success('状态修改成功')
-}
+  await changePostStatus(row.id!, row.status!);
+  ElMessage.success(t("organization.post.status_change_success"));
+};
 
 onMounted(() => {
-  dictStore.loadDicts('sys_normal_disable')
-  loadData()
-})
+  dictStore.loadDicts("sys_normal_disable");
+  loadData();
+});
 </script>
 
 <style scoped>

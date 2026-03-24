@@ -3,19 +3,33 @@
     <div class="monitor-toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><DataAnalysis /></el-icon>
-        <span class="toolbar-title">Kibana UI</span>
+        <span class="toolbar-title">{{ t("monitor.kibana.title") }}</span>
         <el-tag type="danger" size="small" effect="plain">Kibana</el-tag>
       </div>
       <div class="toolbar-right">
-        <el-tooltip content="在新窗口中打开" placement="top">
-          <el-button :icon="TopRight" circle size="small" @click="openInNewWindow" />
+        <el-tooltip :content="t('monitor.kibana.open_in_new')" placement="top">
+          <el-button
+            :icon="TopRight"
+            circle
+            size="small"
+            @click="openInNewWindow"
+          />
         </el-tooltip>
-        <el-tooltip content="刷新监控页面" placement="top">
-          <el-button :icon="Refresh" circle size="small" @click="refreshIframe" />
+        <el-tooltip :content="t('monitor.kibana.refresh')" placement="top">
+          <el-button
+            :icon="Refresh"
+            circle
+            size="small"
+            @click="refreshIframe"
+          />
         </el-tooltip>
       </div>
     </div>
-    <div class="monitor-iframe-container" v-loading="loading" element-loading-text="加载监控页面中...">
+    <div
+      class="monitor-iframe-container"
+      v-loading="loading"
+      :element-loading-text="t('monitor.kibana.loading_text')"
+    >
       <iframe
         ref="kibanaIframe"
         :src="kibanaUrl"
@@ -28,20 +42,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { DataAnalysis, TopRight, Refresh } from '@element-plus/icons-vue'
-import { getConfigByKey } from '@/api/system'
+import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { DataAnalysis, TopRight, Refresh } from "@element-plus/icons-vue";
+import { getConfigByKey } from "@/api/system";
 
-const defaultUrl = 'http://localhost:5601'
-const kibanaUrl = ref(defaultUrl)
-const loading = ref(true)
-const kibanaIframe = ref<HTMLIFrameElement>()
+const { t } = useI18n();
+
+const defaultUrl = "http://localhost:5601";
+const kibanaUrl = ref(defaultUrl);
+const loading = ref(true);
+const kibanaIframe = ref<HTMLIFrameElement>();
 
 async function loadUrl() {
   try {
-    const res = await getConfigByKey('sys.kibana.monitor.url')
+    const res = await getConfigByKey("sys.kibana.monitor.url");
     if (res.code === 200 && res.data) {
-      kibanaUrl.value = res.data
+      kibanaUrl.value = res.data;
     }
   } catch {
     // 配置不存在时使用默认值
@@ -49,24 +66,24 @@ async function loadUrl() {
 }
 
 function onIframeLoad() {
-  loading.value = false
+  loading.value = false;
 }
 
 function openInNewWindow() {
-  window.open(kibanaUrl.value, '_blank')
+  window.open(kibanaUrl.value, "_blank");
 }
 
 function refreshIframe() {
-  loading.value = true
+  loading.value = true;
   if (kibanaIframe.value) {
-    kibanaIframe.value.src = kibanaUrl.value
+    kibanaIframe.value.src = kibanaUrl.value;
   }
 }
 
 onMounted(async () => {
-  loading.value = true
-  await loadUrl()
-})
+  loading.value = true;
+  await loadUrl();
+});
 </script>
 
 <style scoped>

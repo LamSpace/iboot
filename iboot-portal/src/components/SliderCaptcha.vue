@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="安全验证"
+    :title="t('login.captcha.title')"
     width="340px"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
@@ -14,7 +14,10 @@
       </div>
       <div class="captcha-track" ref="trackRef">
         <div class="captcha-fill" :style="{ width: fillWidth + 'px' }"></div>
-        <div class="captcha-target" :style="{ left: targetPosition + 'px' }"></div>
+        <div
+          class="captcha-target"
+          :style="{ left: targetPosition + 'px' }"
+        ></div>
         <div
           class="captcha-slider"
           :style="{ left: sliderPosition + 'px' }"
@@ -30,10 +33,10 @@
       <div class="captcha-actions">
         <el-button size="small" @click="handleReset" :disabled="isSuccess">
           <el-icon><Refresh /></el-icon>
-          刷新
+          {{ t("login.captcha.refresh") }}
         </el-button>
         <el-button size="small" @click="handleCancel">
-          取消
+          {{ t("login.captcha.cancel") }}
         </el-button>
       </div>
     </div>
@@ -41,147 +44,151 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Check, Close, Right, Refresh } from '@element-plus/icons-vue'
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { Check, Close, Right, Refresh } from "@element-plus/icons-vue";
+
+const { t } = useI18n();
 
 const props = defineProps<{
-  modelValue: boolean
-}>()
+  modelValue: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'success'): void
-  (e: 'cancel'): void
-}>()
+  (e: "update:modelValue", value: boolean): void;
+  (e: "success"): void;
+  (e: "cancel"): void;
+}>();
 
 const visible = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
-})
+  set: (val) => emit("update:modelValue", val),
+});
 
-const trackRef = ref<HTMLElement | null>(null)
-const trackWidth = 280
-const sliderWidth = 40
-const targetWidth = 8
-const tolerance = 5
+const trackRef = ref<HTMLElement | null>(null);
+const trackWidth = 280;
+const sliderWidth = 40;
+const targetWidth = 8;
+const tolerance = 5;
 
-const sliderPosition = ref(0)
-const targetPosition = ref(0)
-const fillWidth = ref(0)
-const isDragging = ref(false)
-const isSuccess = ref(false)
-const isError = ref(false)
-const startX = ref(0)
+const sliderPosition = ref(0);
+const targetPosition = ref(0);
+const fillWidth = ref(0);
+const isDragging = ref(false);
+const isSuccess = ref(false);
+const isError = ref(false);
+const startX = ref(0);
 
 const tipText = computed(() => {
-  if (isSuccess.value) return '验证成功'
-  if (isError.value) return '验证失败，请重试'
-  return '请拖动滑块到指定位置'
-})
+  if (isSuccess.value) return t("login.captcha.tip_success");
+  if (isError.value) return t("login.captcha.tip_error");
+  return t("login.captcha.tip_default");
+});
 
 const generateTargetPosition = () => {
-  const minPos = 100
-  const maxPos = trackWidth - sliderWidth - targetWidth - 20
-  targetPosition.value = Math.floor(Math.random() * (maxPos - minPos + 1)) + minPos
-}
+  const minPos = 100;
+  const maxPos = trackWidth - sliderWidth - targetWidth - 20;
+  targetPosition.value =
+    Math.floor(Math.random() * (maxPos - minPos + 1)) + minPos;
+};
 
 const handleMouseDown = (e: MouseEvent) => {
-  if (isSuccess.value) return
-  isDragging.value = true
-  isError.value = false
-  startX.value = e.clientX - sliderPosition.value
-  document.addEventListener('mousemove', handleMouseMove)
-  document.addEventListener('mouseup', handleMouseUp)
-}
+  if (isSuccess.value) return;
+  isDragging.value = true;
+  isError.value = false;
+  startX.value = e.clientX - sliderPosition.value;
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mouseup", handleMouseUp);
+};
 
 const handleTouchStart = (e: TouchEvent) => {
-  if (isSuccess.value) return
-  isDragging.value = true
-  isError.value = false
-  startX.value = e.touches[0].clientX - sliderPosition.value
-  document.addEventListener('touchmove', handleTouchMove)
-  document.addEventListener('touchend', handleTouchEnd)
-}
+  if (isSuccess.value) return;
+  isDragging.value = true;
+  isError.value = false;
+  startX.value = e.touches[0].clientX - sliderPosition.value;
+  document.addEventListener("touchmove", handleTouchMove);
+  document.addEventListener("touchend", handleTouchEnd);
+};
 
 const handleMouseMove = (e: MouseEvent) => {
-  if (!isDragging.value) return
-  moveSlider(e.clientX)
-}
+  if (!isDragging.value) return;
+  moveSlider(e.clientX);
+};
 
 const handleTouchMove = (e: TouchEvent) => {
-  if (!isDragging.value) return
-  moveSlider(e.touches[0].clientX)
-}
+  if (!isDragging.value) return;
+  moveSlider(e.touches[0].clientX);
+};
 
 const moveSlider = (clientX: number) => {
-  let newPos = clientX - startX.value
-  const maxPos = trackWidth - sliderWidth
-  newPos = Math.max(0, Math.min(newPos, maxPos))
-  sliderPosition.value = newPos
-  fillWidth.value = newPos + sliderWidth / 2
-}
+  let newPos = clientX - startX.value;
+  const maxPos = trackWidth - sliderWidth;
+  newPos = Math.max(0, Math.min(newPos, maxPos));
+  sliderPosition.value = newPos;
+  fillWidth.value = newPos + sliderWidth / 2;
+};
 
 const handleMouseUp = () => {
-  finishDrag()
-  document.removeEventListener('mousemove', handleMouseMove)
-  document.removeEventListener('mouseup', handleMouseUp)
-}
+  finishDrag();
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+};
 
 const handleTouchEnd = () => {
-  finishDrag()
-  document.removeEventListener('touchmove', handleTouchMove)
-  document.removeEventListener('touchend', handleTouchEnd)
-}
+  finishDrag();
+  document.removeEventListener("touchmove", handleTouchMove);
+  document.removeEventListener("touchend", handleTouchEnd);
+};
 
 const finishDrag = () => {
-  if (!isDragging.value) return
-  isDragging.value = false
-  
-  const sliderCenter = sliderPosition.value + sliderWidth / 2
-  const targetCenter = targetPosition.value + targetWidth / 2
-  
+  if (!isDragging.value) return;
+  isDragging.value = false;
+
+  const sliderCenter = sliderPosition.value + sliderWidth / 2;
+  const targetCenter = targetPosition.value + targetWidth / 2;
+
   if (Math.abs(sliderCenter - targetCenter) <= tolerance) {
-    isSuccess.value = true
+    isSuccess.value = true;
     setTimeout(() => {
-      emit('success')
-      visible.value = false
-    }, 500)
+      emit("success");
+      visible.value = false;
+    }, 500);
   } else {
-    isError.value = true
+    isError.value = true;
     setTimeout(() => {
-      resetSlider()
-    }, 1000)
+      resetSlider();
+    }, 1000);
   }
-}
+};
 
 const resetSlider = () => {
-  sliderPosition.value = 0
-  fillWidth.value = 0
-  isError.value = false
-  isSuccess.value = false
-  generateTargetPosition()
-}
+  sliderPosition.value = 0;
+  fillWidth.value = 0;
+  isError.value = false;
+  isSuccess.value = false;
+  generateTargetPosition();
+};
 
 const handleReset = () => {
-  resetSlider()
-}
+  resetSlider();
+};
 
 const handleCancel = () => {
-  emit('cancel')
-  visible.value = false
-  resetSlider()
-}
+  emit("cancel");
+  visible.value = false;
+  resetSlider();
+};
 
 onMounted(() => {
-  generateTargetPosition()
-})
+  generateTargetPosition();
+});
 
 onUnmounted(() => {
-  document.removeEventListener('mousemove', handleMouseMove)
-  document.removeEventListener('mouseup', handleMouseUp)
-  document.removeEventListener('touchmove', handleTouchMove)
-  document.removeEventListener('touchend', handleTouchEnd)
-})
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+  document.removeEventListener("touchmove", handleTouchMove);
+  document.removeEventListener("touchend", handleTouchEnd);
+});
 </script>
 
 <style scoped>
@@ -252,7 +259,10 @@ onUnmounted(() => {
   color: #409eff;
   font-size: 18px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: border-color 0.3s, color 0.3s, transform 0.1s;
+  transition:
+    border-color 0.3s,
+    color 0.3s,
+    transform 0.1s;
   user-select: none;
   z-index: 10;
 }

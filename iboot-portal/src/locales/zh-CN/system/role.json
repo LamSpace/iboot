@@ -1,0 +1,51 @@
+{
+  "title": "角色管理",
+  "add": "新增角色",
+  "edit": "编辑角色",
+  "delete": "删除角色",
+  "export": "导出 Excel",
+  "search": "搜索",
+  "reset": "重置",
+  "roleName": "角色名称",
+  "roleCode": "角色编码",
+  "orderNum": "排序",
+  "dataScope": "数据权限",
+  "status": "状态",
+  "remark": "备注",
+  "createTime": "创建时间",
+  "action": "操作",
+  "edit_action": "编辑",
+  "menu_permission": "菜单权限",
+  "data_permission": "数据权限",
+  "assign_menu_permission": "分配菜单权限",
+  "assign_data_permission": "设置数据权限",
+  "confirm_delete": "确认删除该角色吗？",
+  "confirm_delete_title": "提示",
+  "delete_success": "删除成功",
+  "add_success": "新增成功",
+  "edit_success": "修改成功",
+  "status_change_success": "状态修改成功",
+  "menu_permission_success": "菜单权限分配成功",
+  "data_permission_success": "数据权限设置成功",
+  "cancel": "取消",
+  "confirm": "确定",
+  "please_select": "请选择",
+  "please_input": "请输入",
+  "placeholder": {
+    "roleName": "请输入角色名称",
+    "roleCode": "请输入角色编码",
+    "orderNum": "请输入排序",
+    "remark": "请输入备注"
+  },
+  "validation": {
+    "roleCode_required": "请输入角色编码",
+    "roleName_required": "请输入角色名称"
+  },
+  "data_scope_types": {
+    "all": "全部数据权限",
+    "custom": "自定义数据权限",
+    "dept": "本部门数据权限",
+    "dept_below": "本部门及以下数据权限",
+    "self": "仅本人数据权限"
+  }
+}

@@ -1,9 +1,13 @@
 <template>
   <li>
     <!-- 节点卡片 -->
-    <div 
-      class="org-card" 
-      :class="{ 'is-root': level === 0, 'is-disabled': node.status !== 1, 'is-matched': isMatched }"
+    <div
+      class="org-card"
+      :class="{
+        'is-root': level === 0,
+        'is-disabled': node.status !== 1,
+        'is-matched': isMatched,
+      }"
       :style="{ borderTopColor: levelColor }"
       @click="$emit('select', node)"
     >
@@ -12,8 +16,8 @@
         <div class="header-actions">
           <span v-if="node.status !== 1" class="status-badge">停用</span>
           <!-- 展开/折叠按钮 -->
-          <el-icon 
-            v-if="hasChildren" 
+          <el-icon
+            v-if="hasChildren"
             class="toggle-btn"
             @click.stop="$emit('toggle', node.id)"
           >
@@ -50,31 +54,35 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { User, ArrowDown, ArrowRight } from '@element-plus/icons-vue'
-import type { OrgChartNode } from '@/api/system'
+import { computed } from "vue";
+import { User, ArrowDown, ArrowRight } from "@element-plus/icons-vue";
+import type { OrgChartNode } from "@/api/system";
 
 const props = defineProps<{
-  node: OrgChartNode
-  level: number
-  matchedIds: Set<number>
-  collapsedIds: Set<number>
-}>()
+  node: OrgChartNode;
+  level: number;
+  matchedIds: Set<number>;
+  collapsedIds: Set<number>;
+}>();
 
 defineEmits<{
-  select: [node: OrgChartNode]
-  toggle: [nodeId: number]
-}>()
+  select: [node: OrgChartNode];
+  toggle: [nodeId: number];
+}>();
 
-const levelColors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399']
-const levelColor = computed(() => levelColors[props.level % levelColors.length])
+const levelColors = ["#409EFF", "#67C23A", "#E6A23C", "#F56C6C", "#909399"];
+const levelColor = computed(
+  () => levelColors[props.level % levelColors.length],
+);
 
 // 搜索高亮
-const isMatched = computed(() => props.matchedIds.has(props.node.id))
+const isMatched = computed(() => props.matchedIds.has(props.node.id));
 
 // 展开/折叠状态
-const isCollapsed = computed(() => props.collapsedIds.has(props.node.id))
-const hasChildren = computed(() => props.node.children && props.node.children.length > 0)
+const isCollapsed = computed(() => props.collapsedIds.has(props.node.id));
+const hasChildren = computed(
+  () => props.node.children && props.node.children.length > 0,
+);
 </script>
 
 <style scoped>
@@ -85,7 +93,7 @@ const hasChildren = computed(() => props.node.children && props.node.children.le
   max-width: 200px;
   background: white;
   border-radius: 8px;
-  border-top: 4px solid #409EFF;
+  border-top: 4px solid #409eff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
@@ -109,13 +117,24 @@ const hasChildren = computed(() => props.node.children && props.node.children.le
 
 /* 搜索匹配高亮 */
 .org-card.is-matched {
-  box-shadow: 0 0 0 3px #409EFF, 0 4px 12px rgba(64, 158, 255, 0.3);
+  box-shadow:
+    0 0 0 3px #409eff,
+    0 4px 12px rgba(64, 158, 255, 0.3);
   animation: pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 3px #409EFF, 0 4px 12px rgba(64, 158, 255, 0.3); }
-  50% { box-shadow: 0 0 0 5px #409EFF, 0 4px 16px rgba(64, 158, 255, 0.5); }
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px #409eff,
+      0 4px 12px rgba(64, 158, 255, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px #409eff,
+      0 4px 16px rgba(64, 158, 255, 0.5);
+  }
 }
 
 .card-header {
@@ -196,11 +215,13 @@ const hasChildren = computed(() => props.node.children && props.node.children.le
   cursor: pointer;
   color: #909399;
   font-size: 14px;
-  transition: color 0.2s, transform 0.2s;
+  transition:
+    color 0.2s,
+    transform 0.2s;
 }
 
 .toggle-btn:hover {
-  color: #409EFF;
+  color: #409eff;
   transform: scale(1.2);
 }
 </style>

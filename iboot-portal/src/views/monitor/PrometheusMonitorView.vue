@@ -3,19 +3,38 @@
     <div class="monitor-toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><TrendCharts /></el-icon>
-        <span class="toolbar-title">Prometh监控</span>
-        <el-tag type="warning" size="small" effect="plain">Prometheus</el-tag>
+        <span class="toolbar-title">{{ t("monitor.prometheus.title") }}</span>
+        <el-tag type="warning" size="small" effect="plain">{{
+          t("monitor.prometheus.prometheus")
+        }}</el-tag>
       </div>
       <div class="toolbar-right">
-        <el-tooltip content="在新窗口中打开" placement="top">
-          <el-button :icon="TopRight" circle size="small" @click="openInNewWindow" />
+        <el-tooltip
+          :content="t('monitor.prometheus.open_in_new')"
+          placement="top"
+        >
+          <el-button
+            :icon="TopRight"
+            circle
+            size="small"
+            @click="openInNewWindow"
+          />
         </el-tooltip>
-        <el-tooltip content="刷新监控页面" placement="top">
-          <el-button :icon="Refresh" circle size="small" @click="refreshIframe" />
+        <el-tooltip :content="t('monitor.prometheus.refresh')" placement="top">
+          <el-button
+            :icon="Refresh"
+            circle
+            size="small"
+            @click="refreshIframe"
+          />
         </el-tooltip>
       </div>
     </div>
-    <div class="monitor-iframe-container" v-loading="loading" element-loading-text="加载监控页面中...">
+    <div
+      class="monitor-iframe-container"
+      v-loading="loading"
+      :element-loading-text="t('monitor.prometheus.loading_text')"
+    >
       <iframe
         ref="prometheusIframe"
         :src="prometheusUrl"
@@ -28,20 +47,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { TrendCharts, TopRight, Refresh } from '@element-plus/icons-vue'
-import { getConfigByKey } from '@/api/system'
+import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { TrendCharts, TopRight, Refresh } from "@element-plus/icons-vue";
+import { getConfigByKey } from "@/api/system";
 
-const defaultUrl = 'http://localhost:9090'
-const prometheusUrl = ref(defaultUrl)
-const loading = ref(true)
-const prometheusIframe = ref<HTMLIFrameElement>()
+const { t } = useI18n();
+
+const defaultUrl = "http://localhost:9090";
+const prometheusUrl = ref(defaultUrl);
+const loading = ref(true);
+const prometheusIframe = ref<HTMLIFrameElement>();
 
 async function loadUrl() {
   try {
-    const res = await getConfigByKey('sys.prometheus.monitor.url')
+    const res = await getConfigByKey("sys.prometheus.monitor.url");
     if (res.code === 200 && res.data) {
-      prometheusUrl.value = res.data
+      prometheusUrl.value = res.data;
     }
   } catch {
     // 配置不存在时使用默认值
@@ -49,24 +71,24 @@ async function loadUrl() {
 }
 
 function onIframeLoad() {
-  loading.value = false
+  loading.value = false;
 }
 
 function openInNewWindow() {
-  window.open(prometheusUrl.value, '_blank')
+  window.open(prometheusUrl.value, "_blank");
 }
 
 function refreshIframe() {
-  loading.value = true
+  loading.value = true;
   if (prometheusIframe.value) {
-    prometheusIframe.value.src = prometheusUrl.value
+    prometheusIframe.value.src = prometheusUrl.value;
   }
 }
 
 onMounted(async () => {
-  loading.value = true
-  await loadUrl()
-})
+  loading.value = true;
+  await loadUrl();
+});
 </script>
 
 <style scoped>

@@ -1,0 +1,33 @@
+{
+  "title": "User Login",
+  "system_name": "iBoot Management System",
+  "username": "Username",
+  "password": "Password",
+  "verify_code": "Verification Code",
+  "remember_me": "Remember Me",
+  "forgot_password": "Forgot Password?",
+  "login": "Login",
+  "logout": "Logout",
+  "register": "Register",
+  "third_party_login": "Third-party Login",
+  "username_placeholder": "Please enter username",
+  "password_placeholder": "Please enter password",
+  "password_too_short": "Password must be at least 6 characters",
+  "verify_code_placeholder": "Please enter verification code",
+  "refresh_verify_code": "Click to refresh",
+  "submit": "Login",
+  "logging_in": "Logging in...",
+  "success": "Login successful",
+  "failed": "Invalid username or password",
+  "logout_success": "Logout successful",
+  "redirect": "Redirect to",
+  "other_login_methods": "Other login methods",
+  "captcha": {
+    "title": "Security Verification",
+    "tip_default": "Please drag the slider to the specified position",
+    "tip_success": "Verification successful",
+    "tip_error": "Verification failed, please try again",
+    "refresh": "Refresh",
+    "cancel": "Cancel"
+  }
+}

@@ -1,16 +1,16 @@
-<script lang="ts">
-import { RouterView } from 'vue-router'
+<script lang="ts" setup>
+import { RouterView } from "vue-router";
+import { ElConfigProvider } from "element-plus";
+import { useLocale } from "@/composables/useLocale";
+import zhCn from "element-plus/es/locale/lang/zh-cn";
 
-export default {
-  name: 'App',
-  components: {
-    RouterView
-  }
-}
+const { elementLocale } = useLocale();
 </script>
 
 <template>
-  <RouterView />
+  <ElConfigProvider :locale="elementLocale">
+    <RouterView />
+  </ElConfigProvider>
 </template>
 
 <style scoped>

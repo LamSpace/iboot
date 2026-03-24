@@ -1,0 +1,70 @@
+{
+  "title": "Data Statistics Report",
+  "date_range": {
+    "start": "Start Date",
+    "end": "End Date",
+    "separator": "to",
+    "shortcuts": {
+      "last_7_days": "Last 7 Days",
+      "last_30_days": "Last 30 Days",
+      "this_month": "This Month"
+    }
+  },
+  "overview": {
+    "user_count": "Users",
+    "role_count": "Roles",
+    "dept_count": "Departments",
+    "post_count": "Posts",
+    "menu_count": "Menus",
+    "config_count": "Configs"
+  },
+  "tabs": {
+    "user": "User Statistics",
+    "log": "Log Statistics",
+    "overview": "System Overview"
+  },
+  "user_stats": {
+    "overview": "User Overview",
+    "total_users": "Total Users",
+    "active_today": "Active Users Today",
+    "new_today": "New Users Today",
+    "activity_description": "Activity Description",
+    "activity_note": "Active users: Unique users who successfully logged in within the selected time range.",
+    "dept_distribution": "Department distribution: Shows the proportion of users in each department (not yet enabled)."
+  },
+  "log_stats": {
+    "login_title": "Login Log Statistics",
+    "total_logins": "Total Logins",
+    "success_rate": "Success Rate",
+    "success_count": "Success Count",
+    "fail_count": "Fail Count",
+    "login_trend": "Login Trend (Recent)",
+    "operate_title": "Operation Log Statistics",
+    "total_operations": "Total Operations",
+    "operate_trend": "Operation Trend (Recent)"
+  },
+  "module_stats": {
+    "title": "Module Operation Statistics",
+    "module_name": "Module Name",
+    "operation_count": "Operation Count",
+    "percentage": "Percentage"
+  },
+  "overview_stats": {
+    "title": "System Resources",
+    "category": "Category",
+    "count": "Count",
+    "description": "Description",
+    "user_management": "User Management",
+    "role_management": "Role Management",
+    "dept_management": "Department Management",
+    "post_management": "Post Management",
+    "menu_management": "Menu Management",
+    "system_config": "System Config",
+    "user_desc": "Total registered users",
+    "role_desc": "Total permission roles",
+    "dept_desc": "Total organization departments",
+    "post_desc": "Total post settings",
+    "menu_desc": "Total system menus and permissions",
+    "config_desc": "Total system parameters"
+  }
+}

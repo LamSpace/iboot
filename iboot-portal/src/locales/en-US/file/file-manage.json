@@ -1,0 +1,58 @@
+{
+  "title": "File Management",
+  "actions": {
+    "upload": "Upload File",
+    "export": "Export Excel",
+    "search": "Search",
+    "reset": "Reset",
+    "download": "Download",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "search": {
+    "file_name": "File Name",
+    "file_category": "File Category",
+    "file_name_placeholder": "Enter file name",
+    "select_category": "Select category"
+  },
+  "table": {
+    "id": "ID",
+    "file_name": "File Name",
+    "file_size": "File Size",
+    "file_ext": "Extension",
+    "file_category": "File Category",
+    "upload_by": "Uploaded By",
+    "upload_time": "Upload Time",
+    "actions": "Actions"
+  },
+  "dialog": {
+    "edit_title": "Edit File Information",
+    "file_name_label": "File Name",
+    "file_name_placeholder": "Enter file name",
+    "file_category_label": "File Category",
+    "file_category_placeholder": "Select file category",
+    "remark_label": "Remark",
+    "remark_placeholder": "Enter remark",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "messages": {
+    "file_size_limit": "File size cannot exceed 50MB",
+    "upload_success": "Uploaded successfully",
+    "upload_failed": "Upload failed",
+    "upload_error": "Upload failed, please try again",
+    "delete_confirm": "Are you sure you want to delete this file? Deleted files cannot be recovered.",
+    "delete_success": "Deleted successfully",
+    "update_success": "Updated successfully"
+  },
+  "validation": {
+    "file_name_required": "Please enter file name"
+  },
+  "category": {
+    "image": "Image",
+    "video": "Video",
+    "audio": "Audio",
+    "archive": "Archive",
+    "other": "Other"
+  }
+}

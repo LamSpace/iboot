@@ -1,0 +1,159 @@
+{
+  "title": "消息中心",
+  "tabs": {
+    "message": "消息管理",
+    "template": "消息模板"
+  },
+  "actions": {
+    "add": "新增消息",
+    "export": "导出 Excel",
+    "edit": "编辑",
+    "delete": "删除",
+    "send": "发送",
+    "revoke": "撤回",
+    "search": "搜索",
+    "reset": "重置"
+  },
+  "search": {
+    "title": "消息标题",
+    "type": "消息类型",
+    "status": "状态",
+    "placeholder": "请输入消息标题"
+  },
+  "table": {
+    "id": "ID",
+    "title": "消息标题",
+    "type": "消息类型",
+    "priority": "优先级",
+    "receiver_type": "接收类型",
+    "status": "状态",
+    "create_by": "创建人",
+    "create_time": "创建时间",
+    "actions": "操作"
+  },
+  "dialog": {
+    "add_title": "新增消息",
+    "edit_title": "编辑消息",
+    "title_label": "消息标题",
+    "title_placeholder": "请输入消息标题",
+    "type_label": "消息类型",
+    "type_placeholder": "请选择消息类型",
+    "priority_label": "优先级",
+    "receiver_type_label": "接收类型",
+    "receiver_type_placeholder": "请选择接收类型",
+    "target_user_label": "指定用户",
+    "target_user_placeholder": "请搜索并选择用户",
+    "content_label": "消息内容",
+    "content_placeholder": "请输入消息内容",
+    "remark_label": "备注",
+    "remark_placeholder": "请输入备注",
+    "cancel": "取消",
+    "save_draft": "保存草稿",
+    "save_and_send": "保存并发送",
+    "confirm": "确定"
+  },
+  "send_dialog": {
+    "title": "发送消息",
+    "receiver_type_label": "接收类型",
+    "target_user_label": "指定用户",
+    "target_user_placeholder": "请搜索并选择用户",
+    "cancel": "取消",
+    "confirm": "确认发送"
+  },
+  "messages": {
+    "delete_confirm": "确认删除该消息吗？",
+    "revoke_confirm": "确认撤回该消息吗？撤回后未读用户将不再收到该消息。",
+    "delete_success": "删除成功",
+    "revoke_success": "撤回成功",
+    "save_success": "新增成功",
+    "update_success": "修改成功",
+    "send_success": "发送成功",
+    "send_warning": "消息已保存，但发送失败，请在列表中手动发送",
+    "select_user_warning": "请选择接收用户"
+  },
+  "validation": {
+    "title_required": "请输入消息标题",
+    "type_required": "请选择消息类型",
+    "receiver_type_required": "请选择接收类型",
+    "content_required": "请输入消息内容"
+  },
+  "notification": {
+    "title": "消息中心",
+    "no_message": "暂无消息",
+    "mark_all_read": "全部已读",
+    "close": "关闭",
+    "view_all": "查看全部消息",
+    "delete": "删除",
+    "urgent": "紧急",
+    "important": "重要",
+    "unread": "未读",
+    "time": {
+      "just_now": "刚刚",
+      "minutes_ago": "{0}分钟前",
+      "hours_ago": "{0}小时前"
+    },
+    "filter": {
+      "all": "全部",
+      "notification": "通知",
+      "system": "系统",
+      "important": "重要"
+    }
+  },
+  "inbox": {
+    "title": "我的消息",
+    "filter": {
+      "all": "全部",
+      "unread": "未读",
+      "read": "已读"
+    },
+    "no_message": "暂无消息",
+    "delete_confirm": "确认删除该消息吗？",
+    "delete_success": "删除成功",
+    "mark_all_read_success": "已全部标记为已读",
+    "delete": "删除",
+    "close": "关闭",
+    "urgent": "紧急",
+    "important": "重要",
+    "messages": {
+      "delete_confirm": "确认删除该消息吗？",
+      "delete_success": "删除成功",
+      "mark_all_read_success": "已全部标记为已读",
+      "delete_title": "提示"
+    }
+  },
+  "template": {
+    "add": "新增模板",
+    "edit": "编辑模板",
+    "delete": "删除模板",
+    "search": "搜索",
+    "reset": "重置",
+    "template_code": "模板编码",
+    "template_name": "模板名称",
+    "template_content": "模板内容",
+    "status": "状态",
+    "enabled": "启用",
+    "disabled": "停用",
+    "placeholder": {
+      "template_code": "请输入模板编码",
+      "template_name": "请输入模板名称",
+      "template_content": "请输入模板内容，支持 ${变量名} 占位符"
+    },
+    "dialog": {
+      "add_title": "新增消息模板",
+      "edit_title": "编辑消息模板",
+      "cancel": "取消",
+      "confirm": "确定"
+    },
+    "messages": {
+      "delete_confirm": "确认删除该消息模板吗？",
+      "delete_success": "删除成功",
+      "save_success": "新增成功",
+      "update_success": "修改成功"
+    },
+    "validation": {
+      "template_code_required": "请输入模板编码",
+      "template_name_required": "请输入模板名称",
+      "template_content_required": "请输入模板内容"
+    }
+  }
+}

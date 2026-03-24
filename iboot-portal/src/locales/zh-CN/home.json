@@ -1,0 +1,19 @@
+{
+  "title": "首页",
+  "register": "注册",
+  "login": "登录",
+  "start_using": "开始使用",
+  "learn_more": "了解更多",
+  "system_title": "新一代企业级管理平台",
+  "system_description": "基于 Vue 3 与 Spring Boot 构建的现代化解决方案，<br>为您的业务提供高效、安全、可靠的技术支撑。",
+  "features_title": "核心特性",
+  "feature_permission_title": "权限管理",
+  "feature_permission_desc": "基于 RBAC 的细粒度权限控制，支持用户、角色、菜单的灵活配置",
+  "feature_architecture_title": "现代架构",
+  "feature_architecture_desc": "前后端分离设计，RESTful API 接口规范，支持微服务扩展",
+  "feature_security_title": "安全可靠",
+  "feature_security_desc": "JWT 身份认证，XSS/CSRF 防护，SQL 注入防御，全方位安全保障",
+  "feature_efficiency_title": "高效开发",
+  "feature_efficiency_desc": "完善的代码生成器，丰富的组件库，大幅提升开发效率",
+  "tech_stack_title": "技术栈"
+}

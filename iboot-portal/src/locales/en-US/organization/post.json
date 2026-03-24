@@ -1,0 +1,36 @@
+{
+  "title": "Post Management",
+  "add": "Add Post",
+  "edit": "Edit Post",
+  "delete": "Delete Post",
+  "export": "Export Excel",
+  "search": "Search",
+  "reset": "Reset",
+  "postName": "Post Name",
+  "postCode": "Post Code",
+  "orderNum": "Sort Order",
+  "status": "Status",
+  "remark": "Remark",
+  "createTime": "Created At",
+  "action": "Action",
+  "edit_action": "Edit",
+  "please_select": "Please select",
+  "please_input": "Please enter",
+  "confirm_delete": "Are you sure you want to delete this post?",
+  "confirm_delete_title": "Warning",
+  "delete_success": "Deleted successfully",
+  "add_success": "Added successfully",
+  "edit_success": "Updated successfully",
+  "status_change_success": "Status changed successfully",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "placeholder": {
+    "postName": "Please enter post name",
+    "postCode": "Please enter post code",
+    "remark": "Please enter remark"
+  },
+  "validation": {
+    "postName_required": "Please enter post name",
+    "postCode_required": "Please enter post code"
+  }
+}

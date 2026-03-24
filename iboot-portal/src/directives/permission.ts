@@ -1,5 +1,5 @@
-import type { Directive } from 'vue'
-import { usePermissionStore } from '@/stores/permission'
+import type { Directive } from "vue";
+import { usePermissionStore } from "@/stores/permission";
 
 /**
  * v-permission 按钮级权限控制指令
@@ -11,12 +11,12 @@ import { usePermissionStore } from '@/stores/permission'
  */
 export const permission: Directive<HTMLElement, string | string[]> = {
   mounted(el, binding) {
-    const { value } = binding
-    if (!value) return
+    const { value } = binding;
+    if (!value) return;
 
-    const permissionStore = usePermissionStore()
+    const permissionStore = usePermissionStore();
     if (!permissionStore.hasPermission(value)) {
-      el.parentNode?.removeChild(el)
+      el.parentNode?.removeChild(el);
     }
-  }
-}
+  },
+};

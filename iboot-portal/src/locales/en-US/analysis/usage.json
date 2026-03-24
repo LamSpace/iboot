@@ -1,0 +1,46 @@
+{
+  "title": "System Usage Analysis",
+  "date_range": {
+    "start": "Start Date",
+    "end": "End Date",
+    "separator": "to",
+    "shortcuts": {
+      "last_7_days": "Last 7 Days",
+      "last_30_days": "Last 30 Days",
+      "this_month": "This Month"
+    }
+  },
+  "overview": {
+    "today_active": "Active Users Today",
+    "week_active": "Active Users This Week",
+    "month_active": "Active Users This Month"
+  },
+  "active_user_rank": {
+    "title": "Active User Ranking",
+    "top": "TOP",
+    "rank": "Rank",
+    "username": "Username",
+    "operation_count": "Operations",
+    "activity": "Activity"
+  },
+  "feature_module": {
+    "title": "Feature Module Usage",
+    "frequency": "Usage Frequency",
+    "rank": "Rank",
+    "module_name": "Module Name",
+    "usage_count": "Usage Count",
+    "percentage": "Percentage"
+  },
+  "time_distribution": {
+    "title": "24-Hour Access Distribution",
+    "peak_hours": "Peak Hours",
+    "hour_label": "Hour"
+  },
+  "activity_trend": {
+    "title": "User Activity Trend"
+  },
+  "empty": {
+    "no_data": "No data",
+    "no_trend_data": "No trend data"
+  }
+}

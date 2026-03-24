@@ -1,0 +1,28 @@
+{
+  "title": "Online Users",
+  "export": "Export Excel",
+  "refresh": "Refresh",
+  "search": "Search",
+  "reset": "Reset",
+  "force_logout": "Force Logout",
+  "current_online_users": "Current Online Users",
+  "users_count": "",
+  "auto_refresh": "Auto Refresh",
+  "username": "Username",
+  "loginIp": "Login IP",
+  "tokenId": "Session ID",
+  "nickname": "Nickname",
+  "dept": "Department",
+  "browser": "Browser",
+  "os": "Operating System",
+  "loginTime": "Login Time",
+  "action": "Action",
+  "please_input": "Please enter",
+  "force_logout_confirm": "Are you sure you want to force logout user \"{username}\"?",
+  "force_logout_title": "Force Logout Confirmation",
+  "force_logout_success": "Force logout successful",
+  "placeholder": {
+    "username": "Please enter username",
+    "loginIp": "Please enter login IP"
+  }
+}

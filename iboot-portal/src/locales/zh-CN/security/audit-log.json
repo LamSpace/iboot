@@ -1,0 +1,30 @@
+{
+  "title": "审计日志",
+  "search": "搜索",
+  "reset": "重置",
+  "detail": "详情",
+  "action": "操作",
+  "level": "日志级别",
+  "keyword": "关键字",
+  "logger": "Logger",
+  "thread": "线程",
+  "message": "消息",
+  "timestamp": "时间",
+  "time_range": "时间范围",
+  "date_range_separator": "至",
+  "start_time": "开始时间",
+  "end_time": "结束时间",
+  "detail_title": "运行日志详情",
+  "please_select": "请选择",
+  "placeholder": {
+    "keyword": "搜索消息内容",
+    "logger": "如 com.iboot.admin"
+  },
+  "level_options": {
+    "ERROR": "ERROR",
+    "WARN": "WARN",
+    "INFO": "INFO",
+    "DEBUG": "DEBUG",
+    "TRACE": "TRACE"
+  }
+}

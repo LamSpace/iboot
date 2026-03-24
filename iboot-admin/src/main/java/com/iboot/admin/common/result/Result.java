@@ -16,6 +16,7 @@
 
 package com.iboot.admin.common.result;
 
+import com.iboot.admin.common.i18n.I18nUtil;
 import java.io.Serializable;
 
 /**
@@ -73,7 +74,7 @@ public class Result<T> implements Serializable {
      * @return 成功响应结果
      */
     public static <T> Result<T> success() {
-        return new Result<>(200, "操作成功");
+        return new Result<>(200, I18nUtil.getMessage("result.success"));
     }
 
     /**
@@ -85,7 +86,20 @@ public class Result<T> implements Serializable {
      * @return 成功响应结果
      */
     public static <T> Result<T> success(T data) {
-        return new Result<>(200, "操作成功", data);
+        return new Result<>(200, I18nUtil.getMessage("result.success"), data);
+    }
+
+    /**
+     * 成功响应 - 包含消息码和数据
+     *
+     * @param <T>     泛型类型
+     * @param code    消息码
+     * @param data    响应数据
+     *
+     * @return 成功响应结果
+     */
+    public static <T> Result<T> successWithCode(String code, T data) {
+        return new Result<>(200, I18nUtil.getMessage(code), data);
     }
 
     /**
@@ -109,7 +123,7 @@ public class Result<T> implements Serializable {
      * @return 失败响应结果
      */
     public static <T> Result<T> error() {
-        return new Result<>(500, "操作失败");
+        return new Result<>(500, I18nUtil.getMessage("result.error"));
     }
 
     /**
@@ -122,6 +136,18 @@ public class Result<T> implements Serializable {
      */
     public static <T> Result<T> error(String message) {
         return new Result<>(500, message);
+    }
+
+    /**
+     * 失败响应 - 包含消息码
+     *
+     * @param <T>     泛型类型
+     * @param code    消息码
+     *
+     * @return 失败响应结果
+     */
+    public static <T> Result<T> errorWithCode(String code) {
+        return new Result<>(500, I18nUtil.getMessage(code));
     }
 
     /**

@@ -1,8 +1,8 @@
 <template>
   <div class="dashboard-layout">
-    <el-container style="margin: 0; padding: 0;">
+    <el-container style="margin: 0; padding: 0">
       <!-- 侧边栏 -->
-      <el-aside width="200px" class="sidebar" style="margin: 0; padding: 0;">
+      <el-aside width="200px" class="sidebar" style="margin: 0; padding: 0">
         <div class="logo">
           <h3>{{ systemName }}</h3>
         </div>
@@ -24,12 +24,16 @@
             </el-menu-item>
             <el-sub-menu v-else :index="item.index">
               <template #title>
-                <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
+                <el-icon v-if="item.icon"
+                  ><component :is="item.icon"
+                /></el-icon>
                 <span>{{ item.title }}</span>
               </template>
               <template v-for="subItem in item.children" :key="subItem.index">
                 <el-menu-item :index="subItem.index">
-                  <el-icon v-if="subItem.icon"><component :is="subItem.icon" /></el-icon>
+                  <el-icon v-if="subItem.icon"
+                    ><component :is="subItem.icon"
+                  /></el-icon>
                   <span>{{ subItem.title }}</span>
                 </el-menu-item>
               </template>
@@ -37,21 +41,34 @@
           </template>
         </el-menu>
       </el-aside>
-      
+
       <!-- 主内容区域 -->
-      <el-container style="margin: 0; padding: 0;">
-        <el-header class="header" style="margin: 0; padding: 0;">
-          <el-row :gutter="20" class="header-row" style="margin: 0; padding: 0;">
+      <el-container style="margin: 0; padding: 0">
+        <el-header class="header" style="margin: 0; padding: 0">
+          <el-row :gutter="20" class="header-row" style="margin: 0; padding: 0">
             <el-col :span="12">
               <el-breadcrumb separator="/" class="breadcrumb">
-                <el-breadcrumb-item :to="{ path: '/dashboard' }" style="margin-left: 20px;">首页</el-breadcrumb-item>
-                <el-breadcrumb-item style="margin-right: 20px;">{{ currentBreadcrumb }}</el-breadcrumb-item>
+                <el-breadcrumb-item
+                  :to="{ path: '/dashboard' }"
+                  style="margin-left: 20px"
+                  >{{ t("dashboard.home") }}</el-breadcrumb-item
+                >
+                <el-breadcrumb-item style="margin-right: 20px">{{
+                  currentBreadcrumb
+                }}</el-breadcrumb-item>
               </el-breadcrumb>
             </el-col>
             <el-col :span="12" class="user-info">
               <NotificationBell class="notification-bell" />
-              <el-badge :value="unreadNoticeCount" :hidden="unreadNoticeCount === 0" :max="99" class="notice-badge">
-                <el-icon class="notice-bell" @click="noticePopupVisible = true"><Bell /></el-icon>
+              <el-badge
+                :value="unreadNoticeCount"
+                :hidden="unreadNoticeCount === 0"
+                :max="99"
+                class="notice-badge"
+              >
+                <el-icon class="notice-bell" @click="noticePopupVisible = true"
+                  ><Bell
+                /></el-icon>
               </el-badge>
               <el-dropdown>
                 <span class="el-dropdown-link">
@@ -59,60 +76,90 @@
                 </span>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item @click="handleProfile">个人中心</el-dropdown-item>
-                    <el-dropdown-item @click="handleChangePassword">修改密码</el-dropdown-item>
-                    <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+                    <el-dropdown-item @click="handleProfile">{{
+                      t("dashboard.profile")
+                    }}</el-dropdown-item>
+                    <el-dropdown-item @click="handleChangePassword">{{
+                      t("dashboard.change_password")
+                    }}</el-dropdown-item>
+                    <el-dropdown-item divided @click="handleLogout">{{
+                      t("dashboard.logout")
+                    }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
+              <!-- 语言切换组件 -->
+              <LocalePicker class="locale-picker" />
             </el-col>
           </el-row>
         </el-header>
-        
-        <el-main class="main-content" style="margin: 0; padding: 0;">
+
+        <el-main class="main-content" style="margin: 0; padding: 0">
           <router-view />
         </el-main>
       </el-container>
     </el-container>
 
     <!-- 个人中心对话框 -->
-    <el-dialog v-model="profileDialogVisible" title="个人中心" width="500px">
-      <el-form ref="profileFormRef" :model="profileForm" :rules="profileRules" label-width="80px">
-        <el-form-item label="用户名">
+    <el-dialog
+      v-model="profileDialogVisible"
+      :title="t('dashboard.profile')"
+      width="500px"
+    >
+      <el-form
+        ref="profileFormRef"
+        :model="profileForm"
+        :rules="profileRules"
+        label-width="80px"
+      >
+        <el-form-item :label="t('user.username')">
           <el-input v-model="profileForm.username" disabled />
         </el-form-item>
-        <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="profileForm.nickname" placeholder="请输入昵称" />
+        <el-form-item :label="t('user.nickname')" prop="nickname">
+          <el-input
+            v-model="profileForm.nickname"
+            :placeholder="t('user.placeholder.nickname')"
+          />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="profileForm.email" placeholder="请输入邮箱" />
+        <el-form-item :label="t('user.email')" prop="email">
+          <el-input
+            v-model="profileForm.email"
+            :placeholder="t('user.placeholder.email')"
+          />
         </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="profileForm.phone" placeholder="请输入手机号" />
+        <el-form-item :label="t('user.phone')" prop="phone">
+          <el-input
+            v-model="profileForm.phone"
+            :placeholder="t('user.placeholder.phone')"
+          />
         </el-form-item>
-        <el-form-item label="性别">
+        <el-form-item :label="t('user.gender')">
           <el-radio-group v-model="profileForm.gender">
-            <el-radio :value="1">男</el-radio>
-            <el-radio :value="2">女</el-radio>
-            <el-radio :value="0">未知</el-radio>
+            <el-radio :value="1">{{ t("user.male") }}</el-radio>
+            <el-radio :value="2">{{ t("user.female") }}</el-radio>
+            <el-radio :value="0">{{ t("user.unknown") }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="部门">
+        <el-form-item :label="t('user.dept')">
           <el-input v-model="profileForm.deptName" disabled />
         </el-form-item>
-        <el-form-item label="岗位">
+        <el-form-item :label="t('user.post')">
           <el-input :value="profileForm.postNames?.join(', ')" disabled />
         </el-form-item>
-        <el-form-item label="角色">
+        <el-form-item :label="t('user.role')">
           <el-input :value="profileForm.roleNames?.join(', ')" disabled />
         </el-form-item>
-        <el-form-item label="创建时间">
+        <el-form-item :label="t('common.create_time')">
           <el-input v-model="profileForm.createTime" disabled />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="profileDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmitProfile">保存</el-button>
+        <el-button @click="profileDialogVisible = false">{{
+          t("common.cancel")
+        }}</el-button>
+        <el-button type="primary" @click="handleSubmitProfile">{{
+          t("common.save")
+        }}</el-button>
       </template>
     </el-dialog>
 
@@ -120,283 +167,343 @@
     <NoticePopup v-model="noticePopupVisible" @read-change="loadUnreadCount" />
 
     <!-- 修改密码对话框 -->
-    <el-dialog v-model="passwordDialogVisible" title="修改密码" width="400px">
-      <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="80px">
-        <el-form-item label="旧密码" prop="oldPassword">
-          <el-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入旧密码" show-password />
+    <el-dialog
+      v-model="passwordDialogVisible"
+      :title="t('dashboard.change_password')"
+      width="400px"
+    >
+      <el-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        label-width="80px"
+      >
+        <el-form-item :label="t('dashboard.old_password')" prop="oldPassword">
+          <el-input
+            v-model="passwordForm.oldPassword"
+            type="password"
+            :placeholder="t('dashboard.old_password_required')"
+            show-password
+          />
         </el-form-item>
-        <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码" show-password />
+        <el-form-item :label="t('dashboard.new_password')" prop="newPassword">
+          <el-input
+            v-model="passwordForm.newPassword"
+            type="password"
+            :placeholder="t('dashboard.new_password_required')"
+            show-password
+          />
         </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input v-model="passwordForm.confirmPassword" type="password" placeholder="请确认新密码" show-password />
+        <el-form-item
+          :label="t('dashboard.confirm_password')"
+          prop="confirmPassword"
+        >
+          <el-input
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            :placeholder="t('dashboard.confirm_password_required')"
+            show-password
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="passwordDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmitPassword">确定</el-button>
+        <el-button @click="passwordDialogVisible = false">{{
+          t("common.cancel")
+        }}</el-button>
+        <el-button type="primary" @click="handleSubmitPassword">{{
+          t("common.confirm")
+        }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, type Component } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, ElRow, ElCol, type FormInstance, type FormRules } from 'element-plus'
-import { ArrowDown, Bell } from '@element-plus/icons-vue'
-import { getUserProfile, updateUserProfile, updateUserPassword, getUnreadNoticeCount, type UserProfile, type Menu } from '@/api/system'
-import { useUserStore } from '@/stores/user'
-import { usePermissionStore } from '@/stores/permission'
-import { useAppStore } from '@/stores/app'
-import { getIconComponent } from '@/utils/icon-map'
-import NoticePopup from '@/components/NoticePopup.vue'
-import NotificationBell from '@/components/Notification/NotificationBell.vue'
+import { ref, reactive, computed, onMounted, type Component } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import {
+  ElMessage,
+  ElRow,
+  ElCol,
+  type FormInstance,
+  type FormRules,
+} from "element-plus";
+import { useI18n } from "vue-i18n";
+import { ArrowDown, Bell } from "@element-plus/icons-vue";
+import {
+  getUserProfile,
+  updateUserProfile,
+  updateUserPassword,
+  getUnreadNoticeCount,
+  type UserProfile,
+  type Menu,
+} from "@/api/system";
+import { useUserStore } from "@/stores/user";
+import { usePermissionStore } from "@/stores/permission";
+import { useAppStore } from "@/stores/app";
+import { getIconComponent } from "@/utils/icon-map";
+import NoticePopup from "@/components/NoticePopup.vue";
+import NotificationBell from "@/components/Notification/NotificationBell.vue";
+import LocalePicker from "@/components/LocalePicker.vue";
 
 interface MenuItem {
-  index: string
-  title: string
-  icon?: Component
-  children?: MenuItem[]
+  index: string;
+  title: string;
+  icon?: Component;
+  children?: MenuItem[];
 }
 
-const router = useRouter()
-const route = useRoute()
-const userStore = useUserStore()
-const permissionStore = usePermissionStore()
-const appStore = useAppStore()
-const isCollapse = ref(false)
-const currentUsername = ref('admin')
+const router = useRouter();
+const route = useRoute();
+const userStore = useUserStore();
+const permissionStore = usePermissionStore();
+const appStore = useAppStore();
+const { t } = useI18n();
+const isCollapse = ref(false);
+const currentUsername = ref("admin");
 
-const systemName = computed(() => appStore.systemName)
+const systemName = computed(() => appStore.systemName);
 
 // ==================== 系统公告 ====================
-const noticePopupVisible = ref(false)
-const unreadNoticeCount = ref(0)
+const noticePopupVisible = ref(false);
+const unreadNoticeCount = ref(0);
 
 const loadUnreadCount = async () => {
   try {
-    const res = await getUnreadNoticeCount()
+    const res = await getUnreadNoticeCount();
     if (res.code === 200) {
-      unreadNoticeCount.value = res.data ?? 0
+      unreadNoticeCount.value = res.data ?? 0;
     }
   } catch {
     // ignore
   }
-}
+};
 
 // ==================== 动态菜单 ====================
 
-/**
- * 提取菜单路径的最后一段，用于路由导航
- * 例如: /system/user → user, /organization/dept → dept
- */
 function getLastPathSegment(path: string): string {
-  const segments = path.split('/').filter(Boolean)
-  return segments.length > 0 ? segments[segments.length - 1] : path
+  const segments = path.split("/").filter(Boolean);
+  return segments.length > 0 ? segments[segments.length - 1] : path;
 }
 
-/**
- * 将后端菜单树转换为 el-menu 所需格式
- */
 function convertMenuTree(menus: Menu[]): MenuItem[] {
-  const result: MenuItem[] = []
+  const result: MenuItem[] = [];
   for (const menu of menus) {
-    if (menu.visible === 0 || menu.status === 0) continue
+    if (menu.visible === 0 || menu.status === 0) continue;
 
-    if (menu.menuType === 'M') {
-      // 目录类型：有子菜单
-      const children = menu.children ? convertMenuTree(menu.children) : []
+    if (menu.menuType === "M") {
+      const children = menu.children ? convertMenuTree(menu.children) : [];
       if (children.length > 0) {
         result.push({
           index: `dir-${menu.id}`,
           title: menu.menuName,
           icon: getIconComponent(menu.icon),
-          children
-        })
+          children,
+        });
       }
-    } else if (menu.menuType === 'C' && menu.path) {
-      // 菜单类型：叶子节点
-      const routePath = getLastPathSegment(menu.path)
+    } else if (menu.menuType === "C" && menu.path) {
+      const routePath = getLastPathSegment(menu.path);
       result.push({
-        index: '/' + routePath,
+        index: "/" + routePath,
         title: menu.menuName,
-        icon: getIconComponent(menu.icon)
-      })
+        icon: getIconComponent(menu.icon),
+      });
     }
   }
-  return result
+  return result;
 }
 
-const menuList = computed(() => convertMenuTree(permissionStore.menuTree))
+const menuList = computed(() => convertMenuTree(permissionStore.menuTree));
 
-/**
- * 根据当前路由路径计算激活的菜单索引
- */
 const activeIndex = computed(() => {
-  const path = route.path
-  if (path.startsWith('/dashboard/')) {
-    return '/' + path.replace('/dashboard/', '')
+  const path = route.path;
+  if (path.startsWith("/dashboard/")) {
+    return "/" + path.replace("/dashboard/", "");
   }
-  return ''
-})
+  return "";
+});
 
-/**
- * 根据当前路由路径计算面包屑文字
- */
 const currentBreadcrumb = computed(() => {
-  const item = findMenuItemByIndex(activeIndex.value)
-  return item?.title ?? ''
-})
+  const item = findMenuItemByIndex(activeIndex.value);
+  return item?.title ?? "";
+});
 
 // ==================== 个人中心 ====================
 
-const profileDialogVisible = ref(false)
-const profileFormRef = ref<FormInstance>()
+const profileDialogVisible = ref(false);
+const profileFormRef = ref<FormInstance>();
 const profileForm = reactive<UserProfile>({
-  username: '',
-  nickname: '',
-  email: '',
-  phone: '',
+  username: "",
+  nickname: "",
+  email: "",
+  phone: "",
   gender: 0,
-  deptName: '',
+  deptName: "",
   postNames: [],
   roleNames: [],
-  createTime: ''
-})
+  createTime: "",
+});
 const profileRules: FormRules = {
-  email: [{ type: 'email', message: '请输入正确的邮箱', trigger: 'blur' }],
-  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }]
-}
+  email: [{ type: "email", message: t("user.email_invalid"), trigger: "blur" }],
+  phone: [
+    {
+      pattern: /^1[3-9]\d{9}$/,
+      message: t("user.phone_invalid"),
+      trigger: "blur",
+    },
+  ],
+};
 
 // ==================== 修改密码 ====================
 
-const passwordDialogVisible = ref(false)
-const passwordFormRef = ref<FormInstance>()
+const passwordDialogVisible = ref(false);
+const passwordFormRef = ref<FormInstance>();
 const passwordForm = reactive({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-const validateConfirmPassword = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+  oldPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+});
+const validateConfirmPassword = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void,
+) => {
   if (value !== passwordForm.newPassword) {
-    callback(new Error('两次输入的密码不一致'))
+    callback(new Error(t("dashboard.password_not_match")));
   } else {
-    callback()
+    callback();
   }
-}
+};
 const passwordRules: FormRules = {
-  oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+  oldPassword: [
+    {
+      required: true,
+      message: t("dashboard.old_password_required"),
+      trigger: "blur",
+    },
+  ],
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度必须在6-20之间', trigger: 'blur' }
+    {
+      required: true,
+      message: t("dashboard.new_password_required"),
+      trigger: "blur",
+    },
+    {
+      min: 6,
+      max: 20,
+      message: t("dashboard.new_password_length"),
+      trigger: "blur",
+    },
   ],
   confirmPassword: [
-    { required: true, message: '请确认新密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: 'blur' }
-  ]
-}
+    {
+      required: true,
+      message: t("dashboard.confirm_password_required"),
+      trigger: "blur",
+    },
+    { validator: validateConfirmPassword, trigger: "blur" },
+  ],
+};
 
 // ==================== 方法 ====================
 
 const loadUserProfile = async () => {
   try {
-    const res = await getUserProfile()
+    const res = await getUserProfile();
     if (res.code === 200) {
-      Object.assign(profileForm, res.data)
-      currentUsername.value = res.data.nickname || res.data.username || 'admin'
+      Object.assign(profileForm, res.data);
+      currentUsername.value = res.data.nickname || res.data.username || "admin";
     }
   } catch {
     // 如果获取失败，使用默认值
   }
-}
+};
 
 const handleProfile = async () => {
-  await loadUserProfile()
-  profileDialogVisible.value = true
-}
+  await loadUserProfile();
+  profileDialogVisible.value = true;
+};
 
 const handleSubmitProfile = async () => {
-  await profileFormRef.value?.validate()
+  await profileFormRef.value?.validate();
   try {
     await updateUserProfile({
       nickname: profileForm.nickname,
       email: profileForm.email,
       phone: profileForm.phone,
-      gender: profileForm.gender
-    })
-    ElMessage.success('个人信息修改成功')
-    profileDialogVisible.value = false
-    currentUsername.value = profileForm.nickname || profileForm.username || 'admin'
+      gender: profileForm.gender,
+    });
+    ElMessage.success(t("dashboard.profile_update_success"));
+    profileDialogVisible.value = false;
+    currentUsername.value =
+      profileForm.nickname || profileForm.username || "admin";
   } catch {
-    ElMessage.error('修改失败')
+    ElMessage.error(t("dashboard.profile_update_failed"));
   }
-}
+};
 
 const handleChangePassword = () => {
-  passwordForm.oldPassword = ''
-  passwordForm.newPassword = ''
-  passwordForm.confirmPassword = ''
-  passwordDialogVisible.value = true
-}
+  passwordForm.oldPassword = "";
+  passwordForm.newPassword = "";
+  passwordForm.confirmPassword = "";
+  passwordDialogVisible.value = true;
+};
 
 const handleSubmitPassword = async () => {
-  await passwordFormRef.value?.validate()
+  await passwordFormRef.value?.validate();
   try {
     await updateUserPassword({
       oldPassword: passwordForm.oldPassword,
-      newPassword: passwordForm.newPassword
-    })
-    ElMessage.success('密码修改成功，请重新登录')
-    passwordDialogVisible.value = false
-    userStore.clearUser()
-    router.push('/login')
+      newPassword: passwordForm.newPassword,
+    });
+    ElMessage.success(t("dashboard.password_update_success"));
+    passwordDialogVisible.value = false;
+    userStore.clearUser();
+    router.push("/login");
   } catch {
-    ElMessage.error('密码修改失败')
+    ElMessage.error(t("dashboard.password_update_failed"));
   }
-}
+};
 
 const handleLogout = () => {
-  userStore.clearUser()
-  router.push('/login')
-  ElMessage.success('已退出登录')
-}
+  userStore.clearUser();
+  router.push("/login");
+  ElMessage.success(t("dashboard.logout_success"));
+};
 
 const handleMenuSelect = (index: string) => {
-  if (index.startsWith('/')) {
-    // 菜单项（type C）：导航到对应路由
-    router.push(`/dashboard${index}`)
-  } else if (index.startsWith('dir-')) {
-    // 目录项（type M）：导航到第一个子菜单
-    const dirItem = menuList.value.find(item => item.index === index)
+  if (index.startsWith("/")) {
+    router.push(`/dashboard${index}`);
+  } else if (index.startsWith("dir-")) {
+    const dirItem = menuList.value.find((item) => item.index === index);
     if (dirItem?.children && dirItem.children.length > 0) {
-      const firstChild = dirItem.children[0]
-      router.push(`/dashboard${firstChild.index}`)
+      const firstChild = dirItem.children[0];
+      router.push(`/dashboard${firstChild.index}`);
     }
   }
-}
+};
 
 const findMenuItemByIndex = (index: string): MenuItem | null => {
   for (const item of menuList.value) {
-    if (item.index === index) return item
+    if (item.index === index) return item;
     if (item.children) {
-      const child = item.children.find(c => c.index === index)
-      if (child) return child
+      const child = item.children.find((c) => c.index === index);
+      if (child) return child;
     }
   }
-  return null
-}
+  return null;
+};
 
 onMounted(async () => {
-  loadUserProfile()
-  const noticeRes = await getUnreadNoticeCount().catch(() => null)
+  loadUserProfile();
+  const noticeRes = await getUnreadNoticeCount().catch(() => null);
   if (noticeRes && noticeRes.code === 200) {
-    unreadNoticeCount.value = noticeRes.data ?? 0
+    unreadNoticeCount.value = noticeRes.data ?? 0;
     if (unreadNoticeCount.value > 0) {
-      noticePopupVisible.value = true
+      noticePopupVisible.value = true;
     }
   }
-})
+});
 </script>
 
 <style scoped>
@@ -484,6 +591,10 @@ onMounted(async () => {
   padding-right: 20px;
 }
 
+.locale-picker {
+  margin-left: 8px;
+}
+
 .notification-bell {
   display: flex;
   align-items: center;
@@ -509,18 +620,5 @@ onMounted(async () => {
   margin: 0;
   padding: 0;
   overflow-y: auto;
-}
-
-.welcome-card {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-.welcome-card h2 {
-  margin-bottom: 15px;
-  color: #409eff;
 }
 </style>

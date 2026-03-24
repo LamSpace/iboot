@@ -2,8 +2,12 @@
   <div class="notification-list">
     <div class="list-header">
       <div class="header-title">
-        <span>消息中心</span>
-        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="header-badge" />
+        <span>{{ t("message.messageCenter.notification.title") }}</span>
+        <el-badge
+          :value="unreadCount"
+          :hidden="unreadCount === 0"
+          class="header-badge"
+        />
       </div>
       <div class="header-actions">
         <el-button
@@ -13,10 +17,10 @@
           size="small"
           @click="handleMarkAllAsRead"
         >
-          全部已读
+          {{ t("message.messageCenter.notification.mark_all_read") }}
         </el-button>
         <el-button link type="info" size="small" @click="$emit('close')">
-          关闭
+          {{ t("message.messageCenter.notification.close") }}
         </el-button>
       </div>
     </div>
@@ -25,11 +29,23 @@
 
     <!-- 消息类型筛选 -->
     <div class="filter-tabs">
-      <el-radio-group v-model="filterType" size="small" @change="handleFilterChange">
-        <el-radio-button label="">全部</el-radio-button>
-        <el-radio-button label="notification">通知</el-radio-button>
-        <el-radio-button label="system">系统</el-radio-button>
-        <el-radio-button label="urgent">重要</el-radio-button>
+      <el-radio-group
+        v-model="filterType"
+        size="small"
+        @change="handleFilterChange"
+      >
+        <el-radio-button label="">{{
+          t("message.messageCenter.notification.filter.all")
+        }}</el-radio-button>
+        <el-radio-button label="notification">{{
+          t("message.messageCenter.notification.filter.notification")
+        }}</el-radio-button>
+        <el-radio-button label="system">{{
+          t("message.messageCenter.notification.filter.system")
+        }}</el-radio-button>
+        <el-radio-button label="urgent">{{
+          t("message.messageCenter.notification.filter.important")
+        }}</el-radio-button>
       </el-radio-group>
     </div>
 
@@ -42,7 +58,9 @@
           <el-icon :size="64" color="#dcdfe6">
             <Bell />
           </el-icon>
-          <p class="empty-text">暂无消息</p>
+          <p class="empty-text">
+            {{ t("message.messageCenter.notification.no_message") }}
+          </p>
         </div>
       </template>
 
@@ -67,7 +85,7 @@
                 type="danger"
                 effect="plain"
               >
-                紧急
+                {{ t("message.messageCenter.notification.urgent") }}
               </el-tag>
               <el-tag
                 v-else-if="notification.priority === '1'"
@@ -75,14 +93,21 @@
                 type="warning"
                 effect="plain"
               >
-                重要
+                {{ t("message.messageCenter.notification.important") }}
               </el-tag>
             </div>
             <p class="item-message">{{ notification.content }}</p>
             <div class="item-footer">
-              <span class="item-time">{{ formatTime(notification.sentAt) }}</span>
-              <el-tag v-if="!notification.read" size="small" type="primary" effect="plain">
-                未读
+              <span class="item-time">{{
+                formatTime(notification.sentAt)
+              }}</span>
+              <el-tag
+                v-if="!notification.read"
+                size="small"
+                type="primary"
+                effect="plain"
+              >
+                {{ t("message.messageCenter.notification.unread") }}
               </el-tag>
             </div>
           </div>
@@ -93,7 +118,7 @@
               size="small"
               @click.stop="handleDelete(notification)"
             >
-              删除
+              {{ t("message.messageCenter.notification.delete") }}
             </el-button>
           </div>
         </div>
@@ -115,120 +140,150 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Bell, Message, Warning, DocumentChecked, InfoFilled } from '@element-plus/icons-vue'
-import { usePush } from '@/composables/usePush'
-import { useRouter } from 'vue-router'
-import type { Notification } from '@/stores/push'
+import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
+import {
+  Bell,
+  Message,
+  Warning,
+  DocumentChecked,
+  InfoFilled,
+} from "@element-plus/icons-vue";
+import { usePush } from "@/composables/usePush";
+import { useRouter } from "vue-router";
+import type { Notification } from "@/stores/push";
 
-const router = useRouter()
-const { unreadCount, notifications, hasUnread, markAsRead, removeNotification, clearUnread } = usePush()
+const { t } = useI18n();
+
+const router = useRouter();
+const {
+  unreadCount,
+  notifications,
+  hasUnread,
+  markAsRead,
+  removeNotification,
+  clearUnread,
+} = usePush();
 
 const emit = defineEmits<{
-  close: []
-  view: [notification: Notification]
-}>()
+  close: [];
+  view: [notification: Notification];
+}>();
 
-const filterType = ref('')
-const currentPage = ref(1)
-const pageSize = ref(10)
+const filterType = ref("");
+const currentPage = ref(1);
+const pageSize = ref(10);
 
 // 按类型筛选
 const filteredNotifications = computed(() => {
-  let result = [...notifications.value]
+  let result = [...notifications.value];
 
-  if (filterType.value === 'urgent') {
-    result = result.filter((n) => n.priority === '1' || n.priority === '2')
+  if (filterType.value === "urgent") {
+    result = result.filter((n) => n.priority === "1" || n.priority === "2");
   } else if (filterType.value) {
-    result = result.filter((n) => n.type === filterType.value)
+    result = result.filter((n) => n.type === filterType.value);
   }
 
-  return result
-})
+  return result;
+});
 
 // 总页数
 const totalPages = computed(() => {
-  return Math.ceil(filteredNotifications.value.length / pageSize.value)
-})
+  return Math.ceil(filteredNotifications.value.length / pageSize.value);
+});
 
 // 当前页的消息
 const displayNotifications = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredNotifications.value.slice(start, end)
-})
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredNotifications.value.slice(start, end);
+});
 
 // 获取消息图标
 const getMessageIcon = (notification: Notification) => {
-  if (notification.priority === '2') {
-    return Warning
+  if (notification.priority === "2") {
+    return Warning;
   }
-  if (notification.priority === '1') {
-    return InfoFilled
+  if (notification.priority === "1") {
+    return InfoFilled;
   }
-  if (notification.type === 'system') {
-    return DocumentChecked
+  if (notification.type === "system") {
+    return DocumentChecked;
   }
-  return Message
-}
+  return Message;
+};
 
 // 获取图标样式类
 const getIconClass = (notification: Notification) => {
-  if (notification.priority === '2') {
-    return 'icon-danger'
+  if (notification.priority === "2") {
+    return "icon-danger";
   }
-  if (notification.priority === '1') {
-    return 'icon-warning'
+  if (notification.priority === "1") {
+    return "icon-warning";
   }
-  return 'icon-primary'
-}
+  return "icon-primary";
+};
 
 // 处理筛选变化
 const handleFilterChange = () => {
-  currentPage.value = 1
-}
+  currentPage.value = 1;
+};
 
 // 处理分页变化
 const handlePageChange = (page: number) => {
-  currentPage.value = page
-}
+  currentPage.value = page;
+};
 
 // 处理 item 点击
 const handleItemClick = (notification: Notification) => {
   if (!notification.read) {
-    markAsRead(notification.id)
+    markAsRead(notification.id);
   }
-  emit('view', notification)
-  router.push('/message/messages')
-}
+  emit("view", notification);
+  router.push("/message/messages");
+};
 
 // 标记全部已读
 const handleMarkAllAsRead = () => {
-  clearUnread()
-}
+  clearUnread();
+};
 
 // 删除消息
 const handleDelete = (notification: Notification) => {
-  removeNotification(notification.id)
-}
+  removeNotification(notification.id);
+};
 
 // 格式化时间
 const formatTime = (timeString: string) => {
-  if (!timeString) return ''
-  const date = new Date(timeString)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
+  if (!timeString) return "";
+  const date = new Date(timeString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
 
-  if (diff < 60 * 1000) return '刚刚'
-  if (diff < 60 * 60 * 1000) return `${Math.floor(diff / (60 * 1000))}分钟前`
-  if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / (60 * 60 * 1000))}小时前`
-  return date.toLocaleDateString('zh-CN', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+  if (diff < 60 * 1000)
+    return t("message.messageCenter.notification.time.just_now");
+  if (diff < 60 * 60 * 1000) {
+    const minutes = Math.floor(diff / (60 * 1000));
+    return t("message.messageCenter.notification.time.minutes_ago").replace(
+      "{0}",
+      String(minutes),
+    );
+  }
+  if (diff < 24 * 60 * 60 * 1000) {
+    const hours = Math.floor(diff / (60 * 60 * 1000));
+    return t("message.messageCenter.notification.time.hours_ago").replace(
+      "{0}",
+      String(hours),
+    );
+  }
+  const locale = document.documentElement.lang || "zh-CN";
+  return date.toLocaleDateString(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 </script>
 
 <style scoped>

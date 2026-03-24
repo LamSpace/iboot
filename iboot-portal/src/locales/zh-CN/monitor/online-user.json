@@ -1,0 +1,28 @@
+{
+  "title": "在线用户",
+  "export": "导出 Excel",
+  "refresh": "刷新",
+  "search": "搜索",
+  "reset": "重置",
+  "force_logout": "强退",
+  "current_online_users": "当前在线用户",
+  "users_count": "人",
+  "auto_refresh": "自动刷新",
+  "username": "用户名",
+  "loginIp": "登录 IP",
+  "tokenId": "会话 ID",
+  "nickname": "昵称",
+  "dept": "部门",
+  "browser": "浏览器",
+  "os": "操作系统",
+  "loginTime": "登录时间",
+  "action": "操作",
+  "please_input": "请输入",
+  "force_logout_confirm": "确认要强制退出用户 \"{username}\" 吗？",
+  "force_logout_title": "强制退出确认",
+  "force_logout_success": "强退成功",
+  "placeholder": {
+    "username": "请输入用户名",
+    "loginIp": "请输入登录 IP"
+  }
+}

@@ -4,7 +4,7 @@
     <div class="toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><TrendCharts /></el-icon>
-        <span class="toolbar-title">系统性能监控</span>
+        <span class="toolbar-title">{{ t("monitor.performance.title") }}</span>
         <el-tag v-if="serverInfo" type="info" size="small" effect="plain">
           {{ serverInfo.os.hostName }}
         </el-tag>
@@ -17,18 +17,24 @@
           size="small"
           @click="openSba"
         >
-          打开服务监控控制台
+          {{ t("monitor.performance.open_sba") }}
           <el-icon style="margin-left: 4px"><TopRight /></el-icon>
         </el-button>
         <el-switch
           v-model="autoRefresh"
-          active-text="自动刷新"
+          :active-text="t('monitor.performance.auto_refresh')"
           inactive-text=""
           style="margin-right: 12px"
           @change="toggleAutoRefresh"
         />
-        <el-tooltip content="刷新" placement="top">
-          <el-button :icon="Refresh" circle size="small" @click="loadData" :loading="loading" />
+        <el-tooltip :content="t('monitor.performance.refresh')" placement="top">
+          <el-button
+            :icon="Refresh"
+            circle
+            size="small"
+            @click="loadData"
+            :loading="loading"
+          />
         </el-tooltip>
       </div>
     </div>
@@ -38,7 +44,9 @@
       <el-row :gutter="16" class="stats-cards" v-if="serverInfo">
         <el-col :xs="12" :sm="6">
           <el-card shadow="hover" class="stat-card">
-            <div class="stat-label">CPU 使用率</div>
+            <div class="stat-label">
+              {{ t("monitor.performance.cpu_usage") }}
+            </div>
             <div class="stat-value">
               {{ serverInfo.cpu.totalUsage.toFixed(1) }}%
               <el-tag
@@ -47,7 +55,12 @@
                 effect="dark"
                 style="margin-left: 6px"
               >
-                {{ dictStore.getDictLabel('sys_monitor_status', serverInfo.cpu.status) }}
+                {{
+                  dictStore.getDictLabel(
+                    "sys_monitor_status",
+                    serverInfo.cpu.status,
+                  )
+                }}
               </el-tag>
             </div>
             <el-progress
@@ -60,7 +73,9 @@
         </el-col>
         <el-col :xs="12" :sm="6">
           <el-card shadow="hover" class="stat-card">
-            <div class="stat-label">物理内存</div>
+            <div class="stat-label">
+              {{ t("monitor.performance.physical_memory") }}
+            </div>
             <div class="stat-value">
               {{ serverInfo.memory.usageRate.toFixed(1) }}%
               <el-tag
@@ -69,11 +84,18 @@
                 effect="dark"
                 style="margin-left: 6px"
               >
-                {{ dictStore.getDictLabel('sys_monitor_status', serverInfo.memory.status) }}
+                {{
+                  dictStore.getDictLabel(
+                    "sys_monitor_status",
+                    serverInfo.memory.status,
+                  )
+                }}
               </el-tag>
             </div>
             <el-progress
-              :percentage="Math.min(Math.round(serverInfo.memory.usageRate), 100)"
+              :percentage="
+                Math.min(Math.round(serverInfo.memory.usageRate), 100)
+              "
               :status="progressStatus(serverInfo.memory.status)"
               :stroke-width="6"
               style="margin-top: 6px"
@@ -82,7 +104,9 @@
         </el-col>
         <el-col :xs="12" :sm="6">
           <el-card shadow="hover" class="stat-card">
-            <div class="stat-label">JVM 内存</div>
+            <div class="stat-label">
+              {{ t("monitor.performance.jvm_memory") }}
+            </div>
             <div class="stat-value">
               {{ serverInfo.jvm.usageRate.toFixed(1) }}%
               <el-tag
@@ -91,7 +115,12 @@
                 effect="dark"
                 style="margin-left: 6px"
               >
-                {{ dictStore.getDictLabel('sys_monitor_status', serverInfo.jvm.status) }}
+                {{
+                  dictStore.getDictLabel(
+                    "sys_monitor_status",
+                    serverInfo.jvm.status,
+                  )
+                }}
               </el-tag>
             </div>
             <el-progress
@@ -104,7 +133,9 @@
         </el-col>
         <el-col :xs="12" :sm="6">
           <el-card shadow="hover" class="stat-card">
-            <div class="stat-label">磁盘 (最高)</div>
+            <div class="stat-label">
+              {{ t("monitor.performance.disk_max") }}
+            </div>
             <div class="stat-value" v-if="maxDisk">
               {{ maxDisk.usageRate.toFixed(1) }}%
               <el-tag
@@ -113,7 +144,9 @@
                 effect="dark"
                 style="margin-left: 6px"
               >
-                {{ dictStore.getDictLabel('sys_monitor_status', maxDisk.status) }}
+                {{
+                  dictStore.getDictLabel("sys_monitor_status", maxDisk.status)
+                }}
               </el-tag>
             </div>
             <div class="stat-value" v-else>--</div>
@@ -135,20 +168,56 @@
           <el-card shadow="hover">
             <template #header>
               <span class="card-title">
-                <el-tag type="primary" size="small" effect="plain" style="margin-right: 6px">CPU</el-tag>
-                处理器信息
+                <el-tag
+                  type="primary"
+                  size="small"
+                  effect="plain"
+                  style="margin-right: 6px"
+                  >CPU</el-tag
+                >
+                {{ t("monitor.performance.cpu_info") }}
               </span>
             </template>
             <el-descriptions :column="1" border size="small">
-              <el-descriptions-item label="CPU 型号">{{ serverInfo.cpu.model }}</el-descriptions-item>
-              <el-descriptions-item label="核心数">{{ serverInfo.cpu.coreCount }}</el-descriptions-item>
-              <el-descriptions-item label="系统使用率">{{ serverInfo.cpu.systemUsage.toFixed(1) }}%</el-descriptions-item>
-              <el-descriptions-item label="用户使用率">{{ serverInfo.cpu.userUsage.toFixed(1) }}%</el-descriptions-item>
-              <el-descriptions-item label="总使用率">{{ serverInfo.cpu.totalUsage.toFixed(1) }}%</el-descriptions-item>
-              <el-descriptions-item label="空闲率">{{ serverInfo.cpu.idle.toFixed(1) }}%</el-descriptions-item>
-              <el-descriptions-item label="状态">
-                <el-tag :type="statusTagType(serverInfo.cpu.status)" size="small">
-                  {{ dictStore.getDictLabel('sys_monitor_status', serverInfo.cpu.status) }}
+              <el-descriptions-item
+                :label="t('monitor.performance.cpu_model')"
+                >{{ serverInfo.cpu.model }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.core_count')"
+                >{{ serverInfo.cpu.coreCount }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.system_usage')"
+                >{{
+                  serverInfo.cpu.systemUsage.toFixed(1)
+                }}%</el-descriptions-item
+              >
+              <el-descriptions-item :label="t('monitor.performance.user_usage')"
+                >{{
+                  serverInfo.cpu.userUsage.toFixed(1)
+                }}%</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.total_usage')"
+                >{{
+                  serverInfo.cpu.totalUsage.toFixed(1)
+                }}%</el-descriptions-item
+              >
+              <el-descriptions-item :label="t('monitor.performance.idle')"
+                >{{ serverInfo.cpu.idle.toFixed(1) }}%</el-descriptions-item
+              >
+              <el-descriptions-item :label="t('monitor.performance.status')">
+                <el-tag
+                  :type="statusTagType(serverInfo.cpu.status)"
+                  size="small"
+                >
+                  {{
+                    dictStore.getDictLabel(
+                      "sys_monitor_status",
+                      serverInfo.cpu.status,
+                    )
+                  }}
                 </el-tag>
               </el-descriptions-item>
             </el-descriptions>
@@ -159,18 +228,45 @@
           <el-card shadow="hover">
             <template #header>
               <span class="card-title">
-                <el-tag type="warning" size="small" effect="plain" style="margin-right: 6px">RAM</el-tag>
-                物理内存
+                <el-tag
+                  type="warning"
+                  size="small"
+                  effect="plain"
+                  style="margin-right: 6px"
+                  >RAM</el-tag
+                >
+                {{ t("monitor.performance.physical_memory_detail") }}
               </span>
             </template>
             <el-descriptions :column="1" border size="small">
-              <el-descriptions-item label="总内存">{{ serverInfo.memory.totalDisplay }}</el-descriptions-item>
-              <el-descriptions-item label="已使用">{{ serverInfo.memory.usedDisplay }}</el-descriptions-item>
-              <el-descriptions-item label="空闲">{{ serverInfo.memory.freeDisplay }}</el-descriptions-item>
-              <el-descriptions-item label="使用率">{{ serverInfo.memory.usageRate.toFixed(1) }}%</el-descriptions-item>
-              <el-descriptions-item label="状态">
-                <el-tag :type="statusTagType(serverInfo.memory.status)" size="small">
-                  {{ dictStore.getDictLabel('sys_monitor_status', serverInfo.memory.status) }}
+              <el-descriptions-item
+                :label="t('monitor.performance.total_memory')"
+                >{{ serverInfo.memory.totalDisplay }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.used_memory')"
+                >{{ serverInfo.memory.usedDisplay }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.free_memory')"
+                >{{ serverInfo.memory.freeDisplay }}</el-descriptions-item
+              >
+              <el-descriptions-item :label="t('monitor.performance.usage_rate')"
+                >{{
+                  serverInfo.memory.usageRate.toFixed(1)
+                }}%</el-descriptions-item
+              >
+              <el-descriptions-item :label="t('monitor.performance.status')">
+                <el-tag
+                  :type="statusTagType(serverInfo.memory.status)"
+                  size="small"
+                >
+                  {{
+                    dictStore.getDictLabel(
+                      "sys_monitor_status",
+                      serverInfo.memory.status,
+                    )
+                  }}
                 </el-tag>
               </el-descriptions-item>
             </el-descriptions>
@@ -184,23 +280,65 @@
           <el-card shadow="hover">
             <template #header>
               <span class="card-title">
-                <el-tag type="success" size="small" effect="plain" style="margin-right: 6px">JVM</el-tag>
-                Java 虚拟机
+                <el-tag
+                  type="success"
+                  size="small"
+                  effect="plain"
+                  style="margin-right: 6px"
+                  >JVM</el-tag
+                >
+                {{ t("monitor.performance.jvm_detail") }}
               </span>
             </template>
             <el-descriptions :column="1" border size="small">
-              <el-descriptions-item label="最大内存">{{ serverInfo.jvm.maxMemoryDisplay }}</el-descriptions-item>
-              <el-descriptions-item label="已分配内存">{{ serverInfo.jvm.totalMemoryDisplay }}</el-descriptions-item>
-              <el-descriptions-item label="已使用内存">{{ serverInfo.jvm.usedMemoryDisplay }}</el-descriptions-item>
-              <el-descriptions-item label="空闲内存">{{ serverInfo.jvm.freeMemoryDisplay }}</el-descriptions-item>
-              <el-descriptions-item label="使用率">{{ serverInfo.jvm.usageRate.toFixed(1) }}%</el-descriptions-item>
-              <el-descriptions-item label="Java 版本">{{ serverInfo.jvm.javaVersion }}</el-descriptions-item>
-              <el-descriptions-item label="JVM 名称">{{ serverInfo.jvm.jvmName }}</el-descriptions-item>
-              <el-descriptions-item label="启动时间">{{ serverInfo.jvm.startTime }}</el-descriptions-item>
-              <el-descriptions-item label="运行时长">{{ serverInfo.jvm.runTime }}</el-descriptions-item>
-              <el-descriptions-item label="状态">
-                <el-tag :type="statusTagType(serverInfo.jvm.status)" size="small">
-                  {{ dictStore.getDictLabel('sys_monitor_status', serverInfo.jvm.status) }}
+              <el-descriptions-item
+                :label="t('monitor.performance.max_memory')"
+                >{{ serverInfo.jvm.maxMemoryDisplay }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.total_memory')"
+                >{{ serverInfo.jvm.totalMemoryDisplay }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.used_memory')"
+                >{{ serverInfo.jvm.usedMemoryDisplay }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.free_memory_jvm')"
+                >{{ serverInfo.jvm.freeMemoryDisplay }}</el-descriptions-item
+              >
+              <el-descriptions-item :label="t('monitor.performance.usage_rate')"
+                >{{
+                  serverInfo.jvm.usageRate.toFixed(1)
+                }}%</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.java_version')"
+                >{{ serverInfo.jvm.javaVersion }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.jvm_name')"
+                >{{ serverInfo.jvm.jvmName }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.start_time')"
+                >{{ serverInfo.jvm.startTime }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.run_time')"
+                >{{ serverInfo.jvm.runTime }}</el-descriptions-item
+              >
+              <el-descriptions-item :label="t('monitor.performance.status')">
+                <el-tag
+                  :type="statusTagType(serverInfo.jvm.status)"
+                  size="small"
+                >
+                  {{
+                    dictStore.getDictLabel(
+                      "sys_monitor_status",
+                      serverInfo.jvm.status,
+                    )
+                  }}
                 </el-tag>
               </el-descriptions-item>
             </el-descriptions>
@@ -211,16 +349,34 @@
           <el-card shadow="hover">
             <template #header>
               <span class="card-title">
-                <el-tag type="info" size="small" effect="plain" style="margin-right: 6px">OS</el-tag>
-                操作系统
+                <el-tag
+                  type="info"
+                  size="small"
+                  effect="plain"
+                  style="margin-right: 6px"
+                  >OS</el-tag
+                >
+                {{ t("monitor.performance.os_info") }}
               </span>
             </template>
             <el-descriptions :column="1" border size="small">
-              <el-descriptions-item label="操作系统">{{ serverInfo.os.name }}</el-descriptions-item>
-              <el-descriptions-item label="系统架构">{{ serverInfo.os.arch }}</el-descriptions-item>
-              <el-descriptions-item label="系统版本">{{ serverInfo.os.version }}</el-descriptions-item>
-              <el-descriptions-item label="主机名">{{ serverInfo.os.hostName }}</el-descriptions-item>
-              <el-descriptions-item label="运行时长">{{ serverInfo.os.uptime }}</el-descriptions-item>
+              <el-descriptions-item :label="t('monitor.performance.os_name')">{{
+                serverInfo.os.name
+              }}</el-descriptions-item>
+              <el-descriptions-item :label="t('monitor.performance.os_arch')">{{
+                serverInfo.os.arch
+              }}</el-descriptions-item>
+              <el-descriptions-item
+                :label="t('monitor.performance.os_version')"
+                >{{ serverInfo.os.version }}</el-descriptions-item
+              >
+              <el-descriptions-item
+                :label="t('monitor.performance.host_name')"
+                >{{ serverInfo.os.hostName }}</el-descriptions-item
+              >
+              <el-descriptions-item :label="t('monitor.performance.uptime')">{{
+                serverInfo.os.uptime
+              }}</el-descriptions-item>
             </el-descriptions>
           </el-card>
         </el-col>
@@ -230,17 +386,47 @@
       <el-card shadow="hover" class="section-row" v-if="serverInfo">
         <template #header>
           <span class="card-title">
-            <el-tag type="danger" size="small" effect="plain" style="margin-right: 6px">DISK</el-tag>
-            磁盘信息
+            <el-tag
+              type="danger"
+              size="small"
+              effect="plain"
+              style="margin-right: 6px"
+              >DISK</el-tag
+            >
+            {{ t("monitor.performance.disk_info") }}
           </span>
         </template>
         <el-table :data="serverInfo.disks" size="small" stripe>
-          <el-table-column prop="mountPoint" label="挂载点" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="fsType" label="文件系统" width="100" />
-          <el-table-column prop="totalDisplay" label="总大小" width="100" />
-          <el-table-column prop="usedDisplay" label="已使用" width="100" />
-          <el-table-column prop="freeDisplay" label="可用" width="100" />
-          <el-table-column label="使用率" width="200">
+          <el-table-column
+            prop="mountPoint"
+            :label="t('monitor.performance.mount_point')"
+            min-width="120"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="fsType"
+            :label="t('monitor.performance.file_system')"
+            width="100"
+          />
+          <el-table-column
+            prop="totalDisplay"
+            :label="t('monitor.performance.total_size')"
+            width="100"
+          />
+          <el-table-column
+            prop="usedDisplay"
+            :label="t('monitor.performance.used')"
+            width="100"
+          />
+          <el-table-column
+            prop="freeDisplay"
+            :label="t('monitor.performance.available')"
+            width="100"
+          />
+          <el-table-column
+            :label="t('monitor.performance.usage_rate')"
+            width="200"
+          >
             <template #default="{ row }">
               <el-progress
                 :percentage="Math.min(Math.round(row.usageRate), 100)"
@@ -250,10 +436,14 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="100" align="center">
+          <el-table-column
+            :label="t('monitor.performance.status')"
+            width="100"
+            align="center"
+          >
             <template #default="{ row }">
               <el-tag :type="statusTagType(row.status)" size="small">
-                {{ dictStore.getDictLabel('sys_monitor_status', row.status) }}
+                {{ dictStore.getDictLabel("sys_monitor_status", row.status) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -261,153 +451,185 @@
       </el-card>
 
       <!-- 4. 服务健康检查区 -->
-      <el-card shadow="hover" class="section-row" v-if="serverInfo && serverInfo.serviceChecks.length > 0">
+      <el-card
+        shadow="hover"
+        class="section-row"
+        v-if="serverInfo && serverInfo.serviceChecks.length > 0"
+      >
         <template #header>
           <span class="card-title">
-            <el-tag type="success" size="small" effect="plain" style="margin-right: 6px">HEALTH</el-tag>
-            服务健康检查
+            <el-tag
+              type="success"
+              size="small"
+              effect="plain"
+              style="margin-right: 6px"
+              >HEALTH</el-tag
+            >
+            {{ t("monitor.performance.health_check") }}
           </span>
         </template>
         <el-table :data="serverInfo.serviceChecks" size="small" stripe>
-          <el-table-column prop="name" label="检查项" min-width="150" />
-          <el-table-column label="状态" width="120" align="center">
+          <el-table-column
+            prop="name"
+            :label="t('monitor.performance.check_item')"
+            min-width="150"
+          />
+          <el-table-column
+            :label="t('monitor.performance.status')"
+            width="120"
+            align="center"
+          >
             <template #default="{ row }">
               <el-tag :type="statusTagType(row.status)" size="small">
-                {{ row.statusLabel || dictStore.getDictLabel('sys_monitor_status', row.status) }}
+                {{
+                  row.statusLabel ||
+                  dictStore.getDictLabel("sys_monitor_status", row.status)
+                }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="响应时间" width="120" align="center">
+          <el-table-column
+            :label="t('monitor.performance.response_time')"
+            width="120"
+            align="center"
+          >
             <template #default="{ row }">
               <span :class="{ 'slow-response': row.responseTime > 1000 }">
                 {{ row.responseTime }} ms
               </span>
             </template>
           </el-table-column>
-          <el-table-column prop="detail" label="详细信息" min-width="200" show-overflow-tooltip />
+          <el-table-column
+            prop="detail"
+            :label="t('monitor.performance.detail')"
+            min-width="200"
+            show-overflow-tooltip
+          />
         </el-table>
       </el-card>
 
       <!-- 环境提示 -->
       <div class="env-hint" v-if="serverInfo">
-        在容器 / Kubernetes 环境下，本页面展示的是当前应用实例可见的系统资源，不代表整个宿主机或整个集群。
+        {{ t("monitor.performance.env_hint") }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { TrendCharts, Refresh, TopRight } from '@element-plus/icons-vue'
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { TrendCharts, Refresh, TopRight } from "@element-plus/icons-vue";
 import {
   getServerMonitorInfo,
   getConfigByKey,
-  type ServerInfoResponse
-} from '@/api/system'
-import { useDictStore } from '@/stores/dict'
+  type ServerInfoResponse,
+} from "@/api/system";
+import { useDictStore } from "@/stores/dict";
 
-const dictStore = useDictStore()
+const { t } = useI18n();
+const dictStore = useDictStore();
 
 // ==================== 数据 ====================
-const loading = ref(false)
-const serverInfo = ref<ServerInfoResponse | null>(null)
+const loading = ref(false);
+const serverInfo = ref<ServerInfoResponse | null>(null);
 
 // ==================== 自动刷新 ====================
-const autoRefresh = ref(false)
-const refreshInterval = ref(30)
-let refreshTimer: ReturnType<typeof setInterval> | null = null
+const autoRefresh = ref(false);
+const refreshInterval = ref(30);
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 // ==================== 计算属性 ====================
 const maxDisk = computed(() => {
-  if (!serverInfo.value || !serverInfo.value.disks.length) return null
+  if (!serverInfo.value || !serverInfo.value.disks.length) return null;
   return serverInfo.value.disks.reduce((max, disk) =>
-    disk.usageRate > max.usageRate ? disk : max
-  )
-})
+    disk.usageRate > max.usageRate ? disk : max,
+  );
+});
 
 // ==================== 工具函数 ====================
 const statusTagType = (status: string): string => {
-  if (status === 'DOWN') return 'danger'
-  if (status === 'WARN') return 'warning'
-  return 'success'
-}
+  if (status === "DOWN") return "danger";
+  if (status === "WARN") return "warning";
+  return "success";
+};
 
 const progressStatus = (status: string): string => {
-  if (status === 'DOWN') return 'exception'
-  if (status === 'WARN') return 'warning'
-  return 'success'
-}
+  if (status === "DOWN") return "exception";
+  if (status === "WARN") return "warning";
+  return "success";
+};
 
 const openSba = () => {
   if (serverInfo.value?.sbaUrl) {
-    window.open(serverInfo.value.sbaUrl, '_blank')
+    window.open(serverInfo.value.sbaUrl, "_blank");
   }
-}
+};
 
 // ==================== 数据加载 ====================
 const loadData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getServerMonitorInfo()
+    const res = await getServerMonitorInfo();
     if (res.code === 200) {
-      serverInfo.value = res.data
+      serverInfo.value = res.data;
     }
   } catch (e) {
-    console.error('加载服务器监控数据失败', e)
+    console.error("加载服务器监控数据失败", e);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const loadRefreshConfig = async () => {
   try {
-    const res = await getConfigByKey('monitor.performance.refreshInterval')
+    const res = await getConfigByKey("monitor.performance.refreshInterval");
     if (res.code === 200 && res.data) {
-      const val = parseInt(res.data as unknown as string, 10)
+      const val = parseInt(res.data as unknown as string, 10);
       if (!isNaN(val) && val > 0) {
-        refreshInterval.value = val
+        refreshInterval.value = val;
       }
     }
   } catch {
     // use default
   }
-}
+};
 
 // ==================== 自动刷新 ====================
 const toggleAutoRefresh = (val: boolean | string | number) => {
   if (val) {
-    startAutoRefresh()
+    startAutoRefresh();
   } else {
-    stopAutoRefresh()
+    stopAutoRefresh();
   }
-}
+};
 
 const startAutoRefresh = () => {
-  stopAutoRefresh()
+  stopAutoRefresh();
   if (refreshInterval.value > 0) {
     refreshTimer = setInterval(() => {
-      loadData()
-    }, refreshInterval.value * 1000)
+      loadData();
+    }, refreshInterval.value * 1000);
   }
-}
+};
 
 const stopAutoRefresh = () => {
   if (refreshTimer) {
-    clearInterval(refreshTimer)
-    refreshTimer = null
+    clearInterval(refreshTimer);
+    refreshTimer = null;
   }
-}
+};
 
 // ==================== 生命周期 ====================
 onMounted(async () => {
-  await dictStore.loadDicts('sys_monitor_status')
-  await loadRefreshConfig()
-  loadData()
-})
+  await dictStore.loadDicts("sys_monitor_status");
+  await loadRefreshConfig();
+  loadData();
+});
 
 onUnmounted(() => {
-  stopAutoRefresh()
-})
+  stopAutoRefresh();
+});
 </script>
 
 <style scoped>

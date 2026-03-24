@@ -1,0 +1,42 @@
+{
+  "title": "MinIO 对象存储监控",
+  "minio": "MinIO",
+  "open_in_new": "在新窗口中打开 MinIO 控制台",
+  "refresh": "刷新监控数据",
+  "loading_text": "加载监控数据中...",
+  "status": {
+    "enabled": "运行中",
+    "disabled": "未启用",
+    "online": "在线",
+    "offline": "离线"
+  },
+  "stats": {
+    "buckets": "存储桶数量",
+    "uptime": "运行时间",
+    "console": "MinIO Console"
+  },
+  "service_info": {
+    "title": "服务信息",
+    "status": "服务状态",
+    "endpoint": "API 端点",
+    "console_url": "控制台地址",
+    "version": "版本"
+  },
+  "bucket_list": {
+    "title": "存储桶列表",
+    "count": "个",
+    "name": "名称",
+    "object_count": "对象数",
+    "size": "大小"
+  },
+  "actions": {
+    "open_console": "在新窗口打开 MinIO 控制台",
+    "config": "配置 MinIO 参数"
+  },
+  "messages": {
+    "minio_disabled": "MinIO 未启用",
+    "minio_disabled_subtitle": "当前系统使用本地文件存储，未启用 MinIO 对象存储",
+    "open_console": "打开 MinIO Console",
+    "connection_error": "连接 MinIO 服务器失败"
+  }
+}

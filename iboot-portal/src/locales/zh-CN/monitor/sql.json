@@ -1,0 +1,8 @@
+{
+  "title": "SQL 监控",
+  "subtitle": "SQL 执行监控",
+  "druid_monitor": "Druid Monitor",
+  "open_in_new": "在新窗口中打开",
+  "refresh": "刷新监控页面",
+  "loading_text": "加载监控页面中..."
+}
