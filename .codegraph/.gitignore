@@ -1,0 +1,7 @@
+# CodeGraph: commit the knowledge graph database so collaborators
+# don't need to re-index. Ignore only runtime files.
+daemon.pid
+daemon.sock
+daemon.log
+codegraph.db-shm
+codegraph.db-wal
