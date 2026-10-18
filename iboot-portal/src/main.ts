@@ -6,6 +6,9 @@ import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import "element-plus/theme-chalk/dark/css-vars.css";
 import i18n from "./locales";
+import "./styles/fonts.css";
+import "./styles/tokens.css";
+import "./styles/element.css";
 import "./styles/global.css";
 import { permission } from "./directives/permission";
 

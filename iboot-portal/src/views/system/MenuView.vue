@@ -1,18 +1,7 @@
 <template>
   <div class="content-wrapper">
-    <div class="content-body">
-      <!-- 操作按钮 -->
-      <div class="action-bar">
-        <el-button type="primary" @click="handleAdd">{{
-          t("system.menu.add")
-        }}</el-button>
-        <el-button
-          type="success"
-          :loading="exportLoading"
-          @click="handleExport"
-          >{{ t("system.menu.export") }}</el-button
-        >
-      </div>
+    <PageHeader :title="t('system.menu.title')" />
+    <FilterBar>
       <el-form :inline="true" :model="queryParams" class="search-form">
         <el-form-item :label="t('system.menu.name')">
           <el-input
@@ -44,6 +33,22 @@
           }}</el-button>
         </el-form-item>
       </el-form>
+    </FilterBar>
+
+    <div class="content-body">
+      <TableToolbar>
+          <el-button type="primary" @click="handleAdd">{{
+            t("system.menu.add")
+          }}</el-button>
+          <el-button
+            type="success"
+            :loading="exportLoading"
+            @click="handleExport"
+            >{{ t("system.menu.export") }}</el-button
+          >
+
+      </TableToolbar>
+
       <el-table
         :data="filteredMenuTree"
         row-key="id"
@@ -126,6 +131,9 @@
             }}</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <EmptyState :title="t('common.no_data')" />
+        </template>
       </el-table>
     </div>
 
@@ -268,6 +276,11 @@ import {
 } from "@/api/system";
 import { useDictStore } from "@/stores/dict";
 import { useExport } from "@/composables/useExport";
+
+import PageHeader from "@/components/PageHeader.vue";
+import FilterBar from "@/components/FilterBar.vue";
+import TableToolbar from "@/components/TableToolbar.vue";
+import EmptyState from "@/components/EmptyState.vue";
 
 const { t } = useI18n();
 const dictStore = useDictStore();
@@ -456,30 +469,23 @@ onMounted(() => {
 
 <style scoped>
 .content-wrapper {
-  padding: 20px;
+  padding: var(--ib-content-gutter);
 }
 
 .content-body {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.action-bar {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  background: var(--ib-color-canvas);
+  padding: var(--ib-space-lg);
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-xl);
+  box-shadow: none;
 }
 
 .search-form {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .pagination {
-  margin-top: 20px;
+  margin-top: var(--ib-space-md);
   justify-content: flex-end;
 }
 </style>

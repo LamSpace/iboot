@@ -50,6 +50,9 @@
     "en-US": "English",
     "label": "Language"
   },
+  "no_data": "No data",
+  "load_failed": "Failed to load page",
+  "reload": "Reload",
   "messages": {
     "locale_changed": "Language changed"
   }

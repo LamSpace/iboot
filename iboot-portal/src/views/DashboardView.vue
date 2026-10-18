@@ -1,20 +1,34 @@
 <template>
   <div class="dashboard-layout">
     <el-container style="margin: 0; padding: 0">
+      <!-- 移动端遮罩 -->
+      <div
+        v-if="isMobile && drawerVisible"
+        class="sidebar-overlay"
+        @click="drawerVisible = false"
+      />
       <!-- 侧边栏 -->
-      <el-aside width="200px" class="sidebar" style="margin: 0; padding: 0">
+      <el-aside
+        :width="asideWidth"
+        class="sidebar"
+        :class="{
+          'is-collapsed': sidebarCollapsed,
+          'is-drawer': isMobile,
+          'is-drawer-open': isMobile && drawerVisible,
+        }"
+      >
         <div class="logo">
-          <h3>{{ systemName }}</h3>
+          <span class="logo-mark">iB</span>
+          <span v-if="isMobile || !sidebarCollapsed" class="logo-text">{{
+            systemName
+          }}</span>
         </div>
         <el-menu
           :default-active="activeIndex"
           class="menu"
           :router="false"
-          :collapse="isCollapse"
+          :collapse="sidebarCollapsed"
           :unique-opened="true"
-          background-color="#545c64"
-          text-color="#fff"
-          active-text-color="#ffd04b"
           @select="handleMenuSelect"
         >
           <template v-for="item in menuList" :key="item.index">
@@ -44,21 +58,24 @@
 
       <!-- 主内容区域 -->
       <el-container style="margin: 0; padding: 0">
-        <el-header class="header" style="margin: 0; padding: 0">
-          <el-row :gutter="20" class="header-row" style="margin: 0; padding: 0">
-            <el-col :span="12">
-              <el-breadcrumb separator="/" class="breadcrumb">
-                <el-breadcrumb-item
-                  :to="{ path: '/dashboard' }"
-                  style="margin-left: 20px"
-                  >{{ t("dashboard.home") }}</el-breadcrumb-item
-                >
-                <el-breadcrumb-item style="margin-right: 20px">{{
-                  currentBreadcrumb
-                }}</el-breadcrumb-item>
-              </el-breadcrumb>
-            </el-col>
-            <el-col :span="12" class="user-info">
+        <el-header class="header">
+          <div class="header-left">
+            <button
+              class="shell-toggle"
+              type="button"
+              :aria-label="t('dashboard.home')"
+              @click="toggleSidebar"
+            >
+              <el-icon><component :is="toggleIcon" /></el-icon>
+            </button>
+            <el-breadcrumb separator="/" class="breadcrumb">
+              <el-breadcrumb-item :to="{ path: '/dashboard' }">{{
+                t("dashboard.home")
+              }}</el-breadcrumb-item>
+              <el-breadcrumb-item>{{ currentBreadcrumb }}</el-breadcrumb-item>
+            </el-breadcrumb>
+          </div>
+          <div class="header-right user-info">
               <NotificationBell class="notification-bell" />
               <el-badge
                 :value="unreadNoticeCount"
@@ -90,11 +107,10 @@
               </el-dropdown>
               <!-- 语言切换组件 -->
               <LocalePicker class="locale-picker" />
-            </el-col>
-          </el-row>
+          </div>
         </el-header>
 
-        <el-main class="main-content" style="margin: 0; padding: 0">
+        <el-main class="main-content">
           <router-view />
         </el-main>
       </el-container>
@@ -219,17 +235,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, type Component } from "vue";
-import { useRouter, useRoute } from "vue-router";
 import {
-  ElMessage,
-  ElRow,
-  ElCol,
-  type FormInstance,
-  type FormRules,
-} from "element-plus";
+  ref,
+  reactive,
+  computed,
+  onMounted,
+  onUnmounted,
+  type Component,
+} from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import { useI18n } from "vue-i18n";
-import { ArrowDown, Bell } from "@element-plus/icons-vue";
+import {
+  ArrowDown,
+  Bell,
+  Expand,
+  Fold,
+  Menu as MenuIcon,
+} from "@element-plus/icons-vue";
 import {
   getUserProfile,
   updateUserProfile,
@@ -260,7 +283,44 @@ const permissionStore = usePermissionStore();
 const appStore = useAppStore();
 const { t } = useI18n();
 const isCollapse = ref(false);
+const isMobile = ref(false);
+const isCompact = ref(false);
+const compactExpanded = ref(false);
+const drawerVisible = ref(false);
 const currentUsername = ref("admin");
+
+const sidebarCollapsed = computed(
+  () =>
+    !isMobile.value &&
+    (isCollapse.value || (isCompact.value && !compactExpanded.value)),
+);
+
+const asideWidth = computed(() => {
+  if (isMobile.value) return "232px";
+  return sidebarCollapsed.value ? "64px" : "232px";
+});
+
+const toggleIcon = computed(() => {
+  if (isMobile.value) return MenuIcon;
+  return sidebarCollapsed.value ? Expand : Fold;
+});
+
+function updateViewport() {
+  isMobile.value = window.innerWidth <= 768;
+  isCompact.value = window.innerWidth > 768 && window.innerWidth <= 1024;
+  if (!isMobile.value) drawerVisible.value = false;
+  if (!isCompact.value) compactExpanded.value = false;
+}
+
+function toggleSidebar() {
+  if (isMobile.value) {
+    drawerVisible.value = !drawerVisible.value;
+  } else if (isCompact.value) {
+    compactExpanded.value = !compactExpanded.value;
+  } else {
+    isCollapse.value = !isCollapse.value;
+  }
+}
 
 const systemName = computed(() => appStore.systemName);
 
@@ -472,6 +532,7 @@ const handleLogout = () => {
 };
 
 const handleMenuSelect = (index: string) => {
+  if (isMobile.value) drawerVisible.value = false;
   if (index.startsWith("/")) {
     router.push(`/dashboard${index}`);
   } else if (index.startsWith("dir-")) {
@@ -495,6 +556,8 @@ const findMenuItemByIndex = (index: string): MenuItem | null => {
 };
 
 onMounted(async () => {
+  updateViewport();
+  window.addEventListener("resize", updateViewport);
   loadUserProfile();
   const noticeRes = await getUnreadNoticeCount().catch(() => null);
   if (noticeRes && noticeRes.code === 200) {
@@ -503,6 +566,10 @@ onMounted(async () => {
       noticePopupVisible.value = true;
     }
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", updateViewport);
 });
 </script>
 
@@ -523,14 +590,15 @@ onMounted(async () => {
 }
 
 .sidebar {
-  background-color: #545c64;
+  position: relative;
   height: 100vh;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
   overflow-y: auto;
-  border-right: none;
-  top: 0;
-  left: 0;
+  background: var(--ib-color-canvas);
+  border-right: 1px solid var(--ib-color-hairline);
+  transition: width var(--ib-duration-base) var(--ib-ease);
 }
 
 .sidebar::-webkit-scrollbar {
@@ -538,61 +606,118 @@ onMounted(async () => {
 }
 
 .logo {
-  height: 60px;
+  height: var(--ib-header-height);
   display: flex;
   align-items: center;
+  gap: var(--ib-space-sm);
+  padding: 0 var(--ib-space-md);
+  overflow: hidden;
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
+}
+
+.logo-mark {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
-  border-bottom: 1px solid #444;
-  margin: 0;
-  padding: 0;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: var(--ib-radius-md);
+  background: var(--ib-color-ink);
+  color: var(--ib-color-on-primary);
+  font-size: var(--ib-text-caption);
+  font-weight: var(--ib-weight-bold);
+}
+
+.logo-text {
+  color: var(--ib-color-ink);
+  font-size: var(--ib-text-body-sm);
+  font-weight: var(--ib-weight-semibold);
+  white-space: nowrap;
 }
 
 .menu {
   border-right: none;
-  border: none;
-  margin: 0;
-  padding-left: 0;
-  padding-right: 0;
+  padding: var(--ib-space-xs);
+  --el-menu-bg-color: transparent;
+  --el-menu-text-color: var(--ib-color-charcoal);
+  --el-menu-active-color: var(--ib-color-ink);
+  --el-menu-hover-bg-color: var(--ib-color-surface);
+  --el-menu-item-height: 40px;
+  --el-menu-sub-item-height: 38px;
 }
 
 .menu:not(.el-menu--collapse) {
-  width: 200px;
-  min-height: 400px;
-  margin: 0;
-  padding: 0;
+  width: 100%;
+}
+
+.menu :deep(.el-menu-item),
+.menu :deep(.el-sub-menu__title) {
+  margin: 2px 0;
+  border-radius: var(--ib-radius-md);
+  font-size: var(--ib-text-body-sm);
+}
+
+.menu :deep(.el-menu-item.is-active) {
+  background: var(--ib-color-surface);
+  font-weight: var(--ib-weight-semibold);
+}
+
+.menu :deep(.el-sub-menu .el-menu-item) {
+  min-width: 0;
 }
 
 .header {
-  background-color: white;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
-  margin: 0;
-  padding: 0;
-}
-
-.header-row {
+  height: var(--ib-header-height);
   display: flex;
   align-items: center;
-  height: 100%;
-  margin: 0;
-  padding: 0;
+  padding: 0 var(--ib-content-gutter);
+  background: var(--ib-color-canvas);
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--ib-space-sm);
+  min-width: 0;
+}
+
+.shell-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-full);
+  background: var(--ib-color-canvas);
+  color: var(--ib-color-charcoal);
+  cursor: pointer;
+  transition: background var(--ib-duration-fast) var(--ib-ease);
+}
+
+.shell-toggle:hover {
+  background: var(--ib-color-surface);
 }
 
 .breadcrumb {
-  line-height: 60px;
+  line-height: normal;
+}
+
+.header-right {
+  margin-left: auto;
 }
 
 .user-info {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 16px;
-  padding-right: 20px;
+  gap: var(--ib-space-md);
 }
 
 .locale-picker {
-  margin-left: 8px;
+  margin-left: var(--ib-space-xs);
 }
 
 .notification-bell {
@@ -601,14 +726,14 @@ onMounted(async () => {
 }
 
 .notice-bell {
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
-  color: #606266;
-  transition: color 0.2s;
+  color: var(--ib-color-steel);
+  transition: color var(--ib-duration-fast) var(--ib-ease);
 }
 
 .notice-bell:hover {
-  color: #409eff;
+  color: var(--ib-color-ink);
 }
 
 .notice-badge {
@@ -616,9 +741,33 @@ onMounted(async () => {
 }
 
 .main-content {
-  background-color: #f5f7fa;
   margin: 0;
   padding: 0;
   overflow-y: auto;
+  background: var(--ib-color-surface);
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1999;
+  background: rgba(10, 10, 10, 0.32);
+}
+
+@media (max-width: 768px) {
+  .sidebar.is-drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2000;
+    box-shadow: var(--ib-shadow-4);
+    transform: translateX(-100%);
+    transition: transform var(--ib-duration-base) var(--ib-ease);
+  }
+
+  .sidebar.is-drawer.is-drawer-open {
+    transform: translateX(0);
+  }
 }
 </style>

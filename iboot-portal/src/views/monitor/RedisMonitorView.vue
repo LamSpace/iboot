@@ -746,7 +746,7 @@ onUnmounted(() => {
 .toolbar-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .toolbar-right {
@@ -768,14 +768,14 @@ onUnmounted(() => {
 
 .stat-label {
   font-size: 13px;
-  color: #909399;
+  color: var(--ib-color-steel);
   margin-bottom: 6px;
 }
 
 .stat-value {
   font-size: 20px;
   font-weight: 700;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .memory-value {
@@ -787,7 +787,7 @@ onUnmounted(() => {
 
 .stat-desc {
   font-size: 12px;
-  color: #c0c4cc;
+  color: var(--ib-color-muted);
   margin-top: 4px;
 }
 
@@ -798,20 +798,20 @@ onUnmounted(() => {
 .card-title {
   font-weight: 600;
   font-size: 14px;
-  color: #303133;
+  color: var(--ib-color-ink);
   display: flex;
   align-items: center;
 }
 
 .highlight-value {
   font-weight: 700;
-  color: #409eff;
+  color: var(--ib-color-brand-blue);
   font-size: 15px;
 }
 
 .stat-detail {
   font-size: 12px;
-  color: #909399;
+  color: var(--ib-color-steel);
   margin-left: 8px;
 }
 
@@ -825,7 +825,7 @@ onUnmounted(() => {
 }
 
 .key-value-content {
-  background: #f5f7fa;
+  background: var(--ib-color-surface);
   border-radius: 6px;
   padding: 12px;
   max-height: 400px;
@@ -837,7 +837,7 @@ onUnmounted(() => {
   white-space: pre-wrap;
   word-break: break-all;
   font-size: 13px;
-  color: #606266;
+  color: var(--ib-color-slate);
   font-family: "Courier New", Courier, monospace;
 }
 </style>

@@ -232,7 +232,7 @@ watch(
 }
 
 .message-item {
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--ib-color-hairline-soft);
   border-radius: 6px;
   margin-bottom: 10px;
   transition: box-shadow 0.2s;
@@ -243,7 +243,7 @@ watch(
 }
 
 .message-item.expanded {
-  border-color: #409eff;
+  border-color: var(--ib-color-brand-blue);
 }
 
 .message-item.unread {
@@ -269,21 +269,21 @@ watch(
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #f56c6c;
+  background-color: var(--ib-color-danger-text);
   flex-shrink: 0;
 }
 
 .message-title {
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .message-meta {
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: #909399;
+  color: var(--ib-color-steel);
   flex-shrink: 0;
   margin-left: 16px;
 }
@@ -296,7 +296,7 @@ watch(
 .message-text {
   padding-top: 12px;
   font-size: 14px;
-  color: #606266;
+  color: var(--ib-color-slate);
   line-height: 1.6;
   white-space: pre-wrap;
 }

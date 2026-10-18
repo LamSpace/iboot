@@ -205,20 +205,20 @@ onUnmounted(() => {
 }
 
 .captcha-tip.success {
-  color: #67c23a;
+  color: var(--ib-color-success-text);
 }
 
 .captcha-tip.error {
-  color: #f56c6c;
+  color: var(--ib-color-danger-text);
 }
 
 .captcha-track {
   position: relative;
   width: 280px;
   height: 40px;
-  background: linear-gradient(90deg, #e8f4ff 0%, #f0f7ff 100%);
+  background: var(--ib-color-surface);
   border-radius: 20px;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--ib-color-hairline);
   margin: 0 auto;
   overflow: hidden;
 }
@@ -228,7 +228,7 @@ onUnmounted(() => {
   left: 0;
   top: 0;
   height: 100%;
-  background: linear-gradient(90deg, #409eff 0%, #67c23a 100%);
+  background: var(--ib-color-brand-blue);
   border-radius: 20px 0 0 20px;
   transition: none;
 }
@@ -239,9 +239,9 @@ onUnmounted(() => {
   transform: translateY(-50%);
   width: 8px;
   height: 24px;
-  background: linear-gradient(180deg, #f56c6c 0%, #e6a23c 100%);
+  background: var(--ib-color-danger-text);
   border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(245, 108, 108, 0.4);
+  box-shadow: var(--ib-shadow-1);
 }
 
 .captcha-slider {
@@ -251,12 +251,12 @@ onUnmounted(() => {
   height: 40px;
   background: #fff;
   border-radius: 50%;
-  border: 2px solid #409eff;
+  border: 2px solid var(--ib-color-brand-blue);
   cursor: grab;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #409eff;
+  color: var(--ib-color-brand-blue);
   font-size: 18px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition:
@@ -277,14 +277,14 @@ onUnmounted(() => {
 }
 
 .captcha-slider.success {
-  border-color: #67c23a;
-  color: #67c23a;
+  border-color: var(--ib-color-success-text);
+  color: var(--ib-color-success-text);
   background: #f0f9eb;
 }
 
 .captcha-slider.error {
-  border-color: #f56c6c;
-  color: #f56c6c;
+  border-color: var(--ib-color-danger-text);
+  color: var(--ib-color-danger-text);
   background: #fef0f0;
 }
 

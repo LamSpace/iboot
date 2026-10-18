@@ -55,7 +55,7 @@
     <div class="list-content">
       <template v-if="filteredNotifications.length === 0">
         <div class="empty-state">
-          <el-icon :size="64" color="#dcdfe6">
+          <el-icon :size="64" color="var(--ib-color-hairline)">
             <Bell />
           </el-icon>
           <p class="empty-text">
@@ -305,7 +305,7 @@ const formatTime = (timeString: string) => {
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
   font-size: 16px;
 }
 
@@ -329,7 +329,7 @@ const formatTime = (timeString: string) => {
   align-items: center;
   justify-content: center;
   padding: 64px 16px;
-  color: #909399;
+  color: var(--ib-color-steel);
 }
 
 .empty-text {
@@ -340,18 +340,18 @@ const formatTime = (timeString: string) => {
 .list-item {
   display: flex;
   padding: 12px 16px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .list-item:hover {
-  background-color: #f5f7fa;
+  background-color: var(--ib-color-surface);
 }
 
 .list-item.unread {
   background-color: #ecf5ff;
-  border-left: 3px solid #409eff;
+  border-left: 3px solid var(--ib-color-brand-blue);
 }
 
 .list-item.unread:hover {
@@ -365,15 +365,15 @@ const formatTime = (timeString: string) => {
 }
 
 .icon-primary {
-  color: #409eff;
+  color: var(--ib-color-brand-blue);
 }
 
 .icon-warning {
-  color: #e6a23c;
+  color: var(--ib-color-warning-text);
 }
 
 .icon-danger {
-  color: #f56c6c;
+  color: var(--ib-color-danger-text);
 }
 
 .item-content {
@@ -390,13 +390,13 @@ const formatTime = (timeString: string) => {
 
 .item-title {
   font-weight: 500;
-  color: #303133;
+  color: var(--ib-color-ink);
   font-size: 14px;
 }
 
 .item-message {
   margin: 0 0 8px 0;
-  color: #606266;
+  color: var(--ib-color-slate);
   font-size: 13px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -412,7 +412,7 @@ const formatTime = (timeString: string) => {
 
 .item-time {
   font-size: 12px;
-  color: #909399;
+  color: var(--ib-color-steel);
 }
 
 .item-actions {
@@ -425,7 +425,7 @@ const formatTime = (timeString: string) => {
   display: flex;
   justify-content: center;
   padding: 12px;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--ib-color-hairline-soft);
 }
 
 /* 滚动条样式 */
@@ -434,11 +434,11 @@ const formatTime = (timeString: string) => {
 }
 
 .list-content::-webkit-scrollbar-thumb {
-  background: #dcdfe6;
+  background: var(--ib-color-hairline);
   border-radius: 3px;
 }
 
 .list-content::-webkit-scrollbar-thumb:hover {
-  background: #c0c4cc;
+  background: var(--ib-color-muted);
 }
 </style>

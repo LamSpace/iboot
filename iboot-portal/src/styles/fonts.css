@@ -1,0 +1,8 @@
+/* Self-hosted DM Sans (Latin subset). CJK falls back to system fonts. */
+@font-face {
+  font-family: "DM Sans";
+  src: url("../assets/fonts/dm-sans-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}

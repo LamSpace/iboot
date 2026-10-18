@@ -1,33 +1,7 @@
 <template>
   <div class="content-wrapper">
-    <div class="content-body">
-      <!-- 操作按钮 -->
-      <div class="action-bar">
-        <el-upload
-          ref="uploadRef"
-          :action="uploadUrl"
-          :headers="uploadHeaders"
-          :data="uploadData"
-          :before-upload="beforeUpload"
-          :on-success="handleUploadSuccess"
-          :on-error="handleUploadError"
-          :show-file-list="false"
-          multiple
-        >
-          <el-button type="primary"
-            ><el-icon><Upload /></el-icon>
-            {{ t("file.fileManage.actions.upload") }}</el-button
-          >
-        </el-upload>
-        <el-button
-          type="success"
-          :loading="exportLoading"
-          @click="handleExport"
-          >{{ t("file.fileManage.actions.export") }}</el-button
-        >
-      </div>
-
-      <!-- 搜索栏 -->
+    <PageHeader :title="t('file.fileManage.title')" />
+    <FilterBar>
       <el-form :inline="true" :model="queryParams" class="search-form">
         <el-form-item :label="t('file.fileManage.search.file_name')">
           <el-input
@@ -59,6 +33,30 @@
           }}</el-button>
         </el-form-item>
       </el-form>
+    </FilterBar>
+
+    <div class="content-body">
+      <TableToolbar>
+        <el-upload
+          ref="uploadRef"
+          :action="uploadUrl"
+          :headers="uploadHeaders"
+          :data="uploadData"
+          :before-upload="beforeUpload"
+          :on-success="handleUploadSuccess"
+          :on-error="handleUploadError"
+          :show-file-list="false"
+          multiple
+        >
+          <el-button type="primary"
+            ><el-icon><Upload /></el-icon>
+            {{ t("file.fileManage.actions.upload") }}</el-button
+          >
+        </el-upload>
+        <el-button :loading="exportLoading" @click="handleExport">{{
+          t("file.fileManage.actions.export")
+        }}</el-button>
+      </TableToolbar>
 
       <!-- 文件列表 -->
       <el-table :data="fileList" style="width: 100%" v-loading="loading">
@@ -75,19 +73,29 @@
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            <el-icon v-if="row.fileCategory === 'image'" color="#67C23A"
+            <el-icon
+              v-if="row.fileCategory === 'image'"
+              class="file-icon file-icon-image"
               ><Picture
             /></el-icon>
-            <el-icon v-else-if="row.fileCategory === 'video'" color="#E6A23C"
+            <el-icon
+              v-else-if="row.fileCategory === 'video'"
+              class="file-icon file-icon-video"
               ><VideoCamera
             /></el-icon>
-            <el-icon v-else-if="row.fileCategory === 'audio'" color="#409EFF"
+            <el-icon
+              v-else-if="row.fileCategory === 'audio'"
+              class="file-icon file-icon-audio"
               ><Headset
             /></el-icon>
-            <el-icon v-else-if="row.fileCategory === 'archive'" color="#F56C6C"
+            <el-icon
+              v-else-if="row.fileCategory === 'archive'"
+              class="file-icon file-icon-archive"
               ><Box
             /></el-icon>
-            <el-icon v-else color="#909399"><Document /></el-icon>
+            <el-icon v-else class="file-icon file-icon-other"
+              ><Document
+            /></el-icon>
             <span style="margin-left: 6px">{{ row.fileName }}</span>
           </template>
         </el-table-column>
@@ -114,18 +122,17 @@
           align="center"
         >
           <template #default="{ row }">
-            <el-tag
+            <StatusTag
               :type="
                 dictStore.getDictListClass(
                   'sys_file_category',
                   row.fileCategory,
                 )
               "
-            >
-              {{
-                dictStore.getDictLabel("sys_file_category", row.fileCategory)
-              }}
-            </el-tag>
+              :label="
+                dictStore.getDictLabel('sys_file_category', row.fileCategory)
+              "
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -156,6 +163,9 @@
             }}</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <EmptyState :title="t('common.no_data')" />
+        </template>
       </el-table>
 
       <!-- 分页 -->
@@ -253,6 +263,11 @@ import {
 import { useDictStore } from "@/stores/dict";
 import { useUserStore } from "@/stores/user";
 import { useExport } from "@/composables/useExport";
+import PageHeader from "@/components/PageHeader.vue";
+import FilterBar from "@/components/FilterBar.vue";
+import TableToolbar from "@/components/TableToolbar.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import StatusTag from "@/components/StatusTag.vue";
 
 const { t } = useI18n();
 const dictStore = useDictStore();
@@ -323,12 +338,14 @@ const beforeUpload = (file: UploadRawFile) => {
 };
 
 const handleUploadSuccess = (response: any) => {
-  if (response.code === 200) {
+  // The backend may wrap the result in a CloudEvent envelope.
+  const payload = response?.data?.code !== undefined ? response.data : response;
+  if (payload.code === 200) {
     ElMessage.success(t("file.fileManage.messages.upload_success"));
     loadData();
   } else {
     ElMessage.error(
-      response.message || t("file.fileManage.messages.upload_failed"),
+      payload.message || t("file.fileManage.messages.upload_failed"),
     );
   }
 };
@@ -412,30 +429,47 @@ onMounted(() => {
 
 <style scoped>
 .content-wrapper {
-  padding: 20px;
+  padding: var(--ib-content-gutter);
 }
 
 .content-body {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.action-bar {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  background: var(--ib-color-canvas);
+  padding: var(--ib-space-lg);
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-xl);
+  box-shadow: none;
 }
 
 .search-form {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .pagination {
-  margin-top: 20px;
+  margin-top: var(--ib-space-md);
   justify-content: flex-end;
+}
+
+.file-icon {
+  vertical-align: middle;
+}
+
+.file-icon-image {
+  color: var(--ib-color-success-text);
+}
+
+.file-icon-video {
+  color: var(--ib-color-warning-text);
+}
+
+.file-icon-audio {
+  color: var(--ib-color-brand-blue);
+}
+
+.file-icon-archive {
+  color: var(--ib-color-danger-text);
+}
+
+.file-icon-other {
+  color: var(--ib-color-steel);
 }
 </style>

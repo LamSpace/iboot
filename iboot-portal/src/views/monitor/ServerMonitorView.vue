@@ -22,24 +22,17 @@
             :icon="Refresh"
             circle
             size="small"
-            @click="refreshIframe"
+            @click="iframePanel?.reload()"
           />
         </el-tooltip>
       </div>
     </div>
-    <div
-      class="monitor-iframe-container"
-      v-loading="loading"
-      :element-loading-text="t('monitor.server.loading_text')"
-    >
-      <iframe
-        ref="sbaIframe"
-        :src="sbaUrl"
-        class="monitor-iframe"
-        frameborder="0"
-        @load="onIframeLoad"
-      />
-    </div>
+    <IframePanel
+      ref="iframePanel"
+      :src="sbaUrl"
+      :error-text="t('common.load_failed')"
+      :retry-text="t('common.reload')"
+    />
   </div>
 </template>
 
@@ -48,6 +41,7 @@ import { ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { Monitor, TopRight, Refresh } from "@element-plus/icons-vue";
 import { getConfigByKey } from "@/api/system";
+import IframePanel from "@/components/IframePanel.vue";
 
 const { t } = useI18n();
 
@@ -61,8 +55,7 @@ const defaultSbaUrl = import.meta.env.DEV
   ? "http://localhost:8080/sba"
   : "/sba";
 const sbaUrl = ref(defaultSbaUrl);
-const loading = ref(true);
-const sbaIframe = ref<HTMLIFrameElement>();
+const iframePanel = ref<InstanceType<typeof IframePanel>>();
 
 async function loadSbaUrl() {
   try {
@@ -75,23 +68,11 @@ async function loadSbaUrl() {
   }
 }
 
-function onIframeLoad() {
-  loading.value = false;
-}
-
 function openInNewWindow() {
   window.open(sbaUrl.value, "_blank");
 }
 
-function refreshIframe() {
-  loading.value = true;
-  if (sbaIframe.value) {
-    sbaIframe.value.src = sbaUrl.value;
-  }
-}
-
 onMounted(async () => {
-  loading.value = true;
   await loadSbaUrl();
 });
 </script>
@@ -125,28 +106,12 @@ onMounted(async () => {
 .toolbar-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .toolbar-right {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.monitor-iframe-container {
-  flex: 1;
-  background: #fff;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  min-height: 0;
-}
-
-.monitor-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
 }
 </style>

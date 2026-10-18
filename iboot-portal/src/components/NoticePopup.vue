@@ -156,7 +156,7 @@ watch(
 }
 
 .notice-item {
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--ib-color-hairline-soft);
   border-radius: 6px;
   margin-bottom: 10px;
   transition: box-shadow 0.2s;
@@ -167,7 +167,7 @@ watch(
 }
 
 .notice-item.expanded {
-  border-color: #409eff;
+  border-color: var(--ib-color-brand-blue);
 }
 
 .notice-header {
@@ -188,7 +188,7 @@ watch(
 .notice-title {
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .top-tag {
@@ -199,7 +199,7 @@ watch(
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: #909399;
+  color: var(--ib-color-steel);
   flex-shrink: 0;
   margin-left: 16px;
 }
@@ -212,7 +212,7 @@ watch(
 .notice-text {
   padding-top: 12px;
   font-size: 14px;
-  color: #606266;
+  color: var(--ib-color-slate);
   line-height: 1.6;
   white-space: pre-wrap;
 }

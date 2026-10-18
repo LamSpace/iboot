@@ -340,7 +340,7 @@ onMounted(() => {
 .toolbar-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .toolbar-right {
@@ -385,12 +385,12 @@ onMounted(() => {
 .stat-value {
   font-size: 24px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .stat-label {
   font-size: 13px;
-  color: #909399;
+  color: var(--ib-color-steel);
   margin-top: 4px;
 }
 

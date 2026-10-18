@@ -1,0 +1,157 @@
+/**
+ * Element Plus mapping and component skin.
+ * Keep framework-specific selectors in this file; business views should not
+ * need to know about Element Plus internals.
+ */
+:root {
+  /* Typography */
+  --el-font-family: var(--ib-font-sans);
+  --el-font-size-base: var(--ib-text-body-sm);
+
+  /* Primary action */
+  --el-color-primary: var(--ib-color-primary);
+  --el-color-primary-light-3: color-mix(in srgb, var(--ib-color-primary) 70%, #ffffff);
+  --el-color-primary-light-5: color-mix(in srgb, var(--ib-color-primary) 50%, #ffffff);
+  --el-color-primary-light-7: color-mix(in srgb, var(--ib-color-primary) 30%, #ffffff);
+  --el-color-primary-light-8: color-mix(in srgb, var(--ib-color-primary) 20%, #ffffff);
+  --el-color-primary-light-9: color-mix(in srgb, var(--ib-color-primary) 10%, #ffffff);
+  --el-color-primary-dark-2: var(--ib-color-primary-pressed);
+
+  /* Semantic colors */
+  --el-color-success: var(--ib-color-success-text);
+  --el-color-warning: var(--ib-color-warning-text);
+  --el-color-danger: var(--ib-color-danger-text);
+  --el-color-error: var(--ib-color-danger-text);
+  --el-color-info: var(--ib-color-info-text);
+
+  /* Text */
+  --el-text-color-primary: var(--ib-color-ink);
+  --el-text-color-regular: var(--ib-color-charcoal);
+  --el-text-color-secondary: var(--ib-color-steel);
+  --el-text-color-placeholder: var(--ib-color-muted);
+  --el-text-color-disabled: var(--ib-color-muted);
+
+  /* Surfaces and borders */
+  --el-bg-color: var(--ib-color-canvas);
+  --el-bg-color-page: var(--ib-color-surface);
+  --el-bg-color-overlay: var(--ib-color-canvas);
+  --el-fill-color-blank: var(--ib-color-canvas);
+  --el-fill-color-light: var(--ib-color-surface);
+  --el-fill-color-lighter: var(--ib-color-surface-soft);
+  --el-border-color: var(--ib-color-hairline);
+  --el-border-color-light: var(--ib-color-hairline);
+  --el-border-color-lighter: var(--ib-color-hairline-soft);
+  --el-border-color-extra-light: var(--ib-color-hairline-soft);
+
+  /* Shape */
+  --el-border-radius-base: var(--ib-radius-md);
+  --el-border-radius-small: var(--ib-radius-sm);
+  --el-border-radius-round: var(--ib-radius-full);
+
+  /* Elevation */
+  --el-box-shadow: var(--ib-shadow-2);
+  --el-box-shadow-light: var(--ib-shadow-1);
+  --el-box-shadow-lighter: var(--ib-shadow-1);
+  --el-box-shadow-dark: var(--ib-shadow-4);
+}
+
+/* Buttons: pill geometry and firm labels */
+.el-button {
+  --el-button-border-radius: var(--ib-radius-full);
+  border-radius: var(--ib-radius-full);
+  font-weight: var(--ib-weight-semibold);
+}
+
+.el-button.is-link {
+  height: auto;
+  padding: 0;
+  border-radius: 0;
+}
+
+.el-button--small {
+  font-size: var(--ib-text-caption);
+}
+
+/* Compact action variant for dense table toolbars */
+.ib-btn-compact.el-button:not(.is-link) {
+  height: 28px;
+  padding: 0 var(--ib-space-sm);
+  font-size: var(--ib-text-caption);
+}
+
+/* Cards and panels: flat with hairline borders */
+.el-card {
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-xl);
+  box-shadow: none;
+}
+
+.el-card__header {
+  padding: var(--ib-space-md) var(--ib-space-lg);
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
+}
+
+.el-card__body {
+  padding: var(--ib-space-lg);
+}
+
+/* Tables */
+.el-table {
+  --el-table-header-bg-color: var(--ib-color-surface);
+  --el-table-header-text-color: var(--ib-color-steel);
+  --el-table-row-hover-bg-color: var(--ib-color-surface);
+  --el-table-border-color: var(--ib-color-hairline-soft);
+  --el-table-text-color: var(--ib-color-charcoal);
+  font-size: var(--ib-text-caption);
+}
+
+.el-table th.el-table__cell {
+  font-weight: var(--ib-weight-semibold);
+}
+
+/* Inputs */
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  border-radius: var(--ib-radius-md);
+  box-shadow: 0 0 0 1px var(--ib-color-hairline) inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 2px var(--ib-color-brand-blue-deep) inset;
+}
+
+/* Tags and badges */
+.el-tag {
+  border-radius: var(--ib-radius-full);
+  font-weight: var(--ib-weight-semibold);
+}
+
+/* Dialogs and overlays keep the elevated treatment */
+.el-dialog {
+  border-radius: var(--ib-radius-xl);
+  box-shadow: var(--ib-shadow-4);
+}
+
+.el-dropdown__popper,
+.el-select__popper,
+.el-popover,
+.el-picker__popper {
+  border-radius: var(--ib-radius-lg);
+  box-shadow: var(--ib-shadow-2);
+}
+
+/* Pagination */
+.el-pagination.is-background .el-pager li,
+.el-pagination .btn-prev,
+.el-pagination .btn-next {
+  border-radius: var(--ib-radius-full);
+}
+
+/* Descriptions */
+.el-descriptions__label {
+  color: var(--ib-color-steel);
+  font-weight: var(--ib-weight-medium);
+}

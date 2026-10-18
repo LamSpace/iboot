@@ -50,6 +50,9 @@
     "en-US": "English",
     "label": "语言"
   },
+  "no_data": "暂无数据",
+  "load_failed": "页面加载失败",
+  "reload": "重新加载",
   "messages": {
     "locale_changed": "语言已切换"
   }

@@ -1,0 +1,120 @@
+/**
+ * iBoot design tokens.
+ * Visual language derived from the MiniMax design analysis.
+ * Business views must consume these tokens instead of hardcoded palette values.
+ */
+:root {
+  /* Surfaces */
+  --ib-color-canvas: #ffffff;
+  --ib-color-surface: #f7f8fa;
+  --ib-color-surface-soft: #f2f3f5;
+  --ib-color-hairline: #e5e7eb;
+  --ib-color-hairline-soft: #eaecf0;
+
+  /* Text */
+  --ib-color-ink: #0a0a0a;
+  --ib-color-ink-strong: #000000;
+  --ib-color-charcoal: #222222;
+  --ib-color-slate: #45515e;
+  --ib-color-steel: #5f5f5f;
+  --ib-color-stone: #8e8e93;
+  --ib-color-muted: #a8aab2;
+
+  /* Actions */
+  --ib-color-primary: #0a0a0a;
+  --ib-color-on-primary: #ffffff;
+  --ib-color-primary-pressed: #222222;
+  --ib-color-primary-disabled: #e5e7eb;
+  --ib-color-disabled-text: #a8aab2;
+
+  /* Brand accents: charts, KPI, module identity only */
+  --ib-color-brand-coral: #ff5530;
+  --ib-color-brand-magenta: #ea5ec1;
+  --ib-color-brand-blue: #1456f0;
+  --ib-color-brand-blue-mid: #3b82f6;
+  --ib-color-brand-blue-deep: #1d4ed8;
+  --ib-color-brand-cyan: #3daeff;
+  --ib-color-brand-blue-200: #bfdbfe;
+  --ib-color-brand-purple: #a855f7;
+
+  /* Semantic */
+  --ib-color-success-bg: #e8ffea;
+  --ib-color-success-text: #1ba673;
+  --ib-color-warning-bg: #fff7e6;
+  --ib-color-warning-text: #b45309;
+  --ib-color-danger-bg: #fef0f0;
+  --ib-color-danger-text: #d45656;
+  --ib-color-info-text: #5f5f5f;
+
+  /* Typography */
+  --ib-font-sans:
+    "DM Sans", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "微软雅黑", sans-serif;
+  --ib-font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+
+  --ib-text-micro: 12px;
+  --ib-text-caption: 13px;
+  --ib-text-body-sm: 14px;
+  --ib-text-body: 16px;
+  --ib-text-subtitle: 18px;
+  --ib-text-card-title: 20px;
+  --ib-text-heading-sm: 24px;
+  --ib-text-heading-md: 32px;
+  --ib-text-heading-lg: 40px;
+  --ib-text-display-lg: 56px;
+  --ib-text-hero: 80px;
+
+  --ib-leading-tight: 1.1;
+  --ib-leading-heading: 1.25;
+  --ib-leading-body: 1.5;
+  --ib-leading-caption: 1.7;
+
+  --ib-weight-regular: 400;
+  --ib-weight-medium: 500;
+  --ib-weight-semibold: 600;
+  --ib-weight-bold: 700;
+
+  /* Spacing: 4px base */
+  --ib-space-xxs: 4px;
+  --ib-space-xs: 8px;
+  --ib-space-sm: 12px;
+  --ib-space-md: 16px;
+  --ib-space-lg: 20px;
+  --ib-space-xl: 24px;
+  --ib-space-xxl: 32px;
+  --ib-space-xxxl: 40px;
+  --ib-space-section-sm: 48px;
+  --ib-space-section: 64px;
+  --ib-space-section-lg: 80px;
+  --ib-space-hero: 96px;
+
+  /* Radius */
+  --ib-radius-xs: 4px;
+  --ib-radius-sm: 6px;
+  --ib-radius-md: 8px;
+  --ib-radius-lg: 12px;
+  --ib-radius-xl: 16px;
+  --ib-radius-xxl: 20px;
+  --ib-radius-xxxl: 24px;
+  --ib-radius-hero: 32px;
+  --ib-radius-full: 9999px;
+
+  /* Elevation */
+  --ib-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ib-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.08);
+  --ib-shadow-3: 0 0 22px rgba(0, 0, 0, 0.08);
+  --ib-shadow-4: 0 12px 16px -4px rgba(36, 36, 36, 0.08);
+
+  /* Motion */
+  --ib-duration-fast: 150ms;
+  --ib-duration-base: 200ms;
+  --ib-ease: ease;
+
+  /* Layout */
+  --ib-sidebar-width: 232px;
+  --ib-sidebar-collapsed-width: 64px;
+  --ib-header-height: 56px;
+  --ib-content-gutter: 24px;
+}

@@ -1,0 +1,1487 @@
+[
+  {
+    "route": "/",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/login",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/login",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/login",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/login",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/register",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/register",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/register",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/register",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/register",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/register",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/register",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/register",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/user",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/user",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/user",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/user",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/role",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/role",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/role",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/role",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/menu",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/menu",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/menu",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/menu",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dict",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dict",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dict",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dict",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/config",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/config",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/config",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/config",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dept",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dept",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dept",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dept",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/post",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/post",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/post",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/post",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/org-chart",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/org-chart",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/org-chart",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/org-chart",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/notice",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/notice",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/notice",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/notice",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/message-center",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/message-center",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/message-center",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/message-center",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/login-log",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/login-log",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/login-log",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/login-log",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/operate-log",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/operate-log",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/operate-log",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/operate-log",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/audit-log",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/audit-log",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/audit-log",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/audit-log",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/file-manage",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/file-manage",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/file-manage",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/file-manage",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/online-user",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/online-user",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/online-user",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/online-user",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/server-monitor",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/server-monitor",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/server-monitor",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/server-monitor",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/redis-monitor",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/redis-monitor",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/redis-monitor",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/redis-monitor",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/sql-monitor",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/sql-monitor",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/sql-monitor",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/sql-monitor",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/minio-monitor",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/minio-monitor",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/minio-monitor",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/minio-monitor",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/swagger",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/swagger",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/swagger",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/swagger",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/performance",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/performance",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/performance",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/performance",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/job",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/job",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/job",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/job",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/report",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/report",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/report",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/report",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/usage",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/usage",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/usage",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/usage",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/prometheus-monitor",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/prometheus-monitor",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/prometheus-monitor",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/prometheus-monitor",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/grafana-monitor",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/grafana-monitor",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/grafana-monitor",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/grafana-monitor",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/kibana-monitor",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/kibana-monitor",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/kibana-monitor",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/kibana-monitor",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/alertmanager",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/alertmanager",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/alertmanager",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/alertmanager",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/thanos-query",
+    "width": 1440,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/thanos-query",
+    "width": 1280,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/thanos-query",
+    "width": 1024,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/thanos-query",
+    "width": 768,
+    "locale": "zh-CN",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/login",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/register",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/register",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/user",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/role",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/menu",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dict",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/config",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/dept",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/post",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/org-chart",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/notice",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/message-center",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/login-log",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/operate-log",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/audit-log",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/file-manage",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/online-user",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/server-monitor",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/redis-monitor",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/sql-monitor",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/minio-monitor",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/swagger",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/performance",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/job",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/report",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/usage",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/prometheus-monitor",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/grafana-monitor",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/kibana-monitor",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/alertmanager",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  },
+  {
+    "route": "/dashboard/thanos-query",
+    "width": 1440,
+    "locale": "en-US",
+    "path": "/login",
+    "pageOverflow": false,
+    "bodyOverflow": false,
+    "offenders": []
+  }
+]

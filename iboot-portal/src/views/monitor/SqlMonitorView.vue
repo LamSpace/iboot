@@ -22,24 +22,17 @@
             :icon="Refresh"
             circle
             size="small"
-            @click="refreshIframe"
+            @click="iframePanel?.reload()"
           />
         </el-tooltip>
       </div>
     </div>
-    <div
-      class="monitor-iframe-container"
-      v-loading="loading"
-      :element-loading-text="t('monitor.sql.loading_text')"
-    >
-      <iframe
-        ref="druidIframe"
-        :src="druidUrl"
-        class="monitor-iframe"
-        frameborder="0"
-        @load="onIframeLoad"
-      />
-    </div>
+    <IframePanel
+      ref="iframePanel"
+      :src="druidUrl"
+      :error-text="t('common.load_failed')"
+      :retry-text="t('common.reload')"
+    />
   </div>
 </template>
 
@@ -48,6 +41,7 @@ import { ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { DataAnalysis, TopRight, Refresh } from "@element-plus/icons-vue";
 import { getConfigByKey } from "@/api/system";
+import IframePanel from "@/components/IframePanel.vue";
 
 const { t } = useI18n();
 
@@ -61,6 +55,7 @@ const defaultDruidUrl = import.meta.env.DEV
   ? "http://localhost:8080/druid"
   : "/druid";
 const druidUrl = ref(defaultDruidUrl);
+const iframePanel = ref<InstanceType<typeof IframePanel>>();
 
 /** 开发环境前后端端口不同，配置中的相对路径需指向后端 */
 function resolveDruidUrl(url: string) {
@@ -68,8 +63,6 @@ function resolveDruidUrl(url: string) {
     ? `http://localhost:8080${url}`
     : url;
 }
-const loading = ref(true);
-const druidIframe = ref<HTMLIFrameElement>();
 
 async function loadDruidUrl() {
   try {
@@ -82,23 +75,11 @@ async function loadDruidUrl() {
   }
 }
 
-function onIframeLoad() {
-  loading.value = false;
-}
-
 function openInNewWindow() {
   window.open(druidUrl.value, "_blank");
 }
 
-function refreshIframe() {
-  loading.value = true;
-  if (druidIframe.value) {
-    druidIframe.value.src = druidUrl.value;
-  }
-}
-
 onMounted(async () => {
-  loading.value = true;
   await loadDruidUrl();
 });
 </script>
@@ -132,28 +113,12 @@ onMounted(async () => {
 .toolbar-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .toolbar-right {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.monitor-iframe-container {
-  flex: 1;
-  background: #fff;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  min-height: 0;
-}
-
-.monitor-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
 }
 </style>

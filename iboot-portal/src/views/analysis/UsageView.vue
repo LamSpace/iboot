@@ -1,12 +1,7 @@
 <template>
   <div class="content-wrapper">
-    <!-- 工具栏 -->
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <el-icon :size="18"><PieChart /></el-icon>
-        <span class="toolbar-title">{{ t("analysis.usage.title") }}</span>
-      </div>
-      <div class="toolbar-right">
+    <PageHeader :title="t('analysis.usage.title')">
+      <template #actions>
         <el-date-picker
           v-model="dateRange"
           type="daterange"
@@ -25,63 +20,35 @@
           size="small"
           @click="loadData"
           :loading="loading"
-          style="margin-left: 12px"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <div v-loading="loading">
       <!-- 活跃度概览卡片 -->
-      <el-row :gutter="16" class="stats-cards" v-if="usageData">
-        <el-col :xs="12" :sm="8">
-          <el-card
-            shadow="hover"
-            class="stat-card"
-            style="border-top: 3px solid #409eff"
-          >
-            <div class="stat-label">
-              {{ t("analysis.usage.overview.today_active") }}
-            </div>
-            <div class="stat-value" style="color: #409eff">
-              {{ usageData.activityStats.todayActiveUsers }}
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="8">
-          <el-card
-            shadow="hover"
-            class="stat-card"
-            style="border-top: 3px solid #67c23a"
-          >
-            <div class="stat-label">
-              {{ t("analysis.usage.overview.week_active") }}
-            </div>
-            <div class="stat-value" style="color: #67c23a">
-              {{ usageData.activityStats.weekActiveUsers }}
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="8">
-          <el-card
-            shadow="hover"
-            class="stat-card"
-            style="border-top: 3px solid #e6a23c"
-          >
-            <div class="stat-label">
-              {{ t("analysis.usage.overview.month_active") }}
-            </div>
-            <div class="stat-value" style="color: #e6a23c">
-              {{ usageData.activityStats.monthActiveUsers }}
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+      <div class="metrics-grid" v-if="usageData">
+        <MetricCard
+          :label="t('analysis.usage.overview.today_active')"
+          :value="usageData.activityStats.todayActiveUsers"
+          accent="blue"
+        />
+        <MetricCard
+          :label="t('analysis.usage.overview.week_active')"
+          :value="usageData.activityStats.weekActiveUsers"
+          accent="magenta"
+        />
+        <MetricCard
+          :label="t('analysis.usage.overview.month_active')"
+          :value="usageData.activityStats.monthActiveUsers"
+          accent="cyan"
+        />
+      </div>
 
       <!-- 分析内容 -->
       <el-row :gutter="16" v-if="usageData">
         <!-- 左侧：活跃用户排行 -->
-        <el-col :span="12">
-          <el-card shadow="hover" class="analysis-card">
+        <el-col :xs="24" :md="12">
+          <el-card class="analysis-card">
             <template #header>
               <div class="card-header">
                 <span class="card-title">{{
@@ -141,16 +108,16 @@
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty
+            <EmptyState
               v-if="usageData.activityStats.topActiveUsers.length === 0"
-              :description="t('analysis.usage.empty.no_data')"
+              :title="t('analysis.usage.empty.no_data')"
             />
           </el-card>
         </el-col>
 
         <!-- 右侧：功能模块排行 -->
-        <el-col :span="12">
-          <el-card shadow="hover" class="analysis-card">
+        <el-col :xs="24" :md="12">
+          <el-card class="analysis-card">
             <template #header>
               <div class="card-header">
                 <span class="card-title">{{
@@ -211,9 +178,9 @@
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty
+            <EmptyState
               v-if="usageData.featureUsageStats.moduleRanking.length === 0"
-              :description="t('analysis.usage.empty.no_data')"
+              :title="t('analysis.usage.empty.no_data')"
             />
           </el-card>
         </el-col>
@@ -222,7 +189,7 @@
       <!-- 时段分析 -->
       <el-row :gutter="16" style="margin-top: 16px" v-if="usageData">
         <el-col :span="24">
-          <el-card shadow="hover" class="analysis-card">
+          <el-card class="analysis-card">
             <template #header>
               <div class="card-header">
                 <span class="card-title">{{
@@ -264,7 +231,7 @@
       <!-- 活跃趋势 -->
       <el-row :gutter="16" style="margin-top: 16px" v-if="usageData">
         <el-col :span="24">
-          <el-card shadow="hover" class="analysis-card">
+          <el-card class="analysis-card">
             <template #header>
               <span class="card-title">{{
                 t("analysis.usage.activity_trend.title")
@@ -294,9 +261,9 @@
                 </span>
               </div>
             </div>
-            <el-empty
+            <EmptyState
               v-else
-              :description="t('analysis.usage.empty.no_trend_data')"
+              :title="t('analysis.usage.empty.no_trend_data')"
             />
           </el-card>
         </el-col>
@@ -308,8 +275,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import { PieChart, Refresh } from "@element-plus/icons-vue";
+import { Refresh } from "@element-plus/icons-vue";
 import { getUsageAnalysis, type UsageResponse } from "@/api/system";
+import PageHeader from "@/components/PageHeader.vue";
+import MetricCard from "@/components/MetricCard.vue";
+import EmptyState from "@/components/EmptyState.vue";
 
 const { t } = useI18n();
 const loading = ref(false);
@@ -454,62 +424,18 @@ onMounted(() => {
 
 <style scoped>
 .content-wrapper {
-  padding: 12px;
+  padding: var(--ib-content-gutter);
 }
 
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #fff;
-  padding: 10px 16px;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  margin-bottom: 16px;
-}
-
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.toolbar-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-}
-
-.stats-cards {
-  margin-bottom: 16px;
-}
-
-.stat-card {
-  text-align: center;
-}
-
-.stat-card :deep(.el-card__body) {
-  padding: 16px;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-bottom: 6px;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 700;
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ib-space-md);
+  margin-bottom: var(--ib-space-md);
 }
 
 .analysis-card {
-  border-radius: 8px;
+  margin-bottom: var(--ib-space-md);
 }
 
 .card-header {
@@ -519,18 +445,19 @@ onMounted(() => {
 }
 
 .card-title {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: var(--ib-weight-semibold);
+  font-size: var(--ib-text-body-sm);
+  color: var(--ib-color-ink);
 }
 
 .stat-num {
-  font-weight: 600;
-  color: #303133;
+  font-weight: var(--ib-weight-semibold);
+  color: var(--ib-color-ink);
 }
 
 /* 24 小时分布图 */
 .hour-chart {
-  padding: 16px 0;
+  padding: var(--ib-space-md) 0;
 }
 
 .hour-bars {
@@ -538,7 +465,7 @@ onMounted(() => {
   align-items: flex-end;
   height: 120px;
   gap: 2px;
-  padding: 0 4px;
+  padding: 0 var(--ib-space-xxs);
 }
 
 .hour-bar-wrapper {
@@ -550,14 +477,14 @@ onMounted(() => {
 
 .hour-bar {
   width: 100%;
-  background: linear-gradient(180deg, #79bbff, #409eff);
-  border-radius: 3px 3px 0 0;
   min-height: 4px;
-  transition: all 0.3s ease;
+  border-radius: var(--ib-radius-xs) var(--ib-radius-xs) 0 0;
+  background: var(--ib-color-brand-blue-mid);
+  transition: height var(--ib-duration-base) var(--ib-ease);
 }
 
 .hour-bar.peak {
-  background: linear-gradient(180deg, #f89898, #f56c6c);
+  background: var(--ib-color-brand-coral);
 }
 
 .hour-bar:hover {
@@ -567,9 +494,9 @@ onMounted(() => {
 
 .hour-labels {
   display: flex;
-  padding: 6px 4px 0;
-  font-size: 10px;
-  color: #909399;
+  padding: 6px var(--ib-space-xxs) 0;
+  font-size: var(--ib-text-micro);
+  color: var(--ib-color-steel);
 }
 
 .hour-labels span {
@@ -579,34 +506,34 @@ onMounted(() => {
 
 .hour-axis-label {
   text-align: center;
-  font-size: 12px;
-  color: #606266;
-  margin-top: 8px;
+  font-size: var(--ib-text-micro);
+  color: var(--ib-color-steel);
+  margin-top: var(--ib-space-xs);
 }
 
 /* 趋势图 */
 .trend-container {
-  padding: 16px 0;
+  padding: var(--ib-space-md) 0;
 }
 
 .trend-chart-large {
   display: flex;
   align-items: flex-end;
   height: 150px;
-  gap: 8px;
-  padding: 0 8px;
+  gap: var(--ib-space-xs);
+  padding: 0 var(--ib-space-xs);
 }
 
 .trend-bar-large {
   flex: 1;
-  background: linear-gradient(180deg, #95d475, #67c23a);
-  border-radius: 4px 4px 0 0;
   min-height: 20px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  transition: all 0.3s ease;
   position: relative;
+  border-radius: var(--ib-radius-xs) var(--ib-radius-xs) 0 0;
+  background: var(--ib-color-success-text);
+  transition: height var(--ib-duration-base) var(--ib-ease);
 }
 
 .trend-bar-large:hover {
@@ -616,20 +543,26 @@ onMounted(() => {
 .trend-value {
   position: absolute;
   top: -20px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #67c23a;
+  font-size: var(--ib-text-micro);
+  font-weight: var(--ib-weight-semibold);
+  color: var(--ib-color-success-text);
 }
 
 .trend-labels-large {
   display: flex;
-  padding: 8px;
-  font-size: 11px;
-  color: #606266;
+  padding: var(--ib-space-xs);
+  font-size: var(--ib-text-micro);
+  color: var(--ib-color-steel);
 }
 
 .trend-labels-large span {
   flex: 1;
   text-align: center;
+}
+
+@media (max-width: 768px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

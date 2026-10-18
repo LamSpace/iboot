@@ -1,5 +1,6 @@
 <template>
   <div class="content-wrapper">
+    <PageHeader :title="t('monitor.onlineUser.title')" />
     <div class="content-body">
       <!-- 统计信息 -->
       <div class="stats-bar">
@@ -186,6 +187,8 @@ import {
 import { useDictStore } from "@/stores/dict";
 import { useExport } from "@/composables/useExport";
 
+import PageHeader from "@/components/PageHeader.vue";
+
 const { t } = useI18n();
 const dictStore = useDictStore();
 const { exportLoading, handleExport: performExport } = useExport();
@@ -311,14 +314,15 @@ onUnmounted(() => {
 
 <style scoped>
 .content-wrapper {
-  padding: 20px;
+  padding: var(--ib-content-gutter);
 }
 
 .content-body {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  background: var(--ib-color-canvas);
+  padding: var(--ib-space-lg);
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-xl);
+  box-shadow: none;
 }
 
 .stats-bar {
@@ -334,11 +338,11 @@ onUnmounted(() => {
 }
 
 .search-form {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .pagination {
-  margin-top: 20px;
+  margin-top: var(--ib-space-md);
   justify-content: flex-end;
 }
 </style>

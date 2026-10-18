@@ -1,21 +1,18 @@
 <template>
   <div class="home">
-    <!-- 背景动画 -->
-    <canvas id="three-home-bg" class="three-home-bg"></canvas>
-
     <!-- 导航栏 -->
     <header class="navbar">
       <div class="navbar-brand">
+        <span class="brand-mark">iB</span>
         <span class="brand-text">{{ systemName }}</span>
       </div>
       <nav class="navbar-links">
         <router-link v-if="registerEnabled" to="/register" class="nav-link">{{
           t("home.register")
         }}</router-link>
-        <router-link to="/login" class="nav-link nav-link-primary">{{
+        <router-link to="/login" class="btn btn-primary nav-cta">{{
           t("home.login")
         }}</router-link>
-        <!-- 语言切换 -->
         <LocalePicker class="locale-picker" />
       </nav>
     </header>
@@ -24,28 +21,16 @@
     <main class="main-content">
       <!-- Hero 区域 -->
       <section class="hero">
-        <h1 class="hero-title">
-          <span class="gradient-text">{{ systemName }}</span>
-        </h1>
-        <p class="hero-subtitle">{{ t("home.system_title") }}</p>
-        <p class="hero-description" v-html="t('home.system_description')"></p>
+        <p class="hero-eyebrow">{{ t("home.system_title") }}</p>
+        <h1 class="hero-title">{{ systemName }}</h1>
+        <p
+          class="hero-description"
+          v-html="t('home.system_description')"
+        ></p>
         <div class="hero-actions">
-          <router-link to="/login" class="btn btn-primary">
-            <span>{{ t("home.start_using") }}</span>
-            <svg
-              class="btn-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </router-link>
+          <router-link to="/login" class="btn btn-primary">{{
+            t("home.start_using")
+          }}</router-link>
           <a href="#features" class="btn btn-secondary">{{
             t("home.learn_more")
           }}</a>
@@ -61,7 +46,7 @@
             v-for="(feature, index) in features"
             :key="index"
           >
-            <div class="feature-icon" :style="{ background: feature.gradient }">
+            <div class="feature-icon" :class="`accent-${feature.accent}`">
               <component :is="feature.icon" />
             </div>
             <h3 class="feature-title">{{ feature.title }}</h3>
@@ -74,13 +59,12 @@
       <section class="tech-stack">
         <h2 class="section-title">{{ t("home.tech_stack_title") }}</h2>
         <div class="tech-grid">
-          <div
+          <span
             class="tech-item"
-            v-for="(tech, index) in techStack"
-            :key="index"
+            v-for="tech in techStack"
+            :key="tech"
+            >{{ tech }}</span
           >
-            <span class="tech-name">{{ tech }}</span>
-          </div>
         </div>
       </section>
     </main>
@@ -93,9 +77,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, h } from "vue";
+import { onMounted, computed, h } from "vue";
 import { useI18n } from "vue-i18n";
-import * as THREE from "three";
 import { useAppStore } from "@/stores/app";
 import LocalePicker from "@/components/LocalePicker.vue";
 
@@ -110,7 +93,7 @@ const features = computed(() => [
   {
     title: t("home.feature_permission_title"),
     description: t("home.feature_permission_desc"),
-    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    accent: "blue",
     icon: h(
       "svg",
       {
@@ -131,7 +114,7 @@ const features = computed(() => [
   {
     title: t("home.feature_architecture_title"),
     description: t("home.feature_architecture_desc"),
-    gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    accent: "magenta",
     icon: h(
       "svg",
       {
@@ -152,7 +135,7 @@ const features = computed(() => [
   {
     title: t("home.feature_security_title"),
     description: t("home.feature_security_desc"),
-    gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    accent: "purple",
     icon: h(
       "svg",
       {
@@ -173,7 +156,7 @@ const features = computed(() => [
   {
     title: t("home.feature_efficiency_title"),
     description: t("home.feature_efficiency_desc"),
-    gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+    accent: "coral",
     icon: h(
       "svg",
       {
@@ -205,427 +188,287 @@ const techStack = [
   "MySQL",
 ];
 
-// Three.js 背景
-let scene: THREE.Scene;
-let camera: THREE.PerspectiveCamera;
-let renderer: THREE.WebGLRenderer;
-let particles: THREE.Points;
-let animationId: number;
-
-const initThree = () => {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000,
-  );
-  camera.position.z = 50;
-
-  const canvas = document.getElementById("three-home-bg") as HTMLCanvasElement;
-  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  // 创建粒子系统
-  const particleCount = 1500;
-  const positions = new Float32Array(particleCount * 3);
-  const colors = new Float32Array(particleCount * 3);
-
-  const colorPalette = [
-    new THREE.Color(0x667eea),
-    new THREE.Color(0x764ba2),
-    new THREE.Color(0xf093fb),
-    new THREE.Color(0xf5576c),
-    new THREE.Color(0x4facfe),
-    new THREE.Color(0x00f2fe),
-    new THREE.Color(0xfa709a),
-    new THREE.Color(0xfee140),
-  ];
-
-  for (let i = 0; i < particleCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 200;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
-
-    const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
-    colors[i * 3] = color.r;
-    colors[i * 3 + 1] = color.g;
-    colors[i * 3 + 2] = color.b;
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-  const material = new THREE.PointsMaterial({
-    size: 0.5,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.8,
-    sizeAttenuation: true,
-  });
-
-  particles = new THREE.Points(geometry, material);
-  scene.add(particles);
-
-  animate();
-};
-
-const animate = () => {
-  animationId = requestAnimationFrame(animate);
-
-  particles.rotation.x += 0.0003;
-  particles.rotation.y += 0.0005;
-
-  renderer.render(scene, camera);
-};
-
-const handleResize = () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-};
-
 onMounted(() => {
   appStore.loadPublicConfig();
-  initThree();
-  window.addEventListener("resize", handleResize);
-});
-
-onUnmounted(() => {
-  cancelAnimationFrame(animationId);
-  window.removeEventListener("resize", handleResize);
-  renderer.dispose();
 });
 </script>
 
 <style scoped>
 .home {
-  position: relative;
   min-height: 100vh;
-  background: linear-gradient(180deg, #0d0d0d 0%, #1a1a2e 50%, #16213e 100%);
-  color: #ffffff;
+  background: var(--ib-color-canvas);
+  color: var(--ib-color-ink);
   overflow-x: hidden;
-}
-
-.three-home-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
 }
 
 /* 导航栏 */
 .navbar {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 100;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 3rem;
-  background: rgba(13, 13, 13, 0.8);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  height: 64px;
+  padding: 0 var(--ib-space-xxl);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
 }
 
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--ib-space-sm);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ib-radius-md);
+  background: var(--ib-color-ink);
+  color: var(--ib-color-on-primary);
+  font-size: var(--ib-text-caption);
+  font-weight: var(--ib-weight-bold);
 }
 
 .brand-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(90deg, #667eea, #f093fb, #4facfe);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-size: var(--ib-text-body);
+  font-weight: var(--ib-weight-semibold);
 }
 
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-}
-
-.locale-picker {
-  margin-left: 0.5rem;
+  gap: var(--ib-space-lg);
 }
 
 .nav-link {
+  color: var(--ib-color-steel);
+  font-size: var(--ib-text-body-sm);
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.95rem;
-  font-weight: 500;
-  transition: color 0.3s ease;
+  transition: color var(--ib-duration-fast) var(--ib-ease);
 }
 
 .nav-link:hover {
-  color: #ffffff;
+  color: var(--ib-color-ink);
 }
 
-.nav-link-primary {
-  padding: 0.5rem 1.25rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 6px;
-  color: #ffffff;
+.nav-cta {
+  height: 36px;
+  padding: 0 var(--ib-space-lg);
+  font-size: var(--ib-text-caption);
 }
 
-.nav-link-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+.locale-picker {
+  margin-left: var(--ib-space-xxs);
 }
 
 /* 主内容 */
 .main-content {
-  position: relative;
-  z-index: 10;
-  padding-top: 80px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--ib-space-xxl);
 }
 
 /* Hero 区域 */
 .hero {
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 4rem 2rem;
+  align-items: flex-start;
+  padding: var(--ib-space-hero) 0;
+}
+
+.hero-eyebrow {
+  margin: 0 0 var(--ib-space-md);
+  font-size: var(--ib-text-body-sm);
+  color: var(--ib-color-steel);
 }
 
 .hero-title {
-  font-size: clamp(3rem, 8vw, 5rem);
-  font-weight: 800;
-  margin-bottom: 1rem;
-  letter-spacing: -0.02em;
-}
-
-.gradient-text {
-  background: linear-gradient(
-    90deg,
-    #667eea,
-    #f093fb,
-    #f5576c,
-    #4facfe,
-    #fee140
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: gradient-flow 4s ease infinite;
-}
-
-@keyframes gradient-flow {
-  0%,
-  100% {
-    background-position: 0% center;
-  }
-  50% {
-    background-position: 100% center;
-  }
-}
-
-.hero-subtitle {
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 300;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 1.5rem;
+  max-width: 900px;
+  margin: 0 0 var(--ib-space-lg);
+  font-size: clamp(40px, 7vw, 80px);
+  font-weight: var(--ib-weight-semibold);
+  line-height: var(--ib-leading-tight);
+  letter-spacing: -2px;
+  color: var(--ib-color-ink-strong);
 }
 
 .hero-description {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.8;
-  max-width: 600px;
-  margin-bottom: 3rem;
+  max-width: 640px;
+  margin: 0 0 var(--ib-space-xxl);
+  font-size: var(--ib-text-subtitle);
+  line-height: 1.6;
+  color: var(--ib-color-steel);
 }
 
 .hero-actions {
   display: flex;
-  gap: 1rem;
   flex-wrap: wrap;
-  justify-content: center;
+  gap: var(--ib-space-sm);
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
+  justify-content: center;
+  height: 44px;
+  padding: 0 var(--ib-space-xl);
+  border-radius: var(--ib-radius-full);
+  font-size: var(--ib-text-body-sm);
+  font-weight: var(--ib-weight-semibold);
   text-decoration: none;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  cursor: pointer;
+  transition:
+    background var(--ib-duration-fast) var(--ib-ease),
+    color var(--ib-duration-fast) var(--ib-ease);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
-  border: none;
+  background: var(--ib-color-ink);
+  color: var(--ib-color-on-primary);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+  background: var(--ib-color-charcoal);
 }
 
 .btn-secondary {
-  background: transparent;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--ib-color-ink);
+  color: var(--ib-color-ink);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--ib-color-surface);
 }
 
-.btn-icon {
-  width: 20px;
-  height: 20px;
-}
-
-/* 特性区域 */
-.features {
-  padding: 6rem 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+/* 区块 */
+.features,
+.tech-stack {
+  padding: var(--ib-space-section-lg) 0;
+  border-top: 1px solid var(--ib-color-hairline-soft);
 }
 
 .section-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 4rem;
-  background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  margin: 0 0 var(--ib-space-xxl);
+  font-size: var(--ib-text-heading-md);
+  font-weight: var(--ib-weight-semibold);
+  letter-spacing: -0.5px;
+  color: var(--ib-color-ink);
 }
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ib-space-md);
 }
 
 .feature-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 2rem;
-  transition: all 0.3s ease;
-}
-
-.feature-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
+  padding: var(--ib-space-xl);
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-xl);
+  background: var(--ib-color-canvas);
 }
 
 .feature-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--ib-space-lg);
+  border-radius: var(--ib-radius-lg);
+  background: var(--ib-color-surface);
 }
 
-.feature-icon svg {
-  width: 28px;
-  height: 28px;
-  color: #ffffff;
+.feature-icon :deep(svg) {
+  width: 22px;
+  height: 22px;
+}
+
+.accent-blue {
+  color: var(--ib-color-brand-blue);
+}
+
+.accent-magenta {
+  color: var(--ib-color-brand-magenta);
+}
+
+.accent-purple {
+  color: var(--ib-color-brand-purple);
+}
+
+.accent-coral {
+  color: var(--ib-color-brand-coral);
 }
 
 .feature-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: #ffffff;
+  margin: 0 0 var(--ib-space-xs);
+  font-size: var(--ib-text-card-title);
+  font-weight: var(--ib-weight-semibold);
+  color: var(--ib-color-ink);
 }
 
 .feature-desc {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  font-size: var(--ib-text-body-sm);
   line-height: 1.6;
-}
-
-/* 技术栈区域 */
-.tech-stack {
-  padding: 4rem 2rem 6rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  color: var(--ib-color-steel);
 }
 
 .tech-grid {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
+  gap: var(--ib-space-xs);
 }
 
 .tech-item {
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
+  padding: 8px 14px;
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-full);
+  background: var(--ib-color-canvas);
+  font-size: var(--ib-text-caption);
+  color: var(--ib-color-charcoal);
 }
 
-.tech-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-}
-
-/* 页脚 */
 .footer {
-  position: relative;
-  z-index: 10;
-  padding: 2rem;
+  padding: var(--ib-space-xl) var(--ib-space-xxl);
+  border-top: 1px solid var(--ib-color-hairline-soft);
+  color: var(--ib-color-steel);
+  font-size: var(--ib-text-caption);
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.footer p {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.875rem;
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 0 var(--ib-space-xl);
+  }
+
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .navbar {
-    padding: 1rem 1.5rem;
+    padding: 0 var(--ib-space-lg);
   }
 
-  .hero {
-    padding: 2rem 1rem;
+  .navbar-links .nav-link {
+    display: none;
   }
 
-  .features,
-  .tech-stack {
-    padding: 3rem 1rem;
+  .hero-title {
+    letter-spacing: -1px;
   }
 
-  .section-title {
-    font-size: 2rem;
-    margin-bottom: 2rem;
+  .features-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

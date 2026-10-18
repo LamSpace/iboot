@@ -657,7 +657,7 @@ onUnmounted(() => {
 .toolbar-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .toolbar-right {
@@ -679,14 +679,14 @@ onUnmounted(() => {
 
 .stat-label {
   font-size: 13px;
-  color: #909399;
+  color: var(--ib-color-steel);
   margin-bottom: 6px;
 }
 
 .stat-value {
   font-size: 20px;
   font-weight: 700;
-  color: #303133;
+  color: var(--ib-color-ink);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -699,20 +699,20 @@ onUnmounted(() => {
 .card-title {
   font-weight: 600;
   font-size: 14px;
-  color: #303133;
+  color: var(--ib-color-ink);
   display: flex;
   align-items: center;
 }
 
 .slow-response {
-  color: #e6a23c;
+  color: var(--ib-color-warning-text);
   font-weight: 600;
 }
 
 .env-hint {
   text-align: center;
   font-size: 12px;
-  color: #c0c4cc;
+  color: var(--ib-color-muted);
   padding: 8px 0 4px;
 }
 </style>

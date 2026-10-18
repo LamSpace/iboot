@@ -1,61 +1,71 @@
 <template>
   <div class="register-container">
-    <canvas id="three-bg" class="three-bg"></canvas>
-    <div class="register-form">
-      <h2>{{ systemName }}</h2>
-      <p class="register-subtitle">{{ t("register.title") }}</p>
-      <el-form
-        :model="registerForm"
-        :rules="registerRules"
-        ref="registerFormRef"
-        @submit.prevent="handleRegister"
-      >
-        <el-form-item prop="username">
-          <el-input
-            v-model="registerForm.username"
-            :placeholder="t('register.username_placeholder')"
-            prefix-icon="User"
-          />
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input
-            v-model="registerForm.password"
-            type="password"
-            :placeholder="t('register.password_placeholder')"
-            prefix-icon="Lock"
-          />
-        </el-form-item>
-        <el-form-item prop="confirmPassword">
-          <el-input
-            v-model="registerForm.confirmPassword"
-            type="password"
-            :placeholder="t('register.confirm_password_placeholder')"
-            prefix-icon="Lock"
-            @keyup.enter="handleRegister"
-          />
-        </el-form-item>
-        <el-form-item prop="nickname">
-          <el-input
-            v-model="registerForm.nickname"
-            :placeholder="t('register.nickname_placeholder')"
-            prefix-icon="UserFilled"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            @click="handleRegister"
-            :loading="loading"
-            style="width: 100%"
-          >
-            {{ t("register.submit") }}
-          </el-button>
-        </el-form-item>
-        <div class="register-links">
-          <router-link to="/login">{{ t("register.has_account") }}</router-link>
-        </div>
-      </el-form>
-    </div>
+    <section class="register-brand">
+      <span class="brand-mark">iB</span>
+      <h1 class="brand-title">{{ systemName }}</h1>
+      <p class="brand-copy">{{ t("home.system_title") }}</p>
+    </section>
+
+    <section class="register-panel">
+      <LocalePicker class="register-locale" />
+      <div class="register-form">
+        <h2>{{ systemName }}</h2>
+        <p class="register-subtitle">{{ t("register.title") }}</p>
+        <el-form
+          :model="registerForm"
+          :rules="registerRules"
+          ref="registerFormRef"
+          @submit.prevent="handleRegister"
+        >
+          <el-form-item prop="username">
+            <el-input
+              v-model="registerForm.username"
+              :placeholder="t('register.username_placeholder')"
+              prefix-icon="User"
+            />
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input
+              v-model="registerForm.password"
+              type="password"
+              :placeholder="t('register.password_placeholder')"
+              prefix-icon="Lock"
+            />
+          </el-form-item>
+          <el-form-item prop="confirmPassword">
+            <el-input
+              v-model="registerForm.confirmPassword"
+              type="password"
+              :placeholder="t('register.confirm_password_placeholder')"
+              prefix-icon="Lock"
+              @keyup.enter="handleRegister"
+            />
+          </el-form-item>
+          <el-form-item prop="nickname">
+            <el-input
+              v-model="registerForm.nickname"
+              :placeholder="t('register.nickname_placeholder')"
+              prefix-icon="UserFilled"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              type="primary"
+              @click="handleRegister"
+              :loading="loading"
+              style="width: 100%"
+            >
+              {{ t("register.submit") }}
+            </el-button>
+          </el-form-item>
+          <div class="register-links">
+            <router-link to="/login">{{
+              t("register.has_account")
+            }}</router-link>
+          </div>
+        </el-form>
+      </div>
+    </section>
 
     <!-- 滑块验证组件 -->
     <SliderCaptcha
@@ -67,15 +77,15 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, onUnmounted, computed } from "vue";
+import { reactive, ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import type { FormInstance, FormRules } from "element-plus";
 import { useI18n } from "vue-i18n";
-import * as THREE from "three";
 import { register } from "@/api/auth";
 import { useAppStore } from "@/stores/app";
 import SliderCaptcha from "@/components/SliderCaptcha.vue";
+import LocalePicker from "@/components/LocalePicker.vue";
 
 interface RegisterForm {
   username: string;
@@ -148,86 +158,6 @@ const registerRules: FormRules = {
   ],
 };
 
-// Three.js 3D 背景
-let scene: THREE.Scene;
-let camera: THREE.PerspectiveCamera;
-let renderer: THREE.WebGLRenderer;
-let particles: THREE.Points;
-let animationId: number;
-
-const initThree = () => {
-  scene = new THREE.Scene();
-
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000,
-  );
-  camera.position.z = 5;
-
-  const canvas = document.getElementById("three-bg") as HTMLCanvasElement;
-  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-
-  const particleCount = 2000;
-  const positions = new Float32Array(particleCount * 3);
-
-  for (let i = 0; i < particleCount * 3; i += 3) {
-    positions[i] = (Math.random() - 0.5) * 20;
-    positions[i + 1] = (Math.random() - 0.5) * 20;
-    positions[i + 2] = (Math.random() - 0.5) * 20;
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-
-  const material = new THREE.PointsMaterial({
-    color: 0x409eff,
-    size: 0.05,
-    transparent: true,
-    opacity: 0.8,
-  });
-
-  particles = new THREE.Points(geometry, material);
-  scene.add(particles);
-
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-  scene.add(ambientLight);
-
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
-  directionalLight.position.set(1, 1, 1);
-  scene.add(directionalLight);
-
-  animate();
-};
-
-const animate = () => {
-  animationId = requestAnimationFrame(animate);
-
-  const positions = particles.geometry.attributes.position
-    .array as Float32Array;
-  for (let i = 0; i < positions.length; i += 3) {
-    positions[i + 1] += 0.01;
-    if (positions[i + 1] > 10) {
-      positions[i + 1] = -10;
-    }
-  }
-  particles.geometry.attributes.position.needsUpdate = true;
-
-  particles.rotation.x += 0.001;
-  particles.rotation.y += 0.001;
-
-  renderer.render(scene, camera);
-};
-
-const handleResize = () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-};
-
 const handleRegister = async () => {
   if (!registerFormRef.value) return;
 
@@ -266,88 +196,128 @@ onMounted(() => {
   if (appStore.configLoaded && !appStore.registerEnabled) {
     ElMessage.warning(t("register.not_enabled"));
     router.push("/login");
-    return;
-  }
-  initThree();
-  window.addEventListener("resize", handleResize);
-});
-
-onUnmounted(() => {
-  cancelAnimationFrame(animationId);
-  window.removeEventListener("resize", handleResize);
-  if (renderer) {
-    renderer.dispose();
   }
 });
 </script>
 
 <style scoped>
 .register-container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  min-height: 100vh;
+  background: var(--ib-color-canvas);
 }
 
-.three-bg {
+.register-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--ib-space-hero);
+  background: var(--ib-color-surface);
+  border-right: 1px solid var(--ib-color-hairline-soft);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ib-radius-lg);
+  background: var(--ib-color-ink);
+  color: var(--ib-color-on-primary);
+  font-size: var(--ib-text-body-sm);
+  font-weight: var(--ib-weight-bold);
+}
+
+.brand-title {
+  max-width: 560px;
+  margin: var(--ib-space-lg) 0;
+  font-size: clamp(40px, 5vw, 64px);
+  font-weight: var(--ib-weight-semibold);
+  line-height: var(--ib-leading-tight);
+  letter-spacing: -2px;
+  color: var(--ib-color-ink-strong);
+}
+
+.brand-copy {
+  max-width: 420px;
+  margin: 0;
+  font-size: var(--ib-text-subtitle);
+  line-height: 1.6;
+  color: var(--ib-color-steel);
+}
+
+.register-panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ib-space-xxl);
+}
+
+.register-locale {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  top: var(--ib-space-xl);
+  right: var(--ib-space-xl);
 }
 
 .register-form {
-  position: relative;
-  z-index: 10;
-  width: 400px;
-  padding: 40px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #2c3e50;
+  width: 100%;
+  max-width: 400px;
 }
 
 .register-form h2 {
+  display: none;
+  margin: 0;
+  font-size: var(--ib-text-heading-sm);
+  font-weight: var(--ib-weight-semibold);
   text-align: center;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #2c3e50, #34495e, #7f8c8d);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  font-size: 24px;
+  color: var(--ib-color-ink);
 }
 
 .register-subtitle {
+  margin: 0 0 var(--ib-space-lg);
+  font-size: var(--ib-text-body-sm);
+  color: var(--ib-color-steel);
   text-align: center;
-  margin-bottom: 24px;
-  color: #606266;
-  font-size: 14px;
+}
+
+.register-form :deep(.el-form-item) {
+  margin-bottom: var(--ib-space-md);
 }
 
 .register-links {
+  margin-top: var(--ib-space-xs);
   text-align: center;
 }
 
 .register-links a {
-  color: #409eff;
+  color: var(--ib-color-ink);
+  font-size: var(--ib-text-body-sm);
   text-decoration: none;
-  font-size: 14px;
 }
 
 .register-links a:hover {
   text-decoration: underline;
 }
 
-.el-input {
-  margin-bottom: 20px;
+@media (max-width: 900px) {
+  .register-container {
+    grid-template-columns: 1fr;
+  }
+
+  .register-brand {
+    display: none;
+  }
+
+  .register-panel {
+    padding: var(--ib-space-xl);
+  }
+
+  .register-form h2 {
+    display: block;
+    margin-bottom: var(--ib-space-xs);
+  }
 }
 </style>

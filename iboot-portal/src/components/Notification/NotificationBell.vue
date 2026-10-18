@@ -41,7 +41,7 @@
       <div class="dropdown-content">
         <template v-if="notifications.length === 0">
           <div class="empty-state">
-            <el-icon :size="48" color="#dcdfe6">
+            <el-icon :size="48" color="var(--ib-color-hairline)">
               <Bell />
             </el-icon>
             <p class="empty-text">
@@ -242,12 +242,12 @@ defineExpose({
 }
 
 .bell-icon {
-  color: #606266;
+  color: var(--ib-color-slate);
   transition: color 0.3s;
 }
 
 .bell-icon:hover {
-  color: #409eff;
+  color: var(--ib-color-brand-blue);
 }
 
 .notification-dropdown {
@@ -269,12 +269,12 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #f5f7fa;
+  background: var(--ib-color-surface);
 }
 
 .header-title {
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .header-actions {
@@ -293,7 +293,7 @@ defineExpose({
   align-items: center;
   justify-content: center;
   padding: 48px 16px;
-  color: #909399;
+  color: var(--ib-color-steel);
 }
 
 .empty-icon {
@@ -308,13 +308,13 @@ defineExpose({
 .notification-item {
   display: flex;
   padding: 12px 16px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .notification-item:hover {
-  background-color: #f5f7fa;
+  background-color: var(--ib-color-surface);
 }
 
 .notification-item.unread {
@@ -332,13 +332,13 @@ defineExpose({
 
 .notification-title {
   font-weight: 500;
-  color: #303133;
+  color: var(--ib-color-ink);
   margin-bottom: 4px;
   font-size: 14px;
 }
 
 .notification-content {
-  color: #606266;
+  color: var(--ib-color-slate);
   font-size: 13px;
   margin-bottom: 8px;
   display: -webkit-box;
@@ -355,7 +355,7 @@ defineExpose({
 
 .notification-time {
   font-size: 12px;
-  color: #909399;
+  color: var(--ib-color-steel);
 }
 
 .notification-actions {
@@ -367,7 +367,7 @@ defineExpose({
   padding: 12px 16px;
   text-align: center;
   background: #fafafa;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--ib-color-hairline-soft);
 }
 
 /* 滚动条样式 */
@@ -376,11 +376,11 @@ defineExpose({
 }
 
 .dropdown-content::-webkit-scrollbar-thumb {
-  background: #dcdfe6;
+  background: var(--ib-color-hairline);
   border-radius: 3px;
 }
 
 .dropdown-content::-webkit-scrollbar-thumb:hover {
-  background: #c0c4cc;
+  background: var(--ib-color-muted);
 }
 </style>

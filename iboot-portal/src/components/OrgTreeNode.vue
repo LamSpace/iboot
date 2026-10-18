@@ -70,7 +70,13 @@ defineEmits<{
   toggle: [nodeId: number];
 }>();
 
-const levelColors = ["#409EFF", "#67C23A", "#E6A23C", "#F56C6C", "#909399"];
+const levelColors = [
+  "var(--ib-color-brand-blue)",
+  "var(--ib-color-success-text)",
+  "var(--ib-color-warning-text)",
+  "var(--ib-color-danger-text)",
+  "var(--ib-color-steel)",
+];
 const levelColor = computed(
   () => levelColors[props.level % levelColors.length],
 );
@@ -93,7 +99,7 @@ const hasChildren = computed(
   max-width: 200px;
   background: white;
   border-radius: 8px;
-  border-top: 4px solid #409eff;
+  border-top: 4px solid var(--ib-color-brand-blue);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
@@ -118,7 +124,7 @@ const hasChildren = computed(
 /* 搜索匹配高亮 */
 .org-card.is-matched {
   box-shadow:
-    0 0 0 3px #409eff,
+    0 0 0 3px var(--ib-color-brand-blue),
     0 4px 12px rgba(64, 158, 255, 0.3);
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -127,12 +133,12 @@ const hasChildren = computed(
   0%,
   100% {
     box-shadow:
-      0 0 0 3px #409eff,
+      0 0 0 3px var(--ib-color-brand-blue),
       0 4px 12px rgba(64, 158, 255, 0.3);
   }
   50% {
     box-shadow:
-      0 0 0 5px #409eff,
+      0 0 0 5px var(--ib-color-brand-blue),
       0 4px 16px rgba(64, 158, 255, 0.5);
   }
 }
@@ -148,7 +154,7 @@ const hasChildren = computed(
 .dept-name {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -169,7 +175,7 @@ const hasChildren = computed(
   font-size: 10px;
   padding: 2px 5px;
   background: #fef0f0;
-  color: #f56c6c;
+  color: var(--ib-color-danger-text);
   border-radius: 3px;
   flex-shrink: 0;
 }
@@ -186,12 +192,12 @@ const hasChildren = computed(
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #606266;
+  color: var(--ib-color-slate);
 }
 
 .leader-info .icon {
   font-size: 12px;
-  color: #909399;
+  color: var(--ib-color-steel);
 }
 
 .member-count {
@@ -207,13 +213,13 @@ const hasChildren = computed(
 
 .member-count .unit {
   font-size: 11px;
-  color: #909399;
+  color: var(--ib-color-steel);
 }
 
 /* 展开/折叠按钮 */
 .toggle-btn {
   cursor: pointer;
-  color: #909399;
+  color: var(--ib-color-steel);
   font-size: 14px;
   transition:
     color 0.2s,
@@ -221,7 +227,7 @@ const hasChildren = computed(
 }
 
 .toggle-btn:hover {
-  color: #409eff;
+  color: var(--ib-color-brand-blue);
   transform: scale(1.2);
 }
 </style>

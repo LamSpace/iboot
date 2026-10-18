@@ -1,274 +1,245 @@
 <template>
   <div class="content-wrapper">
+    <PageHeader :title="t('dashboard.home')" />
+
     <!-- 统计卡片 -->
-    <el-row :gutter="16" class="stats-row">
-      <el-col
-        :xs="12"
-        :sm="8"
-        :md="4"
+    <div class="metrics-grid">
+      <MetricCard
         v-for="item in statsCards"
         :key="item.label"
-      >
-        <el-card
-          shadow="hover"
-          class="stat-card"
-          :style="{ borderTop: `3px solid ${item.color}` }"
-        >
-          <div class="stat-card-body">
-            <div class="stat-info">
-              <div class="stat-label">{{ item.label }}</div>
-              <div class="stat-value" :style="{ color: item.color }">
-                {{ item.value }}
-              </div>
-            </div>
-            <el-icon
-              class="stat-icon"
-              :style="{ color: item.color }"
-              :size="36"
-            >
-              <component :is="item.icon" />
-            </el-icon>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        :label="item.label"
+        :value="item.value"
+        :icon="item.icon"
+        :accent="item.accent"
+      />
+    </div>
 
     <!-- 系统状态 + 登录趋势 -->
-    <el-row :gutter="16" class="charts-row">
+    <div class="dashboard-grid">
       <!-- 系统健康状态 -->
-      <el-col :span="8">
-        <el-card shadow="hover" class="health-card">
-          <template #header>
-            <div class="card-header">
-              <span>{{ t("dashboard.system_health") }}</span>
-              <el-tag :type="systemHealthType" size="small" effect="dark">
-                {{ systemHealthLabel }}
-              </el-tag>
-            </div>
-          </template>
-          <div class="health-items" v-if="serverInfo">
-            <div class="health-item">
-              <div class="health-label">
-                <el-icon><Cpu /></el-icon>
-                <span>{{ t("dashboard.cpu") }}</span>
-              </div>
-              <el-progress
-                :percentage="Math.round(serverInfo.cpu.totalUsage)"
-                :status="getProgressStatus(serverInfo.cpu.status)"
-                :stroke-width="12"
-              />
-            </div>
-            <div class="health-item">
-              <div class="health-label">
-                <el-icon><Coin /></el-icon>
-                <span>{{ t("dashboard.memory") }}</span>
-              </div>
-              <el-progress
-                :percentage="Math.round(serverInfo.memory.usageRate)"
-                :status="getProgressStatus(serverInfo.memory.status)"
-                :stroke-width="12"
-              />
-            </div>
-            <div class="health-item">
-              <div class="health-label">
-                <el-icon><Box /></el-icon>
-                <span>{{ t("dashboard.jvm") }}</span>
-              </div>
-              <el-progress
-                :percentage="Math.round(serverInfo.jvm.usageRate)"
-                :status="getProgressStatus(serverInfo.jvm.status)"
-                :stroke-width="12"
-              />
-            </div>
+      <el-card class="health-card">
+        <template #header>
+          <div class="card-header">
+            <span>{{ t("dashboard.system_health") }}</span>
+            <StatusTag :type="systemHealthType" :label="systemHealthLabel" />
           </div>
-          <div v-else class="health-loading">
-            <el-skeleton :rows="3" animated />
+        </template>
+        <div class="health-items" v-if="serverInfo">
+          <div class="health-item">
+            <div class="health-label">
+              <el-icon><Cpu /></el-icon>
+              <span>{{ t("dashboard.cpu") }}</span>
+            </div>
+            <el-progress
+              :percentage="Math.round(serverInfo.cpu.totalUsage)"
+              :status="getProgressStatus(serverInfo.cpu.status)"
+              :stroke-width="12"
+            />
           </div>
-        </el-card>
-      </el-col>
+          <div class="health-item">
+            <div class="health-label">
+              <el-icon><Coin /></el-icon>
+              <span>{{ t("dashboard.memory") }}</span>
+            </div>
+            <el-progress
+              :percentage="Math.round(serverInfo.memory.usageRate)"
+              :status="getProgressStatus(serverInfo.memory.status)"
+              :stroke-width="12"
+            />
+          </div>
+          <div class="health-item">
+            <div class="health-label">
+              <el-icon><Box /></el-icon>
+              <span>{{ t("dashboard.jvm") }}</span>
+            </div>
+            <el-progress
+              :percentage="Math.round(serverInfo.jvm.usageRate)"
+              :status="getProgressStatus(serverInfo.jvm.status)"
+              :stroke-width="12"
+            />
+          </div>
+        </div>
+        <div v-else class="health-loading">
+          <el-skeleton :rows="3" animated />
+        </div>
+      </el-card>
 
       <!-- 登录趋势图 -->
-      <el-col :span="16">
-        <el-card shadow="hover" class="trend-card">
-          <template #header>
-            <div class="card-header">
-              <span>{{ t("dashboard.login_trend") }}</span>
-              <el-tag type="info" size="small">
-                {{ t("dashboard.login_trend_total") }} {{ totalLoginCount }}
-                {{ t("common.times") }}
-              </el-tag>
-            </div>
-          </template>
-          <div class="trend-chart" v-if="loginTrend.length > 0">
-            <div class="trend-bars">
-              <div
-                v-for="item in loginTrend"
-                :key="item.date"
-                class="trend-bar-wrapper"
-              >
-                <div class="trend-value">{{ item.value }}</div>
-                <div
-                  class="trend-bar"
-                  :style="{ height: getTrendBarHeight(item.value) + '%' }"
-                ></div>
-              </div>
-            </div>
-            <div class="trend-labels">
-              <span v-for="item in loginTrend" :key="item.date">
-                {{ formatDateLabel(item.date) }}
-              </span>
-            </div>
-          </div>
-          <div v-else class="trend-empty">
-            <el-empty
-              :description="t('dashboard.login_trend_no_data')"
-              :image-size="60"
+      <el-card class="trend-card">
+        <template #header>
+          <div class="card-header">
+            <span>{{ t("dashboard.login_trend") }}</span>
+            <StatusTag
+              type="info"
+              :label="`${t('dashboard.login_trend_total')} ${totalLoginCount} ${t('common.times')}`"
             />
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </template>
+        <div class="trend-chart" v-if="loginTrend.length > 0">
+          <div class="trend-bars">
+            <div
+              v-for="item in loginTrend"
+              :key="item.date"
+              class="trend-bar-wrapper"
+            >
+              <div class="trend-value">{{ item.value }}</div>
+              <div
+                class="trend-bar"
+                :style="{ height: getTrendBarHeight(item.value) + '%' }"
+              ></div>
+            </div>
+          </div>
+          <div class="trend-labels">
+            <span v-for="item in loginTrend" :key="item.date">
+              {{ formatDateLabel(item.date) }}
+            </span>
+          </div>
+        </div>
+        <div v-else class="trend-empty">
+          <EmptyState :title="t('dashboard.login_trend_no_data')" />
+        </div>
+      </el-card>
+    </div>
 
     <!-- 最近日志 -->
-    <el-row :gutter="16" class="logs-row">
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>{{ t("dashboard.recent_login_logs") }}</span>
-              <el-button
-                link
-                type="primary"
-                @click="router.push('/dashboard/login-log')"
-                >{{ t("dashboard.view_all") }}</el-button
-              >
-            </div>
-          </template>
-          <el-table
-            :data="summary?.recentLoginLogs ?? []"
-            style="width: 100%"
-            v-loading="loading"
-            size="small"
-          >
-            <el-table-column
-              prop="username"
-              :label="t('dashboard.username')"
-              min-width="100"
-            />
-            <el-table-column
-              prop="ipAddress"
-              :label="t('dashboard.login_ip')"
-              min-width="120"
-            />
-            <el-table-column
-              prop="status"
-              :label="t('dashboard.status')"
-              width="80"
-              align="center"
+    <div class="dashboard-grid logs-grid">
+      <el-card>
+        <template #header>
+          <div class="card-header">
+            <span>{{ t("dashboard.recent_login_logs") }}</span>
+            <el-button
+              link
+              type="primary"
+              @click="router.push('/dashboard/login-log')"
+              >{{ t("dashboard.view_all") }}</el-button
             >
-              <template #default="{ row }">
-                <el-tag
-                  :type="row.status === 1 ? 'success' : 'danger'"
-                  size="small"
-                >
-                  {{
-                    row.status === 1
-                      ? t("dashboard.success")
-                      : t("dashboard.failure")
-                  }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="loginTime"
-              :label="t('dashboard.time')"
-              min-width="160"
-            />
-          </el-table>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>{{ t("dashboard.recent_operate_logs") }}</span>
-              <el-button
-                link
-                type="primary"
-                @click="router.push('/dashboard/operate-log')"
-                >{{ t("dashboard.view_all") }}</el-button
-              >
-            </div>
-          </template>
-          <el-table
-            :data="summary?.recentOperateLogs ?? []"
-            style="width: 100%"
-            v-loading="loading"
-            size="small"
+          </div>
+        </template>
+        <el-table
+          :data="summary?.recentLoginLogs ?? []"
+          style="width: 100%"
+          v-loading="loading"
+          size="small"
+        >
+          <el-table-column
+            prop="username"
+            :label="t('dashboard.username')"
+            min-width="100"
+          />
+          <el-table-column
+            prop="ipAddress"
+            :label="t('dashboard.login_ip')"
+            min-width="120"
+          />
+          <el-table-column
+            prop="status"
+            :label="t('dashboard.status')"
+            width="80"
+            align="center"
           >
-            <el-table-column
-              prop="operatorName"
-              :label="t('dashboard.operator')"
-              min-width="100"
-            />
-            <el-table-column
-              prop="title"
-              :label="t('dashboard.module')"
-              min-width="100"
-            />
-            <el-table-column
-              prop="requestMethod"
-              :label="t('dashboard.method')"
-              width="70"
-              align="center"
-            />
-            <el-table-column
-              prop="status"
-              :label="t('dashboard.status')"
-              width="80"
-              align="center"
+            <template #default="{ row }">
+              <StatusTag
+                :type="row.status === 1 ? 'success' : 'danger'"
+                :label="
+                  row.status === 1
+                    ? t('dashboard.success')
+                    : t('dashboard.failure')
+                "
+              />
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="loginTime"
+            :label="t('dashboard.time')"
+            min-width="160"
+          />
+          <template #empty>
+            <EmptyState :title="t('common.no_data')" />
+          </template>
+        </el-table>
+      </el-card>
+
+      <el-card>
+        <template #header>
+          <div class="card-header">
+            <span>{{ t("dashboard.recent_operate_logs") }}</span>
+            <el-button
+              link
+              type="primary"
+              @click="router.push('/dashboard/operate-log')"
+              >{{ t("dashboard.view_all") }}</el-button
             >
-              <template #default="{ row }">
-                <el-tag
-                  :type="row.status === 1 ? 'success' : 'danger'"
-                  size="small"
-                >
-                  {{
-                    row.status === 1
-                      ? t("dashboard.success")
-                      : t("dashboard.failure")
-                  }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="operTime"
-              :label="t('dashboard.time')"
-              min-width="160"
-            />
-          </el-table>
-        </el-card>
-      </el-col>
-    </el-row>
+          </div>
+        </template>
+        <el-table
+          :data="summary?.recentOperateLogs ?? []"
+          style="width: 100%"
+          v-loading="loading"
+          size="small"
+        >
+          <el-table-column
+            prop="operatorName"
+            :label="t('dashboard.operator')"
+            min-width="100"
+          />
+          <el-table-column
+            prop="title"
+            :label="t('dashboard.module')"
+            min-width="100"
+          />
+          <el-table-column
+            prop="requestMethod"
+            :label="t('dashboard.method')"
+            width="70"
+            align="center"
+          />
+          <el-table-column
+            prop="status"
+            :label="t('dashboard.status')"
+            width="80"
+            align="center"
+          >
+            <template #default="{ row }">
+              <StatusTag
+                :type="row.status === 1 ? 'success' : 'danger'"
+                :label="
+                  row.status === 1
+                    ? t('dashboard.success')
+                    : t('dashboard.failure')
+                "
+              />
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="operTime"
+            :label="t('dashboard.time')"
+            min-width="160"
+          />
+          <template #empty>
+            <EmptyState :title="t('common.no_data')" />
+          </template>
+        </el-table>
+      </el-card>
+    </div>
 
     <!-- 快捷导航 -->
-    <el-card shadow="hover" class="shortcuts-card">
+    <el-card class="shortcuts-card">
       <template #header>
         <span>{{ t("dashboard.shortcuts") }}</span>
       </template>
-      <el-row :gutter="16">
-        <el-col :span="4" v-for="item in shortcuts" :key="item.path">
-          <div
-            class="shortcut-item"
-            @click="router.push(`/dashboard/${item.path}`)"
-          >
-            <el-icon :size="28" :style="{ color: item.color }">
-              <component :is="item.icon" />
-            </el-icon>
-            <span class="shortcut-label">{{ item.label }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="shortcuts-grid">
+        <div
+          v-for="item in shortcuts"
+          :key="item.path"
+          class="shortcut-item"
+          @click="router.push(`/dashboard/${item.path}`)"
+        >
+          <el-icon :size="24" :style="{ color: item.color }">
+            <component :is="item.icon" />
+          </el-icon>
+          <span class="shortcut-label">{{ item.label }}</span>
+        </div>
+      </div>
     </el-card>
   </div>
 </template>
@@ -301,6 +272,10 @@ import {
   type ServerInfoResponse,
   type TrendData,
 } from "@/api/system";
+import PageHeader from "@/components/PageHeader.vue";
+import MetricCard from "@/components/MetricCard.vue";
+import StatusTag from "@/components/StatusTag.vue";
+import EmptyState from "@/components/EmptyState.vue";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -318,7 +293,7 @@ interface StatCard {
   label: string;
   value: number;
   icon: Component;
-  color: string;
+  accent: "ink" | "coral" | "magenta" | "blue" | "purple" | "cyan";
 }
 
 const statsCards = computed<StatCard[]>(() => [
@@ -326,37 +301,37 @@ const statsCards = computed<StatCard[]>(() => [
     label: t("dashboard.user_count"),
     value: summary.value?.userCount ?? 0,
     icon: User,
-    color: "#409eff",
+    accent: "ink",
   },
   {
     label: t("dashboard.today_active"),
     value: todayActiveUsers.value,
     icon: UserFilled,
-    color: "#67c23a",
+    accent: "blue",
   },
   {
     label: t("dashboard.online_users"),
     value: onlineCount.value,
     icon: Monitor,
-    color: "#e6a23c",
+    accent: "cyan",
   },
   {
     label: t("dashboard.dept_count"),
     value: summary.value?.deptCount ?? 0,
     icon: OfficeBuilding,
-    color: "#f56c6c",
+    accent: "purple",
   },
   {
     label: t("dashboard.login_log_count"),
     value: summary.value?.loginLogCount ?? 0,
     icon: Tickets,
-    color: "#909399",
+    accent: "magenta",
   },
   {
     label: t("dashboard.operate_log_count"),
     value: summary.value?.operateLogCount ?? 0,
     icon: Operation,
-    color: "#8e44ad",
+    accent: "coral",
   },
 ]);
 
@@ -365,37 +340,37 @@ const shortcuts = computed(() => [
     label: t("dashboard.user_management"),
     path: "user",
     icon: User,
-    color: "#409eff",
+    color: "var(--ib-color-brand-blue)",
   },
   {
     label: t("dashboard.role_management"),
     path: "role",
     icon: Avatar,
-    color: "#67c23a",
+    color: "var(--ib-color-brand-magenta)",
   },
   {
     label: t("dashboard.dept_management"),
     path: "dept",
     icon: OfficeBuilding,
-    color: "#e6a23c",
+    color: "var(--ib-color-brand-purple)",
   },
   {
     label: t("dashboard.post_management"),
     path: "post",
     icon: Briefcase,
-    color: "#f56c6c",
+    color: "var(--ib-color-brand-coral)",
   },
   {
     label: t("dashboard.menu_management"),
     path: "menu",
     icon: Setting,
-    color: "#909399",
+    color: "var(--ib-color-steel)",
   },
   {
     label: t("dashboard.operate_log"),
     path: "operate-log",
     icon: Document,
-    color: "#8e44ad",
+    color: "var(--ib-color-brand-cyan)",
   },
 ]);
 
@@ -547,100 +522,71 @@ onUnmounted(() => {
 
 <style scoped>
 .content-wrapper {
-  padding: 16px;
+  padding: var(--ib-content-gutter);
 }
 
-.stats-row {
-  margin-bottom: 16px;
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ib-space-md);
+  margin-bottom: var(--ib-space-md);
 }
 
-.stat-card {
-  border-radius: 8px;
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--ib-space-md);
+  margin-bottom: var(--ib-space-md);
 }
 
-.stat-card-body {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.stat-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.stat-icon {
-  opacity: 0.8;
-}
-
-.charts-row {
-  margin-bottom: 16px;
-}
-
-.health-card,
-.trend-card {
-  height: 280px;
-  border-radius: 8px;
-  overflow: hidden;
+.logs-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .health-card :deep(.el-card__body) {
-  padding: 16px;
+  height: 220px;
   overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .health-card :deep(.el-card__body::-webkit-scrollbar) {
-  display: none; /* Chrome Safari */
+  display: none;
 }
 
 .health-items {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--ib-space-lg);
 }
 
 .health-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--ib-space-xs);
 }
 
 .health-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #606266;
+  gap: var(--ib-space-xs);
+  font-size: var(--ib-text-caption);
+  color: var(--ib-color-steel);
 }
 
 .health-loading {
-  padding: 16px 0;
+  padding: var(--ib-space-md) 0;
 }
 
 .trend-card :deep(.el-card__body) {
-  padding: 16px;
-  height: calc(100% - 56px);
+  height: 220px;
   overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .trend-card :deep(.el-card__body::-webkit-scrollbar) {
-  display: none; /* Chrome Safari */
+  display: none;
 }
 
 .trend-chart {
@@ -653,8 +599,8 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   align-items: flex-end;
-  gap: 12px;
-  padding: 0 8px;
+  gap: var(--ib-space-sm);
+  padding: 0 var(--ib-space-xs);
 }
 
 .trend-bar-wrapper {
@@ -667,19 +613,19 @@ onUnmounted(() => {
 }
 
 .trend-value {
-  font-size: 12px;
-  font-weight: 600;
-  color: #409eff;
-  margin-bottom: 4px;
+  margin-bottom: var(--ib-space-xxs);
+  font-size: var(--ib-text-micro);
+  font-weight: var(--ib-weight-semibold);
+  color: var(--ib-color-brand-blue);
 }
 
 .trend-bar {
   width: 100%;
   max-width: 40px;
-  background: linear-gradient(180deg, #409eff, #79bbff);
-  border-radius: 4px 4px 0 0;
   min-height: 4px;
-  transition: height 0.3s ease;
+  border-radius: var(--ib-radius-xs) var(--ib-radius-xs) 0 0;
+  background: var(--ib-color-brand-blue);
+  transition: height var(--ib-duration-base) var(--ib-ease);
 }
 
 .trend-bar:hover {
@@ -688,15 +634,15 @@ onUnmounted(() => {
 
 .trend-labels {
   display: flex;
-  padding: 8px 8px 0;
-  gap: 12px;
+  gap: var(--ib-space-sm);
+  padding: var(--ib-space-xs) var(--ib-space-xs) 0;
 }
 
 .trend-labels span {
   flex: 1;
   text-align: center;
-  font-size: 12px;
-  color: #909399;
+  font-size: var(--ib-text-micro);
+  color: var(--ib-color-steel);
 }
 
 .trend-empty {
@@ -706,38 +652,67 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.logs-row {
-  margin-bottom: 16px;
-}
-
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-weight: 600;
+  justify-content: space-between;
+  font-weight: var(--ib-weight-semibold);
 }
 
-.shortcuts-card {
-  border-radius: 8px;
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ib-space-xs);
 }
 
 .shortcut-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 0;
+  gap: var(--ib-space-xs);
+  padding: var(--ib-space-md) 0;
+  border-radius: var(--ib-radius-md);
   cursor: pointer;
-  border-radius: 8px;
-  transition: background-color 0.2s;
+  transition: background var(--ib-duration-fast) var(--ib-ease);
 }
 
 .shortcut-item:hover {
-  background-color: #f5f7fa;
+  background: var(--ib-color-surface);
 }
 
 .shortcut-label {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #606266;
+  font-size: var(--ib-text-caption);
+  color: var(--ib-color-charcoal);
+  text-align: center;
+}
+
+@media (max-width: 1280px) {
+  .metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shortcuts-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .logs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shortcuts-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

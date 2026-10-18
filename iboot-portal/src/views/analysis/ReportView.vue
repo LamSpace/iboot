@@ -1,12 +1,7 @@
 <template>
   <div class="content-wrapper">
-    <!-- 工具栏 -->
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <el-icon :size="18"><TrendCharts /></el-icon>
-        <span class="toolbar-title">{{ t("analysis.report.title") }}</span>
-      </div>
-      <div class="toolbar-right">
+    <PageHeader :title="t('analysis.report.title')">
+      <template #actions>
         <el-date-picker
           v-model="dateRange"
           type="daterange"
@@ -25,33 +20,21 @@
           size="small"
           @click="loadData"
           :loading="loading"
-          style="margin-left: 12px"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <div v-loading="loading">
       <!-- 系统概览卡片 -->
-      <el-row :gutter="16" class="stats-cards" v-if="reportData">
-        <el-col
-          :xs="12"
-          :sm="8"
-          :md="4"
+      <div class="metrics-grid" v-if="reportData">
+        <MetricCard
           v-for="item in overviewCards"
           :key="item.label"
-        >
-          <el-card
-            shadow="hover"
-            class="stat-card"
-            :style="{ borderTop: `3px solid ${item.color}` }"
-          >
-            <div class="stat-label">{{ item.label }}</div>
-            <div class="stat-value" :style="{ color: item.color }">
-              {{ item.value }}
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+          :label="item.label"
+          :value="item.value"
+          :accent="item.accent"
+        />
+      </div>
 
       <!-- 报表类型切换 -->
       <el-tabs v-model="activeTab" class="report-tabs">
@@ -333,8 +316,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import { TrendCharts, Refresh } from "@element-plus/icons-vue";
+import { Refresh } from "@element-plus/icons-vue";
 import { getStatisticsReport, type ReportResponse } from "@/api/system";
+import PageHeader from "@/components/PageHeader.vue";
+import MetricCard from "@/components/MetricCard.vue";
 
 const { t } = useI18n();
 const loading = ref(false);
@@ -382,32 +367,32 @@ const overviewCards = computed(() => {
     {
       label: t("analysis.report.overview.user_count"),
       value: overviewStats.userCount,
-      color: "#409eff",
+      accent: "ink",
     },
     {
       label: t("analysis.report.overview.role_count"),
       value: overviewStats.roleCount,
-      color: "#67c23a",
+      accent: "blue",
     },
     {
       label: t("analysis.report.overview.dept_count"),
       value: overviewStats.deptCount,
-      color: "#e6a23c",
+      accent: "purple",
     },
     {
       label: t("analysis.report.overview.post_count"),
       value: overviewStats.postCount,
-      color: "#f56c6c",
+      accent: "coral",
     },
     {
       label: t("analysis.report.overview.menu_count"),
       value: overviewStats.menuCount,
-      color: "#909399",
+      accent: "magenta",
     },
     {
       label: t("analysis.report.overview.config_count"),
       value: overviewStats.configCount,
-      color: "#8e44ad",
+      accent: "cyan",
     },
   ];
 });
@@ -539,121 +524,78 @@ onMounted(() => {
 
 <style scoped>
 .content-wrapper {
-  padding: 12px;
+  padding: var(--ib-content-gutter);
 }
 
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #fff;
-  padding: 10px 16px;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  margin-bottom: 16px;
-}
-
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.toolbar-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-}
-
-.stats-cards {
-  margin-bottom: 16px;
-}
-
-.stat-card {
-  text-align: center;
-}
-
-.stat-card :deep(.el-card__body) {
-  padding: 16px;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-bottom: 6px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ib-space-md);
+  margin-bottom: var(--ib-space-md);
 }
 
 .report-tabs {
-  background: #fff;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: var(--ib-space-lg);
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-xl);
+  background: var(--ib-color-canvas);
 }
 
 .card-title {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: var(--ib-weight-semibold);
+  font-size: var(--ib-text-body-sm);
+  color: var(--ib-color-ink);
 }
 
 .stat-num {
-  font-weight: 600;
-  font-size: 16px;
-  color: #303133;
+  font-weight: var(--ib-weight-semibold);
+  font-size: var(--ib-text-body);
+  color: var(--ib-color-ink);
 }
 
 .stat-num.highlight {
-  color: #409eff;
+  color: var(--ib-color-brand-blue);
 }
 
 .stat-num.success {
-  color: #67c23a;
+  color: var(--ib-color-success-text);
 }
 
 .stat-num.danger {
-  color: #f56c6c;
+  color: var(--ib-color-danger-text);
 }
 
 .chart-placeholder {
-  margin-top: 16px;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 6px;
+  margin-top: var(--ib-space-md);
+  padding: var(--ib-space-sm);
+  border-radius: var(--ib-radius-sm);
+  background: var(--ib-color-surface);
 }
 
 .trend-title {
-  font-size: 13px;
-  color: #606266;
-  margin-bottom: 12px;
-  font-weight: 500;
+  margin-bottom: var(--ib-space-sm);
+  font-size: var(--ib-text-caption);
+  font-weight: var(--ib-weight-medium);
+  color: var(--ib-color-steel);
 }
 
 .trend-chart {
   display: flex;
   align-items: flex-end;
   height: 80px;
-  gap: 4px;
+  gap: var(--ib-space-xxs);
 }
 
 .trend-bar {
   flex: 1;
-  background: linear-gradient(180deg, #409eff, #79bbff);
-  border-radius: 3px 3px 0 0;
   min-height: 4px;
-  transition: height 0.3s ease;
+  border-radius: var(--ib-radius-xs) var(--ib-radius-xs) 0 0;
+  background: var(--ib-color-brand-blue);
+  transition: height var(--ib-duration-base) var(--ib-ease);
 }
 
 .trend-bar.operate {
-  background: linear-gradient(180deg, #67c23a, #95d475);
+  background: var(--ib-color-success-text);
 }
 
 .trend-bar:hover {
@@ -663,12 +605,24 @@ onMounted(() => {
 .trend-labels {
   display: flex;
   margin-top: 6px;
-  font-size: 10px;
-  color: #909399;
+  font-size: var(--ib-text-micro);
+  color: var(--ib-color-steel);
 }
 
 .trend-labels span {
   flex: 1;
   text-align: center;
+}
+
+@media (max-width: 1280px) {
+  .metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

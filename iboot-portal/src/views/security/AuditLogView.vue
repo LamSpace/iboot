@@ -1,6 +1,7 @@
 <template>
   <div class="content-wrapper">
-    <div class="content-body">
+    <PageHeader :title="t('security.auditLog.title')" />
+    <FilterBar>
       <!-- 搜索表单 -->
       <el-form :inline="true" :model="queryParams" class="search-form">
         <el-form-item :label="t('security.auditLog.level')">
@@ -66,6 +67,9 @@
           }}</el-button>
         </el-form-item>
       </el-form>
+    </FilterBar>
+
+    <div class="content-body">
 
       <el-table :data="logList" style="width: 100%" v-loading="loading">
         <el-table-column
@@ -118,6 +122,9 @@
             }}</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <EmptyState :title="t('common.no_data')" />
+        </template>
       </el-table>
 
       <el-pagination
@@ -169,6 +176,10 @@
 import { ref, reactive, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { getRunLogList, type RunLog, type RunLogQuery } from "@/api/system";
+
+import PageHeader from "@/components/PageHeader.vue";
+import FilterBar from "@/components/FilterBar.vue";
+import EmptyState from "@/components/EmptyState.vue";
 
 const { t } = useI18n();
 const loading = ref(false);
@@ -254,22 +265,23 @@ onMounted(() => {
 
 <style scoped>
 .content-wrapper {
-  padding: 20px;
+  padding: var(--ib-content-gutter);
 }
 
 .content-body {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  background: var(--ib-color-canvas);
+  padding: var(--ib-space-lg);
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-xl);
+  box-shadow: none;
 }
 
 .search-form {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .pagination {
-  margin-top: 20px;
+  margin-top: var(--ib-space-md);
   justify-content: flex-end;
 }
 

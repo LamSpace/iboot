@@ -1,29 +1,14 @@
 <template>
   <div class="content-wrapper">
+    <PageHeader :title="t('message.messageCenter.title')" />
     <div class="content-body">
       <el-tabs v-model="activeTab">
         <el-tab-pane
           :label="t('message.messageCenter.tabs.message')"
           name="message"
         >
-          <!-- 操作按钮 -->
-          <div class="action-bar">
-            <el-button
-              type="primary"
-              v-permission="'message:add'"
-              @click="handleAdd"
-              >{{ t("message.messageCenter.actions.add") }}</el-button
-            >
-            <el-button
-              type="success"
-              :loading="exportLoading"
-              @click="handleExport"
-              >{{ t("message.messageCenter.actions.export") }}</el-button
-            >
-          </div>
-
-          <!-- 搜索表单 -->
-          <el-form :inline="true" :model="queryParams" class="search-form">
+          <FilterBar>
+            <el-form :inline="true" :model="queryParams" class="search-form">
             <el-form-item :label="t('message.messageCenter.search.title')">
               <el-input
                 v-model="queryParams.title"
@@ -68,6 +53,21 @@
               }}</el-button>
             </el-form-item>
           </el-form>
+          </FilterBar>
+
+          <TableToolbar>
+            <el-button
+              type="primary"
+              v-permission="'message:add'"
+              @click="handleAdd"
+              >{{ t("message.messageCenter.actions.add") }}</el-button
+            >
+            <el-button
+              :loading="exportLoading"
+              @click="handleExport"
+              >{{ t("message.messageCenter.actions.export") }}</el-button
+            >
+          </TableToolbar>
 
           <!-- 数据表格 -->
           <el-table :data="messageList" style="width: 100%" v-loading="loading">
@@ -90,18 +90,17 @@
               align="center"
             >
               <template #default="{ row }">
-                <el-tag
+                <StatusTag
                   :type="
                     dictStore.getDictListClass(
                       'sys_message_type',
                       row.messageType,
                     )
                   "
-                >
-                  {{
-                    dictStore.getDictLabel("sys_message_type", row.messageType)
-                  }}
-                </el-tag>
+                  :label="
+                    dictStore.getDictLabel('sys_message_type', row.messageType)
+                  "
+                />
               </template>
             </el-table-column>
             <el-table-column
@@ -111,18 +110,17 @@
               align="center"
             >
               <template #default="{ row }">
-                <el-tag
+                <StatusTag
                   :type="
                     dictStore.getDictListClass(
                       'sys_message_priority',
                       row.priority,
                     )
                   "
-                >
-                  {{
-                    dictStore.getDictLabel("sys_message_priority", row.priority)
-                  }}
-                </el-tag>
+                  :label="
+                    dictStore.getDictLabel('sys_message_priority', row.priority)
+                  "
+                />
               </template>
             </el-table-column>
             <el-table-column
@@ -147,13 +145,14 @@
               align="center"
             >
               <template #default="{ row }">
-                <el-tag
+                <StatusTag
                   :type="
                     dictStore.getDictListClass('sys_message_status', row.status)
                   "
-                >
-                  {{ dictStore.getDictLabel("sys_message_status", row.status) }}
-                </el-tag>
+                  :label="
+                    dictStore.getDictLabel('sys_message_status', row.status)
+                  "
+                />
               </template>
             </el-table-column>
             <el-table-column
@@ -206,6 +205,9 @@
                 >
               </template>
             </el-table-column>
+            <template #empty>
+              <EmptyState :title="t('common.no_data')" />
+            </template>
           </el-table>
 
           <!-- 分页 -->
@@ -439,6 +441,11 @@ import {
 import { useDictStore } from "@/stores/dict";
 import { useExport } from "@/composables/useExport";
 import MessageTemplatePanel from "@/components/MessageTemplatePanel.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import FilterBar from "@/components/FilterBar.vue";
+import TableToolbar from "@/components/TableToolbar.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import StatusTag from "@/components/StatusTag.vue";
 
 const { t } = useI18n();
 const dictStore = useDictStore();
@@ -713,30 +720,23 @@ onMounted(() => {
 
 <style scoped>
 .content-wrapper {
-  padding: 20px;
+  padding: var(--ib-content-gutter);
 }
 
 .content-body {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.action-bar {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  background: var(--ib-color-canvas);
+  padding: var(--ib-space-lg);
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-xl);
+  box-shadow: none;
 }
 
 .search-form {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .pagination {
-  margin-top: 20px;
+  margin-top: var(--ib-space-md);
   justify-content: flex-end;
 }
 </style>

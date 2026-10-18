@@ -404,7 +404,7 @@ onMounted(() => {
   left: 50%;
   width: 2px;
   height: 30px;
-  background: #c0c4cc;
+  background: var(--ib-color-muted);
 }
 
 .org-tree > li {
@@ -429,7 +429,7 @@ onMounted(() => {
   left: 50%;
   width: 2px;
   height: 30px;
-  background: #c0c4cc;
+  background: var(--ib-color-muted);
 }
 
 /* 子节点之间的水平连接线 */
@@ -439,7 +439,7 @@ onMounted(() => {
   top: -30px;
   width: 100%;
   height: 2px;
-  background: #c0c4cc;
+  background: var(--ib-color-muted);
 }
 
 /* 第一个子节点：水平线从中间开始 */
@@ -471,7 +471,7 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eaed 100%);
+  background: var(--ib-color-surface);
 }
 
 /* 页面头部 */
@@ -493,7 +493,7 @@ onMounted(() => {
   margin: 0;
   font-size: 17px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .header-right {
@@ -536,14 +536,14 @@ onMounted(() => {
   align-items: center;
   gap: 14px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
   margin-bottom: 16px;
 }
 
 .dept-avatar {
   width: 50px;
   height: 50px;
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  background: var(--ib-color-brand-blue);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -560,12 +560,12 @@ onMounted(() => {
 .dept-info h3 {
   margin: 0 0 4px 0;
   font-size: 16px;
-  color: #303133;
+  color: var(--ib-color-ink);
 }
 
 .dept-code {
   font-size: 12px;
-  color: #909399;
+  color: var(--ib-color-steel);
 }
 
 .stats-row {
@@ -576,7 +576,7 @@ onMounted(() => {
 
 .stat-card {
   flex: 1;
-  background: #f5f7fa;
+  background: var(--ib-color-surface);
   border-radius: 8px;
   padding: 14px;
   text-align: center;
@@ -585,12 +585,12 @@ onMounted(() => {
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  color: #409eff;
+  color: var(--ib-color-brand-blue);
 }
 
 .stat-label {
   font-size: 12px;
-  color: #909399;
+  color: var(--ib-color-steel);
   margin-top: 4px;
 }
 
@@ -610,17 +610,17 @@ onMounted(() => {
 }
 
 .info-item .el-icon {
-  color: #909399;
+  color: var(--ib-color-steel);
 }
 
 .info-item .label {
-  color: #909399;
+  color: var(--ib-color-steel);
   font-size: 12px;
   min-width: 45px;
 }
 
 .info-item .value {
-  color: #303133;
+  color: var(--ib-color-ink);
   font-size: 13px;
 }
 
@@ -646,12 +646,12 @@ onMounted(() => {
 }
 
 .sub-dept-item .el-icon {
-  color: #409eff;
+  color: var(--ib-color-brand-blue);
 }
 
 .sub-dept-item span {
   flex: 1;
-  color: #303133;
+  color: var(--ib-color-ink);
   font-size: 13px;
 }
 </style>
