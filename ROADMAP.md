@@ -6,7 +6,7 @@
 >
 > 本文只定义"做什么、用什么、受什么约束、带来什么价值、怎么算完成",不含实施排期。每个条目都带验收判据,判据不成立的条目不进路线图。
 >
-> 最近更新:2026-09-17
+> 最近更新:2026-10-18
 
 ---
 
@@ -81,8 +81,8 @@ infrastructure → config / persistence / repository / security / filter / inter
 
 | 缺口 | 证据 |
 |---|---|
-| 数据备份与恢复 | 代码中无任何 backup 实现,仅有旧 TODO 条目 |
-| 业务数据行级多语言 | 现有 i18n 只覆盖 UI 文案与异常消息,记录本身无多语言字段 |
+| 数据备份与恢复 | 代码中无任何 backup 实现;已决策**暂不做**(原阶段 0.2) |
+| 业务数据行级多语言 | 现有 i18n 只覆盖 UI 文案与异常消息;已决策**暂不做**(原阶段 0.4) |
 | 链路追踪 | compose 中无 Zipkin / Tempo / SkyWalking / Jaeger,doc 11 提到但环境未落地 |
 | 服务注册 / 配置中心 / MQ / 分布式事务 | 完全未引入 |
 | K8s 编排 | 无 Deployment/Helm 清单,只有 docker-compose |
@@ -92,12 +92,14 @@ infrastructure → config / persistence / repository / security / filter / inter
 
 ### 1.5 文档与实现的偏差
 
-| 位置 | 问题 | 处理 |
+以下偏差已逐项处理完毕:
+
+| 位置 | 原问题 | 处理结果 |
 |---|---|---|
-| `doc/02-技术栈.md` | 写 Spring Boot **3.5.9**,实际 pom 为 **4.0.3** | 归入阶段 0 附带修正 |
-| `doc/02-技术栈.md` | 依赖清单列 `elasticsearch-java 8.17.0`,而运行环境为 ES **9.2.3** | 阶段 0.3 前置升级,详见 § 6.1 |
-| `README.md` | 徽章写 "Spring Boot 4.x",与 pom 一致但与 doc 02 冲突 | 以 pom 为准 |
-| `TODO.md` / `graalvm-native-image-plan.md` | 非规范文档,内容陈旧 | 由本文取代并删除 |
+| `doc/02-技术栈.md` | 写 Spring Boot **3.5.9**,实际 pom 为 **4.0.3** | ✅ 已修正为 **4.0.3**(Spring Framework / Security 同步为 7.x) |
+| `doc/02-技术栈.md` | 依赖清单列 `elasticsearch-java 8.17.0` | ✅ 已修正为 **9.2.5**(由 Boot 4.0.3 托管,与 ES 9.2.3 同属 9.2.x) |
+| `README.md` | 徽章写 "Spring Boot 4.x",与 doc 02 冲突 | ✅ 无需修改;doc 02 修正后二者一致,以 pom 为准 |
+| `TODO.md` / `graalvm-native-image-plan.md` | 非规范文档,内容陈旧 | ✅ 已删除,由本文取代 |
 
 ---
 
@@ -135,8 +137,8 @@ graph LR
 
     P0 --> P1 --> P2 --> P3 --> P4
 
-    P0 -. "0.3 ES 客户端升 9.x<br/>是 RAG 向量检索前置" .-> P1
-    P0 -. "0.2 MinioService 抽<br/>StorageProvider SPI" .-> P3
+    P0 -. "0.3 业务全文检索<br/>是 RAG 向量检索前置" .-> P1
+    P0 -. "0.7 MinioService 抽<br/>StorageProvider SPI" .-> P3
     P1 -. "iboot-ai 已独立可部署<br/>阶段 2 零迁移成本" .-> P2
     P2 -. "服务清单与镜像<br/>是 Helm 化对象" .-> P3
 ```
@@ -162,13 +164,13 @@ graph LR
 | 编号 | 子项 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|---|
 | **0.1** | 父 POM 多模块预备 | Maven 聚合 `iboot-parent`,`modules = iboot-admin` + 预留 `iboot-ai`;依赖版本集中到 `dependencyManagement` | 纯构建结构改造,**不动一行业务代码** | `mvn verify` 绿;Docker 中间件环境与前端联调行为零变化 |
-| **0.2** | 数据备份与恢复 | Quartz(已有)+ `mysqldump` + MinIO(已有)+ AES-GCM 加密 + 元数据表 `db_backup_record` + 恢复演练 | 恢复目标必须是独立演练库,**禁止覆盖原库**;`mysqldump` 版本须与 MySQL 8.0.45 匹配;大库逻辑备份耗时,binlog 增量留作选做 | 定时备份产物落 MinIO;一次完整恢复演练成功且行数 / 校验和一致 |
-| **0.3** | 业务全文检索 | 复用已部署的 ES 9(目前仅存运行日志),公告 / 消息 / 文件内容建索引;写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 定时对账 | ⚠️ `elasticsearch-java` 现为 **8.17.0**,连 ES **9.2.3** 官方不保证兼容,须先升客户端;不引入 Canal(重) | 公告/消息/文件内容可检索;源数据删改后 5 分钟内索引一致 |
-| **0.4** | 行级业务多语言 | 翻译表 `sys_i18n_value(lang, table, row_id, field, value)` + MyBatis 拦截器自动替换与默认语言回退 + 复用二级缓存 | 与 `DataScopeInterceptor` 的拦截器链顺序敏感;与 PageHelper 的分页改写需兼容;回退规则须先定死(默认语言缺失 → 空还是回退) | 同一记录中/英切换返回正确字段;数据权限过滤仍生效 |
+| **0.2** | 数据备份与恢复(**暂不做**) | Quartz(已有)+ `mysqldump` + MinIO(已有)+ AES-GCM 加密 + 元数据表 `db_backup_record` + 恢复演练 | 恢复目标必须是独立演练库,**禁止覆盖原库**;`mysqldump` 版本须与 MySQL 8.0.45 匹配;大库逻辑备份耗时,binlog 增量留作选做 | 定时备份产物落 MinIO;一次完整恢复演练成功且行数 / 校验和一致 |
+| **0.3** | 业务全文检索 | 复用已部署的 ES 9(目前仅存运行日志),公告 / 消息 / 文件内容建索引;写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 定时对账 | ES 客户端已随 Boot 4.0.3 升至 **9.2.5**,与 ES **9.2.3** 同属 9.2.x,兼容前置已满足;不引入 Canal(重) | 公告/消息/文件内容可检索;源数据删改后 5 分钟内索引一致 |
+| **0.4** | 行级业务多语言(**暂不做**) | 翻译表 `sys_i18n_value(lang, table, row_id, field, value)` + MyBatis 拦截器自动替换与默认语言回退 + 复用二级缓存 | 与 `DataScopeInterceptor` 的拦截器链顺序敏感;与 PageHelper 的分页改写需兼容;回退规则须先定死(默认语言缺失 → 空还是回退) | 同一记录中/英切换返回正确字段;数据权限过滤仍生效 |
 | **0.5** | 审批流 / 工作流 | **Spike 决定**:Flowable 7 on Boot 4.0.3(判据:引擎启动 + 一条请假流程单测通过);不通则 Spring Statemachine + 自研状态持久化 | Flowable × Boot 4 兼容性**未经验证**;二者只取其一,不并存(原 TODO#8 由此消化) | 一条真实流程可跑通:发起 → 审批 → 驳回 → 归档 |
 | **0.6** | 多渠道通知 | 渠道 SPI(站内 SSE 已有 / Spring Mail / 阿里云短信 Dysmsapi / 钉钉 webhook)+ 复用 `message_template` 表 + 失败重试 | 需真实阿里云密钥,密钥不入仓(env / Nacos);短信签名与模板有云侧审核周期;阶段 2 后重投职责移交 RocketMQ | 同一业务事件按渠道可达;失败可见且可重试 |
 | **0.7** | 衔接性抽象 | 把 `MinioService` 抽为 `StorageProvider` SPI(MinIO / OSS 双实现) | 阶段 3 的 MinIO→OSS 替换依赖它;两者 SDK 不兼容,不做抽象则上云要改遍文件相关代码 | 本地跑 MinIO 实现、测试跑内存实现,行为一致 |
-| **0.8** | 文档修正 | `doc/02-技术栈.md` 版本号 3.5.9 → 4.0.3;ES 客户端版本描述 | — | 文档与 pom 一致 |
+| **0.8** | 文档修正(**已完成**) | `doc/02-技术栈.md` 版本号 3.5.9 → 4.0.3;ES 客户端版本描述 | — | 文档与 pom 一致 |
 
 ### 4.1 阶段 1:AI 工作台
 
@@ -192,7 +194,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | # | 能力 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|---|
 | 1 | 智能对话 | Spring AI `ChatClient` + 会话记忆(Redis)+ **复用现有 SSE 基建**做流式 token | SSE 超时/心跳沿用现配置;流式通道与业务推送通道分离;LLM 调用是阻塞 I/O,与已启用的虚拟线程契合 | 多轮上下文正确;首 token < 3s;模型不可用时降级可见 |
-| 2 | 知识库 RAG | 上传复用 MinIO/File → 解析 → 分块 → Embedding → **ES 9 `dense_vector` + KNN + BM25 混合检索(RRF)** → 引用溯源 | 前置依赖 0.3 的 ES 客户端升级;分块策略需调优;embedding 产生持续 token 成本 | 50 篇自建测试集 Top-5 召回 ≥ 80%;答案带可点击溯源 |
+| 2 | 知识库 RAG | 上传复用 MinIO/File → 解析 → 分块 → Embedding → **ES 9 `dense_vector` + KNN + BM25 混合检索(RRF)** → 引用溯源 | ES 客户端已随 Boot 4.0.3 升至 9.2.5;前置依赖 0.3 的索引与检索能力;分块策略需调优;embedding 产生持续 token 成本 | 50 篇自建测试集 Top-5 召回 ≥ 80%;答案带可点击溯源 |
 | 3 | 智能体编排 | AgentScope Java 2.0.1;工具 = 既有管理端 API(查用户 / 查日志 / 统计 / 备份状态);Agent Card 注册 Nacos | JDK 25 未在官方声明范围内(社区对 JDK 21 仍是实验性验证)→ **须 Spike**;写操作工具必须 HITL 确认;提示词注入 → 工具白名单 + 只读/可写分级 | 3 个只读工具端到端正确;写操作二次确认不可绕过 |
 | 4 | **RAG 权限一致性** | 检索前置过滤 RBAC + 数据权限(复用 `DataScopeInterceptor` 语义) | **不做鉴权的 RAG 等于把全量数据泄漏给最低权限用户**,这是安全缺陷而非功能缺陷 | 红队用例:低权限用户提问**不得**召回越权内容 |
 | 5 | 知识图谱 | Neo4j + GraphRAG;**最小可用图 = 把 `sys_dept` / `sys_user` / `sys_role` / `sys_menu` 入图**(数据现成,回答"谁能访问什么""跨部门协作路径"这类多跳问题) | 新增中间件 +1;GraphRAG 建模需真实语料支撑 | 组织架构 + RBAC 入图;2 跳关系查询正确 |
@@ -243,7 +245,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 |---|---|---|
 | `iboot-gateway` | 新建 | Spring Cloud Gateway:路由、鉴权前置、统一 CORS、限流入口 |
 | `iboot-auth` | 从 admin 抽出 `AuthController` + JWT + Redis 会话 | 认证中心 / SSO,其余服务的依赖前置 |
-| `iboot-file` | 文件管理 + 0.2 备份恢复 + 0.7 `StorageProvider` | 边界清晰、依赖少 |
+| `iboot-file` | 文件管理 + 0.7 `StorageProvider`(0.2 备份恢复暂不做) | 边界清晰、依赖少 |
 | `iboot-notify` | 消息中心 + SSE 推送 + 0.6 多渠道通知 | **有状态连接**,独立最能体现价值 |
 | `iboot-job` | 定时任务 | 调度语义独立 |
 | `iboot-monitor` | 监控运维 + 日志 + ES | 读多写少,可独立扩缩 |
@@ -312,7 +314,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 | # | 原条目 | 去向 | 说明 |
 |---|---|---|---|
-| 1 | 数据备份与恢复 | **阶段 0.2** | 唯一"写了没做"的功能洞 |
+| 1 | 数据备份与恢复 | **阶段 0.2(暂不做)** | 唯一"写了没做"的功能洞 |
 | 2 | 零信任网络 | **阶段 4** | mesh mTLS |
 | 3 | 微服务拆分 + SCA(Nacos/Seata/Sentinel/RocketMQ) | **阶段 2** | 彻底拆分 |
 | 4 | SSO 统一认证中心 | **阶段 2.2** | Spring Authorization Server |
@@ -328,7 +330,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | 14 | 流处理 / 批处理 | **阶段 4**(Flink 选做 / Batch) | — |
 | 15 | AI 工作台(知识图谱、知识库、小模型、数字人、langchain4j/AgentScope/SAA、智能对话与编排) | **阶段 1 全覆盖**;数字人降权为接口预留;"小模型(文字识别)"由云 API 承接(OCR) | langchain4j 与 SAA 因 Boot 4 约束改为 Spring AI + AgentScope Java,详见 § 7.2 |
 | 16 | ShardingSphere + ElasticJob | ElasticJob → **阶段 2**(调度集群化);ShardingSphere → **阶段 4** | — |
-| 17 | 业务数据全面国际化 | **阶段 0.4** | 续接已完成的 i18n |
+| 17 | 业务数据全面国际化 | **阶段 0.4(暂不做)** | 续接已完成的 i18n |
 
 **原 GraalVM 文档的去向**:关键结论与勘误沉淀在 § 7.1。
 
@@ -351,7 +353,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
 | DeepSeek | `deepseek-chat` / `deepseek-reasoner`(OpenAI 兼容端点) | **无 embedding 模型** |
 | Embedding | 百炼 `text-embedding-v4` 或本地 BGE-M3 | 第二供应商必然存在 |
-| Elasticsearch 客户端 | **8.17.0 → 9.x** | 连 ES 9.2.3 的硬前置 |
+| Elasticsearch 客户端 | **9.2.5(Boot 4.0.3 托管)** | 与 ES 9.2.3 同属 9.2.x |
 | MySQL / Redis / ES / MinIO | 8.0.45 / 7.0.14 / 9.2.3 / RELEASE.2025-09 | 现状 |
 | Flowable | 7.x(未验证) | 0.5 Spike 门禁 |
 | Apache Dubbo | **阻塞** | 无 Boot 4 支持 |
@@ -363,7 +365,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 |---|---|---|---|
 | R1 | SAA 无 Boot 4 稳定版 | 1 | **已规避**:主干改用 Spring AI 2.0.1 + AgentScope Java,SAA 等 GA 后再接 |
 | R2 | Dubbo 不支持 Boot 4 | 2 | 服务间 HTTP 先行;延后至阶段 4 重评 |
-| R3 | ES 8.x 客户端连 9.x 服务端 | 0.3 / 1 | 阶段 0.3 前置升级客户端,列为 RAG 硬依赖 |
+| R3 | ES 8.x 客户端连 9.x 服务端 | 0.3 / 1 | **已消除**:Boot 4.0.3 托管 `elasticsearch-java` 9.2.5 |
 | R4 | 本机内存:N×JVM + 18 中间件 | 2 | 按需 profiles 只跑改动服务;mock 依赖服务;native 列为阶段 4 缓解手段 |
 | R5 | RAG 越权检索导致数据泄漏 | 1 | 检索前置权限过滤 + 红队用例必测(见 § 4.1 能力清单 #4) |
 | R6 | LLM token 与云账单失控 | 1 / 3 | 配额 + 用量看板 + Alertmanager 告警 |
