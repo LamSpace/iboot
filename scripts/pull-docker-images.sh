@@ -96,27 +96,27 @@ echo ""
 # 拉取 Elasticsearch 镜像
 echo "======================================"
 echo "正在拉取 Elasticsearch 镜像..."
-docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/elasticsearch/elasticsearch:8.19.7
-docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/elasticsearch/elasticsearch:8.19.7  docker.elastic.co/elasticsearch/elasticsearch:8.19.7
-docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/elasticsearch/elasticsearch:8.19.7
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/elasticsearch/elasticsearch:9.2.3
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/elasticsearch/elasticsearch:9.2.3  docker.elastic.co/elasticsearch/elasticsearch:9.2.3
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/elasticsearch/elasticsearch:9.2.3
 echo "Elasticsearch 镜像拉取完成！"
 echo ""
 
 # 拉取 Logstash 镜像
 echo "======================================"
 echo "正在拉取 Logstash 镜像..."
-docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/logstash/logstash:8.17.4
-docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/logstash/logstash:8.17.4  docker.elastic.co/logstash/logstash:8.17.4
-docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/logstash/logstash:8.17.4
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/logstash/logstash:9.2.3
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/logstash/logstash:9.2.3  docker.elastic.co/logstash/logstash:9.2.3
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/logstash/logstash:9.2.3
 echo "Logstash 镜像拉取完成！"
 echo ""
 
 # 拉取 Kibana 镜像
 echo "======================================"
 echo "正在拉取 Kibana 镜像..."
-docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/kibana/kibana:8.18.8
-docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/kibana/kibana:8.18.8  docker.elastic.co/kibana/kibana:8.18.8
-docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/kibana/kibana:8.18.8
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/kibana/kibana:9.2.3
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/kibana/kibana:9.2.3  docker.elastic.co/kibana/kibana:9.2.3
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.elastic.co/kibana/kibana:9.2.3
 echo "Kibana 镜像拉取完成！"
 echo ""
 

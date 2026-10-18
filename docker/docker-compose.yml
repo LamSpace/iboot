@@ -355,7 +355,7 @@ services:
 
   # ELK 日志收集
   elasticsearch:
-    image: elasticsearch:9.2.5
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.3
     container_name: iboot-elasticsearch
     ports:
       - "9200:9200"
@@ -376,7 +376,7 @@ services:
       start_period: 60s
 
   logstash:
-    image: logstash:9.2.5
+    image: docker.elastic.co/logstash/logstash:9.2.3
     container_name: iboot-logstash
     ports:
       - "5044:5044"
@@ -400,7 +400,7 @@ services:
       start_period: 30s
 
   kibana:
-    image: kibana:9.2.5
+    image: docker.elastic.co/kibana/kibana:9.2.3
     container_name: iboot-kibana
     ports:
       - "5601:5601"

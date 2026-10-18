@@ -47,3 +47,6 @@ tmp/
 
 # 其他
 .cache/
+
+# CodeGraph 本地索引
+.codegraph/
