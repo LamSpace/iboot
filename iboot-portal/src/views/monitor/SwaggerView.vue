@@ -61,6 +61,13 @@ const defaultSwaggerUrl = import.meta.env.DEV
   ? "http://localhost:8080/swagger-ui.html"
   : "/swagger-ui.html";
 const swaggerUrl = ref(defaultSwaggerUrl);
+
+/** 开发环境前后端端口不同，配置中的相对路径需指向后端 */
+function resolveSwaggerUrl(url: string) {
+  return import.meta.env.DEV && url.startsWith("/")
+    ? `http://localhost:8080${url}`
+    : url;
+}
 const loading = ref(true);
 const swaggerIframe = ref<HTMLIFrameElement>();
 
@@ -68,7 +75,7 @@ async function loadSwaggerUrl() {
   try {
     const res = await getConfigByKey("sys.swagger.ui.url");
     if (res.code === 200 && res.data) {
-      swaggerUrl.value = res.data;
+      swaggerUrl.value = resolveSwaggerUrl(res.data);
     }
   } catch {
     // 配置不存在时使用默认值

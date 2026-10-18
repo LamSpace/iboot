@@ -61,6 +61,13 @@ const defaultDruidUrl = import.meta.env.DEV
   ? "http://localhost:8080/druid"
   : "/druid";
 const druidUrl = ref(defaultDruidUrl);
+
+/** 开发环境前后端端口不同，配置中的相对路径需指向后端 */
+function resolveDruidUrl(url: string) {
+  return import.meta.env.DEV && url.startsWith("/")
+    ? `http://localhost:8080${url}`
+    : url;
+}
 const loading = ref(true);
 const druidIframe = ref<HTMLIFrameElement>();
 
@@ -68,7 +75,7 @@ async function loadDruidUrl() {
   try {
     const res = await getConfigByKey("sys.druid.monitor.url");
     if (res.code === 200 && res.data) {
-      druidUrl.value = res.data;
+      druidUrl.value = resolveDruidUrl(res.data);
     }
   } catch {
     // 配置不存在时使用默认值
