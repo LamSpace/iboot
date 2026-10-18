@@ -70,8 +70,8 @@ infrastructure → config / persistence / repository / security / filter / inter
 
 | 分组 | 容器 |
 |---|---|
-| 数据 | mysql 8.0.45、redis 7.0.14、minio、elasticsearch 9.2.5 |
-| 日志 | logstash 9.2.5、kibana 9.2.5、elasticsearch-exporter |
+| 数据 | mysql 8.0.45、redis 7.0.14、minio、elasticsearch 9.2.3 |
+| 日志 | logstash 9.2.3、kibana 9.2.3、elasticsearch-exporter |
 | 指标 | prometheus、alertmanager、grafana、thanos(sidecar / store / query / compact)、mysqld-exporter、redis-exporter、node-exporter |
 | 初始化 | minio-init |
 
@@ -95,7 +95,7 @@ infrastructure → config / persistence / repository / security / filter / inter
 | 位置 | 问题 | 处理 |
 |---|---|---|
 | `doc/02-技术栈.md` | 写 Spring Boot **3.5.9**,实际 pom 为 **4.0.3** | 归入阶段 0 附带修正 |
-| `doc/02-技术栈.md` | 依赖清单列 `elasticsearch-java 8.17.0`,而运行环境为 ES **9.2.5** | 阶段 0.3 前置升级,详见 § 6.1 |
+| `doc/02-技术栈.md` | 依赖清单列 `elasticsearch-java 8.17.0`,而运行环境为 ES **9.2.3** | 阶段 0.3 前置升级,详见 § 6.1 |
 | `README.md` | 徽章写 "Spring Boot 4.x",与 pom 一致但与 doc 02 冲突 | 以 pom 为准 |
 | `TODO.md` / `graalvm-native-image-plan.md` | 非规范文档,内容陈旧 | 由本文取代并删除 |
 
@@ -163,7 +163,7 @@ graph LR
 |---|---|---|---|---|
 | **0.1** | 父 POM 多模块预备 | Maven 聚合 `iboot-parent`,`modules = iboot-admin` + 预留 `iboot-ai`;依赖版本集中到 `dependencyManagement` | 纯构建结构改造,**不动一行业务代码** | `mvn verify` 绿;Docker 中间件环境与前端联调行为零变化 |
 | **0.2** | 数据备份与恢复 | Quartz(已有)+ `mysqldump` + MinIO(已有)+ AES-GCM 加密 + 元数据表 `db_backup_record` + 恢复演练 | 恢复目标必须是独立演练库,**禁止覆盖原库**;`mysqldump` 版本须与 MySQL 8.0.45 匹配;大库逻辑备份耗时,binlog 增量留作选做 | 定时备份产物落 MinIO;一次完整恢复演练成功且行数 / 校验和一致 |
-| **0.3** | 业务全文检索 | 复用已部署的 ES 9(目前仅存运行日志),公告 / 消息 / 文件内容建索引;写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 定时对账 | ⚠️ `elasticsearch-java` 现为 **8.17.0**,连 ES **9.2.5** 官方不保证兼容,须先升客户端;不引入 Canal(重) | 公告/消息/文件内容可检索;源数据删改后 5 分钟内索引一致 |
+| **0.3** | 业务全文检索 | 复用已部署的 ES 9(目前仅存运行日志),公告 / 消息 / 文件内容建索引;写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 定时对账 | ⚠️ `elasticsearch-java` 现为 **8.17.0**,连 ES **9.2.3** 官方不保证兼容,须先升客户端;不引入 Canal(重) | 公告/消息/文件内容可检索;源数据删改后 5 分钟内索引一致 |
 | **0.4** | 行级业务多语言 | 翻译表 `sys_i18n_value(lang, table, row_id, field, value)` + MyBatis 拦截器自动替换与默认语言回退 + 复用二级缓存 | 与 `DataScopeInterceptor` 的拦截器链顺序敏感;与 PageHelper 的分页改写需兼容;回退规则须先定死(默认语言缺失 → 空还是回退) | 同一记录中/英切换返回正确字段;数据权限过滤仍生效 |
 | **0.5** | 审批流 / 工作流 | **Spike 决定**:Flowable 7 on Boot 4.0.3(判据:引擎启动 + 一条请假流程单测通过);不通则 Spring Statemachine + 自研状态持久化 | Flowable × Boot 4 兼容性**未经验证**;二者只取其一,不并存(原 TODO#8 由此消化) | 一条真实流程可跑通:发起 → 审批 → 驳回 → 归档 |
 | **0.6** | 多渠道通知 | 渠道 SPI(站内 SSE 已有 / Spring Mail / 阿里云短信 Dysmsapi / 钉钉 webhook)+ 复用 `message_template` 表 + 失败重试 | 需真实阿里云密钥,密钥不入仓(env / Nacos);短信签名与模板有云侧审核周期;阶段 2 后重投职责移交 RocketMQ | 同一业务事件按渠道可达;失败可见且可重试 |
@@ -351,8 +351,8 @@ Boot 4.0.3 这一前提改变了可选生态:
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
 | DeepSeek | `deepseek-chat` / `deepseek-reasoner`(OpenAI 兼容端点) | **无 embedding 模型** |
 | Embedding | 百炼 `text-embedding-v4` 或本地 BGE-M3 | 第二供应商必然存在 |
-| Elasticsearch 客户端 | **8.17.0 → 9.x** | 连 ES 9.2.5 的硬前置 |
-| MySQL / Redis / ES / MinIO | 8.0.45 / 7.0.14 / 9.2.5 / RELEASE.2025-09 | 现状 |
+| Elasticsearch 客户端 | **8.17.0 → 9.x** | 连 ES 9.2.3 的硬前置 |
+| MySQL / Redis / ES / MinIO | 8.0.45 / 7.0.14 / 9.2.3 / RELEASE.2025-09 | 现状 |
 | Flowable | 7.x(未验证) | 0.5 Spike 门禁 |
 | Apache Dubbo | **阻塞** | 无 Boot 4 支持 |
 | GraalVM(若做 native) | 工具链必须 **25** | Boot 4 native 构建要求 |
