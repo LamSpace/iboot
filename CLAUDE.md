@@ -88,8 +88,13 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ## 6. Git 提交与 GitHub 操作
 
 - 代码提交/推送统一走功能分支（例如 `feat/<name>`、`fix/<name>`、`docs/<name>`）。
-- 禁止在本地 `master` 分支直接提交并推送；合并到 `master` 前需确认（直接合并或通过 PR）。
-- 本地已安装 GitHub CLI `gh`，GitHub 上的仓库操作（PR、Issue、Release、Actions 等）优先使用 `gh`。
+- 禁止在本地 `master` 分支直接提交并推送；也不要用本地 `git merge` + `git push` 直接合并到 `master`。
+- 标准流程：
+  1. 功能分支提交并推送：`git push -u origin <branch>`。
+  2. 使用 `gh pr create --base master --head <branch>` 创建 PR。
+  3. 确认后使用 `gh pr merge <number> --merge --delete-branch` 合并。
+  4. 更新本地 `master`：`git checkout master && git pull --ff-only origin master`。
+- 本地已安装 GitHub CLI `gh`，GitHub 上的仓库操作（PR、Issue、Release、Actions 等）统一使用 `gh`。
 
 ---
 
