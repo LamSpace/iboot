@@ -69,6 +69,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 适用于新增或修改的 Java 代码；批量重写存量注释需单独立项。
 
+**新增或修改 Java 代码时，必须同步新增或更新对应的类、方法、字段注释；不得只改代码不改注释。**
+
 - 语言：说明文字用中文，`@param` / `@return` / `@throws` 等标签名用英文。
 - 类/接口/枚举/注解：必须写类级 Javadoc。第一句是摘要（以句号结尾），
   空一行后用 `<p>` 说明职责、分层位置、关键协作对象、事务/线程/缓存约束。
@@ -82,6 +84,12 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - 类级标签：`@author iBoot Team`、`@since 1.0.0`；只在确有语义时加 `@see`。
 
 详细模板、深度预算与正反例见 `doc/19-JavaDoc 规范.md`。
+
+## 6. Git 提交与 GitHub 操作
+
+- 代码提交/推送统一走功能分支（例如 `feat/<name>`、`fix/<name>`、`docs/<name>`）。
+- 禁止在本地 `master` 分支直接提交并推送；合并到 `master` 前需确认（直接合并或通过 PR）。
+- 本地已安装 GitHub CLI `gh`，GitHub 上的仓库操作（PR、Issue、Release、Actions 等）优先使用 `gh`。
 
 ---
 
