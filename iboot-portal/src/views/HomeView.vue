@@ -13,6 +13,7 @@
         <router-link to="/login" class="btn btn-primary nav-cta">{{
           t("home.login")
         }}</router-link>
+        <ThemePicker />
         <LocalePicker class="locale-picker" />
       </nav>
     </header>
@@ -81,6 +82,7 @@ import { onMounted, computed, h } from "vue";
 import { useI18n } from "vue-i18n";
 import { useAppStore } from "@/stores/app";
 import LocalePicker from "@/components/LocalePicker.vue";
+import ThemePicker from "@/components/ThemePicker.vue";
 
 const { t } = useI18n();
 const appStore = useAppStore();
@@ -211,7 +213,7 @@ onMounted(() => {
   align-items: center;
   height: 64px;
   padding: 0 var(--ib-space-xxl);
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--ib-color-canvas) 90%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--ib-color-hairline-soft);
 }

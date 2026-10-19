@@ -4,12 +4,17 @@
  * Business views must consume these tokens instead of hardcoded palette values.
  */
 :root {
+  color-scheme: light;
+
   /* Surfaces */
   --ib-color-canvas: #ffffff;
   --ib-color-surface: #f7f8fa;
   --ib-color-surface-soft: #f2f3f5;
   --ib-color-hairline: #e5e7eb;
   --ib-color-hairline-soft: #eaecf0;
+  --ib-color-overlay: rgba(10, 10, 10, 0.32);
+  --ib-color-code-bg: #1e1e1e;
+  --ib-color-code-text: #d4d4d4;
 
   /* Text */
   --ib-color-ink: #0a0a0a;
@@ -18,7 +23,7 @@
   --ib-color-slate: #45515e;
   --ib-color-steel: #5f5f5f;
   --ib-color-stone: #8e8e93;
-  --ib-color-muted: #a8aab2;
+  --ib-color-muted: #8e8e93;
 
   /* Actions */
   --ib-color-primary: #0a0a0a;
@@ -36,14 +41,15 @@
   --ib-color-brand-cyan: #3daeff;
   --ib-color-brand-blue-200: #bfdbfe;
   --ib-color-brand-purple: #a855f7;
+  --ib-color-on-brand: #ffffff;
 
   /* Semantic */
   --ib-color-success-bg: #e8ffea;
-  --ib-color-success-text: #1ba673;
+  --ib-color-success-text: #0f7a54;
   --ib-color-warning-bg: #fff7e6;
   --ib-color-warning-text: #b45309;
   --ib-color-danger-bg: #fef0f0;
-  --ib-color-danger-text: #d45656;
+  --ib-color-danger-text: #c53a3a;
   --ib-color-info-text: #5f5f5f;
 
   /* Typography */
@@ -117,4 +123,65 @@
   --ib-sidebar-collapsed-width: 64px;
   --ib-header-height: 56px;
   --ib-content-gutter: 24px;
+}
+
+/**
+ * Dark theme.
+ * Only semantic color and elevation tokens change; geometry, typography,
+ * spacing, and motion stay identical so views need no theme-specific styles.
+ */
+html.dark {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --ib-color-canvas: #0a0a0a;
+  --ib-color-surface: #141414;
+  --ib-color-surface-soft: #1c1c1c;
+  --ib-color-hairline: #2a2a2a;
+  --ib-color-hairline-soft: #232323;
+  --ib-color-overlay: rgba(10, 10, 10, 0.32);
+  --ib-color-code-bg: #1e1e1e;
+  --ib-color-code-text: #d4d4d4;
+
+  /* Text */
+  --ib-color-ink: #f5f5f5;
+  --ib-color-ink-strong: #ffffff;
+  --ib-color-charcoal: #d4d4d4;
+  --ib-color-slate: #b8c2cc;
+  --ib-color-steel: #a3a3a3;
+  --ib-color-stone: #8a8a8f;
+  --ib-color-muted: #828282;
+
+  /* Actions */
+  --ib-color-primary: #f5f5f5;
+  --ib-color-on-primary: #0a0a0a;
+  --ib-color-primary-pressed: #d4d4d4;
+  --ib-color-primary-disabled: #2a2a2a;
+  --ib-color-disabled-text: #828282;
+
+  /* Brand accents */
+  --ib-color-brand-coral: #ff6b4a;
+  --ib-color-brand-magenta: #f472d0;
+  --ib-color-brand-blue: #4d8dff;
+  --ib-color-brand-blue-mid: #60a5fa;
+  --ib-color-brand-blue-deep: #3b82f6;
+  --ib-color-brand-cyan: #67c3ff;
+  --ib-color-brand-blue-200: #1e3a8a;
+  --ib-color-brand-purple: #b57bff;
+  --ib-color-on-brand: #0a0a0a;
+
+  /* Semantic */
+  --ib-color-success-bg: #10291a;
+  --ib-color-success-text: #4ade80;
+  --ib-color-warning-bg: #2b1f0b;
+  --ib-color-warning-text: #fbbf24;
+  --ib-color-danger-bg: #2c1414;
+  --ib-color-danger-text: #f87171;
+  --ib-color-info-text: #a3a3a3;
+
+  /* Elevation: rely on surface steps instead of visible drop shadows */
+  --ib-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --ib-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --ib-shadow-3: 0 0 22px rgba(0, 0, 0, 0.45);
+  --ib-shadow-4: 0 12px 16px -4px rgba(0, 0, 0, 0.55);
 }

@@ -289,8 +289,8 @@ onMounted(() => {
   max-height: 400px;
   overflow: auto;
   padding: 12px;
-  background: #1e1e1e;
-  color: #d4d4d4;
+  background: var(--ib-color-code-bg);
+  color: var(--ib-color-code-text);
   border-radius: 4px;
   font-family: "Consolas", "Monaco", "Courier New", monospace;
   font-size: 12px;

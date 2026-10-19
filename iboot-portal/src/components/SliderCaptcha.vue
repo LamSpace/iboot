@@ -200,7 +200,7 @@ onUnmounted(() => {
   text-align: center;
   margin-bottom: 15px;
   font-size: 14px;
-  color: #666;
+  color: var(--ib-color-steel);
   transition: color 0.3s;
 }
 
@@ -249,7 +249,7 @@ onUnmounted(() => {
   top: 0;
   width: 40px;
   height: 40px;
-  background: #fff;
+  background: var(--ib-color-canvas);
   border-radius: 50%;
   border: 2px solid var(--ib-color-brand-blue);
   cursor: grab;
@@ -258,7 +258,7 @@ onUnmounted(() => {
   justify-content: center;
   color: var(--ib-color-brand-blue);
   font-size: 18px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--ib-shadow-2);
   transition:
     border-color 0.3s,
     color 0.3s,
@@ -279,13 +279,13 @@ onUnmounted(() => {
 .captcha-slider.success {
   border-color: var(--ib-color-success-text);
   color: var(--ib-color-success-text);
-  background: #f0f9eb;
+  background: var(--ib-color-success-bg);
 }
 
 .captcha-slider.error {
   border-color: var(--ib-color-danger-text);
   color: var(--ib-color-danger-text);
-  background: #fef0f0;
+  background: var(--ib-color-danger-bg);
 }
 
 .captcha-actions {
@@ -304,6 +304,6 @@ onUnmounted(() => {
 .slider-captcha-dialog .el-dialog__header {
   padding: 15px 20px;
   margin-right: 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
 }
 </style>

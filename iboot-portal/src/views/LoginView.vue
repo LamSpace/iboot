@@ -7,7 +7,10 @@
     </section>
 
     <section class="login-panel">
-      <LocalePicker class="login-locale" />
+      <div class="login-actions">
+        <ThemePicker />
+        <LocalePicker class="login-locale" />
+      </div>
       <div class="login-form">
         <h2>{{ systemName }}</h2>
         <el-form
@@ -71,6 +74,7 @@ import { usePermissionStore } from "@/stores/permission";
 import { useAppStore } from "@/stores/app";
 import SliderCaptcha from "@/components/SliderCaptcha.vue";
 import LocalePicker from "@/components/LocalePicker.vue";
+import ThemePicker from "@/components/ThemePicker.vue";
 
 interface LoginForm {
   username: string;
@@ -224,10 +228,13 @@ onMounted(() => {
   padding: var(--ib-space-xxl);
 }
 
-.login-locale {
+.login-actions {
   position: absolute;
   top: var(--ib-space-xl);
   right: var(--ib-space-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--ib-space-sm);
 }
 
 .login-form {

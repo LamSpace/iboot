@@ -105,7 +105,8 @@
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
-              <!-- 语言切换组件 -->
+              <!-- 主题与语言切换 -->
+              <ThemePicker />
               <LocalePicker class="locale-picker" />
           </div>
         </el-header>
@@ -268,6 +269,7 @@ import { getIconComponent } from "@/utils/icon-map";
 import NoticePopup from "@/components/NoticePopup.vue";
 import NotificationBell from "@/components/Notification/NotificationBell.vue";
 import LocalePicker from "@/components/LocalePicker.vue";
+import ThemePicker from "@/components/ThemePicker.vue";
 
 interface MenuItem {
   index: string;
@@ -751,7 +753,7 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: 1999;
-  background: rgba(10, 10, 10, 0.32);
+  background: var(--ib-color-overlay);
 }
 
 @media (max-width: 768px) {

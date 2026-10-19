@@ -163,7 +163,7 @@ watch(
 }
 
 .notice-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--ib-shadow-2);
 }
 
 .notice-item.expanded {
@@ -206,7 +206,7 @@ watch(
 
 .notice-content {
   padding: 0 16px 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--ib-color-hairline-soft);
 }
 
 .notice-text {

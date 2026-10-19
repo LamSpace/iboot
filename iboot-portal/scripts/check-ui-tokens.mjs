@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
  * Guards the design-system contract: business views must not hardcode
- * Element Plus palette values or decorative gradients.
+ * Element Plus palette values, literal colors, or decorative gradients.
+ * Literal colors belong in the token layer and would break dark mode.
  *
  * Usage: node scripts/check-ui-tokens.mjs [root]
- * Default root: src/views
+ * Default root: src/views and src/components
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
@@ -23,6 +24,11 @@ const PALETTE = [
   "#c0c4cc",
 ];
 
+// Unused Vue scaffolding retained as-is; all active views consume tokens.
+const ALLOWED = {
+  "src/components/HelloWorld.vue": ["#42b983"],
+};
+
 const roots = process.argv.slice(2).length
   ? process.argv.slice(2).map((value) => resolve(value))
   : [resolve("src/views"), resolve("src/components")];
@@ -38,23 +44,33 @@ function walk(dir) {
     if (!name.endsWith(".vue")) continue;
 
     const source = readFileSync(path, "utf8");
+    const file = relative(process.cwd(), path);
+    const allowed = ALLOWED[file] ?? [];
     const lines = source.split("\n");
     lines.forEach((line, index) => {
       const lower = line.toLowerCase();
+      const report = (rule) =>
+        violations.push({ file, line: index + 1, rule });
+
       const color = PALETTE.find((value) => lower.includes(value));
       if (color) {
-        violations.push({
-          file: relative(process.cwd(), path),
-          line: index + 1,
-          rule: `palette ${color}`,
-        });
+        report(`palette ${color}`);
       }
       if (lower.includes("linear-gradient")) {
-        violations.push({
-          file: relative(process.cwd(), path),
-          line: index + 1,
-          rule: "decorative gradient",
-        });
+        report("decorative gradient");
+      }
+
+      const literals = [
+        ...line.matchAll(/#[0-9a-fA-F]{3,8}\b/g),
+        ...line.matchAll(/rgba?\([^)]*\)/g),
+        ...line.matchAll(/:\s*(white|black)\b/g),
+      ].map((match) => match[0]);
+      for (const literal of literals) {
+        const normalized = literal.trim();
+        if (allowed.some((value) => normalized.includes(value))) continue;
+        // The palette rule above already reports these values.
+        if (PALETTE.some((value) => normalized.toLowerCase() === value)) continue;
+        report(`literal ${normalized}`);
       }
     });
   }

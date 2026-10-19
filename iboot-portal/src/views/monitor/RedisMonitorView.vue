@@ -730,10 +730,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
+  background: var(--ib-color-canvas);
   padding: 10px 16px;
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--ib-shadow-1);
   margin-bottom: 16px;
 }
 

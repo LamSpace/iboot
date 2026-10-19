@@ -256,9 +256,9 @@ defineExpose({
   right: 0;
   width: 360px;
   max-height: 480px;
-  background: #fff;
+  background: var(--ib-color-canvas);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--ib-shadow-3);
   z-index: 1000;
   margin-top: 8px;
   overflow: hidden;
@@ -318,11 +318,11 @@ defineExpose({
 }
 
 .notification-item.unread {
-  background-color: #ecf5ff;
+  background-color: color-mix(in srgb, var(--ib-color-brand-blue) 10%, var(--ib-color-canvas));
 }
 
 .notification-item.unread:hover {
-  background-color: #e1f3d8;
+  background-color: color-mix(in srgb, var(--ib-color-brand-blue) 16%, var(--ib-color-canvas));
 }
 
 .notification-body {
@@ -366,7 +366,7 @@ defineExpose({
 .dropdown-footer {
   padding: 12px 16px;
   text-align: center;
-  background: #fafafa;
+  background: var(--ib-color-surface);
   border-top: 1px solid var(--ib-color-hairline-soft);
 }
 

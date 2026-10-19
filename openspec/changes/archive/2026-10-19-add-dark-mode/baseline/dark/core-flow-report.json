@@ -1,0 +1,37 @@
+[
+  {
+    "step": "login",
+    "ok": true,
+    "path": "/dashboard"
+  },
+  {
+    "step": "navigate-dict",
+    "ok": true,
+    "path": "/dashboard/dict"
+  },
+  {
+    "step": "crud-dict",
+    "ok": true,
+    "created": true,
+    "deleted": true
+  },
+  {
+    "step": "export-users",
+    "ok": true,
+    "downloads": [],
+    "toast": "导出成功"
+  },
+  {
+    "step": "file-upload",
+    "ok": true,
+    "uploaded": true,
+    "removed": true
+  },
+  {
+    "step": "monitor-visit",
+    "ok": true,
+    "path": "/dashboard/sql-monitor",
+    "iframe": true,
+    "dark": true
+  }
+]

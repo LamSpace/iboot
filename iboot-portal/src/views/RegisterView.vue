@@ -7,7 +7,10 @@
     </section>
 
     <section class="register-panel">
-      <LocalePicker class="register-locale" />
+      <div class="register-actions">
+        <ThemePicker />
+        <LocalePicker class="register-locale" />
+      </div>
       <div class="register-form">
         <h2>{{ systemName }}</h2>
         <p class="register-subtitle">{{ t("register.title") }}</p>
@@ -86,6 +89,7 @@ import { register } from "@/api/auth";
 import { useAppStore } from "@/stores/app";
 import SliderCaptcha from "@/components/SliderCaptcha.vue";
 import LocalePicker from "@/components/LocalePicker.vue";
+import ThemePicker from "@/components/ThemePicker.vue";
 
 interface RegisterForm {
   username: string;
@@ -256,10 +260,13 @@ onMounted(() => {
   padding: var(--ib-space-xxl);
 }
 
-.register-locale {
+.register-actions {
   position: absolute;
   top: var(--ib-space-xl);
   right: var(--ib-space-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--ib-space-sm);
 }
 
 .register-form {

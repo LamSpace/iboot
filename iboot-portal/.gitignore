@@ -79,3 +79,6 @@ tmp/
 *.seed
 *.pid.lock
 .vite/
+
+# Headless Chromium profiles from UI audit scripts
+.chrome-*

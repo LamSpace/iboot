@@ -55,5 +55,11 @@
   "reload": "重新加载",
   "messages": {
     "locale_changed": "语言已切换"
+  },
+  "theme": {
+    "label": "主题",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
   }
 }

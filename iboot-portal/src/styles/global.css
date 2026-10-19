@@ -36,6 +36,30 @@ a {
   width: 100%;
 }
 
+/* Native controls and scrollbars follow the active theme */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: var(--ib-color-surface);
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: var(--ib-color-hairline);
+  border: 2px solid var(--ib-color-surface);
+  border-radius: var(--ib-radius-full);
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--ib-color-steel);
+}
+
 /* 搜索表单下拉框宽度与文本输入框一致 */
 .search-form .el-select {
   min-width: 200px;

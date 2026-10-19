@@ -55,5 +55,11 @@
   "reload": "Reload",
   "messages": {
     "locale_changed": "Language changed"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   }
 }

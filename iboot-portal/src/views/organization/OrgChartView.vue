@@ -480,9 +480,9 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 14px 20px;
-  background: white;
-  border-bottom: 1px solid #e8e8e8;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: var(--ib-color-canvas);
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
+  box-shadow: var(--ib-shadow-1);
   flex-shrink: 0;
 }
 
@@ -548,7 +548,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--ib-color-on-brand);
   flex-shrink: 0;
 }
 
@@ -605,7 +605,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 10px;
-  background: #fafafa;
+  background: var(--ib-color-surface);
   border-radius: 6px;
 }
 
@@ -635,14 +635,14 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 10px;
-  background: #fafafa;
+  background: var(--ib-color-surface);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .sub-dept-item:hover {
-  background: #ecf5ff;
+  background: var(--ib-color-surface-soft);
 }
 
 .sub-dept-item .el-icon {

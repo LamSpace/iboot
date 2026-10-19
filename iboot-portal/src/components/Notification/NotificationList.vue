@@ -289,7 +289,7 @@ const formatTime = (timeString: string) => {
 <style scoped>
 .notification-list {
   width: 100%;
-  background: #fff;
+  background: var(--ib-color-canvas);
   border-radius: 8px;
 }
 
@@ -350,12 +350,12 @@ const formatTime = (timeString: string) => {
 }
 
 .list-item.unread {
-  background-color: #ecf5ff;
+  background-color: color-mix(in srgb, var(--ib-color-brand-blue) 10%, var(--ib-color-canvas));
   border-left: 3px solid var(--ib-color-brand-blue);
 }
 
 .list-item.unread:hover {
-  background-color: #d9ecff;
+  background-color: color-mix(in srgb, var(--ib-color-brand-blue) 16%, var(--ib-color-canvas));
 }
 
 .item-icon {

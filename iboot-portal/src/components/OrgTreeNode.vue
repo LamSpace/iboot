@@ -97,10 +97,10 @@ const hasChildren = computed(
   display: inline-block;
   min-width: 160px;
   max-width: 200px;
-  background: white;
+  background: var(--ib-color-canvas);
   border-radius: 8px;
   border-top: 4px solid var(--ib-color-brand-blue);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--ib-shadow-2);
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: left;
@@ -108,7 +108,7 @@ const hasChildren = computed(
 
 .org-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--ib-shadow-3);
 }
 
 .org-card.is-root {
@@ -118,14 +118,14 @@ const hasChildren = computed(
 
 .org-card.is-disabled {
   opacity: 0.6;
-  background: #f5f5f5;
+  background: var(--ib-color-surface);
 }
 
 /* 搜索匹配高亮 */
 .org-card.is-matched {
   box-shadow:
     0 0 0 3px var(--ib-color-brand-blue),
-    0 4px 12px rgba(64, 158, 255, 0.3);
+    0 4px 12px color-mix(in srgb, var(--ib-color-brand-blue) 30%, transparent);
   animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -134,12 +134,12 @@ const hasChildren = computed(
   100% {
     box-shadow:
       0 0 0 3px var(--ib-color-brand-blue),
-      0 4px 12px rgba(64, 158, 255, 0.3);
+      0 4px 12px color-mix(in srgb, var(--ib-color-brand-blue) 30%, transparent);
   }
   50% {
     box-shadow:
       0 0 0 5px var(--ib-color-brand-blue),
-      0 4px 16px rgba(64, 158, 255, 0.5);
+      0 4px 16px color-mix(in srgb, var(--ib-color-brand-blue) 50%, transparent);
   }
 }
 
@@ -148,7 +148,7 @@ const hasChildren = computed(
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px 8px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--ib-color-hairline-soft);
 }
 
 .dept-name {
@@ -174,7 +174,7 @@ const hasChildren = computed(
 .status-badge {
   font-size: 10px;
   padding: 2px 5px;
-  background: #fef0f0;
+  background: var(--ib-color-danger-bg);
   color: var(--ib-color-danger-text);
   border-radius: 3px;
   flex-shrink: 0;

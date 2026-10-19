@@ -55,6 +55,103 @@
   --el-box-shadow-dark: var(--ib-shadow-4);
 }
 
+/**
+ * Dark theme mapping.
+ * Element Plus ships its own dark css-vars, but the portal's skin overrides the
+ * same variables with --ib-* tokens. Re-declare them under html.dark so the two
+ * layers stay consistent; primary light-N variants mix toward black instead of
+ * white.
+ */
+html.dark {
+  --el-color-primary: var(--ib-color-primary);
+  --el-color-primary-light-3: color-mix(in srgb, var(--ib-color-primary) 70%, #000000);
+  --el-color-primary-light-5: color-mix(in srgb, var(--ib-color-primary) 50%, #000000);
+  --el-color-primary-light-7: color-mix(in srgb, var(--ib-color-primary) 30%, #000000);
+  --el-color-primary-light-8: color-mix(in srgb, var(--ib-color-primary) 20%, #000000);
+  --el-color-primary-light-9: color-mix(in srgb, var(--ib-color-primary) 10%, #000000);
+  --el-color-primary-dark-2: var(--ib-color-primary-pressed);
+
+  --el-color-success: var(--ib-color-success-text);
+  --el-color-success-light-3: color-mix(in srgb, var(--ib-color-success-text) 70%, #000000);
+  --el-color-success-light-5: color-mix(in srgb, var(--ib-color-success-text) 50%, #000000);
+  --el-color-success-light-7: color-mix(in srgb, var(--ib-color-success-text) 30%, #000000);
+  --el-color-success-light-8: color-mix(in srgb, var(--ib-color-success-text) 20%, #000000);
+  --el-color-success-light-9: color-mix(in srgb, var(--ib-color-success-text) 10%, #000000);
+  --el-color-warning: var(--ib-color-warning-text);
+  --el-color-warning-light-3: color-mix(in srgb, var(--ib-color-warning-text) 70%, #000000);
+  --el-color-warning-light-5: color-mix(in srgb, var(--ib-color-warning-text) 50%, #000000);
+  --el-color-warning-light-7: color-mix(in srgb, var(--ib-color-warning-text) 30%, #000000);
+  --el-color-warning-light-8: color-mix(in srgb, var(--ib-color-warning-text) 20%, #000000);
+  --el-color-warning-light-9: color-mix(in srgb, var(--ib-color-warning-text) 10%, #000000);
+  --el-color-danger: var(--ib-color-danger-text);
+  --el-color-danger-light-3: color-mix(in srgb, var(--ib-color-danger-text) 70%, #000000);
+  --el-color-danger-light-5: color-mix(in srgb, var(--ib-color-danger-text) 50%, #000000);
+  --el-color-danger-light-7: color-mix(in srgb, var(--ib-color-danger-text) 30%, #000000);
+  --el-color-danger-light-8: color-mix(in srgb, var(--ib-color-danger-text) 20%, #000000);
+  --el-color-danger-light-9: color-mix(in srgb, var(--ib-color-danger-text) 10%, #000000);
+  --el-color-error: var(--ib-color-danger-text);
+  --el-color-info: var(--ib-color-info-text);
+  --el-color-info-light-3: color-mix(in srgb, var(--ib-color-info-text) 70%, #000000);
+  --el-color-info-light-5: color-mix(in srgb, var(--ib-color-info-text) 50%, #000000);
+  --el-color-info-light-7: color-mix(in srgb, var(--ib-color-info-text) 30%, #000000);
+  --el-color-info-light-8: color-mix(in srgb, var(--ib-color-info-text) 20%, #000000);
+  --el-color-info-light-9: color-mix(in srgb, var(--ib-color-info-text) 10%, #000000);
+
+  --el-text-color-primary: var(--ib-color-ink);
+  --el-text-color-regular: var(--ib-color-charcoal);
+  --el-text-color-secondary: var(--ib-color-steel);
+  --el-text-color-placeholder: var(--ib-color-muted);
+  --el-text-color-disabled: var(--ib-color-muted);
+
+  --el-bg-color: var(--ib-color-canvas);
+  --el-bg-color-page: var(--ib-color-surface);
+  --el-bg-color-overlay: var(--ib-color-surface-soft);
+  --el-fill-color: var(--ib-color-surface);
+  --el-fill-color-light: var(--ib-color-surface);
+  --el-fill-color-lighter: var(--ib-color-surface-soft);
+  --el-fill-color-extra-light: var(--ib-color-surface-soft);
+  --el-fill-color-dark: var(--ib-color-hairline-soft);
+  --el-fill-color-darker: var(--ib-color-hairline);
+  --el-fill-color-blank: var(--ib-color-canvas);
+  --el-border-color: var(--ib-color-hairline);
+  --el-border-color-light: var(--ib-color-hairline);
+  --el-border-color-lighter: var(--ib-color-hairline-soft);
+  --el-border-color-extra-light: var(--ib-color-hairline-soft);
+  --el-border-color-dark: var(--ib-color-hairline);
+  --el-border-color-darker: var(--ib-color-hairline);
+  --el-border-color-hover: var(--ib-color-steel);
+  --el-mask-color: rgba(0, 0, 0, 0.8);
+  --el-mask-color-extra-light: rgba(0, 0, 0, 0.3);
+  --el-overlay-color-lighter: rgba(0, 0, 0, 0.6);
+}
+
+/* Dark primary action: light pill with a dark label */
+html.dark .el-button--primary:not(.is-link):not(.is-text):not(.is-plain) {
+  --el-button-text-color: var(--ib-color-on-primary);
+  --el-button-bg-color: var(--ib-color-primary);
+  --el-button-border-color: var(--ib-color-primary);
+  --el-button-hover-text-color: var(--ib-color-on-primary);
+  --el-button-hover-bg-color: var(--ib-color-primary-pressed);
+  --el-button-hover-border-color: var(--ib-color-primary-pressed);
+  --el-button-active-text-color: var(--ib-color-on-primary);
+  --el-button-active-bg-color: var(--ib-color-primary-pressed);
+  --el-button-active-border-color: var(--ib-color-primary-pressed);
+  --el-button-disabled-text-color: var(--ib-color-disabled-text);
+  --el-button-disabled-bg-color: var(--ib-color-primary-disabled);
+  --el-button-disabled-border-color: var(--ib-color-primary-disabled);
+}
+
+/* Dark semantic buttons: light fills need dark labels */
+html.dark .el-button--success:not(.is-link):not(.is-text):not(.is-plain),
+html.dark .el-button--warning:not(.is-link):not(.is-text):not(.is-plain),
+html.dark .el-button--danger:not(.is-link):not(.is-text):not(.is-plain),
+html.dark .el-button--error:not(.is-link):not(.is-text):not(.is-plain),
+html.dark .el-button--info:not(.is-link):not(.is-text):not(.is-plain) {
+  --el-button-text-color: var(--ib-color-on-brand);
+  --el-button-hover-text-color: var(--ib-color-on-brand);
+  --el-button-active-text-color: var(--ib-color-on-brand);
+}
+
 /* Buttons: pill geometry and firm labels */
 .el-button {
   --el-button-border-radius: var(--ib-radius-full);

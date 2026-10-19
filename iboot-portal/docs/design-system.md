@@ -13,6 +13,99 @@ Business views must consume tokens instead of hardcoded palette values.
 | `src/styles/global.css` | Reset, base typography, utilities |
 | `src/assets/fonts/dm-sans-latin.woff2` | Self-hosted brand typeface |
 | `scripts/check-ui-tokens.mjs` | Audit for hardcoded palette values and gradients |
+| `scripts/check-contrast.mjs` | WCAG AA contrast audit for token pairs |
+| `scripts/ui-capture.mjs` | Responsive screenshot capture through CDP |
+
+## Theme modes
+
+The portal supports three theme modes:
+
+| Mode | Behavior |
+|---|---|
+| `light` | Always use the light palette |
+| `dark` | Always use the dark palette |
+| `system` | Follow `prefers-color-scheme` and update when the OS preference changes |
+
+The explicit choice is stored in `localStorage` under the key `theme`. A
+missing or invalid value falls back to `system`. `useTheme` (in
+`src/composables/useTheme.ts`) owns resolution and persistence; a small inline
+script in `index.html` applies the same rule before the app mounts so the first
+paint never flashes the wrong theme.
+
+The resolved theme is applied as `html.dark` plus
+`document.documentElement.style.colorScheme`. Element Plus's dark css-vars are
+already imported in `src/main.ts`; `element.css` remaps the `--el-*` variables
+to `--ib-*` tokens in both themes.
+
+Theme selection is available in the authenticated shell header (next to the
+locale picker) and in the top-right area of Home, Login, and Register. Labels
+live in `common.json` under `theme.*`.
+
+### Dark token values
+
+Dark values are derived from the semantic tokens; business views never receive
+theme-specific selectors.
+
+| Token | Light | Dark |
+|---|---|---|
+| `--ib-color-canvas` | `#ffffff` | `#0a0a0a` |
+| `--ib-color-surface` | `#f7f8fa` | `#141414` |
+| `--ib-color-surface-soft` | `#f2f3f5` | `#1c1c1c` |
+| `--ib-color-hairline` | `#e5e7eb` | `#2a2a2a` |
+| `--ib-color-hairline-soft` | `#eaecf0` | `#232323` |
+| `--ib-color-overlay` | `rgba(10, 10, 10, 0.32)` | `rgba(10, 10, 10, 0.32)` |
+| `--ib-color-code-bg` | `#1e1e1e` | `#1e1e1e` |
+| `--ib-color-code-text` | `#d4d4d4` | `#d4d4d4` |
+| `--ib-color-ink` | `#0a0a0a` | `#f5f5f5` |
+| `--ib-color-ink-strong` | `#000000` | `#ffffff` |
+| `--ib-color-charcoal` | `#222222` | `#d4d4d4` |
+| `--ib-color-slate` | `#45515e` | `#b8c2cc` |
+| `--ib-color-steel` | `#5f5f5f` | `#a3a3a3` |
+| `--ib-color-stone` | `#8e8e93` | `#8a8a8f` |
+| `--ib-color-muted` | `#8e8e93` | `#828282` |
+| `--ib-color-primary` | `#0a0a0a` | `#f5f5f5` |
+| `--ib-color-on-primary` | `#ffffff` | `#0a0a0a` |
+| `--ib-color-primary-pressed` | `#222222` | `#d4d4d4` |
+| `--ib-color-primary-disabled` | `#e5e7eb` | `#2a2a2a` |
+| `--ib-color-disabled-text` | `#a8aab2` | `#828282` |
+| `--ib-color-brand-coral` | `#ff5530` | `#ff6b4a` |
+| `--ib-color-brand-magenta` | `#ea5ec1` | `#f472d0` |
+| `--ib-color-brand-blue` | `#1456f0` | `#4d8dff` |
+| `--ib-color-brand-blue-mid` | `#3b82f6` | `#60a5fa` |
+| `--ib-color-brand-blue-deep` | `#1d4ed8` | `#3b82f6` |
+| `--ib-color-brand-cyan` | `#3daeff` | `#67c3ff` |
+| `--ib-color-brand-blue-200` | `#bfdbfe` | `#1e3a8a` |
+| `--ib-color-brand-purple` | `#a855f7` | `#b57bff` |
+| `--ib-color-on-brand` | `#ffffff` | `#0a0a0a` |
+| `--ib-color-success-bg` | `#e8ffea` | `#10291a` |
+| `--ib-color-success-text` | `#0f7a54` | `#4ade80` |
+| `--ib-color-warning-bg` | `#fff7e6` | `#2b1f0b` |
+| `--ib-color-warning-text` | `#b45309` | `#fbbf24` |
+| `--ib-color-danger-bg` | `#fef0f0` | `#2c1414` |
+| `--ib-color-danger-text` | `#c53a3a` | `#f87171` |
+| `--ib-color-info-text` | `#5f5f5f` | `#a3a3a3` |
+
+Dark mode inverts the primary action (light pill on dark surfaces) and reduces
+shadows; hierarchy relies on surface steps and hairlines. Every value above is
+checked by `scripts/check-contrast.mjs`.
+
+### Embedded monitor boundary
+
+Embedded pages (`Druid`, `Swagger`, `Spring Boot Admin`, `Prometheus`,
+`Grafana`, `Kibana`, `Alertmanager`, `Thanos`) use the shared page wrapper and
+`IframePanel`. The wrapper, header, and loading/failure states follow the
+theme; the iframe document is third-party and is never restyled by the portal.
+
+Some third-party tools expose their own dark setting:
+
+| Tool | Where to set it |
+|---|---|
+| Grafana | User preferences → UI theme → Dark |
+| Kibana | Stack Management → Advanced Settings → Theme → Dark |
+| Spring Boot Admin | Follows the browser `prefers-color-scheme` only when the deployed version supports it; otherwise stays light |
+| Prometheus / Alertmanager / Thanos / Druid / Swagger | No built-in dark theme; content stays light |
+
+The portal does not toggle these settings.
 
 Import order in `src/main.ts`: Element Plus CSS → fonts → tokens → Element
 skin → global styles.
@@ -139,9 +232,17 @@ Run the audit from `iboot-portal`:
 cnpm run check:ui
 ```
 
-The check fails when a business view contains an Element Plus palette value
-or a decorative `linear-gradient`. A clean fixture should pass:
+The check fails when a business view contains an Element Plus palette value,
+a literal hex/rgb color, a `white`/`black` value, or a decorative
+`linear-gradient`. Intentional theme-neutral literals are listed in the
+script's `ALLOWED` map.
 
 ```bash
-node scripts/check-ui-tokens.mjs /tmp/ui-clean-fixture
+cnpm run check:ui
+node scripts/check-contrast.mjs
 ```
+
+`scripts/ui-capture.mjs` and `scripts/ui-audit.mjs` drive headless Chromium
+through CDP for screenshots and the responsive/i18n audit. Pass
+`--theme light|dark` to run either theme; both scripts seed `localStorage.theme`
+before navigation.
