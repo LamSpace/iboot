@@ -49,9 +49,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 数据权限拦截器 拦截 MyBatis 查询操作，根据当前用户角色数据权限自动拼接 SQL 过滤条件
+ * 数据权限拦截器。
  *
- * @author iBoot
+ * <p>拦截 MyBatis 查询，根据当前用户所有角色的数据范围向 SQL 追加部门或用户过滤条件；
+ * 角色范围按数值优先级合并，计算结果按用户缓存。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.common.annotation.DataScope
  */
 @Component
 @Intercepts({
@@ -74,6 +79,15 @@ public class DataScopeInterceptor implements Interceptor {
      */
     private final Map<String, UserDataScope> userScopeCache = new ConcurrentHashMap<>();
 
+    /**
+     * 创建数据权限拦截器。
+     *
+     * <p>使用 {@link ObjectProvider} 延迟获取 Mapper，避免与 MyBatis 初始化产生循环依赖。
+     *
+     * @param roleMapperProvider 角色 Mapper 提供者
+     * @param deptMapperProvider 部门 Mapper 提供者
+     * @param userMapperProvider 用户 Mapper 提供者
+     */
     public DataScopeInterceptor(ObjectProvider<RoleMapper> roleMapperProvider,
                                 ObjectProvider<DeptMapper> deptMapperProvider, ObjectProvider<UserMapper> userMapperProvider) {
         this.roleMapperProvider = roleMapperProvider;
@@ -149,6 +163,15 @@ public class DataScopeInterceptor implements Interceptor {
     }
 
     @Override
+    /**
+     * 拦截 MyBatis 查询并按当前用户的数据权限改写 SQL。
+     *
+     * <p>只处理带 {@code @DataScope} 标记的查询；其他调用直接放行。
+     *
+     * @param invocation MyBatis 调用
+     * @return 查询结果
+     * @throws Throwable 执行失败时抛出
+     */
     public Object intercept(Invocation invocation) throws Throwable {
         Object[] args = invocation.getArgs();
         MappedStatement ms = (MappedStatement) args[0];

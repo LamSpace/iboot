@@ -22,9 +22,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 /**
- * 文件存储策略接口 定义文件存储的核心操作，支持本地存储和对象存储（如MinIO）
+ * 文件存储策略接口。
  *
- * @author iBoot
+ * <p>抽象文件保存、读取、删除和 URL 生成等操作，由本地存储和对象存储（MinIO）
+ * 分别实现。上层服务通过该接口屏蔽具体存储介质。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface FileStorageStrategy {
 

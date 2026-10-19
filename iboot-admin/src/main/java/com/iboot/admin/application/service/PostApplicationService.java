@@ -33,7 +33,8 @@ import java.util.List;
  * 负责岗位的创建、更新、删除、查询等业务逻辑处理， 支持岗位状态管理和条件查询
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class PostApplicationService {

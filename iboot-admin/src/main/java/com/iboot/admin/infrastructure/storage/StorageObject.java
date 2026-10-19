@@ -19,9 +19,12 @@ package com.iboot.admin.infrastructure.storage;
 import java.io.InputStream;
 
 /**
- * 存储对象DTO 封装从存储系统获取的文件流和元数据
+ * 文件存储对象。
  *
- * @author iBoot
+ * <p>封装从存储系统读取的输入流、内容长度和内容类型，用于下载响应。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class StorageObject {
 

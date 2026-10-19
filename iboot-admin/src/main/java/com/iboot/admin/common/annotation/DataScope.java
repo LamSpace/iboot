@@ -19,11 +19,15 @@ package com.iboot.admin.common.annotation;
 import java.lang.annotation.*;
 
 /**
- * 数据权限注解
- * <p>
- * 用于控制用户对数据的访问权限，根据用户的角色数据范围自动过滤查询结果
+ * 数据权限过滤标记。
  *
- * @author iBoot
+ * <p>标记在查询方法或类上，由 {@code DataScopeInterceptor} 根据当前用户所有角色的
+ * 数据范围向 SQL 追加部门或用户过滤条件。{@code deptAlias} 和 {@code userAlias}
+ * 用于指定 SQL 中部门表、用户表的别名。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.infrastructure.interceptor.DataScopeInterceptor
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
@@ -31,12 +35,12 @@ import java.lang.annotation.*;
 public @interface DataScope {
 
     /**
-     * 部门表的别名
+     * 部门表在 SQL 中的别名，默认 {@code d}。
      */
     String deptAlias() default "d";
 
     /**
-     * 用户表的别名
+     * 用户表在 SQL 中的别名，默认 {@code u}。
      */
     String userAlias() default "u";
 

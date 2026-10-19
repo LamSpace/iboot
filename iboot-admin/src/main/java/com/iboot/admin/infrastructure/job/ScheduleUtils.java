@@ -23,9 +23,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 定时任务调度工具类
+ * Quartz 调度工具。
  *
- * @author iBoot
+ * <p>负责创建、更新、暂停、恢复和删除调度任务，并统一 {@code JobKey}、
+ * {@code TriggerKey} 的生成规则。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public final class ScheduleUtils {
 

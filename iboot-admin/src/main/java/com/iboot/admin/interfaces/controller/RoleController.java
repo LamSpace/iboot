@@ -38,9 +38,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 角色管理控制器
+ * 角色管理控制器。
  *
- * @author iBoot
+ * <p>提供角色的分页查询、详情、新增、修改、删除、状态切换、数据权限设置和导出接口，
+ * 对应 {@code role:*} 权限。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see RoleApplicationService
  */
 @Tag(name = "角色管理", description = "角色管理相关接口")
 @RestController
@@ -54,6 +59,18 @@ public class RoleController {
         this.roleApplicationService = roleApplicationService;
     }
 
+    /**
+     * 分页查询角色列表。
+     *
+     * <p>任一带条件参数非空时走条件查询，否则查询全部角色。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param roleName 角色名称关键字，可为 {@code null}
+     * @param roleCode 角色编码关键字，可为 {@code null}
+     * @param status 状态：0-停用，1-正常；可为 {@code null}
+     * @return 角色分页结果
+     */
     @Operation(summary = "查询角色列表")
     @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('role:list')")
@@ -76,6 +93,11 @@ public class RoleController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 查询所有角色。
+     *
+     * @return 角色列表；没有数据时返回空列表
+     */
     @Operation(summary = "查询所有角色")
     @GetMapping(version = "1", value = "/all")
     @PreAuthorize("hasAuthority('role:list')")
@@ -85,6 +107,15 @@ public class RoleController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询角色详情。
+     *
+     * <p>响应中同时包含角色关联的菜单 ID 和数据权限部门 ID。
+     *
+     * @param id 角色 ID
+     * @return 角色详情
+     * @throws com.iboot.admin.common.exception.BusinessException 角色不存在时抛出
+     */
     @Operation(summary = "查询角色详情")
     @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('role:query')")
@@ -97,6 +128,15 @@ public class RoleController {
         return Result.success(response);
     }
 
+    /**
+     * 新增角色。
+     *
+     * <p>创建角色后，按请求中的 {@code menuIds} 分配菜单权限；
+     * 当数据范围为自定义（2）时，同时设置部门数据权限。
+     *
+     * @param request 角色创建请求
+     * @return 创建后的角色详情
+     */
     @Operation(summary = "新增角色")
     @PostMapping
     @PreAuthorize("hasAuthority('role:add')")
@@ -116,6 +156,14 @@ public class RoleController {
         return Result.success(convertToResponse(createdRole));
     }
 
+    /**
+     * 修改角色。
+     *
+     * <p>更新角色基本信息；请求包含 {@code menuIds} 时同时覆盖菜单权限。
+     *
+     * @param request 角色更新请求，{@code id} 不能为空
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改角色")
     @PutMapping
     @PreAuthorize("hasAuthority('role:edit')")
@@ -131,6 +179,12 @@ public class RoleController {
         return Result.success();
     }
 
+    /**
+     * 删除角色。
+     *
+     * @param id 角色 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除角色")
     @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('role:remove')")
@@ -140,6 +194,13 @@ public class RoleController {
         return Result.success();
     }
 
+    /**
+     * 修改角色状态。
+     *
+     * @param id 角色 ID
+     * @param status 目标状态：1-启用，0-停用
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改角色状态")
     @PutMapping(version = "1", value = "/changeStatus")
     @PreAuthorize("hasAuthority('role:edit')")
@@ -149,6 +210,12 @@ public class RoleController {
         return Result.success();
     }
 
+    /**
+     * 设置角色数据权限。
+     *
+     * @param request 角色请求，包含角色 ID、数据范围和自定义部门 ID 列表
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "设置数据权限")
     @PutMapping(version = "1", value = "/dataScope")
     @PreAuthorize("hasAuthority('role:edit')")
@@ -158,6 +225,15 @@ public class RoleController {
         return Result.success();
     }
 
+    /**
+     * 导出角色列表。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param roleName 角色名称关键字，可为 {@code null}
+     * @param roleCode 角色编码关键字，可为 {@code null}
+     * @param status 状态：0-停用，1-正常；可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出角色列表")
     @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('role:export')")

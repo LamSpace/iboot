@@ -42,9 +42,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 菜单管理控制器
+ * 菜单管理控制器。
  *
- * @author iBoot
+ * <p>提供菜单树、列表、详情、当前用户菜单树与权限、增删改和导出接口；
+ * 管理接口对应 {@code menu:*} 权限，当前用户接口允许已登录用户访问。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see MenuApplicationService
  */
 @Tag(name = "菜单管理", description = "菜单管理相关接口")
 @RestController
@@ -58,6 +63,11 @@ public class MenuController {
         this.menuApplicationService = menuApplicationService;
     }
 
+    /**
+     * 查询菜单树形结构。
+     *
+     * @return 顶级菜单列表，子菜单挂在 {@code children} 中
+     */
     @Operation(summary = "查询菜单树形结构")
     @GetMapping(version = "1", value = "/tree")
     @PreAuthorize("hasAuthority('menu:list')")
@@ -67,6 +77,11 @@ public class MenuController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询菜单列表。
+     *
+     * @return 菜单列表；没有数据时返回空列表
+     */
     @Operation(summary = "查询菜单列表")
     @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('menu:list')")
@@ -76,6 +91,13 @@ public class MenuController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询菜单详情。
+     *
+     * @param id 菜单 ID
+     * @return 菜单详情
+     * @throws com.iboot.admin.common.exception.BusinessException 菜单不存在时抛出
+     */
     @Operation(summary = "查询菜单详情")
     @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('menu:query')")
@@ -84,6 +106,12 @@ public class MenuController {
         return Result.success(convertToResponse(menu));
     }
 
+    /**
+     * 获取当前登录用户的菜单树。
+     *
+     * @return 当前用户可见的菜单树
+     * @throws com.iboot.admin.common.exception.BusinessException 无法获取当前用户信息时抛出
+     */
     @Operation(summary = "获取当前用户菜单树")
     @GetMapping(version = "1", value = "/user/tree")
     public Result<List<MenuResponse>> userMenuTree() {
@@ -93,6 +121,12 @@ public class MenuController {
         return Result.success(responses);
     }
 
+    /**
+     * 获取当前登录用户的权限列表。
+     *
+     * @return 权限标识集合；没有权限时返回空集合
+     * @throws com.iboot.admin.common.exception.BusinessException 无法获取当前用户信息时抛出
+     */
     @Operation(summary = "获取当前用户权限列表")
     @GetMapping(version = "1", value = "/user/perms")
     public Result<Set<String>> userPermissions() {
@@ -102,6 +136,12 @@ public class MenuController {
         return Result.success(perms);
     }
 
+    /**
+     * 新增菜单。
+     *
+     * @param request 菜单创建请求
+     * @return 创建后的菜单详情
+     */
     @Operation(summary = "新增菜单")
     @PostMapping
     @PreAuthorize("hasAuthority('menu:add')")
@@ -112,6 +152,12 @@ public class MenuController {
         return Result.success(convertToResponse(createdMenu));
     }
 
+    /**
+     * 修改菜单。
+     *
+     * @param request 菜单更新请求，{@code id} 不能为空
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改菜单")
     @PutMapping
     @PreAuthorize("hasAuthority('menu:edit')")
@@ -123,6 +169,12 @@ public class MenuController {
         return Result.success();
     }
 
+    /**
+     * 删除菜单。
+     *
+     * @param id 菜单 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除菜单")
     @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('menu:remove')")
@@ -132,6 +184,16 @@ public class MenuController {
         return Result.success();
     }
 
+    /**
+     * 导出菜单列表。
+     *
+     * <p>按菜单树递归展平，并按名称和状态过滤后写入 Excel。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param menuName 菜单名称关键字，可为 {@code null}
+     * @param status 状态：0-停用，1-正常；可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出菜单列表")
     @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('menu:export')")

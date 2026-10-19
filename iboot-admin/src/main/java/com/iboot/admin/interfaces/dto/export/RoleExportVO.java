@@ -21,33 +21,60 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 角色导出VO
+ * 角色导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class RoleExportVO {
 
+    /**
+     * 导出列：角色ID。
+     */
     @ExcelColumn(name = "角色ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：角色编码。
+     */
     @ExcelColumn(name = "角色编码", order = 2, width = 20)
     private String roleCode;
 
+    /**
+     * 导出列：角色名称。
+     */
     @ExcelColumn(name = "角色名称", order = 3, width = 20)
     private String roleName;
 
+    /**
+     * 导出列：显示顺序。
+     */
     @ExcelColumn(name = "显示顺序", order = 4, width = 10)
     private Integer orderNum;
 
+    /**
+     * 导出列：数据权限；字典类型 {@code sys_data_scope}。
+     */
     @ExcelColumn(name = "数据权限", order = 5, width = 15, dictType = "sys_data_scope")
     private Integer dataScope;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_normal_disable}。
+     */
     @ExcelColumn(name = "状态", order = 6, width = 8, dictType = "sys_normal_disable")
     private Integer status;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 7, width = 20)
     private LocalDateTime createTime;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 8, width = 30)
     private String remark;
 

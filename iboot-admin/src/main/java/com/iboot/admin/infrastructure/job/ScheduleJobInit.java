@@ -28,9 +28,12 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * 定时任务调度初始化 在应用启动时，将数据库中的任务加载到 Quartz 调度器
+ * 定时任务初始化。
  *
- * @author iBoot
+ * <p>应用启动后将数据库中的任务同步到 Quartz 调度器，使任务配置在重启后继续生效。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 public class ScheduleJobInit {

@@ -30,11 +30,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 二级缓存管理器
- * <p>
- * 组合 Caffeine（L1）和 Redis（L2）实现二级缓存
+ * 二级缓存管理器。
  *
- * @author iBoot
+ * <p>按缓存名称创建并管理 {@link TwoLevelCache}，组合 Caffeine（L1）和 Redis（L2）
+ * 实现统一的 {@link org.springframework.cache.CacheManager} 接口。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see TwoLevelCache
  */
 public class TwoLevelCacheManager implements CacheManager {
 
@@ -55,6 +58,14 @@ public class TwoLevelCacheManager implements CacheManager {
 
     private final Map<String, TwoLevelCache> cacheMap = new ConcurrentHashMap<>();
 
+    /**
+     * 创建缓存管理器。
+     *
+     * @param l1CacheManager 本地缓存管理器
+     * @param l2CacheManager Redis 缓存管理器
+     * @param redisTemplate Redis 模板
+     * @param metricsService 业务指标服务
+     */
     public TwoLevelCacheManager(CacheManager l1CacheManager, CacheManager l2CacheManager,
                                 RedisTemplate<String, Object> redisTemplate, BusinessMetricsService metricsService) {
         this.l1CacheManager = l1CacheManager;
@@ -63,6 +74,12 @@ public class TwoLevelCacheManager implements CacheManager {
         this.metricsService = metricsService;
     }
 
+    /**
+     * 获取或创建指定名称的二级缓存。
+     *
+     * @param name 缓存名称
+     * @return 二级缓存；L1 或 L2 不可用时返回 {@code null}
+     */
     @Override
     public Cache getCache(String name) {
         return cacheMap.computeIfAbsent(name, cacheName -> {
@@ -79,6 +96,11 @@ public class TwoLevelCacheManager implements CacheManager {
         });
     }
 
+    /**
+     * 获取所有缓存名称。
+     *
+     * @return 本地和 Redis 缓存名称的并集
+     */
     @Override
     public Collection<String> getCacheNames() {
         Set<String> names = new HashSet<>();

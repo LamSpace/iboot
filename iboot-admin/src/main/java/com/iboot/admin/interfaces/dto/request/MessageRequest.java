@@ -21,36 +21,60 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 消息请求 DTO
+ * 消息请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "消息请求")
 public class MessageRequest {
 
+    /**
+     * 消息ID。
+     */
     @Schema(description = "消息ID")
     private Long id;
 
+    /**
+     * 消息标题。
+     */
     @Schema(description = "消息标题")
     @NotBlank(message = "消息标题不能为空")
     @Size(max = 200, message = "消息标题长度不能超过200")
     private String title;
 
+    /**
+     * 消息内容。
+     */
     @Schema(description = "消息内容")
     @NotBlank(message = "消息内容不能为空")
     private String content;
 
+    /**
+     * 消息类型（字典 sys_message_type）。
+     */
     @Schema(description = "消息类型（字典 sys_message_type）")
     @NotBlank(message = "消息类型不能为空")
     private String messageType;
 
+    /**
+     * 优先级（字典 sys_message_priority）。
+     */
     @Schema(description = "优先级（字典 sys_message_priority）")
     private String priority;
 
+    /**
+     * 接收者类型（字典 sys_message_receiver_type）。
+     */
     @Schema(description = "接收者类型（字典 sys_message_receiver_type）")
     @NotBlank(message = "接收者类型不能为空")
     private String receiverType;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;

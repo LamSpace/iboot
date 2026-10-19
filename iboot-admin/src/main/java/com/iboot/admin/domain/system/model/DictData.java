@@ -19,9 +19,14 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 字典数据实体
+ * 字典数据实体。
  *
- * @author iBoot
+ * <p>表示某个字典类型下的一个可选值：{@code dictLabel} 用于展示，
+ * {@code dictValue} 用于存储，{@code dictType} 关联 {@link DictType}。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see DictType
  */
 public class DictData {
 
@@ -151,35 +156,37 @@ public class DictData {
     }
 
     /**
-     * 设为默认
+     * 设置为默认字典值。
      */
     public void setAsDefault() {
         this.isDefault = 1;
     }
 
     /**
-     * 取消默认
+     * 取消默认字典值。
      */
     public void unsetDefault() {
         this.isDefault = 0;
     }
 
     /**
-     * 检查是否为默认值
+     * 判断是否为默认字典值。
+     *
+     * @return {@code isDefault} 为 1 时返回 {@code true}
      */
     public boolean isDefaultValue() {
         return this.isDefault != null && this.isDefault == 1;
     }
 
     /**
-     * 启用
+     * 启用字典数据。
      */
     public void enable() {
         this.status = 1;
     }
 
     /**
-     * 停用
+     * 停用字典数据。
      */
     public void disable() {
         this.status = 0;

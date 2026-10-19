@@ -19,14 +19,18 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 岗位实体（聚合根）
+ * 岗位实体（聚合根）。
  *
- * @author iBoot
+ * <p>表示组织中的岗位定义，{@code postCode} 是业务唯一标识，
+ * {@code postSort} 控制列表展示顺序。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class Post {
 
     /**
-     * 岗位ID
+     * 岗位 ID
      */
     private Long id;
 
@@ -87,7 +91,7 @@ public class Post {
     /**
      * Creates a new {@code Post} instance.
      *
-     * @param id         岗位ID
+     * @param id         岗位 ID
      * @param postCode   岗位编码
      * @param postName   岗位名称
      * @param postSort   岗位排序
@@ -122,28 +126,30 @@ public class Post {
     }
 
     /**
-     * 启用岗位
+     * 启用岗位。
      */
     public void enable() {
         this.status = 1;
     }
 
     /**
-     * 停用岗位
+     * 停用岗位。
      */
     public void disable() {
         this.status = 0;
     }
 
     /**
-     * 检查岗位是否启用
+     * 判断岗位是否启用。
+     *
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isEnabled() {
         return this.status != null && this.status == 1;
     }
 
     /**
-     * 岗位ID
+     * 岗位 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -151,7 +157,7 @@ public class Post {
     }
 
     /**
-     * 岗位ID
+     * 岗位 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -461,7 +467,7 @@ public class Post {
         }
 
         /**
-         * 岗位ID
+         * 岗位 ID
          *
          * @return {@code this}.
          */

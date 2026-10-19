@@ -21,32 +21,53 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 岗位请求 DTO
+ * 岗位请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "岗位请求")
 public class PostRequest {
 
+    /**
+     * 岗位ID。
+     */
     @Schema(description = "岗位ID")
     private Long id;
 
+    /**
+     * 岗位编码。
+     */
     @Schema(description = "岗位编码")
     @NotBlank(message = "岗位编码不能为空")
     @Size(max = 50, message = "岗位编码长度不能超过50")
     private String postCode;
 
+    /**
+     * 岗位名称。
+     */
     @Schema(description = "岗位名称")
     @NotBlank(message = "岗位名称不能为空")
     @Size(max = 50, message = "岗位名称长度不能超过50")
     private String postName;
 
+    /**
+     * 显示顺序。
+     */
     @Schema(description = "显示顺序")
     private Integer orderNum;
 
+    /**
+     * 状态：0-停用，1-正常。
+     */
     @Schema(description = "状态：0-停用，1-正常")
     private Integer status;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;

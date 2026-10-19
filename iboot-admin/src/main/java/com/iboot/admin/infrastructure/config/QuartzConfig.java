@@ -24,9 +24,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 
 /**
- * Quartz 配置类 确保 Quartz 使用 Spring 管理的 DataSource 和事务管理器
+ * Quartz 配置。
  *
- * @author iBoot
+ * <p>确保 Quartz 使用 Spring 管理的 {@link javax.sql.DataSource} 和事务管理器，
+ * 使任务调度与业务事务共享同一数据源。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Configuration
 public class QuartzConfig {

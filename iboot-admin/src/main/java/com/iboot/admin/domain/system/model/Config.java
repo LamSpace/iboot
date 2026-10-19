@@ -19,9 +19,14 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 系统配置实体
+ * 系统配置实体。
  *
- * @author iBoot
+ * <p>表示一条可动态调整的系统参数，按 {@code configKey} 唯一标识，
+ * {@code configValue} 保存字符串形式的值，由调用方按业务语义解析。
+ * {@code configType} 为 1 的配置属于系统内置配置，通常不允许删除。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class Config {
 
@@ -122,14 +127,20 @@ public class Config {
     }
 
     /**
-     * 更新配置值
+     * 更新配置值。
+     *
+     * <p>只修改内存中的字段，持久化由仓储层完成。
+     *
+     * @param newValue 新的配置值
      */
     public void updateValue(String newValue) {
         this.configValue = newValue;
     }
 
     /**
-     * 检查是否为系统内置配置
+     * 判断是否为系统内置配置。
+     *
+     * @return 配置类型为 1 时返回 {@code true}
      */
     public boolean isSystemConfig() {
         return this.configType != null && this.configType == 1;

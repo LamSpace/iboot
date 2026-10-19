@@ -21,59 +21,104 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 菜单请求 DTO
+ * 菜单请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "菜单请求")
 public class MenuRequest {
 
+    /**
+     * 菜单ID。
+     */
     @Schema(description = "菜单ID")
     private Long id;
 
+    /**
+     * 父菜单ID。
+     */
     @Schema(description = "父菜单ID")
     private Long parentId;
 
+    /**
+     * 菜单名称。
+     */
     @Schema(description = "菜单名称")
     @NotBlank(message = "菜单名称不能为空")
     @Size(max = 50, message = "菜单名称长度不能超过50")
     private String menuName;
 
+    /**
+     * 菜单类型：M-目录，C-菜单，F-按钮。
+     */
     @Schema(description = "菜单类型：M-目录，C-菜单，F-按钮")
     @NotBlank(message = "菜单类型不能为空")
     private String menuType;
 
+    /**
+     * 路由地址。
+     */
     @Schema(description = "路由地址")
     @Size(max = 200, message = "路由地址长度不能超过200")
     private String path;
 
+    /**
+     * 组件路径。
+     */
     @Schema(description = "组件路径")
     @Size(max = 255, message = "组件路径长度不能超过255")
     private String component;
 
+    /**
+     * 权限标识。
+     */
     @Schema(description = "权限标识")
     @Size(max = 100, message = "权限标识长度不能超过100")
     private String perms;
 
+    /**
+     * 菜单图标。
+     */
     @Schema(description = "菜单图标")
     @Size(max = 100, message = "菜单图标长度不能超过100")
     private String icon;
 
+    /**
+     * 显示顺序。
+     */
     @Schema(description = "显示顺序")
     private Integer orderNum;
 
+    /**
+     * 是否为外链：0-否，1-是。
+     */
     @Schema(description = "是否为外链：0-否，1-是")
     private Integer isFrame;
 
+    /**
+     * 是否缓存：0-否，1-是。
+     */
     @Schema(description = "是否缓存：0-否，1-是")
     private Integer isCache;
 
+    /**
+     * 是否可见：0-隐藏，1-显示。
+     */
     @Schema(description = "是否可见：0-隐藏，1-显示")
     private Integer visible;
 
+    /**
+     * 状态：0-停用，1-正常。
+     */
     @Schema(description = "状态：0-停用，1-正常")
     private Integer status;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;

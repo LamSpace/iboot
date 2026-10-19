@@ -19,14 +19,18 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 登录日志实体（值对象）
+ * 登录日志实体（值对象）。
  *
- * @author iBoot
+ * <p>记录一次登录尝试的用户、来源、客户端环境和结果，用于安全审计和登录统计。
+ * 该实体以写入和查询为主，不参与复杂的状态流转。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class LoginLog {
 
     /**
-     * 日志ID
+     * 日志 ID
      */
     private Long id;
 
@@ -77,7 +81,7 @@ public class LoginLog {
     /**
      * Creates a new {@code LoginLog} instance.
      *
-     * @param id            日志ID
+     * @param id            日志 ID
      * @param username      用户名
      * @param ipAddress     登录IP
      * @param loginLocation 登录地点
@@ -108,14 +112,16 @@ public class LoginLog {
     }
 
     /**
-     * 检查是否登录成功
+     * 判断登录是否成功。
+     *
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isSuccess() {
         return this.status != null && this.status == 1;
     }
 
     /**
-     * 日志ID
+     * 日志 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -123,7 +129,7 @@ public class LoginLog {
     }
 
     /**
-     * 日志ID
+     * 日志 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -382,7 +388,7 @@ public class LoginLog {
         }
 
         /**
-         * 日志ID
+         * 日志 ID
          *
          * @return {@code this}.
          */

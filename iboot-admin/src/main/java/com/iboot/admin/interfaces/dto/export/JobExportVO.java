@@ -21,39 +21,72 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 定时任务导出VO
+ * 定时任务导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class JobExportVO {
 
+    /**
+     * 导出列：任务ID。
+     */
     @ExcelColumn(name = "任务ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：任务名称。
+     */
     @ExcelColumn(name = "任务名称", order = 2, width = 25)
     private String jobName;
 
+    /**
+     * 导出列：任务组名；字典类型 {@code sys_job_group}。
+     */
     @ExcelColumn(name = "任务组名", order = 3, width = 15, dictType = "sys_job_group")
     private String jobGroup;
 
+    /**
+     * 导出列：调用目标。
+     */
     @ExcelColumn(name = "调用目标", order = 4, width = 40)
     private String invokeTarget;
 
+    /**
+     * 导出列：cron表达式。
+     */
     @ExcelColumn(name = "cron表达式", order = 5, width = 20)
     private String cronExpression;
 
+    /**
+     * 导出列：错过策略；字典类型 {@code sys_job_misfire}。
+     */
     @ExcelColumn(name = "错过策略", order = 6, width = 12, dictType = "sys_job_misfire")
     private Integer misfirePolicy;
 
+    /**
+     * 导出列：是否并发；字典类型 {@code sys_job_concurrent}。
+     */
     @ExcelColumn(name = "是否并发", order = 7, width = 10, dictType = "sys_job_concurrent")
     private Integer concurrent;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_job_status}。
+     */
     @ExcelColumn(name = "状态", order = 8, width = 8, dictType = "sys_job_status")
     private Integer status;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 9, width = 30)
     private String remark;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 10, width = 20)
     private LocalDateTime createTime;
 

@@ -12,7 +12,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 /**
- * Druid 连接池指标绑定器 将 Druid 连接池的监控指标注册到 Micrometer，供 Prometheus 采集
+ * Druid 连接池指标绑定器。
+ *
+ * <p>把 Druid 连接池的活跃连接数、空闲连接数等指标注册到 Micrometer，
+ * 供 Prometheus 采集。未配置 {@link DruidDataSource} 时不生效。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 @ConditionalOnBean(DruidDataSource.class)
@@ -25,11 +31,21 @@ public class DruidMetricsBinder implements MeterBinder {
 
     private MeterRegistry meterRegistry;
 
+    /**
+     * 初始化连接池指标绑定器。
+     *
+     * <p>由容器在依赖注入完成后调用。
+     */
     @PostConstruct
     public void init() {
         log.info("初始化 Druid 连接池监控指标...");
     }
 
+    /**
+     * 向 Micrometer 注册 Druid 连接池指标。
+     *
+     * @param registry 指标注册表
+     */
     @Override
     public void bindTo(MeterRegistry registry) {
         this.meterRegistry = registry;

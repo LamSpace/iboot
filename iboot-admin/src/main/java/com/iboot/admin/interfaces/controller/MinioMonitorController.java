@@ -28,9 +28,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * MinIO监控控制器 提供MinIO集群状态、存储桶信息等监控数据接口
+ * MinIO 监控控制器。
  *
- * @author iBoot
+ * <p>提供 MinIO 集群状态、存储桶列表和存储使用情况查询接口，
+ * 需要 {@code minio:query} 权限。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see MinioAdminService
  */
 @Tag(name = "MinIO监控", description = "MinIO对象存储监控信息接口")
 @RestController
@@ -44,6 +49,11 @@ public class MinioMonitorController {
         this.minioAdminService = minioAdminService;
     }
 
+    /**
+     * 查询 MinIO 监控信息。
+     *
+     * @return 集群状态、存储桶列表和存储使用情况
+     */
     @Operation(summary = "获取MinIO监控信息", description = "获取MinIO集群状态、存储桶列表、存储使用情况等")
     @GetMapping(version = "1")
     @PreAuthorize("hasAuthority('minio:query')")
@@ -52,6 +62,11 @@ public class MinioMonitorController {
         return Result.success(status);
     }
 
+    /**
+     * 检查 MinIO 服务是否在线。
+     *
+     * @return 在线返回 {@code true}，否则返回 {@code false}
+     */
     @Operation(summary = "检查MinIO服务状态", description = "检查MinIO服务是否在线")
     @GetMapping(version = "1", value = "/ping")
     @PreAuthorize("hasAuthority('minio:query')")

@@ -21,9 +21,13 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 定时任务领域模型
+ * 定时任务领域模型。
  *
- * @author iBoot
+ * <p>表示一条 Quartz 定时任务配置，包含调用目标、cron 表达式、错过执行策略、
+ * 并发策略和启停状态。调用目标格式为 {@code beanName.methodName}。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class Job implements Serializable {
 
@@ -66,7 +70,7 @@ public class Job implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 任务ID
+     * 任务 ID
      */
     private Long id;
 
@@ -137,7 +141,7 @@ public class Job implements Serializable {
     /**
      * Creates a new {@code Job} instance.
      *
-     * @param id             任务ID
+     * @param id             任务 ID
      * @param jobName        任务名称
      * @param jobGroup       任务组名
      * @param invokeTarget   调用目标字符串(beanName.methodName)
@@ -177,28 +181,34 @@ public class Job implements Serializable {
     }
 
     /**
-     * 判断任务是否正常运行
+     * 判断任务是否处于正常运行状态。
+     *
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isNormal() {
         return STATUS_NORMAL == this.status;
     }
 
     /**
-     * 判断任务是否暂停
+     * 判断任务是否处于暂停状态。
+     *
+     * @return 状态为 0 时返回 {@code true}
      */
     public boolean isPaused() {
         return STATUS_PAUSE == this.status;
     }
 
     /**
-     * 判断是否禁止并发
+     * 判断是否禁止并发执行。
+     *
+     * @return 并发策略为 0 时返回 {@code true}
      */
     public boolean isConcurrentDisallowed() {
         return CONCURRENT_NO == this.concurrent;
     }
 
     /**
-     * 任务ID
+     * 任务 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -206,7 +216,7 @@ public class Job implements Serializable {
     }
 
     /**
-     * 任务ID
+     * 任务 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -568,7 +578,7 @@ public class Job implements Serializable {
         }
 
         /**
-         * 任务ID
+         * 任务 ID
          *
          * @return {@code this}.
          */

@@ -21,43 +21,79 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
- * 文件信息响应 DTO
+ * 文件信息响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "文件信息响应")
 public class FileResponse {
 
+    /**
+     * 文件ID。
+     */
     @Schema(description = "文件ID")
     private Long id;
 
+    /**
+     * 原始文件名。
+     */
     @Schema(description = "原始文件名")
     private String fileName;
 
+    /**
+     * 文件大小（字节）。
+     */
     @Schema(description = "文件大小（字节）")
     private Long fileSize;
 
+    /**
+     * 可读文件大小。
+     */
     @Schema(description = "可读文件大小")
     private String readableSize;
 
+    /**
+     * MIME类型。
+     */
     @Schema(description = "MIME类型")
     private String fileType;
 
+    /**
+     * 文件扩展名。
+     */
     @Schema(description = "文件扩展名")
     private String fileExt;
 
+    /**
+     * 文件分类。
+     */
     @Schema(description = "文件分类")
     private String fileCategory;
 
+    /**
+     * 上传人。
+     */
     @Schema(description = "上传人")
     private String uploadBy;
 
+    /**
+     * 上传时间。
+     */
     @Schema(description = "上传时间")
     private LocalDateTime uploadTime;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     private String remark;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 

@@ -40,9 +40,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 系统公告控制器
+ * 系统公告控制器。
  *
- * @author iBoot
+ * <p>提供公告的分页查询、详情、增删改、发布/撤回、导出，以及用户端的已发布列表、
+ * 未读数量和标记已读接口。管理接口对应 {@code notice:*} 权限。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see NoticeApplicationService
  */
 @Tag(name = "系统公告", description = "系统公告相关接口")
 @RestController
@@ -57,6 +62,16 @@ public class NoticeController {
     }
 
     // ==================== 后台管理接口 ====================
+    /**
+     * 分页查询公告列表。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param noticeTitle 公告标题关键字，可为 {@code null}
+     * @param noticeType 公告类型，可为 {@code null}
+     * @param status 状态：0-草稿，1-已发布，2-已撤回；可为 {@code null}
+     * @return 公告分页结果
+     */
     @Operation(summary = "查询公告列表")
     @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('notice:list')")
@@ -73,6 +88,13 @@ public class NoticeController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 查询公告详情。
+     *
+     * @param id 公告 ID
+     * @return 公告详情
+     * @throws com.iboot.admin.common.exception.BusinessException 公告不存在时抛出
+     */
     @Operation(summary = "查询公告详情")
     @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('notice:query')")
@@ -81,6 +103,12 @@ public class NoticeController {
         return Result.success(convertToResponse(notice));
     }
 
+    /**
+     * 新增公告。
+     *
+     * @param request 公告创建请求
+     * @return 创建后的公告详情
+     */
     @Operation(summary = "新增公告")
     @PostMapping
     @PreAuthorize("hasAuthority('notice:add')")
@@ -91,6 +119,12 @@ public class NoticeController {
         return Result.success(convertToResponse(created));
     }
 
+    /**
+     * 修改公告。
+     *
+     * @param request 公告更新请求，{@code id} 不能为空
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改公告")
     @PutMapping
     @PreAuthorize("hasAuthority('notice:edit')")
@@ -102,6 +136,12 @@ public class NoticeController {
         return Result.success();
     }
 
+    /**
+     * 删除公告。
+     *
+     * @param id 公告 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除公告")
     @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('notice:remove')")
@@ -111,6 +151,13 @@ public class NoticeController {
         return Result.success();
     }
 
+    /**
+     * 发布公告。
+     *
+     * @param id 公告 ID
+     * @return 无数据的成功响应
+     * @throws com.iboot.admin.common.exception.BusinessException 公告不存在或状态不允许发布时抛出
+     */
     @Operation(summary = "发布公告")
     @PutMapping(version = "1", value = "/{id}/publish")
     @PreAuthorize("hasAuthority('notice:publish')")
@@ -120,6 +167,13 @@ public class NoticeController {
         return Result.success();
     }
 
+    /**
+     * 撤回公告。
+     *
+     * @param id 公告 ID
+     * @return 无数据的成功响应
+     * @throws com.iboot.admin.common.exception.BusinessException 公告不存在或状态不允许撤回时抛出
+     */
     @Operation(summary = "撤回公告")
     @PutMapping(version = "1", value = "/{id}/revoke")
     @PreAuthorize("hasAuthority('notice:publish')")
@@ -129,6 +183,15 @@ public class NoticeController {
         return Result.success();
     }
 
+    /**
+     * 导出公告列表。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param noticeTitle 公告标题关键字，可为 {@code null}
+     * @param noticeType 公告类型，可为 {@code null}
+     * @param status 状态：0-草稿，1-已发布，2-已撤回；可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出公告列表")
     @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('notice:export')")
@@ -142,6 +205,11 @@ public class NoticeController {
     }
 
     // ==================== 用户端接口 ====================
+    /**
+     * 获取已发布公告列表。
+     *
+     * @return 已发布公告列表，每条记录包含当前用户是否已读
+     */
     @Operation(summary = "获取已发布公告列表")
     @GetMapping(version = "1", value = "/published")
     public Result<List<PublishedNoticeResponse>> published() {
@@ -153,6 +221,11 @@ public class NoticeController {
         return Result.success(responses);
     }
 
+    /**
+     * 获取当前用户的未读公告数量。
+     *
+     * @return 未读公告数量
+     */
     @Operation(summary = "获取未读公告数量")
     @GetMapping(version = "1", value = "/unread/count")
     public Result<Long> unreadCount() {
@@ -161,6 +234,12 @@ public class NoticeController {
         return Result.success(count);
     }
 
+    /**
+     * 标记公告已读。
+     *
+     * @param id 公告 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "标记公告已读")
     @PutMapping(version = "1", value = "/{id}/read")
     public Result<Void> markAsRead(@PathVariable Long id) {

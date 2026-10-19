@@ -19,32 +19,47 @@ package com.iboot.admin.common.result;
 import java.util.List;
 
 /**
- * 分页响应结果
+ * 分页响应结果。
+ *
+ * <p>在统一响应 {@link Result} 的基础上增加分页信息：当前页数据放在 {@code data} 中，
+ * 同时携带总记录数、页码和每页数量。成功响应的状态码固定为 {@code 200}。
  *
  * @author iBoot Team
  * @since 1.0.0
+ * @see Result
  */
 public class PageResult<T> extends Result<List<T>> {
 
     /**
-     * 总记录数
+     * 符合条件的总记录数。
      */
     private Long total;
 
     /**
-     * 当前页码
+     * 当前页码，从 1 开始。
      */
     private Integer pageNum;
 
     /**
-     * 每页数量
+     * 每页数量。
      */
     private Integer pageSize;
 
+    /**
+     * 创建空的分页结果，供框架反序列化使用。
+     */
     public PageResult() {
         super();
     }
 
+    /**
+     * 创建包含当前页数据和分页信息的结果。
+     *
+     * @param rows 当前页数据
+     * @param total 符合条件的总记录数
+     * @param pageNum 当前页码，从 1 开始
+     * @param pageSize 每页数量
+     */
     public PageResult(List<T> rows, Long total, Integer pageNum, Integer pageSize) {
         super(200, "查询成功", rows);
         this.total = total;
@@ -53,7 +68,14 @@ public class PageResult<T> extends Result<List<T>> {
     }
 
     /**
-     * 创建分页结果
+     * 创建分页结果。
+     *
+     * @param rows 当前页数据
+     * @param total 符合条件的总记录数
+     * @param pageNum 当前页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param <T> 数据类型
+     * @return 分页结果对象
      */
     public static <T> PageResult<T> of(List<T> rows, Long total, Integer pageNum, Integer pageSize) {
         return new PageResult<>(rows, total, pageNum, pageSize);

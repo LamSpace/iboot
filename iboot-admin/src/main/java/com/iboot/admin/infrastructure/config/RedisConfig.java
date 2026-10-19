@@ -44,11 +44,14 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.time.Duration;
 
 /**
- * Redis 与二级缓存配置类
- * <p>
- * 实现 L1（Caffeine本地缓存）+ L2（Redis分布式缓存）的二级缓存架构
+ * Redis 与二级缓存配置。
  *
- * @author iBoot
+ * <p>实现 L1（Caffeine 本地缓存）+ L2（Redis 分布式缓存）的二级缓存架构，
+ * 并配置缓存失效消息的发布与监听。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.infrastructure.config.cache.TwoLevelCacheManager
  */
 @Configuration
 @EnableCaching

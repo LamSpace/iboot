@@ -30,7 +30,11 @@ import java.util.List;
 /**
  * 字典类型 Mapper 接口
  *
- * @author iBoot
+ * <p>负责领域模型与接口层 DTO/VO 之间的转换，使用 MapStruct 在编译期生成实现；
+ * 映射方向包括请求转实体、实体转响应和实体转导出 VO。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface DictMapper {

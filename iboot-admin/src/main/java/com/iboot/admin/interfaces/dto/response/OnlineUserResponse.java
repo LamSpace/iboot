@@ -21,43 +21,79 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * 在线用户响应 DTO
+ * 在线用户响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "在线用户响应")
 public class OnlineUserResponse {
 
+    /**
+     * 会话令牌ID（脱敏）。
+     */
     @Schema(description = "会话令牌ID（脱敏）")
     private String tokenId;
 
+    /**
+     * 用户ID。
+     */
     @Schema(description = "用户ID")
     private Long userId;
 
+    /**
+     * 用户名。
+     */
     @Schema(description = "用户名")
     private String username;
 
+    /**
+     * 昵称。
+     */
     @Schema(description = "昵称")
     private String nickname;
 
+    /**
+     * 部门ID。
+     */
     @Schema(description = "部门ID")
     private Long deptId;
 
+    /**
+     * 部门名称。
+     */
     @Schema(description = "部门名称")
     private String deptName;
 
+    /**
+     * 登录IP。
+     */
     @Schema(description = "登录IP")
     private String loginIp;
 
+    /**
+     * 浏览器。
+     */
     @Schema(description = "浏览器")
     private String browser;
 
+    /**
+     * 操作系统。
+     */
     @Schema(description = "操作系统")
     private String os;
 
+    /**
+     * 登录时间。
+     */
     @Schema(description = "登录时间")
     private String loginTime;
 
+    /**
+     * 角色列表。
+     */
     @Schema(description = "角色列表")
     private List<String> roles;
 

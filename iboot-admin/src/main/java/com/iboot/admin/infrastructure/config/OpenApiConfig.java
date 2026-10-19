@@ -30,9 +30,12 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 /**
- * Springdoc OpenAPI 配置
+ * Springdoc OpenAPI 配置。
  *
- * @author iBoot
+ * <p>定义 API 文档的基本信息、服务器地址和全局安全方案，供 Swagger UI 展示。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Configuration
 public class OpenApiConfig {
@@ -40,6 +43,11 @@ public class OpenApiConfig {
     @Value("${server.port:8080}")
     private int serverPort;
 
+    /**
+     * 创建 OpenAPI 文档定义。
+     *
+     * @return OpenAPI 配置，包含标题、版本、联系人和服务器信息
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         Server server = new Server();
@@ -57,6 +65,11 @@ public class OpenApiConfig {
                 .components(new Components());
     }
 
+    /**
+     * 创建包含所有接口的 API 分组。
+     *
+     * @return 分组配置
+     */
     @Bean
     public GroupedOpenApi allApi() {
         return GroupedOpenApi.builder()

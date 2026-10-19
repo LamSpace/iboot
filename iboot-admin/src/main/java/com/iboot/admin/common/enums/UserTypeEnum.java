@@ -17,18 +17,22 @@
 package com.iboot.admin.common.enums;
 
 /**
- * 用户类型枚举
+ * 用户类型枚举。
  *
- * @author iBoot
+ * <p>区分系统内置用户与普通用户。系统内置用户在删除、停用、用户名修改等场景
+ * 受到额外限制，相关规则由用户应用服务统一校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public enum UserTypeEnum {
 
     /**
-     * 系统用户
+     * 系统内置用户，受保护，不允许删除或停用。
      */
     SYSTEM(1, "系统用户"),
     /**
-     * 普通用户
+     * 普通业务用户。
      */
     NORMAL(2, "普通用户");
 

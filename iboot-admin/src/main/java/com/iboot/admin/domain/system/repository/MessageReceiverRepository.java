@@ -26,7 +26,11 @@ import java.util.List;
  * 负责消息接收记录的持久化操作，跟踪消息的发送和阅读状态
  * </p>
  *
- * @author iBoot
+ * <p>查询约定：列表方法没有数据时返回空列表而不是 {@code null}；
+ * 查询不存在的接收记录时返回空结果而不是抛出异常。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface MessageReceiverRepository {
 

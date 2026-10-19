@@ -21,37 +21,67 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
- * 登录日志响应 DTO
+ * 登录日志响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "登录日志响应")
 public class LoginLogResponse {
 
+    /**
+     * 日志ID。
+     */
     @Schema(description = "日志ID")
     private Long id;
 
+    /**
+     * 用户名。
+     */
     @Schema(description = "用户名")
     private String username;
 
+    /**
+     * 登录IP。
+     */
     @Schema(description = "登录IP")
     private String ipAddress;
 
+    /**
+     * 登录地点。
+     */
     @Schema(description = "登录地点")
     private String loginLocation;
 
+    /**
+     * 浏览器。
+     */
     @Schema(description = "浏览器")
     private String browser;
 
+    /**
+     * 操作系统。
+     */
     @Schema(description = "操作系统")
     private String os;
 
+    /**
+     * 登录状态：0-失败，1-成功。
+     */
     @Schema(description = "登录状态：0-失败，1-成功")
     private Integer status;
 
+    /**
+     * 提示消息。
+     */
     @Schema(description = "提示消息")
     private String msg;
 
+    /**
+     * 登录时间。
+     */
     @Schema(description = "登录时间")
     private LocalDateTime loginTime;
 

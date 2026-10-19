@@ -22,9 +22,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 用户响应 DTO
+ * 用户响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "用户响应")
 public class UserResponse {

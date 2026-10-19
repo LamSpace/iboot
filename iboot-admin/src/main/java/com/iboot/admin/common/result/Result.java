@@ -20,45 +20,67 @@ import com.iboot.admin.common.i18n.I18nUtil;
 import java.io.Serializable;
 
 /**
- * 统一响应结果
+ * 统一 API 响应结果。
+ *
+ * <p>接口成功响应统一包装为该结构：{@code code} 为业务状态码（成功固定为 200），
+ * {@code message} 为可直接展示的消息，{@code data} 为业务数据，
+ * {@code timestamp} 为响应生成时间。消息码通过 {@link I18nUtil} 按当前请求语言解析。
  *
  * @author iBoot Team
  * @since 1.0.0
+ * @see PageResult
+ * @see I18nUtil
  */
 public class Result<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 响应码
+     * 业务状态码，成功为 200。
      */
     private Integer code;
 
     /**
-     * 响应消息
+     * 响应消息，已完成国际化解析。
      */
     private String message;
 
     /**
-     * 响应数据
+     * 响应数据；无数据时为 {@code null}。
      */
     private T data;
 
     /**
-     * 时间戳
+     * 响应生成时间的时间戳，单位毫秒。
      */
     private Long timestamp;
 
+    /**
+     * 创建空响应，并记录当前时间戳。
+     */
     public Result() {
         this.timestamp = System.currentTimeMillis();
     }
 
+    /**
+     * 创建包含状态码和消息的响应。
+     *
+     * @param code 业务状态码
+     * @param message 响应消息
+     */
     public Result(Integer code, String message) {
         this.code = code;
         this.message = message;
         this.timestamp = System.currentTimeMillis();
     }
 
+    /**
+     * 创建包含状态码、消息和数据的响应。
+     *
+     * @param code 业务状态码
+     * @param message 响应消息
+     * @param data 响应数据
+     */
     public Result(Integer code, String message, T data) {
         this.code = code;
         this.message = message;
@@ -67,97 +89,89 @@ public class Result<T> implements Serializable {
     }
 
     /**
-     * 成功响应 - 无数据
+     * 创建无数据的成功响应。
      *
-     * @param <T> 泛型类型
-     *
-     * @return 成功响应结果
+     * @param <T> 数据类型
+     * @return 状态码为 200 的成功响应，{@code data} 为 {@code null}
      */
     public static <T> Result<T> success() {
         return new Result<>(200, I18nUtil.getMessage("result.success"));
     }
 
     /**
-     * 成功响应 - 包含数据
+     * 创建包含数据的成功响应。
      *
-     * @param <T>  泛型类型
      * @param data 响应数据
-     *
-     * @return 成功响应结果
+     * @param <T> 数据类型
+     * @return 状态码为 200 的成功响应
      */
     public static <T> Result<T> success(T data) {
         return new Result<>(200, I18nUtil.getMessage("result.success"), data);
     }
 
     /**
-     * 成功响应 - 包含消息码和数据
+     * 按国际化消息码创建成功响应。
      *
-     * @param <T>     泛型类型
-     * @param code    消息码
-     * @param data    响应数据
-     *
-     * @return 成功响应结果
+     * @param code 国际化消息码，用于生成 {@code message}
+     * @param data 响应数据
+     * @param <T> 数据类型
+     * @return 状态码为 200 的成功响应
      */
     public static <T> Result<T> successWithCode(String code, T data) {
         return new Result<>(200, I18nUtil.getMessage(code), data);
     }
 
     /**
-     * 成功响应 - 包含自定义消息和数据
+     * 使用自定义消息创建成功响应。
      *
-     * @param <T>     泛型类型
-     * @param message 响应消息
-     * @param data    响应数据
-     *
-     * @return 成功响应结果
+     * @param message 响应消息，不做国际化解析
+     * @param data 响应数据
+     * @param <T> 数据类型
+     * @return 状态码为 200 的成功响应
      */
     public static <T> Result<T> success(String message, T data) {
         return new Result<>(200, message, data);
     }
 
     /**
-     * 失败响应 - 无数据
+     * 创建无数据的失败响应。
      *
-     * @param <T> 泛型类型
-     *
-     * @return 失败响应结果
+     * @param <T> 数据类型
+     * @return 状态码为 500 的失败响应，{@code data} 为 {@code null}
      */
     public static <T> Result<T> error() {
         return new Result<>(500, I18nUtil.getMessage("result.error"));
     }
 
     /**
-     * 失败响应 - 包含自定义消息
+     * 使用自定义消息创建失败响应。
      *
-     * @param <T>     泛型类型
-     * @param message 错误消息
-     *
-     * @return 失败响应结果
+     * @param message 错误消息，不做国际化解析
+     * @param <T> 数据类型
+     * @return 状态码为 500 的失败响应
      */
     public static <T> Result<T> error(String message) {
         return new Result<>(500, message);
     }
 
     /**
-     * 失败响应 - 包含消息码
+     * 按国际化消息码创建失败响应。
      *
-     * @param <T>     泛型类型
-     * @param code    消息码
-     *
-     * @return 失败响应结果
+     * @param code 国际化消息码，用于生成 {@code message}
+     * @param <T> 数据类型
+     * @return 状态码为 500 的失败响应
      */
     public static <T> Result<T> errorWithCode(String code) {
         return new Result<>(500, I18nUtil.getMessage(code));
     }
 
     /**
-     * 失败响应 - 包含自定义状态码和消息
+     * 使用自定义状态码和消息创建失败响应。
      *
-     * @param <T>     泛型类型
-     * @param code    状态码
-     * @param message 错误消息
-     *
-     * @return 失败响应结果
+     * @param code 业务状态码
+     * @param message 错误消息，不做国际化解析
+     * @param <T> 数据类型
+     * @return 指定状态码的失败响应
      */
     public static <T> Result<T> error(Integer code, String message) {
         return new Result<>(code, message);

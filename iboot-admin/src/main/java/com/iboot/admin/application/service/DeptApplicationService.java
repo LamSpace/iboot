@@ -36,7 +36,8 @@ import java.util.stream.Collectors;
  * 负责部门的创建、更新、删除、查询以及组织架构图生成等业务逻辑处理， 支持部门树形结构构建和部门用户数量统计
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class DeptApplicationService {

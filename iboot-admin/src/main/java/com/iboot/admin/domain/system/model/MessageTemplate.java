@@ -20,14 +20,18 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * 消息模板实体
+ * 消息模板实体。
  *
- * @author iBoot
+ * <p>保存可复用的消息内容模板，模板中使用 {@code ${变量名}} 占位符；
+ * 发送消息前由 {@link #fillContent(Map)} 替换为实际参数。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class MessageTemplate {
 
     /**
-     * 模板ID
+     * 模板 ID
      */
     private Long id;
 
@@ -93,7 +97,7 @@ public class MessageTemplate {
     /**
      * Creates a new {@code MessageTemplate} instance.
      *
-     * @param id              模板ID
+     * @param id              模板 ID
      * @param templateCode    模板编码
      * @param templateName    模板名称
      * @param templateContent 模板内容（支持${变量名}占位符）
@@ -131,31 +135,35 @@ public class MessageTemplate {
     }
 
     /**
-     * 启用模板
+     * 启用消息模板。
      */
     public void enable() {
         this.status = 1;
     }
 
     /**
-     * 停用模板
+     * 停用消息模板。
      */
     public void disable() {
         this.status = 0;
     }
 
     /**
-     * 是否启用
+     * 判断消息模板是否启用。
+     *
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isEnabled() {
         return Integer.valueOf(1).equals(this.status);
     }
 
     /**
-     * 填充模板内容，将 ${key} 替换为 params 中对应的值
+     * 填充模板内容。
+     *
+     * <p>把模板中的 {@code ${key}} 占位符替换为 {@code params} 中对应的值；
+     * 模板内容为空或参数为空时原样返回。
      *
      * @param params 变量参数
-     *
      * @return 填充后的内容
      */
     public String fillContent(Map<String, String> params) {
@@ -170,7 +178,7 @@ public class MessageTemplate {
     }
 
     /**
-     * 模板ID
+     * 模板 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -178,7 +186,7 @@ public class MessageTemplate {
     }
 
     /**
-     * 模板ID
+     * 模板 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -514,7 +522,7 @@ public class MessageTemplate {
         }
 
         /**
-         * 模板ID
+         * 模板 ID
          *
          * @return {@code this}.
          */

@@ -35,7 +35,8 @@ import java.util.List;
  * 提供字典类型和字典数据的增删改查功能，支持字典标签查询
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class DictApplicationService {

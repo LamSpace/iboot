@@ -21,49 +21,91 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
- * 定时任务响应 DTO
+ * 定时任务响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "定时任务响应")
 public class JobResponse {
 
+    /**
+     * 任务ID。
+     */
     @Schema(description = "任务ID")
     private Long id;
 
+    /**
+     * 任务名称。
+     */
     @Schema(description = "任务名称")
     private String jobName;
 
+    /**
+     * 任务组名。
+     */
     @Schema(description = "任务组名")
     private String jobGroup;
 
+    /**
+     * 调用目标字符串。
+     */
     @Schema(description = "调用目标字符串")
     private String invokeTarget;
 
+    /**
+     * cron执行表达式。
+     */
     @Schema(description = "cron执行表达式")
     private String cronExpression;
 
+    /**
+     * 计划执行错误策略(1立即执行 2执行一次 3放弃执行)。
+     */
     @Schema(description = "计划执行错误策略(1立即执行 2执行一次 3放弃执行)")
     private Integer misfirePolicy;
 
+    /**
+     * 是否并发执行(0禁止 1允许)。
+     */
     @Schema(description = "是否并发执行(0禁止 1允许)")
     private Integer concurrent;
 
+    /**
+     * 状态(0暂停 1正常)。
+     */
     @Schema(description = "状态(0暂停 1正常)")
     private Integer status;
 
+    /**
+     * 备注信息。
+     */
     @Schema(description = "备注信息")
     private String remark;
 
+    /**
+     * 创建者。
+     */
     @Schema(description = "创建者")
     private String createBy;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
+    /**
+     * 更新者。
+     */
     @Schema(description = "更新者")
     private String updateBy;
 
+    /**
+     * 更新时间。
+     */
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;
 

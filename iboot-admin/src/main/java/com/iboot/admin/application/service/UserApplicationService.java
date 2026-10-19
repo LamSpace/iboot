@@ -30,12 +30,19 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 用户应用服务
- * <p>
- * 提供用户的增删改查、密码管理、状态管理等业务功能 用户密码使用 PasswordEncoder 进行加密存储
- * </p>
+ * 用户应用服务。
  *
- * @author iBoot
+ * <p>负责用户聚合根的用例编排：创建、查询、更新、删除、状态切换、密码修改与重置。
+ * 本类不直接访问数据库，所有持久化操作通过 {@link UserRepository} 完成；
+ * 用户密码在写入前由 {@link PasswordEncoder} 加密。
+ *
+ * <p>所有写操作都在 {@link Transactional} 事务中执行，可预期的业务错误以
+ * {@link BusinessException} 抛出。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see UserRepository
+ * @see com.iboot.admin.interfaces.controller.UserController
  */
 @Service
 public class UserApplicationService {
@@ -53,16 +60,15 @@ public class UserApplicationService {
     }
 
     /**
-     * 创建新用户
-     * <p>
-     * 校验用户名、邮箱、手机号的唯一性，对密码进行加密处理后保存用户
-     * </p>
+     * 创建新用户。
      *
-     * @param user 用户实体
+     * <p>依次校验用户名、邮箱、手机号的唯一性；若存在同名逻辑删除记录，先物理清理再创建，
+     * 以避免逻辑删除与唯一索引冲突。密码在持久化前使用 {@link PasswordEncoder} 加密；
+     * 任一唯一性校验失败时事务回滚。
      *
-     * @return 创建后的用户实体
-     *
-     * @throws BusinessException 当用户名、邮箱或手机号已存在时抛出
+     * @param user 待创建的用户，用户名和密码不能为 {@code null}
+     * @return 已持久化的用户，包含数据库生成的主键
+     * @throws BusinessException 用户名、邮箱或手机号已存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public User createUser(User user) {
@@ -87,16 +93,14 @@ public class UserApplicationService {
     }
 
     /**
-     * 更新用户信息
-     * <p>
-     * 检查用户是否存在，校验邮箱、手机号的唯一性。 系统用户禁止修改用户名和用户类型。
-     * </p>
+     * 更新用户信息。
      *
-     * @param user 用户实体
+     * <p>先确认用户存在；邮箱或手机号发生变化时重新校验唯一性。
+     * 系统内置用户的用户名和用户类型不允许修改，这两个字段会被恢复为数据库中的原值。
      *
-     * @return 是否更新成功
-     *
-     * @throws BusinessException 当用户不存在或邮箱、手机号重复时抛出
+     * @param user 待更新的用户，{@code id} 不能为 {@code null}
+     * @return {@code true} 表示更新成功；{@code false} 表示没有记录被更新
+     * @throws BusinessException 用户不存在，或新邮箱、手机号已被占用时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateUser(User user) {
@@ -122,16 +126,13 @@ public class UserApplicationService {
     }
 
     /**
-     * 删除用户
-     * <p>
-     * 检查用户是否存在，系统内置用户不允许删除
-     * </p>
+     * 删除用户。
+     *
+     * <p>先确认用户存在；系统内置用户不允许删除。删除方式由仓储层决定。
      *
      * @param id 用户 ID
-     *
-     * @return 是否删除成功
-     *
-     * @throws BusinessException 当用户不存在或是系统内置用户时抛出
+     * @return {@code true} 表示删除成功；{@code false} 表示没有记录被删除
+     * @throws BusinessException 用户不存在或是系统内置用户时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteUser(Long id) {
@@ -143,54 +144,49 @@ public class UserApplicationService {
     }
 
     /**
-     * 根据 ID 查询用户
+     * 根据 ID 查询用户。
      *
      * @param id 用户 ID
-     *
-     * @return 用户实体
-     *
-     * @throws BusinessException 当用户不存在时抛出
+     * @return 对应的用户实体，不会返回 {@code null}
+     * @throws BusinessException 用户不存在时抛出
      */
     public User getUserById(Long id) {
         return userRepository.findById(id).orElseThrow(() -> new BusinessException("用户不存在"));
     }
 
     /**
-     * 根据用户名查询用户
+     * 根据用户名查询用户。
      *
      * @param username 用户名
-     *
-     * @return 用户实体
-     *
-     * @throws BusinessException 当用户不存在时抛出
+     * @return 对应的用户实体，不会返回 {@code null}
+     * @throws BusinessException 用户不存在时抛出
      */
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username).orElseThrow(() -> new BusinessException("用户不存在"));
     }
 
     /**
-     * 查询所有用户
+     * 查询所有未删除的用户。
      *
-     * @return 用户列表
+     * @return 用户列表；没有数据时返回空列表
      */
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
     /**
-     * 分页查询用户
+     * 分页查询用户。
      *
-     * @param pageNum  页码，从 1 开始
+     * @param pageNum 页码，从 1 开始
      * @param pageSize 每页数量
-     *
-     * @return 用户列表
+     * @return 当前页的用户列表
      */
     public List<User> getUserPage(int pageNum, int pageSize) {
         return userRepository.findPage(pageNum, pageSize);
     }
 
     /**
-     * 统计用户总数
+     * 统计未删除用户总数。
      *
      * @return 用户总数
      */
@@ -199,71 +195,72 @@ public class UserApplicationService {
     }
 
     /**
-     * 按条件分页查询用户
+     * 按条件分页查询用户。
      *
-     * @param username 用户名（可选）
-     * @param phone    手机号（可选）
-     * @param status   状态（可选）
-     * @param pageNum  页码，从 1 开始
+     * <p>用户名和手机号使用模糊匹配；空字符串与 {@code null} 等价，表示不参与筛选。
+     *
+     * @param username 用户名关键字，可为 {@code null}
+     * @param phone 手机号关键字，可为 {@code null}
+     * @param status 状态：0-停用，1-启用；为 {@code null} 时不筛选
+     * @param pageNum 页码，从 1 开始
      * @param pageSize 每页数量
-     *
-     * @return 用户列表
+     * @return 当前页的用户列表
      */
     public List<User> getUserPageByCondition(String username, String phone, Integer status, int pageNum, int pageSize) {
         return userRepository.findPageByCondition(username, phone, status, pageNum, pageSize);
     }
 
     /**
-     * 按条件查询所有用户（不分页，用于导出）
+     * 按条件查询所有用户，不分页，用于导出。
      *
-     * @param username 用户名（可选）
-     * @param phone    手机号（可选）
-     * @param status   状态（可选）
+     * <p>筛选规则与 {@link #getUserPageByCondition(String, String, Integer, int, int)} 一致。
      *
-     * @return 用户列表
+     * @param username 用户名关键字，可为 {@code null}
+     * @param phone 手机号关键字，可为 {@code null}
+     * @param status 状态：0-停用，1-启用；为 {@code null} 时不筛选
+     * @return 符合条件的用户列表；没有数据时返回空列表
      */
     public List<User> getAllUsersByCondition(String username, String phone, Integer status) {
         return userRepository.findAllByCondition(username, phone, status);
     }
 
     /**
-     * 按条件统计用户总数
+     * 按条件统计用户总数。
      *
-     * @param username 用户名（可选）
-     * @param phone    手机号（可选）
-     * @param status   状态（可选）
+     * <p>筛选规则与 {@link #getUserPageByCondition(String, String, Integer, int, int)} 一致。
      *
-     * @return 用户总数
+     * @param username 用户名关键字，可为 {@code null}
+     * @param phone 手机号关键字，可为 {@code null}
+     * @param status 状态：0-停用，1-启用；为 {@code null} 时不筛选
+     * @return 符合条件的用户总数
      */
     public long countUsersByCondition(String username, String phone, Integer status) {
         return userRepository.countByCondition(username, phone, status);
     }
 
     /**
-     * 按创建时间统计用户数
+     * 按创建时间统计用户数。
+     *
+     * <p>统计区间为闭区间，包含 {@code startTime} 和 {@code endTime} 两个边界值。
      *
      * @param startTime 开始时间
-     * @param endTime   结束时间
-     *
-     * @return 用户数
+     * @param endTime 结束时间
+     * @return 创建时间落在区间内的用户数
      */
     public long countUsersByCreateTime(LocalDateTime startTime, LocalDateTime endTime) {
         return userRepository.countByCreateTime(startTime, endTime);
     }
 
     /**
-     * 修改用户密码
-     * <p>
-     * 校验旧密码是否正确，使用 PasswordEncoder 加密新密码后保存
-     * </p>
+     * 修改用户密码。
      *
-     * @param userId      用户 ID
-     * @param oldPassword 旧密码
-     * @param newPassword 新密码
+     * <p>先校验旧密码；校验通过后使用 {@link PasswordEncoder} 加密新密码并持久化。
      *
-     * @return 是否修改成功
-     *
-     * @throws BusinessException 当用户不存在或旧密码不正确时抛出
+     * @param userId 用户 ID
+     * @param oldPassword 旧密码明文
+     * @param newPassword 新密码明文
+     * @return {@code true} 表示修改成功
+     * @throws BusinessException 用户不存在或旧密码不正确时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean changePassword(Long userId, String oldPassword, String newPassword) {
@@ -278,17 +275,14 @@ public class UserApplicationService {
     }
 
     /**
-     * 重置用户密码
-     * <p>
-     * 管理员重置用户密码，无需验证旧密码
-     * </p>
+     * 重置用户密码。
      *
-     * @param userId      用户 ID
-     * @param newPassword 新密码
+     * <p>管理员操作，不校验旧密码；新密码加密后持久化。
      *
-     * @return 是否重置成功
-     *
-     * @throws BusinessException 当用户不存在时抛出
+     * @param userId 用户 ID
+     * @param newPassword 新密码明文
+     * @return {@code true} 表示重置成功
+     * @throws BusinessException 用户不存在时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean resetPassword(Long userId, String newPassword) {
@@ -298,17 +292,15 @@ public class UserApplicationService {
     }
 
     /**
-     * 启用或停用用户
-     * <p>
-     * 系统内置用户不允许停用
-     * </p>
+     * 启用或停用用户。
+     *
+     * <p>系统内置用户不允许停用；状态变更通过 {@link User#enable()} 或
+     * {@link User#disable()} 完成。
      *
      * @param userId 用户 ID
-     * @param status 状态：1-启用，0-停用
-     *
-     * @return 是否修改成功
-     *
-     * @throws BusinessException 当用户不存在或是系统内置用户时抛出
+     * @param status 目标状态：1-启用，0-停用
+     * @return {@code true} 表示修改成功
+     * @throws BusinessException 用户不存在，或尝试停用系统内置用户时抛出
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean changeStatus(Long userId, Integer status) {

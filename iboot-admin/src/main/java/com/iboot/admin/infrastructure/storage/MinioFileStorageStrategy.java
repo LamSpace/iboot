@@ -31,9 +31,13 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 /**
- * MinIO对象存储策略实现 将文件存储到MinIO对象存储服务
+ * MinIO 对象存储策略。
  *
- * @author iBoot
+ * <p>把文件保存到 MinIO，并返回预签名访问 URL；桶不存在时按配置自动创建。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.domain.system.service.FileStorageStrategy
  */
 public class MinioFileStorageStrategy implements FileStorageStrategy {
 
@@ -49,6 +53,9 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     }
 
     @PostConstruct
+    /**
+     * 初始化 MinIO 客户端并确保桶存在。
+     */
     public void init() {
         try {
             this.minioClient = MinioClient.builder()
@@ -81,6 +88,14 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 保存文件到 MinIO。
+     *
+     * @param file 上传的文件
+     * @param relativePath 对象键的相对路径
+     * @return 保存后的相对路径
+     * @throws IOException 上传失败时抛出
+     */
     public String save(MultipartFile file, String relativePath) throws IOException {
         try {
             String bucketName = minioProperties.getBucketName();
@@ -133,6 +148,12 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 获取文件访问 URL。
+     *
+     * @param filePath 对象键
+     * @return 预签名访问 URL
+     */
     public String getFileUrl(String filePath) {
         try {
             int expireSeconds = minioProperties.getUrlExpireSeconds();
@@ -151,6 +172,13 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 获取文件流和元数据。
+     *
+     * @param filePath 对象键
+     * @return 存储对象
+     * @throws IOException 读取失败时抛出
+     */
     public StorageObject getFileStream(String filePath) throws IOException {
         try {
             String bucketName = minioProperties.getBucketName();
@@ -178,6 +206,12 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 删除对象。
+     *
+     * @param filePath 对象键
+     * @return 删除成功返回 {@code true}
+     */
     public boolean delete(String filePath) {
         try {
             minioClient.removeObject(
@@ -191,6 +225,12 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 判断对象是否存在。
+     *
+     * @param filePath 对象键
+     * @return 存在返回 {@code true}
+     */
     public boolean exists(String filePath) {
         try {
             minioClient
@@ -209,6 +249,11 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 获取存储类型标识。
+     *
+     * @return 固定返回 {@code minio}
+     */
     public String getStorageType() {
         return "minio";
     }

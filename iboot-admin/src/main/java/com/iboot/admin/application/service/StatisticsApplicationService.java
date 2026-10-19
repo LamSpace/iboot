@@ -40,7 +40,8 @@ import java.util.stream.Collectors;
  * 提供系统数据统计分析功能，包括用户统计、日志统计、系统概览、 活跃度分析、功能使用统计和时段分布统计等
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class StatisticsApplicationService {

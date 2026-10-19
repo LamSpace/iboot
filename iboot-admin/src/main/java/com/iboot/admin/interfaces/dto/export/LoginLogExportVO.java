@@ -21,36 +21,66 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 登录日志导出VO
+ * 登录日志导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class LoginLogExportVO {
 
+    /**
+     * 导出列：日志ID。
+     */
     @ExcelColumn(name = "日志ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：用户名。
+     */
     @ExcelColumn(name = "用户名", order = 2, width = 15)
     private String username;
 
+    /**
+     * 导出列：登录IP。
+     */
     @ExcelColumn(name = "登录IP", order = 3, width = 18)
     private String ipAddress;
 
+    /**
+     * 导出列：登录地点。
+     */
     @ExcelColumn(name = "登录地点", order = 4, width = 20)
     private String loginLocation;
 
+    /**
+     * 导出列：浏览器。
+     */
     @ExcelColumn(name = "浏览器", order = 5, width = 20)
     private String browser;
 
+    /**
+     * 导出列：操作系统。
+     */
     @ExcelColumn(name = "操作系统", order = 6, width = 20)
     private String os;
 
+    /**
+     * 导出列：登录状态；字典类型 {@code sys_common_status}。
+     */
     @ExcelColumn(name = "登录状态", order = 7, width = 10, dictType = "sys_common_status")
     private Integer status;
 
+    /**
+     * 导出列：提示消息。
+     */
     @ExcelColumn(name = "提示消息", order = 8, width = 30)
     private String msg;
 
+    /**
+     * 导出列：登录时间。
+     */
     @ExcelColumn(name = "登录时间", order = 9, width = 20)
     private LocalDateTime loginTime;
 

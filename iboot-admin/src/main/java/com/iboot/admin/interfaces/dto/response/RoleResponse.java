@@ -22,40 +22,73 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 角色响应 DTO
+ * 角色响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "角色响应")
 public class RoleResponse {
 
+    /**
+     * 角色ID。
+     */
     @Schema(description = "角色ID")
     private Long id;
 
+    /**
+     * 角色编码。
+     */
     @Schema(description = "角色编码")
     private String roleCode;
 
+    /**
+     * 角色名称。
+     */
     @Schema(description = "角色名称")
     private String roleName;
 
+    /**
+     * 显示顺序。
+     */
     @Schema(description = "显示顺序")
     private Integer orderNum;
 
+    /**
+     * 数据权限范围：1-全部，2-自定义，3-本部门，4-本部门及以下，5-仅本人。
+     */
     @Schema(description = "数据权限范围：1-全部，2-自定义，3-本部门，4-本部门及以下，5-仅本人")
     private Integer dataScope;
 
+    /**
+     * 状态：0-停用，1-正常。
+     */
     @Schema(description = "状态：0-停用，1-正常")
     private Integer status;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     private String remark;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
+    /**
+     * 菜单ID列表。
+     */
     @Schema(description = "菜单ID列表")
     private List<Long> menuIds;
 
+    /**
+     * 部门ID列表。
+     */
     @Schema(description = "部门ID列表")
     private List<Long> deptIds;
 

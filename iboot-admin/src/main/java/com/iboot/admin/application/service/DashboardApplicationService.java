@@ -34,7 +34,8 @@ import java.util.stream.Collectors;
  * 提供 Dashboard 首页数据汇总功能，包括各模块统计数量和最新日志记录
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class DashboardApplicationService {

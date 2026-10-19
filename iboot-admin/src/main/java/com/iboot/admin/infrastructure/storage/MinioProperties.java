@@ -22,9 +22,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * MinIO配置属性 从sys_config表动态读取MinIO相关配置
+ * MinIO 配置属性。
  *
- * @author iBoot
+ * <p>从 {@code sys_config} 动态读取 MinIO 端点、凭证、桶名等配置。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 public class MinioProperties {

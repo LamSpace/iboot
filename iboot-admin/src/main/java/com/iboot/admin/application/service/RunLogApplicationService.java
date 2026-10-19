@@ -43,7 +43,8 @@ import java.util.Optional;
  * 封装 Elasticsearch 查询，提供应用运行日志的搜索和查看功能 支持按日志级别、关键字、Logger 名称、线程名和时间范围进行过滤
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class RunLogApplicationService {

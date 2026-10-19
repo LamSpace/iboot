@@ -12,7 +12,12 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 /**
- * 监控过滤器，用于记录请求指标
+ * 监控过滤器。
+ *
+ * <p>记录请求耗时和结果指标，作为拦截器之外的补充埋点。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 @Order(1)
@@ -22,6 +27,15 @@ public class MonitorFilter implements Filter {
     private MonitorUtils monitorUtils;
 
     @Override
+    /**
+     * 记录请求指标并继续过滤器链。
+     *
+     * @param request Servlet 请求
+     * @param response Servlet 响应
+     * @param chain 过滤器链
+     * @throws IOException 读取请求或写入响应失败时抛出
+     * @throws ServletException 过滤器处理失败时抛出
+     */
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 

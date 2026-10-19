@@ -28,7 +28,11 @@ import java.util.Optional;
  * 负责用户登录日志的持久化操作，支持登录记录的查询、统计和清理
  * </p>
  *
- * @author iBoot
+ * <p>查询约定：列表方法没有数据时返回空列表而不是 {@code null}；分页方法的页码从 1 开始；
+ * 按时间范围查询时区间边界包含在结果内。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface LoginLogRepository {
 

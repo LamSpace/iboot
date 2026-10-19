@@ -44,9 +44,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 日志管理控制器
+ * 日志管理控制器。
  *
- * @author iBoot
+ * <p>提供登录日志、操作日志和运行日志的查询、详情、清理与导出接口，分别对应
+ * {@code loginlog:*}、{@code operatelog:*}、{@code auditlog:*} 权限。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see LoginLogApplicationService
+ * @see OperateLogApplicationService
+ * @see RunLogApplicationService
  */
 @Tag(name = "日志管理", description = "日志管理相关接口")
 @RestController
@@ -69,6 +76,18 @@ public class LogController {
     }
 
     // ==================== 登录日志接口 ====================
+    /**
+     * 分页查询登录日志。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param username 用户名关键字，可为 {@code null}
+     * @param ipAddress 登录 IP 关键字，可为 {@code null}
+     * @param status 状态：0-失败，1-成功；可为 {@code null}
+     * @param beginTime 开始时间，可为 {@code null}
+     * @param endTime 结束时间，可为 {@code null}
+     * @return 登录日志分页结果
+     */
     @Operation(summary = "查询登录日志列表")
     @GetMapping(version = "1", value = "/login/list")
     @PreAuthorize("hasAuthority('loginlog:list')")
@@ -101,6 +120,11 @@ public class LogController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 清空登录日志。
+     *
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "清空登录日志")
     @DeleteMapping(version = "1", value = "/login/clean")
     @PreAuthorize("hasAuthority('loginlog:remove')")
@@ -110,6 +134,17 @@ public class LogController {
         return Result.success();
     }
 
+    /**
+     * 导出登录日志。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param username 用户名关键字，可为 {@code null}
+     * @param ipAddress 登录 IP 关键字，可为 {@code null}
+     * @param status 状态：0-失败，1-成功；可为 {@code null}
+     * @param beginTime 开始时间，可为 {@code null}
+     * @param endTime 结束时间，可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出登录日志")
     @GetMapping(version = "1", value = "/login/export")
     @PreAuthorize("hasAuthority('loginlog:export')")
@@ -131,6 +166,19 @@ public class LogController {
     }
 
     // ==================== 操作日志接口 ====================
+    /**
+     * 分页查询操作日志。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param title 模块标题关键字，可为 {@code null}
+     * @param operatorName 操作人关键字，可为 {@code null}
+     * @param businessType 业务类型，可为 {@code null}
+     * @param status 状态：0-失败，1-成功；可为 {@code null}
+     * @param beginTime 开始时间，可为 {@code null}
+     * @param endTime 结束时间，可为 {@code null}
+     * @return 操作日志分页结果
+     */
     @Operation(summary = "查询操作日志列表")
     @GetMapping(version = "1", value = "/operate/list")
     @PreAuthorize("hasAuthority('operatelog:list')")
@@ -165,6 +213,13 @@ public class LogController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 查询操作日志详情。
+     *
+     * @param id 日志 ID
+     * @return 操作日志详情
+     * @throws RuntimeException 日志不存在时抛出
+     */
     @Operation(summary = "查询操作日志详情")
     @GetMapping(version = "1", value = "/operate/{id}")
     @PreAuthorize("hasAuthority('operatelog:query')")
@@ -174,6 +229,11 @@ public class LogController {
         return Result.success(convertOperateLogToResponse(log));
     }
 
+    /**
+     * 清空操作日志。
+     *
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "清空操作日志")
     @DeleteMapping(version = "1", value = "/operate/clean")
     @PreAuthorize("hasAuthority('operatelog:remove')")
@@ -183,6 +243,18 @@ public class LogController {
         return Result.success();
     }
 
+    /**
+     * 导出操作日志。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param title 模块标题关键字，可为 {@code null}
+     * @param operatorName 操作人关键字，可为 {@code null}
+     * @param businessType 业务类型，可为 {@code null}
+     * @param status 状态：0-失败，1-成功；可为 {@code null}
+     * @param beginTime 开始时间，可为 {@code null}
+     * @param endTime 结束时间，可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出操作日志")
     @GetMapping(version = "1", value = "/operate/export")
     @PreAuthorize("hasAuthority('operatelog:export')")
@@ -205,6 +277,19 @@ public class LogController {
     }
 
     // ==================== 运行日志接口 ====================
+    /**
+     * 分页查询运行日志。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param level 日志级别，可为 {@code null}
+     * @param keyword 关键字，可为 {@code null}
+     * @param logger Logger 名称，可为 {@code null}
+     * @param thread 线程名，可为 {@code null}
+     * @param beginTime 开始时间，可为 {@code null}
+     * @param endTime 结束时间，可为 {@code null}
+     * @return 运行日志分页结果
+     */
     @Operation(summary = "查询运行日志列表")
     @GetMapping(version = "1", value = "/run/list")
     @PreAuthorize("hasAuthority('auditlog:list')")
@@ -227,6 +312,13 @@ public class LogController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 查询运行日志详情。
+     *
+     * @param id 日志 ID
+     * @return 运行日志详情
+     * @throws RuntimeException 日志不存在时抛出
+     */
     @Operation(summary = "查询运行日志详情")
     @GetMapping(version = "1", value = "/run/{id}")
     @PreAuthorize("hasAuthority('auditlog:query')")

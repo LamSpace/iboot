@@ -21,11 +21,15 @@ import com.iboot.admin.common.enums.BusinessTypeEnum;
 import java.lang.annotation.*;
 
 /**
- * 操作日志注解
- * <p>
- * 用于标记需要进行操作日志记录的方法，自动记录请求参数、响应数据、执行耗时等信息
+ * 操作日志标记。
  *
- * @author iBoot
+ * <p>标记在 Controller 方法上，由 {@code LogAspect} 记录模块名称、业务类型、
+ * 请求参数、响应数据、执行耗时和操作人等信息。敏感字段应在请求 DTO
+ * 或切面配置中排除。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.infrastructure.aspect.LogAspect
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
@@ -33,22 +37,22 @@ import java.lang.annotation.*;
 public @interface Log {
 
     /**
-     * 模块名称
+     * 日志中记录的模块名称。
      */
     String title() default "";
 
     /**
-     * 业务操作类型
+     * 业务操作类型，默认 {@link BusinessTypeEnum#OTHER}。
      */
     BusinessTypeEnum businessType() default BusinessTypeEnum.OTHER;
 
     /**
-     * 是否保存请求参数
+     * 是否记录请求参数。
      */
     boolean isSaveRequestData() default true;
 
     /**
-     * 是否保存响应数据
+     * 是否记录响应数据。
      */
     boolean isSaveResponseData() default true;
 

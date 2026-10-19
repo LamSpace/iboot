@@ -19,28 +19,49 @@ package com.iboot.admin.interfaces.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 运行日志响应 DTO
+ * 运行日志响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "运行日志响应")
 public class RunLogResponse {
 
+    /**
+     * ES 文档ID。
+     */
     @Schema(description = "ES 文档ID")
     private String id;
 
+    /**
+     * 日志时间。
+     */
     @Schema(description = "日志时间")
     private String timestamp;
 
+    /**
+     * 日志级别。
+     */
     @Schema(description = "日志级别")
     private String level;
 
+    /**
+     * 线程名。
+     */
     @Schema(description = "线程名")
     private String thread;
 
+    /**
+     * Logger 类名。
+     */
     @Schema(description = "Logger 类名")
     private String logger;
 
+    /**
+     * 日志消息。
+     */
     @Schema(description = "日志消息")
     private String message;
 

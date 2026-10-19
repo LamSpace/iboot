@@ -17,7 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 所有指标均带有 application=iboot-admin 标签，便于 Grafana 仪表板进行数据展示。
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class BusinessMetricsService {

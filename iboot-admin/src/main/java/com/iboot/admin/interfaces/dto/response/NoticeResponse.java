@@ -21,37 +21,67 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
- * 公告响应 DTO（管理端）
+ * 公告响应 DTO（管理端）。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "公告响应")
 public class NoticeResponse {
 
+    /**
+     * 公告ID。
+     */
     @Schema(description = "公告ID")
     private Long id;
 
+    /**
+     * 公告标题。
+     */
     @Schema(description = "公告标题")
     private String noticeTitle;
 
+    /**
+     * 公告类型。
+     */
     @Schema(description = "公告类型")
     private String noticeType;
 
+    /**
+     * 公告内容。
+     */
     @Schema(description = "公告内容")
     private String noticeContent;
 
+    /**
+     * 状态。
+     */
     @Schema(description = "状态")
     private String status;
 
+    /**
+     * 是否置顶。
+     */
     @Schema(description = "是否置顶")
     private Integer isTop;
 
+    /**
+     * 创建人。
+     */
     @Schema(description = "创建人")
     private String createBy;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     private String remark;
 

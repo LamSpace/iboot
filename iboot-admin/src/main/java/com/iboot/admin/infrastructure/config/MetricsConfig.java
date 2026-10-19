@@ -8,6 +8,15 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.concurrent.Executor;
 
+/**
+ * Micrometer 指标配置。
+ *
+ * <p>为所有指标添加公共标签，启用 {@code @Timed} 支持，并注册虚拟线程执行器的
+ * 指标绑定器。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ */
 @Configuration
 public class MetricsConfig {
 

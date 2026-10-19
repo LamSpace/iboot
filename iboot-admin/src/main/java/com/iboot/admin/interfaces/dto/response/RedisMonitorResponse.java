@@ -19,9 +19,13 @@ package com.iboot.admin.interfaces.dto.response;
 import java.util.List;
 
 /**
- * Redis 缓存监控信息响应
+ * Redis 缓存监控信息响应。
  *
- * @author iBoot
+ * <p>按服务器、内存、统计、键空间和命令统计分组，返回 Redis 运行状态，
+ * 并承载缓存键的查询结果。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class RedisMonitorResponse {
 
@@ -223,6 +227,12 @@ public class RedisMonitorResponse {
     }
 
     // ======================== 内部 DTO ========================
+    /**
+     * Redis 服务器信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class ServerInfo {
 
         /**
@@ -640,6 +650,12 @@ public class RedisMonitorResponse {
 
     }
 
+    /**
+     * Redis 内存使用信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class MemoryInfo {
 
         /**
@@ -1147,6 +1163,12 @@ public class RedisMonitorResponse {
 
     }
 
+    /**
+     * Redis 命令与连接统计信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class StatsInfo {
 
         /**
@@ -1650,6 +1672,12 @@ public class RedisMonitorResponse {
 
     }
 
+    /**
+     * Redis 键空间信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class KeyspaceInfo {
 
         /**
@@ -1888,6 +1916,12 @@ public class RedisMonitorResponse {
 
     }
 
+    /**
+     * Redis 单条命令统计。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class CommandStat {
 
         /**
@@ -2129,6 +2163,12 @@ public class RedisMonitorResponse {
 
     }
 
+    /**
+     * 缓存键摘要信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class CacheKeyInfo {
 
         /**
@@ -2374,6 +2414,12 @@ public class RedisMonitorResponse {
 
     }
 
+    /**
+     * 缓存键详情。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class CacheKeyDetail {
 
         /**

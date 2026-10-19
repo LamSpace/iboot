@@ -21,27 +21,42 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 用户注册请求 DTO
+ * 用户注册请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "用户注册请求")
 public class RegisterRequest {
 
+    /**
+     * 用户名。
+     */
     @Schema(description = "用户名")
     @NotBlank(message = "用户名不能为空")
     @Size(min = 2, max = 30, message = "用户名长度必须在2-30之间")
     private String username;
 
+    /**
+     * 密码。
+     */
     @Schema(description = "密码")
     @NotBlank(message = "密码不能为空")
     @Size(min = 6, max = 20, message = "密码长度必须在6-20之间")
     private String password;
 
+    /**
+     * 确认密码。
+     */
     @Schema(description = "确认密码")
     @NotBlank(message = "确认密码不能为空")
     private String confirmPassword;
 
+    /**
+     * 昵称。
+     */
     @Schema(description = "昵称")
     @Size(max = 30, message = "昵称长度不能超过30")
     private String nickname;

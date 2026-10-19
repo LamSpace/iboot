@@ -42,9 +42,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * JWT 认证过滤器
+ * JWT 认证过滤器。
  *
- * @author iBoot
+ * <p>从请求头 {@code Authorization} 解析 Bearer 令牌，校验通过后将认证信息写入
+ * 安全上下文；白名单路径直接放行，未携带或校验失败时交给后续过滤器处理。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -69,6 +73,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    /**
+     * 解析 JWT 并建立安全上下文。
+     *
+     * <p>白名单路径直接放行；请求未携带有效令牌时也继续过滤器链，
+     * 由后续的安全组件决定是否拒绝。
+     *
+     * @param request HTTP 请求
+     * @param response HTTP 响应
+     * @param chain 过滤器链
+     * @throws ServletException 过滤器处理失败时抛出
+     * @throws IOException 读取请求或写入响应失败时抛出
+     */
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         // 检查是否为白名单路径（使用统一配置的匹配方法）

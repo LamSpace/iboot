@@ -41,9 +41,14 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * 操作日志切面
+ * 操作日志切面。
  *
- * @author iBoot
+ * <p>拦截 {@code @Log} 标记的方法，记录模块、业务类型、请求参数、响应数据、
+ * 耗时和操作人等信息。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.common.annotation.Log
  */
 @Aspect
 @Component

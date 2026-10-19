@@ -19,9 +19,14 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 字典类型实体
+ * 字典类型实体。
  *
- * @author iBoot
+ * <p>表示一类字典的定义，{@code dictType} 是业务代码引用的唯一标识，
+ * 其下包含若干 {@link DictData}。字典类型停用后，业务侧不应继续使用。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see DictData
  */
 public class DictType {
 
@@ -115,21 +120,23 @@ public class DictType {
     }
 
     /**
-     * 启用
+     * 启用字典类型。
      */
     public void enable() {
         this.status = 1;
     }
 
     /**
-     * 停用
+     * 停用字典类型。
      */
     public void disable() {
         this.status = 0;
     }
 
     /**
-     * 检查是否启用
+     * 判断字典类型是否启用。
+     *
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isEnabled() {
         return this.status != null && this.status == 1;

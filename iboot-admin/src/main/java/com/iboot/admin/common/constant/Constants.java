@@ -17,7 +17,10 @@
 package com.iboot.admin.common.constant;
 
 /**
- * 常量类
+ * 通用常量。
+ *
+ * <p>集中定义跨模块复用的字符集、响应码、Redis Key 前缀、安全上下文键和内置账号标识。
+ * Redis Key 前缀以冒号结尾，拼接业务标识时直接追加。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -70,37 +73,37 @@ public class Constants {
     public static final String TOKEN_PREFIX = "Bearer ";
 
     /**
-     * 令牌
+     * 安全上下文中的令牌键。
      */
     public static final String TOKEN = "token";
 
     /**
-     * 用户ID
+     * 安全上下文中的用户 ID 键。
      */
     public static final String USER_ID = "userId";
 
     /**
-     * 用户名
+     * 安全上下文中的用户名键。
      */
     public static final String USER_NAME = "userName";
 
     /**
-     * 用户头像
+     * 安全上下文中的头像键。
      */
     public static final String AVATAR = "avatar";
 
     /**
-     * 权限
+     * 安全上下文中的权限集合键。
      */
     public static final String PERMISSIONS = "permissions";
 
     /**
-     * 角色
+     * 安全上下文中的角色集合键。
      */
     public static final String ROLES = "roles";
 
     /**
-     * 系统用户类型
+     * 系统内置用户的类型编码。
      */
     public static final Integer USER_TYPE_SYSTEM = 1;
 
@@ -110,7 +113,7 @@ public class Constants {
     public static final String ROLE_ADMIN_CODE = "ROLE_ADMIN";
 
     /**
-     * 超级管理员用户名
+     * 内置超级管理员用户名。
      */
     public static final String ADMIN_USERNAME = "admin";
 
@@ -125,7 +128,7 @@ public class Constants {
     public static final String ONLINE_TOKEN_KEY = "online_token:";
 
     /**
-     * 部门 ID
+     * 安全上下文中的部门 ID 键。
      */
     public static final String DEPT_ID = "deptId";
 

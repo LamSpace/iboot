@@ -21,45 +21,75 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 定时任务请求 DTO
+ * 定时任务请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "定时任务请求")
 public class JobRequest {
 
+    /**
+     * 任务ID。
+     */
     @Schema(description = "任务ID")
     private Long id;
 
+    /**
+     * 任务名称。
+     */
     @Schema(description = "任务名称")
     @NotBlank(message = "任务名称不能为空")
     @Size(max = 64, message = "任务名称长度不能超过64")
     private String jobName;
 
+    /**
+     * 任务组名。
+     */
     @Schema(description = "任务组名")
     @NotBlank(message = "任务组名不能为空")
     @Size(max = 64, message = "任务组名长度不能超过64")
     private String jobGroup;
 
+    /**
+     * 调用目标字符串(beanName.methodName)。
+     */
     @Schema(description = "调用目标字符串(beanName.methodName)")
     @NotBlank(message = "调用目标不能为空")
     @Size(max = 500, message = "调用目标长度不能超过500")
     private String invokeTarget;
 
+    /**
+     * cron执行表达式。
+     */
     @Schema(description = "cron执行表达式")
     @NotBlank(message = "cron表达式不能为空")
     @Size(max = 255, message = "cron表达式长度不能超过255")
     private String cronExpression;
 
+    /**
+     * 计划执行错误策略(1立即执行 2执行一次 3放弃执行)。
+     */
     @Schema(description = "计划执行错误策略(1立即执行 2执行一次 3放弃执行)")
     private Integer misfirePolicy = 3;
 
+    /**
+     * 是否并发执行(0禁止 1允许)。
+     */
     @Schema(description = "是否并发执行(0禁止 1允许)")
     private Integer concurrent = 0;
 
+    /**
+     * 状态(0暂停 1正常)。
+     */
     @Schema(description = "状态(0暂停 1正常)")
     private Integer status = 1;
 
+    /**
+     * 备注信息。
+     */
     @Schema(description = "备注信息")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;

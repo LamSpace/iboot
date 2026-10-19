@@ -22,17 +22,26 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**
- * 消息发送请求 DTO
+ * 消息发送请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "消息发送请求")
 public class MessageSendRequest {
 
+    /**
+     * 消息ID。
+     */
     @Schema(description = "消息ID")
     @NotNull(message = "消息ID不能为空")
     private Long messageId;
 
+    /**
+     * 接收用户ID列表（接收类型为指定用户时必填）。
+     */
     @Schema(description = "接收用户ID列表（接收类型为指定用户时必填）")
     private List<Long> userIds;
 

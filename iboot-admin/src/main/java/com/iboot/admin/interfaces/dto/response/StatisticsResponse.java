@@ -21,9 +21,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * 统计分析响应 DTO
+ * 统计分析响应 DTO。
  *
- * @author iBoot
+ * <p>包含数据统计报表和使用分析两组结果，内部按用户、日志、系统概览、活跃度、
+ * 功能使用和时段分布等维度组织。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class StatisticsResponse {
 
@@ -33,12 +37,21 @@ public class StatisticsResponse {
     @Schema(description = "数据统计报表响应")
     public static class ReportResponse {
 
+        /**
+         * 用户统计。
+         */
         @Schema(description = "用户统计")
         private UserStats userStats;
 
+        /**
+         * 日志统计。
+         */
         @Schema(description = "日志统计")
         private LogStats logStats;
 
+        /**
+         * 系统概览。
+         */
         @Schema(description = "系统概览")
         private OverviewStats overviewStats;
 
@@ -206,15 +219,27 @@ public class StatisticsResponse {
     @Schema(description = "用户统计")
     public static class UserStats {
 
+        /**
+         * 用户总数。
+         */
         @Schema(description = "用户总数")
         private long totalUsers;
 
+        /**
+         * 今日新增用户。
+         */
         @Schema(description = "今日新增用户")
         private long newUsersToday;
 
+        /**
+         * 今日活跃用户。
+         */
         @Schema(description = "今日活跃用户")
         private long activeUsersToday;
 
+        /**
+         * 部门分布。
+         */
         @Schema(description = "部门分布")
         private List<ChartData> deptDistribution;
 
@@ -409,30 +434,57 @@ public class StatisticsResponse {
     @Schema(description = "日志统计")
     public static class LogStats {
 
+        /**
+         * 登录日志总数。
+         */
         @Schema(description = "登录日志总数")
         private long loginLogCount;
 
+        /**
+         * 操作日志总数。
+         */
         @Schema(description = "操作日志总数")
         private long operateLogCount;
 
+        /**
+         * 登录成功数。
+         */
         @Schema(description = "登录成功数")
         private long loginSuccessCount;
 
+        /**
+         * 登录失败数。
+         */
         @Schema(description = "登录失败数")
         private long loginFailCount;
 
+        /**
+         * 操作成功数。
+         */
         @Schema(description = "操作成功数")
         private long operateSuccessCount;
 
+        /**
+         * 操作失败数。
+         */
         @Schema(description = "操作失败数")
         private long operateFailCount;
 
+        /**
+         * 登录趋势。
+         */
         @Schema(description = "登录趋势")
         private List<TrendData> loginTrend;
 
+        /**
+         * 操作趋势。
+         */
         @Schema(description = "操作趋势")
         private List<TrendData> operateTrend;
 
+        /**
+         * 模块操作统计。
+         */
         @Schema(description = "模块操作统计")
         private List<ChartData> moduleStats;
 
@@ -773,21 +825,39 @@ public class StatisticsResponse {
     @Schema(description = "系统概览统计")
     public static class OverviewStats {
 
+        /**
+         * 用户总数。
+         */
         @Schema(description = "用户总数")
         private long userCount;
 
+        /**
+         * 角色总数。
+         */
         @Schema(description = "角色总数")
         private long roleCount;
 
+        /**
+         * 部门总数。
+         */
         @Schema(description = "部门总数")
         private long deptCount;
 
+        /**
+         * 岗位总数。
+         */
         @Schema(description = "岗位总数")
         private long postCount;
 
+        /**
+         * 菜单总数。
+         */
         @Schema(description = "菜单总数")
         private long menuCount;
 
+        /**
+         * 配置总数。
+         */
         @Schema(description = "配置总数")
         private long configCount;
 
@@ -1032,12 +1102,21 @@ public class StatisticsResponse {
     @Schema(description = "系统使用分析响应")
     public static class UsageResponse {
 
+        /**
+         * 活跃度分析。
+         */
         @Schema(description = "活跃度分析")
         private ActivityStats activityStats;
 
+        /**
+         * 功能使用分析。
+         */
         @Schema(description = "功能使用分析")
         private FeatureUsageStats featureUsageStats;
 
+        /**
+         * 时段分析。
+         */
         @Schema(description = "时段分析")
         private TimeDistributionStats timeDistributionStats;
 
@@ -1212,18 +1291,33 @@ public class StatisticsResponse {
     @Schema(description = "活跃度统计")
     public static class ActivityStats {
 
+        /**
+         * 今日活跃用户。
+         */
         @Schema(description = "今日活跃用户")
         private long todayActiveUsers;
 
+        /**
+         * 本周活跃用户。
+         */
         @Schema(description = "本周活跃用户")
         private long weekActiveUsers;
 
+        /**
+         * 本月活跃用户。
+         */
         @Schema(description = "本月活跃用户")
         private long monthActiveUsers;
 
+        /**
+         * 活跃用户趋势。
+         */
         @Schema(description = "活跃用户趋势")
         private List<TrendData> activeUserTrend;
 
+        /**
+         * 活跃用户排行。
+         */
         @Schema(description = "活跃用户排行")
         private List<RankData> topActiveUsers;
 
@@ -1450,9 +1544,15 @@ public class StatisticsResponse {
     @Schema(description = "功能使用统计")
     public static class FeatureUsageStats {
 
+        /**
+         * 模块访问排行。
+         */
         @Schema(description = "模块访问排行")
         private List<ChartData> moduleRanking;
 
+        /**
+         * API调用统计。
+         */
         @Schema(description = "API调用统计")
         private List<ChartData> apiCallStats;
 
@@ -1592,9 +1692,15 @@ public class StatisticsResponse {
     @Schema(description = "时段分布统计")
     public static class TimeDistributionStats {
 
+        /**
+         * 24小时访问分布。
+         */
         @Schema(description = "24小时访问分布")
         private List<HourData> hourlyDistribution;
 
+        /**
+         * 高峰时段。
+         */
         @Schema(description = "高峰时段")
         private String peakHours;
 
@@ -1734,9 +1840,15 @@ public class StatisticsResponse {
     @Schema(description = "图表数据")
     public static class ChartData {
 
+        /**
+         * 名称/标签。
+         */
         @Schema(description = "名称/标签")
         private String name;
 
+        /**
+         * 数值。
+         */
         @Schema(description = "数值")
         private long value;
 
@@ -1870,9 +1982,15 @@ public class StatisticsResponse {
     @Schema(description = "趋势数据")
     public static class TrendData {
 
+        /**
+         * 日期。
+         */
         @Schema(description = "日期")
         private String date;
 
+        /**
+         * 数值。
+         */
         @Schema(description = "数值")
         private long value;
 
@@ -2006,9 +2124,15 @@ public class StatisticsResponse {
     @Schema(description = "排行数据")
     public static class RankData {
 
+        /**
+         * 用户名。
+         */
         @Schema(description = "用户名")
         private String username;
 
+        /**
+         * 操作数。
+         */
         @Schema(description = "操作数")
         private long count;
 
@@ -2142,9 +2266,15 @@ public class StatisticsResponse {
     @Schema(description = "小时分布数据")
     public static class HourData {
 
+        /**
+         * 小时 (0-23)。
+         */
         @Schema(description = "小时 (0-23)")
         private int hour;
 
+        /**
+         * 数值。
+         */
         @Schema(description = "数值")
         private long value;
 

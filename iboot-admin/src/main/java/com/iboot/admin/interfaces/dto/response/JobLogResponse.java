@@ -21,46 +21,85 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
- * 定时任务日志响应 DTO
+ * 定时任务日志响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "定时任务日志响应")
 public class JobLogResponse {
 
+    /**
+     * 日志ID。
+     */
     @Schema(description = "日志ID")
     private Long id;
 
+    /**
+     * 任务ID。
+     */
     @Schema(description = "任务ID")
     private Long jobId;
 
+    /**
+     * 任务名称。
+     */
     @Schema(description = "任务名称")
     private String jobName;
 
+    /**
+     * 任务组名。
+     */
     @Schema(description = "任务组名")
     private String jobGroup;
 
+    /**
+     * 调用目标字符串。
+     */
     @Schema(description = "调用目标字符串")
     private String invokeTarget;
 
+    /**
+     * 日志信息。
+     */
     @Schema(description = "日志信息")
     private String jobMessage;
 
+    /**
+     * 执行状态(0失败 1成功)。
+     */
     @Schema(description = "执行状态(0失败 1成功)")
     private Integer status;
 
+    /**
+     * 异常信息。
+     */
     @Schema(description = "异常信息")
     private String exceptionInfo;
 
+    /**
+     * 开始时间。
+     */
     @Schema(description = "开始时间")
     private LocalDateTime startTime;
 
+    /**
+     * 结束时间。
+     */
     @Schema(description = "结束时间")
     private LocalDateTime endTime;
 
+    /**
+     * 执行耗时(毫秒)。
+     */
     @Schema(description = "执行耗时(毫秒)")
     private Long costTime;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 

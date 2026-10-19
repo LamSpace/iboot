@@ -21,26 +21,41 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
 /**
- * 更新个人信息请求 DTO
+ * 更新个人信息请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "更新个人信息请求")
 public class UpdateProfileRequest {
 
+    /**
+     * 昵称。
+     */
     @Schema(description = "昵称")
     @Size(max = 30, message = "昵称长度不能超过30")
     private String nickname;
 
+    /**
+     * 邮箱。
+     */
     @Schema(description = "邮箱")
     @Email(message = "邮箱格式不正确")
     @Size(max = 50, message = "邮箱长度不能超过50")
     private String email;
 
+    /**
+     * 手机号码。
+     */
     @Schema(description = "手机号码")
     @Size(max = 11, message = "手机号码长度不能超过11")
     private String phone;
 
+    /**
+     * 性别：0-未知，1-男，2-女。
+     */
     @Schema(description = "性别：0-未知，1-男，2-女")
     private Integer gender;
 

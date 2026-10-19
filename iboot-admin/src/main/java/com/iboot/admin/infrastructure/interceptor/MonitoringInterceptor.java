@@ -15,7 +15,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 监控拦截器 用于收集HTTP请求相关的监控指标
+ * HTTP 监控拦截器。
+ *
+ * <p>在请求前后记录 URI、方法、耗时和结果等指标；静态资源和监控端点由
+ * {@code WebConfig} 排除。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 public class MonitoringInterceptor implements HandlerInterceptor {
@@ -28,6 +34,15 @@ public class MonitoringInterceptor implements HandlerInterceptor {
     private BusinessMetricsService businessMetricsService;
 
     @Override
+    /**
+     * 记录请求开始时间并生成请求 ID。
+     *
+     * @param request HTTP 请求
+     * @param response HTTP 响应
+     * @param handler 处理器
+     * @return 始终返回 {@code true} 以继续处理
+     * @throws Exception 处理失败时抛出
+     */
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
         String requestId = generateRequestId(request);
@@ -38,6 +53,15 @@ public class MonitoringInterceptor implements HandlerInterceptor {
     }
 
     @Override
+    /**
+     * 记录请求耗时和结果指标。
+     *
+     * @param request HTTP 请求
+     * @param response HTTP 响应
+     * @param handler 处理器
+     * @param ex 请求处理异常；正常结束时为 {@code null}
+     * @throws Exception 处理失败时抛出
+     */
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)
             throws Exception {
         String requestId = generateRequestId(request);

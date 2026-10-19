@@ -21,7 +21,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * iBoot 管理系统启动类
+ * iBoot 管理系统启动类。
+ *
+ * <p>启用 Spring Boot 自动配置和定时任务调度，作为后端应用的入口。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -30,6 +32,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class IBootAdminApplication {
 
+    /**
+     * 启动 Spring Boot 应用。
+     *
+     * @param args 命令行参数
+     */
     public static void main(String[] args) {
         SpringApplication.run(IBootAdminApplication.class, args);
     }

@@ -39,9 +39,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 参数配置控制器
+ * 参数配置控制器。
  *
- * @author iBoot
+ * <p>提供系统参数的公开配置、分页查询、详情、增删改、缓存刷新和导出接口；
+ * 管理接口对应 {@code config:*} 权限，公开配置接口允许匿名访问。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see ConfigApplicationService
  */
 @Tag(name = "参数配置", description = "参数配置相关接口")
 @RestController
@@ -61,6 +66,11 @@ public class ConfigController {
         this.configApplicationService = configApplicationService;
     }
 
+    /**
+     * 获取公开系统配置。
+     *
+     * @return 系统名称和注册开关；未配置系统名称时使用默认值
+     */
     @Operation(summary = "获取公开系统配置", description = "获取系统名称、注册开关等公开配置，无需登录")
     @GetMapping(version = "1", value = "/public")
     public Result<PublicConfigResponse> getPublicConfig() {
@@ -72,6 +82,18 @@ public class ConfigController {
                 .build());
     }
 
+    /**
+     * 分页查询参数配置。
+     *
+     * <p>任一带条件参数非空时走条件查询，否则查询全部配置。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param configName 配置名称关键字，可为 {@code null}
+     * @param configKey 配置键关键字，可为 {@code null}
+     * @param configType 配置类型：0-默认，1-系统内置；可为 {@code null}
+     * @return 配置分页结果
+     */
     @Operation(summary = "查询参数配置列表")
     @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('config:list')")
@@ -95,6 +117,11 @@ public class ConfigController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 查询所有参数配置。
+     *
+     * @return 配置列表；没有数据时返回空列表
+     */
     @Operation(summary = "查询所有参数配置")
     @GetMapping(version = "1", value = "/all")
     @PreAuthorize("hasAuthority('config:list')")
@@ -104,6 +131,13 @@ public class ConfigController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询参数配置详情。
+     *
+     * @param id 配置 ID
+     * @return 配置详情
+     * @throws com.iboot.admin.common.exception.BusinessException 配置不存在时抛出
+     */
     @Operation(summary = "查询参数配置详情")
     @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('config:query')")
@@ -112,6 +146,12 @@ public class ConfigController {
         return Result.success(convertToResponse(config));
     }
 
+    /**
+     * 根据配置键查询配置值。
+     *
+     * @param configKey 配置键
+     * @return 配置值；配置不存在时为 {@code null}
+     */
     @Operation(summary = "根据配置键查询配置值")
     @GetMapping(version = "1", value = "/key/{configKey}")
     public Result<String> getByKey(@PathVariable String configKey) {
@@ -119,6 +159,12 @@ public class ConfigController {
         return Result.success(value);
     }
 
+    /**
+     * 新增参数配置。
+     *
+     * @param request 配置创建请求
+     * @return 创建后的配置详情
+     */
     @Operation(summary = "新增参数配置")
     @PostMapping
     @PreAuthorize("hasAuthority('config:add')")
@@ -129,6 +175,12 @@ public class ConfigController {
         return Result.success(convertToResponse(createdConfig));
     }
 
+    /**
+     * 修改参数配置。
+     *
+     * @param request 配置更新请求，{@code id} 不能为空
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改参数配置")
     @PutMapping
     @PreAuthorize("hasAuthority('config:edit')")
@@ -140,6 +192,12 @@ public class ConfigController {
         return Result.success();
     }
 
+    /**
+     * 删除参数配置。
+     *
+     * @param id 配置 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除参数配置")
     @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('config:remove')")
@@ -149,6 +207,13 @@ public class ConfigController {
         return Result.success();
     }
 
+    /**
+     * 刷新配置缓存。
+     *
+     * <p>清除本地和 Redis 中的配置缓存，下次读取时重新加载。
+     *
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "刷新配置缓存")
     @DeleteMapping(version = "1", value = "/refreshCache")
     @PreAuthorize("hasAuthority('config:remove')")
@@ -158,6 +223,15 @@ public class ConfigController {
         return Result.success();
     }
 
+    /**
+     * 导出配置列表。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param configName 配置名称关键字，可为 {@code null}
+     * @param configKey 配置键关键字，可为 {@code null}
+     * @param configType 配置类型：0-默认，1-系统内置；可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出配置列表")
     @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('config:export')")

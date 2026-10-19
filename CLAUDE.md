@@ -65,6 +65,24 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. JavaDoc 注释规范
+
+适用于新增或修改的 Java 代码；批量重写存量注释需单独立项。
+
+- 语言：说明文字用中文，`@param` / `@return` / `@throws` 等标签名用英文。
+- 类/接口/枚举/注解：必须写类级 Javadoc。第一句是摘要（以句号结尾），
+  空一行后用 `<p>` 说明职责、分层位置、关键协作对象、事务/线程/缓存约束。
+- public/protected 方法：必须写 Javadoc。说明“做什么、前置条件、副作用、异常”，
+  不复述方法名；参数、返回值、异常分别用 `@param` / `@return` / `@throws`。
+- 字段：DTO 字段、枚举常量、非显而易见的私有字段必须写；局部变量不写。
+- 生成成员（getter/setter/equals/hashCode/toString、delombok 构造器）不写 Javadoc。
+- 格式：`{@code}` 包类型/字面量/null，`{@link}` 关联类型，分段用 `<p>`，
+  列表用 `<ul>/<li>`，示例用 `<pre>{@code ...}</pre>`。
+- 禁止：同义反复（`@param id 用户 ID`）、变更历史、个人署名、未转义的 `<`/`>`。
+- 类级标签：`@author iBoot Team`、`@since 1.0.0`；只在确有语义时加 `@see`。
+
+详细模板、深度预算与正反例见 `doc/19-JavaDoc 规范.md`。
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

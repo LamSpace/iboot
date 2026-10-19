@@ -21,34 +21,62 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * Dashboard 汇总数据响应 DTO
+ * Dashboard 汇总数据响应 DTO。
  *
- * @author iBoot
+ * <p>聚合用户、角色、部门、岗位、登录日志和操作日志的统计数量，
+ * 并附带最近登录和操作记录，用于首页展示。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "Dashboard 汇总数据响应")
 public class DashboardSummaryResponse {
 
+    /**
+     * 用户总数。
+     */
     @Schema(description = "用户总数")
     private long userCount;
 
+    /**
+     * 角色总数。
+     */
     @Schema(description = "角色总数")
     private long roleCount;
 
+    /**
+     * 部门总数。
+     */
     @Schema(description = "部门总数")
     private long deptCount;
 
+    /**
+     * 岗位总数。
+     */
     @Schema(description = "岗位总数")
     private long postCount;
 
+    /**
+     * 登录日志总数。
+     */
     @Schema(description = "登录日志总数")
     private long loginLogCount;
 
+    /**
+     * 操作日志总数。
+     */
     @Schema(description = "操作日志总数")
     private long operateLogCount;
 
+    /**
+     * 最近登录日志。
+     */
     @Schema(description = "最近登录日志")
     private List<LoginLogResponse> recentLoginLogs;
 
+    /**
+     * 最近操作日志。
+     */
     @Schema(description = "最近操作日志")
     private List<OperateLogResponse> recentOperateLogs;
 

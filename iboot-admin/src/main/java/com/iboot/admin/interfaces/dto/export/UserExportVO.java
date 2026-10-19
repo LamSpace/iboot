@@ -21,42 +21,78 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 用户导出VO
+ * 用户导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class UserExportVO {
 
+    /**
+     * 导出列：用户ID。
+     */
     @ExcelColumn(name = "用户ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：用户名。
+     */
     @ExcelColumn(name = "用户名", order = 2, width = 15)
     private String username;
 
+    /**
+     * 导出列：昵称。
+     */
     @ExcelColumn(name = "昵称", order = 3, width = 15)
     private String nickname;
 
+    /**
+     * 导出列：邮箱。
+     */
     @ExcelColumn(name = "邮箱", order = 4, width = 25)
     private String email;
 
+    /**
+     * 导出列：手机号。
+     */
     @ExcelColumn(name = "手机号", order = 5, width = 15)
     private String phone;
 
+    /**
+     * 导出列：性别；字典类型 {@code sys_user_gender}。
+     */
     @ExcelColumn(name = "性别", order = 6, width = 8, dictType = "sys_user_gender")
     private Integer gender;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_normal_disable}。
+     */
     @ExcelColumn(name = "状态", order = 7, width = 8, dictType = "sys_normal_disable")
     private Integer status;
 
+    /**
+     * 导出列：最后登录IP。
+     */
     @ExcelColumn(name = "最后登录IP", order = 8, width = 18)
     private String loginIp;
 
+    /**
+     * 导出列：最后登录时间。
+     */
     @ExcelColumn(name = "最后登录时间", order = 9, width = 20)
     private LocalDateTime loginTime;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 10, width = 20)
     private LocalDateTime createTime;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 11, width = 30)
     private String remark;
 

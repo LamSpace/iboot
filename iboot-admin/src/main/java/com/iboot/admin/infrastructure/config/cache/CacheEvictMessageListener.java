@@ -27,11 +27,13 @@ import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 缓存失效消息监听器
- * <p>
- * 监听 Redis Pub/Sub 消息，当其他节点发布缓存失效消息时， 清除本节点的 L1 本地缓存，保证分布式环境下的缓存一致性。
+ * 缓存失效消息监听器。
  *
- * @author iBoot
+ * <p>监听 Redis Pub/Sub 的缓存失效消息，当其他节点发布失效事件时清除本节点的
+ * L1 本地缓存，保证分布式环境下的缓存一致性。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class CacheEvictMessageListener implements MessageListener {
 
@@ -39,6 +41,11 @@ public class CacheEvictMessageListener implements MessageListener {
 
     private final TwoLevelCacheManager cacheManager;
 
+    /**
+     * 创建缓存失效监听器。
+     *
+     * @param cacheManager 二级缓存管理器
+     */
     public CacheEvictMessageListener(TwoLevelCacheManager cacheManager) {
         this.cacheManager = cacheManager;
     }
@@ -54,6 +61,15 @@ public class CacheEvictMessageListener implements MessageListener {
         log.info("Registered cache evict message listener on channel: {}", TwoLevelCacheManager.CACHE_EVICT_CHANNEL);
     }
 
+    /**
+     * 处理缓存失效消息。
+     *
+     * <p>消息格式为 {@code cacheName:key}，收到后清除本节点对应的 L1 缓存；
+     * {@code *} 表示清空全部 L1。
+     *
+     * @param message Redis 消息
+     * @param pattern 订阅模式
+     */
     @Override
     public void onMessage(Message message, byte[] pattern) {
         String messageBody = new String(message.getBody(), StandardCharsets.UTF_8);

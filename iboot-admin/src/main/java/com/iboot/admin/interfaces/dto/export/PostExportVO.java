@@ -21,30 +21,54 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 岗位导出VO
+ * 岗位导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class PostExportVO {
 
+    /**
+     * 导出列：岗位ID。
+     */
     @ExcelColumn(name = "岗位ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：岗位编码。
+     */
     @ExcelColumn(name = "岗位编码", order = 2, width = 15)
     private String postCode;
 
+    /**
+     * 导出列：岗位名称。
+     */
     @ExcelColumn(name = "岗位名称", order = 3, width = 20)
     private String postName;
 
+    /**
+     * 导出列：排序。
+     */
     @ExcelColumn(name = "排序", order = 4, width = 8)
     private Integer orderNum;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_normal_disable}。
+     */
     @ExcelColumn(name = "状态", order = 5, width = 8, dictType = "sys_normal_disable")
     private Integer status;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 6, width = 30)
     private String remark;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 7, width = 20)
     private LocalDateTime createTime;
 

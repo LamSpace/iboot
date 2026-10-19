@@ -42,9 +42,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 数据字典控制器
+ * 数据字典控制器。
  *
- * @author iBoot
+ * <p>提供字典类型和字典数据的查询、增删改、导出，以及按类型获取标签的接口。
+ * 管理接口对应 {@code dict:*} 权限；按类型查询数据和获取标签的接口允许已登录用户访问。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see DictApplicationService
  */
 @Tag(name = "数据字典", description = "数据字典相关接口")
 @RestController
@@ -59,6 +64,13 @@ public class DictController {
     }
 
     // ==================== 字典类型接口 ====================
+    /**
+     * 分页查询字典类型。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @return 字典类型分页结果
+     */
     @Operation(summary = "查询字典类型列表")
     @GetMapping(version = "1", value = "/type/list")
     @PreAuthorize("hasAuthority('dict:list')")
@@ -71,6 +83,11 @@ public class DictController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 查询所有字典类型。
+     *
+     * @return 字典类型列表；没有数据时返回空列表
+     */
     @Operation(summary = "查询所有字典类型")
     @GetMapping(version = "1", value = "/type/all")
     @PreAuthorize("hasAuthority('dict:list')")
@@ -80,6 +97,13 @@ public class DictController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询字典类型详情。
+     *
+     * @param id 字典类型 ID
+     * @return 字典类型详情
+     * @throws com.iboot.admin.common.exception.BusinessException 字典类型不存在时抛出
+     */
     @Operation(summary = "查询字典类型详情")
     @GetMapping(version = "1", value = "/type/{id}")
     @PreAuthorize("hasAuthority('dict:query')")
@@ -88,6 +112,12 @@ public class DictController {
         return Result.success(convertTypeToResponse(dictType));
     }
 
+    /**
+     * 新增字典类型。
+     *
+     * @param request 字典类型创建请求
+     * @return 创建后的字典类型详情
+     */
     @Operation(summary = "新增字典类型")
     @PostMapping(version = "1", value = "/type")
     @PreAuthorize("hasAuthority('dict:add')")
@@ -98,6 +128,12 @@ public class DictController {
         return Result.success(convertTypeToResponse(createdType));
     }
 
+    /**
+     * 修改字典类型。
+     *
+     * @param request 字典类型更新请求，{@code id} 不能为空
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改字典类型")
     @PutMapping(version = "1", value = "/type")
     @PreAuthorize("hasAuthority('dict:edit')")
@@ -109,6 +145,12 @@ public class DictController {
         return Result.success();
     }
 
+    /**
+     * 删除字典类型。
+     *
+     * @param id 字典类型 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除字典类型")
     @DeleteMapping(version = "1", value = "/type/{id}")
     @PreAuthorize("hasAuthority('dict:remove')")
@@ -118,6 +160,12 @@ public class DictController {
         return Result.success();
     }
 
+    /**
+     * 导出字典类型列表。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出字典类型列表")
     @GetMapping(version = "1", value = "/type/export")
     @PreAuthorize("hasAuthority('dict:export')")
@@ -131,6 +179,12 @@ public class DictController {
     }
 
     // ==================== 字典数据接口 ====================
+    /**
+     * 根据字典类型查询字典数据。
+     *
+     * @param dictType 字典类型编码
+     * @return 该类型下的字典数据列表；没有数据时返回空列表
+     */
     @Operation(summary = "根据字典类型查询字典数据")
     @GetMapping(version = "1", value = "/data/type/{dictType}")
     public Result<List<DictDataResponse>> dataByType(@PathVariable String dictType) {
@@ -141,6 +195,13 @@ public class DictController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询字典数据详情。
+     *
+     * @param id 字典数据 ID
+     * @return 字典数据详情
+     * @throws com.iboot.admin.common.exception.BusinessException 字典数据不存在时抛出
+     */
     @Operation(summary = "查询字典数据详情")
     @GetMapping(version = "1", value = "/data/{id}")
     @PreAuthorize("hasAuthority('dict:query')")
@@ -149,6 +210,12 @@ public class DictController {
         return Result.success(convertDataToResponse(dictData));
     }
 
+    /**
+     * 新增字典数据。
+     *
+     * @param request 字典数据创建请求
+     * @return 创建后的字典数据详情
+     */
     @Operation(summary = "新增字典数据")
     @PostMapping(version = "1", value = "/data")
     @PreAuthorize("hasAuthority('dict:add')")
@@ -159,6 +226,12 @@ public class DictController {
         return Result.success(convertDataToResponse(createdData));
     }
 
+    /**
+     * 修改字典数据。
+     *
+     * @param request 字典数据更新请求，{@code id} 不能为空
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改字典数据")
     @PutMapping(version = "1", value = "/data")
     @PreAuthorize("hasAuthority('dict:edit')")
@@ -170,6 +243,12 @@ public class DictController {
         return Result.success();
     }
 
+    /**
+     * 删除字典数据。
+     *
+     * @param id 字典数据 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除字典数据")
     @DeleteMapping(version = "1", value = "/data/{id}")
     @PreAuthorize("hasAuthority('dict:remove')")
@@ -179,6 +258,13 @@ public class DictController {
         return Result.success();
     }
 
+    /**
+     * 导出字典数据列表。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param dictType 字典类型编码；为空时导出全部字典数据
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出字典数据列表")
     @GetMapping(version = "1", value = "/data/export")
     @PreAuthorize("hasAuthority('dict:export')")
@@ -197,6 +283,13 @@ public class DictController {
         ExcelExportUtil.exportExcel(response, exportList, DictDataExportVO.class, "字典数据", "字典数据");
     }
 
+    /**
+     * 获取字典标签。
+     *
+     * @param dictType 字典类型编码
+     * @param dictValue 字典键值
+     * @return 对应的字典标签；不存在时返回空字符串
+     */
     @Operation(summary = "获取字典标签")
     @GetMapping(version = "1", value = "/label")
     public Result<String> getDictLabel(@RequestParam String dictType, @RequestParam String dictValue) {

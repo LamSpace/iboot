@@ -27,7 +27,11 @@ import java.util.Optional;
  * 负责字典类型数据的持久化操作，提供完整的增删改查功能
  * </p>
  *
- * @author iBoot
+ * <p>查询约定：列表方法没有数据时返回空列表而不是 {@code null}；分页方法的页码从 1 开始；
+ * 按 ID 查找的方法返回 {@link java.util.Optional}，不存在时为空。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface DictTypeRepository {
 

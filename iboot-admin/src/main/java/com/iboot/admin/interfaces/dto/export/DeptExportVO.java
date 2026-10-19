@@ -21,39 +21,72 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 部门导出VO
+ * 部门导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class DeptExportVO {
 
+    /**
+     * 导出列：部门ID。
+     */
     @ExcelColumn(name = "部门ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：层级。
+     */
     @ExcelColumn(name = "层级", order = 2, width = 8)
     private Integer level;
 
+    /**
+     * 导出列：部门编码。
+     */
     @ExcelColumn(name = "部门编码", order = 3, width = 15)
     private String deptCode;
 
+    /**
+     * 导出列：部门名称。
+     */
     @ExcelColumn(name = "部门名称", order = 4, width = 20)
     private String deptName;
 
+    /**
+     * 导出列：负责人。
+     */
     @ExcelColumn(name = "负责人", order = 5, width = 12)
     private String leader;
 
+    /**
+     * 导出列：联系电话。
+     */
     @ExcelColumn(name = "联系电话", order = 6, width = 15)
     private String phone;
 
+    /**
+     * 导出列：邮箱。
+     */
     @ExcelColumn(name = "邮箱", order = 7, width = 25)
     private String email;
 
+    /**
+     * 导出列：排序。
+     */
     @ExcelColumn(name = "排序", order = 8, width = 8)
     private Integer orderNum;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_normal_disable}。
+     */
     @ExcelColumn(name = "状态", order = 9, width = 8, dictType = "sys_normal_disable")
     private Integer status;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 10, width = 20)
     private LocalDateTime createTime;
 

@@ -10,8 +10,12 @@ import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 import java.util.Locale;
 
 /**
- * 国际化配置类
- * 配置 Spring MessageSource 和 LocaleResolver
+ * 国际化配置。
+ *
+ * <p>注册 {@link org.springframework.context.MessageSource} 和
+ * {@link org.springframework.web.servlet.LocaleResolver}：消息源加载
+ * {@code i18n/messages}、异常和业务消息文件，按请求的 {@code Accept-Language}
+ * 解析语言；找不到消息时回退到消息码本身。
  *
  * @author iBoot Team
  * @since 1.0.0

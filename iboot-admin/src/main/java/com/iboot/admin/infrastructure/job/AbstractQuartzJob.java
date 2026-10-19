@@ -29,9 +29,15 @@ import java.io.StringWriter;
 import java.time.LocalDateTime;
 
 /**
- * 抽象Quartz任务调用
+ * Quartz 任务执行基类。
  *
- * @author iBoot
+ * <p>负责构建任务上下文、调用子类的 {@code doExecute} 并记录执行日志；
+ * 允许并发和禁止并发两种实现共享该流程。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see QuartzJobExecution
+ * @see QuartzDisallowConcurrentExecution
  */
 public abstract class AbstractQuartzJob implements org.quartz.Job {
 
@@ -43,6 +49,11 @@ public abstract class AbstractQuartzJob implements org.quartz.Job {
     private static final ThreadLocal<LocalDateTime> THREAD_LOCAL = new ThreadLocal<>();
 
     @Override
+    /**
+     * 执行 Quartz 任务并记录执行日志。
+     *
+     * @param context Quartz 执行上下文
+     */
     public void execute(JobExecutionContext context) {
         Job job = (Job) context.getMergedJobDataMap().get(ScheduleConstants.TASK_PROPERTIES);
         try {

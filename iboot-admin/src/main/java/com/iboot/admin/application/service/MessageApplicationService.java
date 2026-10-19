@@ -42,7 +42,8 @@ import java.util.stream.Collectors;
  * 负责站内消息的创建、编辑、发送、撤回、删除和查询等业务逻辑处理。 支持消息状态管理（草稿/已发送）、优先级控制、收件箱管理等功能。 消息最大显示数量通过 sys.message.maxDisplay 配置动态读取。
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class MessageApplicationService {

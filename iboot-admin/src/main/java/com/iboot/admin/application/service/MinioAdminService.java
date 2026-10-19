@@ -40,7 +40,8 @@ import java.util.Map;
  * 提供 MinIO 集群监控、存储桶管理等功能的接口。 支持检查 MinIO 服务在线状态、获取存储桶统计信息（对象数量、总大小）等监控功能。 MinIO 配置通过 MinioProperties 注入，支持动态启用/禁用监控。
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class MinioAdminService {

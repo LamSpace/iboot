@@ -39,7 +39,8 @@ import java.util.Optional;
  * 负责定时任务的创建、更新、删除、执行、暂停、恢复和查询等业务逻辑处理。 基于 Quartz 调度框架实现任务调度，支持 Cron 表达式配置执行计划。 同时提供任务日志的查询和清理功能。
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class JobApplicationService {

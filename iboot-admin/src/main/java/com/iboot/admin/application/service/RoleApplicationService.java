@@ -35,7 +35,8 @@ import java.util.List;
  * 负责角色的创建、更新、删除、查询、权限分配和数据权限设置等业务逻辑处理， 支持菜单权限分配和数据范围权限设置
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class RoleApplicationService {

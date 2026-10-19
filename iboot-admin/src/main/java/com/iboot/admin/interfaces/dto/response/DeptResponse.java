@@ -22,43 +22,79 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 部门响应 DTO
+ * 部门响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "部门响应")
 public class DeptResponse {
 
+    /**
+     * 部门ID。
+     */
     @Schema(description = "部门ID")
     private Long id;
 
+    /**
+     * 父部门ID。
+     */
     @Schema(description = "父部门ID")
     private Long parentId;
 
+    /**
+     * 部门编码。
+     */
     @Schema(description = "部门编码")
     private String deptCode;
 
+    /**
+     * 部门名称。
+     */
     @Schema(description = "部门名称")
     private String deptName;
 
+    /**
+     * 显示顺序。
+     */
     @Schema(description = "显示顺序")
     private Integer orderNum;
 
+    /**
+     * 负责人。
+     */
     @Schema(description = "负责人")
     private String leader;
 
+    /**
+     * 负责人电话。
+     */
     @Schema(description = "负责人电话")
     private String phone;
 
+    /**
+     * 负责人邮箱。
+     */
     @Schema(description = "负责人邮箱")
     private String email;
 
+    /**
+     * 状态：0-停用，1-正常。
+     */
     @Schema(description = "状态：0-停用，1-正常")
     private Integer status;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
+    /**
+     * 子部门列表。
+     */
     @Schema(description = "子部门列表")
     private List<DeptResponse> children;
 

@@ -19,11 +19,14 @@ package com.iboot.admin.common.annotation;
 import java.lang.annotation.*;
 
 /**
- * CloudEvents 启用注解
- * <p>
- * 标记在 Controller 类或方法上，表示该接口的响应需要包装为 CloudEvents 格式
- * <p>
- * 使用方式： <pre>
+ * CloudEvents 响应包装标记。
+ *
+ * <p>标记在 Controller 类或方法上，表示对应接口的响应由
+ * {@code CloudEventResponseBodyAdvice} 包装为 CloudEvents 格式。标记在类上时
+ * 对该 Controller 的所有接口生效，标记在方法上时只对该方法生效。
+ *
+ * <p>使用方式：
+ * <pre>
  * {@code @RestController}
  * {@code @RequestMapping("/api/user")}
  * {@code @CloudEventEnabled} // 标记整个 Controller
@@ -35,7 +38,7 @@ import java.lang.annotation.*;
  * {@code @RequestMapping("/api/user")}
  * public class UserController {
  *     {@code @CloudEventEnabled} // 仅标记该方法
- *     public Result<User> getUser() {
+ *     public Result&lt;User&gt; getUser() {
  *         // 该接口会输出 CloudEvents 格式
  *     }
  * }
@@ -50,16 +53,12 @@ import java.lang.annotation.*;
 public @interface CloudEventEnabled {
 
     /**
-     * 事件源路径，默为空
-     * <p>
-     * 如果不指定，将自动从请求路径推导
+     * 事件源路径。留空时根据当前请求路径自动推导。
      */
     String source() default "";
 
     /**
-     * 事件类型，默认为空
-     * <p>
-     * 如果不指定，将根据响应结果自动推导（成功/失败）
+     * 事件类型。留空时根据响应结果自动推导成功或失败类型。
      */
     String type() default "";
 

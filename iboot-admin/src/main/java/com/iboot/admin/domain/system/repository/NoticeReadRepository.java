@@ -26,7 +26,11 @@ import java.util.List;
  * 负责公告已读记录的持久化操作，用于跟踪用户阅读公告的状态
  * </p>
  *
- * @author iBoot
+ * <p>查询约定：列表方法没有数据时返回空列表而不是 {@code null}；
+ * 同一公告与用户只应存在一条已读记录。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface NoticeReadRepository {
 

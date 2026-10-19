@@ -21,31 +21,55 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
- * 配置响应 DTO
+ * 配置响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "配置响应")
 public class ConfigResponse {
 
+    /**
+     * 配置ID。
+     */
     @Schema(description = "配置ID")
     private Long id;
 
+    /**
+     * 配置名称。
+     */
     @Schema(description = "配置名称")
     private String configName;
 
+    /**
+     * 配置键。
+     */
     @Schema(description = "配置键")
     private String configKey;
 
+    /**
+     * 配置值。
+     */
     @Schema(description = "配置值")
     private String configValue;
 
+    /**
+     * 配置类型：0-默认，1-系统内置。
+     */
     @Schema(description = "配置类型：0-默认，1-系统内置")
     private Integer configType;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     private String remark;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 

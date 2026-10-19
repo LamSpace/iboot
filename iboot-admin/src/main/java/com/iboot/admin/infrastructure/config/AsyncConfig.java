@@ -24,9 +24,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 /**
- * 异步任务配置 - 使用虚拟线程
+ * 异步任务配置。
  *
- * @author iBoot
+ * <p>为 {@code @Async} 方法注册基于虚拟线程的执行器，避免平台线程池
+ * 在高并发 I/O 场景下的线程饥饿。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Configuration
 @EnableAsync

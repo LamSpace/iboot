@@ -34,9 +34,14 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * 在线用户监控控制器
+ * 在线用户监控控制器。
  *
- * @author iBoot
+ * <p>提供在线用户分页查询、数量统计、强制退出和导出接口，需要
+ * {@code online:list}、{@code online:forceLogout}、{@code online:export} 权限。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see OnlineUserApplicationService
  */
 @Tag(name = "在线用户监控", description = "在线用户监控相关接口")
 @RestController
@@ -50,6 +55,17 @@ public class OnlineUserController {
         this.onlineUserApplicationService = onlineUserApplicationService;
     }
 
+    /**
+     * 分页查询在线用户。
+     *
+     * <p>先按条件筛选全部在线用户，再在内存中分页。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param username 用户名关键字，可为 {@code null}
+     * @param loginIp 登录 IP 关键字，可为 {@code null}
+     * @return 在线用户分页结果
+     */
     @Operation(summary = "查询在线用户列表")
     @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('online:list')")
@@ -67,6 +83,11 @@ public class OnlineUserController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 获取在线用户总数。
+     *
+     * @return 在线用户数量
+     */
     @Operation(summary = "获取在线用户总数")
     @GetMapping(version = "1", value = "/count")
     @PreAuthorize("hasAuthority('online:list')")
@@ -74,6 +95,12 @@ public class OnlineUserController {
         return Result.success(onlineUserApplicationService.getOnlineUserCount());
     }
 
+    /**
+     * 强制退出指定在线用户。
+     *
+     * @param tokenId 在线会话 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "强制退出用户")
     @DeleteMapping(version = "1", value = "/{tokenId}")
     @PreAuthorize("hasAuthority('online:forceLogout')")
@@ -83,6 +110,14 @@ public class OnlineUserController {
         return Result.success("强退成功", null);
     }
 
+    /**
+     * 导出在线用户列表。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param username 用户名关键字，可为 {@code null}
+     * @param loginIp 登录 IP 关键字，可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出在线用户列表")
     @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('online:export')")

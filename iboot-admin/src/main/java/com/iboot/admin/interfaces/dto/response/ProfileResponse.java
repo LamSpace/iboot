@@ -22,43 +22,79 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 个人信息响应 DTO
+ * 个人信息响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "个人信息响应")
 public class ProfileResponse {
 
+    /**
+     * 用户ID。
+     */
     @Schema(description = "用户ID")
     private Long id;
 
+    /**
+     * 用户名。
+     */
     @Schema(description = "用户名")
     private String username;
 
+    /**
+     * 昵称。
+     */
     @Schema(description = "昵称")
     private String nickname;
 
+    /**
+     * 邮箱。
+     */
     @Schema(description = "邮箱")
     private String email;
 
+    /**
+     * 手机号码。
+     */
     @Schema(description = "手机号码")
     private String phone;
 
+    /**
+     * 性别：0-未知，1-男，2-女。
+     */
     @Schema(description = "性别：0-未知，1-男，2-女")
     private Integer gender;
 
+    /**
+     * 头像。
+     */
     @Schema(description = "头像")
     private String avatar;
 
+    /**
+     * 部门名称。
+     */
     @Schema(description = "部门名称")
     private String deptName;
 
+    /**
+     * 岗位名称列表。
+     */
     @Schema(description = "岗位名称列表")
     private List<String> postNames;
 
+    /**
+     * 角色名称列表。
+     */
     @Schema(description = "角色名称列表")
     private List<String> roleNames;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 

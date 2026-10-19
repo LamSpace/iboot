@@ -19,11 +19,15 @@ package com.iboot.admin.common.annotation;
 import java.lang.annotation.*;
 
 /**
- * 匿名访问注解
- * <p>
- * 用于标记无需认证即可访问的接口，通常用于登录、注册等公开接口
+ * 匿名访问标记。
  *
- * @author iBoot
+ * <p>标记在 Controller 类或方法上，表示对应接口跳过认证过滤器，允许未登录访问；
+ * 通常用于登录、刷新令牌等公开接口。
+ *
+ * <p>该注解只影响认证，不改变授权规则；标记后仍需确认接口不会暴露敏感数据。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

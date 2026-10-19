@@ -39,9 +39,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 部门管理控制器
+ * 部门管理控制器。
  *
- * @author iBoot
+ * <p>提供部门树、组织架构图、列表、详情、增删改和导出接口，对应 {@code dept:*} 权限。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see DeptApplicationService
  */
 @Tag(name = "部门管理", description = "部门管理相关接口")
 @RestController
@@ -55,6 +59,11 @@ public class DeptController {
         this.deptApplicationService = deptApplicationService;
     }
 
+    /**
+     * 查询部门树形结构。
+     *
+     * @return 顶级部门列表，子部门挂在 {@code children} 中
+     */
     @Operation(summary = "查询部门树形结构")
     @GetMapping(version = "1", value = "/tree")
     @PreAuthorize("hasAuthority('dept:list')")
@@ -64,6 +73,11 @@ public class DeptController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询组织架构图。
+     *
+     * @return 组织架构树，每个节点包含部门成员数量
+     */
     @Operation(summary = "查询组织架构图")
     @GetMapping(version = "1", value = "/orgChart")
     @PreAuthorize("hasAuthority('dept:list')")
@@ -75,6 +89,11 @@ public class DeptController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询部门列表。
+     *
+     * @return 部门列表；没有数据时返回空列表
+     */
     @Operation(summary = "查询部门列表")
     @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('dept:list')")
@@ -84,6 +103,13 @@ public class DeptController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询部门详情。
+     *
+     * @param id 部门 ID
+     * @return 部门详情
+     * @throws com.iboot.admin.common.exception.BusinessException 部门不存在时抛出
+     */
     @Operation(summary = "查询部门详情")
     @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('dept:query')")
@@ -92,6 +118,12 @@ public class DeptController {
         return Result.success(convertToResponse(dept));
     }
 
+    /**
+     * 新增部门。
+     *
+     * @param request 部门创建请求
+     * @return 创建后的部门详情
+     */
     @Operation(summary = "新增部门")
     @PostMapping
     @PreAuthorize("hasAuthority('dept:add')")
@@ -102,6 +134,12 @@ public class DeptController {
         return Result.success(convertToResponse(createdDept));
     }
 
+    /**
+     * 修改部门。
+     *
+     * @param request 部门更新请求，{@code id} 不能为空
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改部门")
     @PutMapping
     @PreAuthorize("hasAuthority('dept:edit')")
@@ -113,6 +151,12 @@ public class DeptController {
         return Result.success();
     }
 
+    /**
+     * 删除部门。
+     *
+     * @param id 部门 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除部门")
     @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('dept:remove')")
@@ -122,6 +166,16 @@ public class DeptController {
         return Result.success();
     }
 
+    /**
+     * 导出部门列表。
+     *
+     * <p>按部门树递归展平，并按名称和状态过滤后写入 Excel。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param deptName 部门名称关键字，可为 {@code null}
+     * @param status 状态：0-停用，1-正常；可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出部门列表")
     @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('dept:export')")

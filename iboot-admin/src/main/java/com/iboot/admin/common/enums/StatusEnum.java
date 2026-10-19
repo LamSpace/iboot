@@ -17,18 +17,22 @@
 package com.iboot.admin.common.enums;
 
 /**
- * 状态枚举
+ * 通用状态枚举。
  *
- * @author iBoot
+ * <p>用于启用/停用类状态字段：{@code 1} 表示启用，{@code 0} 表示停用。
+ * 各业务模块复用该编码约定，展示文案可由模块自行定义。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public enum StatusEnum {
 
     /**
-     * 正常/启用
+     * 启用状态，编码为 {@code 1}。
      */
     ENABLE(1, "正常"),
     /**
-     * 停用/禁用
+     * 停用状态，编码为 {@code 0}。
      */
     DISABLE(0, "停用");
 

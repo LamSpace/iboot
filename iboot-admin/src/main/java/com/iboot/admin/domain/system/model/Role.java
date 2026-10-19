@@ -20,9 +20,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 角色实体（聚合根）
+ * 角色实体（聚合根）。
  *
- * @author iBoot
+ * <p>表示一组权限的集合，包含菜单权限（{@code menuIds}）和数据权限
+ * （{@code dataScope}、{@code deptIds}）。用户通过角色获得权限。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see User
+ * @see com.iboot.admin.common.enums.DataScopeEnum
  */
 public class Role {
 
@@ -145,46 +151,46 @@ public class Role {
     }
 
     /**
-     * 启用角色
-     *
-     * @return 启用后的角色对象
+     * 启用角色。
      */
     public void enable() {
         this.status = 1;
     }
 
     /**
-     * 停用角色
-     *
-     * @return 停用后的角色对象
+     * 停用角色。
      */
     public void disable() {
         this.status = 0;
     }
 
     /**
-     * 检查角色是否启用
+     * 判断角色是否启用。
      *
-     * @return 如果角色启用则返回true，否则返回false
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isEnabled() {
         return this.status != null && this.status == 1;
     }
 
     /**
-     * 分配菜单权限
+     * 分配菜单权限。
      *
-     * @param menuIds 菜单ID列表
+     * <p>只修改内存中的菜单 ID 列表，持久化由仓储层完成。
+     *
+     * @param menuIds 菜单 ID 列表
      */
     public void assignMenus(List<Long> menuIds) {
         this.menuIds = menuIds;
     }
 
     /**
-     * 设置数据权限
+     * 设置数据权限。
      *
-     * @param dataScope 数据权限范围
-     * @param deptIds   部门ID列表
+     * <p>同时更新数据范围编码和自定义部门列表。
+     *
+     * @param dataScope 数据权限范围，取值见 {@link com.iboot.admin.common.enums.DataScopeEnum}
+     * @param deptIds 自定义部门 ID 列表；非自定义范围时可为 {@code null}
      */
     public void setDataPermission(Integer dataScope, List<Long> deptIds) {
         this.dataScope = dataScope;

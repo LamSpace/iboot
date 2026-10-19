@@ -19,9 +19,13 @@ package com.iboot.admin.interfaces.dto.response;
 import java.util.List;
 
 /**
- * 服务器监控信息响应
+ * 服务器监控信息响应。
  *
- * @author iBoot
+ * <p>按 CPU、内存、JVM、磁盘、操作系统和服务健康检查分组，返回服务器当前状态
+ * 和阈值判断结果。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class ServerInfoResponse {
 
@@ -281,6 +285,12 @@ public class ServerInfoResponse {
     }
 
     // ======================== 内部 DTO ========================
+    /**
+     * CPU 信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class CpuInfo {
 
         /**
@@ -650,6 +660,12 @@ public class ServerInfoResponse {
 
     }
 
+    /**
+     * Redis 内存使用信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class MemoryInfo {
 
         /**
@@ -1067,6 +1083,12 @@ public class ServerInfoResponse {
 
     }
 
+    /**
+     * JVM 信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class JvmInfo {
 
         /**
@@ -1755,6 +1777,12 @@ public class ServerInfoResponse {
 
     }
 
+    /**
+     * 磁盘信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class DiskInfo {
 
         /**
@@ -2260,6 +2288,12 @@ public class ServerInfoResponse {
 
     }
 
+    /**
+     * 操作系统信息。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class OsInfo {
 
         /**
@@ -2551,6 +2585,12 @@ public class ServerInfoResponse {
 
     }
 
+    /**
+     * 服务健康检查结果。
+     *
+     * @author iBoot Team
+     * @since 1.0.0
+     */
     public static class ServiceCheckInfo {
 
         /**

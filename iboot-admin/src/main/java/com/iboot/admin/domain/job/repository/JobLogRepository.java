@@ -28,7 +28,11 @@ import java.util.Optional;
  * 负责定时任务执行日志的持久化操作，记录任务执行结果和运行状态
  * </p>
  *
- * @author iBoot
+ * <p>查询约定：列表方法没有数据时返回空列表而不是 {@code null}；分页方法的页码从 1 开始；
+ * 按 ID 查找的方法返回 {@link java.util.Optional}，不存在时为空。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface JobLogRepository {
 

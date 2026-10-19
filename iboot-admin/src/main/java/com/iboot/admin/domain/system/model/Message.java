@@ -19,14 +19,18 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 站内消息实体
+ * 站内消息实体。
  *
- * @author iBoot
+ * <p>表示一条站内信，包含标题、内容、类型、优先级和接收者范围。
+ * 消息状态按草稿、已发送、已撤回流转，具体流转规则由应用服务控制。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class Message {
 
     /**
-     * 消息ID
+     * 消息 ID
      */
     private Long id;
 
@@ -56,7 +60,7 @@ public class Message {
     private String senderType;
 
     /**
-     * 发送者用户ID（管理员发送时记录）
+     * 发送者用户 ID（管理员发送时记录）
      */
     private Long senderId;
 
@@ -107,13 +111,13 @@ public class Message {
     /**
      * Creates a new {@code Message} instance.
      *
-     * @param id           消息ID
+     * @param id           消息 ID
      * @param title        消息标题
      * @param content      消息内容
      * @param messageType  消息类型（字典 sys_message_type）
      * @param priority     优先级（字典 sys_message_priority）：0-普通，1-重要，2-紧急
      * @param senderType   发送者类型（字典 sys_message_sender_type）：0-系统，1-管理员
-     * @param senderId     发送者用户ID（管理员发送时记录）
+     * @param senderId     发送者用户 ID（管理员发送时记录）
      * @param receiverType 接收者类型（字典 sys_message_receiver_type）：0-全部用户，1-指定用户
      * @param status       状态（字典 sys_message_status）：0-草稿，1-已发送，2-已撤回
      * @param createBy     创建人
@@ -151,42 +155,50 @@ public class Message {
     }
 
     /**
-     * 发送消息
+     * 将消息标记为已发送。
+     *
+     * <p>只修改内存中的状态，持久化由仓储层完成。
      */
     public void send() {
         this.status = "1";
     }
 
     /**
-     * 撤回消息
+     * 将消息标记为已撤回。
      */
     public void revoke() {
         this.status = "2";
     }
 
     /**
-     * 是否为草稿状态
+     * 判断是否为草稿状态。
+     *
+     * @return 状态为 {@code 0} 时返回 {@code true}
      */
     public boolean isDraft() {
         return "0".equals(this.status);
     }
 
     /**
-     * 是否为已发送状态
+     * 判断是否为已发送状态。
+     *
+     * @return 状态为 {@code 1} 时返回 {@code true}
      */
     public boolean isSent() {
         return "1".equals(this.status);
     }
 
     /**
-     * 是否为已撤回状态
+     * 判断是否为已撤回状态。
+     *
+     * @return 状态为 {@code 2} 时返回 {@code true}
      */
     public boolean isRevoked() {
         return "2".equals(this.status);
     }
 
     /**
-     * 消息ID
+     * 消息 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -194,7 +206,7 @@ public class Message {
     }
 
     /**
-     * 消息ID
+     * 消息 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -282,7 +294,7 @@ public class Message {
     }
 
     /**
-     * 发送者用户ID（管理员发送时记录）
+     * 发送者用户 ID（管理员发送时记录）
      */
     @SuppressWarnings("all")
     public Long getSenderId() {
@@ -290,7 +302,7 @@ public class Message {
     }
 
     /**
-     * 发送者用户ID（管理员发送时记录）
+     * 发送者用户 ID（管理员发送时记录）
      */
     @SuppressWarnings("all")
     public void setSenderId(final Long senderId) {
@@ -605,7 +617,7 @@ public class Message {
         }
 
         /**
-         * 消息ID
+         * 消息 ID
          *
          * @return {@code this}.
          */
@@ -671,7 +683,7 @@ public class Message {
         }
 
         /**
-         * 发送者用户ID（管理员发送时记录）
+         * 发送者用户 ID（管理员发送时记录）
          *
          * @return {@code this}.
          */

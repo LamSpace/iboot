@@ -21,42 +21,78 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 字典数据导出VO
+ * 字典数据导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class DictDataExportVO {
 
+    /**
+     * 导出列：数据ID。
+     */
     @ExcelColumn(name = "数据ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：字典类型。
+     */
     @ExcelColumn(name = "字典类型", order = 2, width = 25)
     private String dictType;
 
+    /**
+     * 导出列：字典标签。
+     */
     @ExcelColumn(name = "字典标签", order = 3, width = 20)
     private String dictLabel;
 
+    /**
+     * 导出列：字典值。
+     */
     @ExcelColumn(name = "字典值", order = 4, width = 15)
     private String dictValue;
 
+    /**
+     * 导出列：排序。
+     */
     @ExcelColumn(name = "排序", order = 5, width = 8)
     private Integer orderNum;
 
+    /**
+     * 导出列：样式属性。
+     */
     @ExcelColumn(name = "样式属性", order = 6, width = 15)
     private String cssClass;
 
+    /**
+     * 导出列：回显样式。
+     */
     @ExcelColumn(name = "回显样式", order = 7, width = 12)
     private String listClass;
 
+    /**
+     * 导出列：是否默认。
+     */
     @ExcelColumn(name = "是否默认", order = 8, width = 10)
     private Integer isDefault;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_normal_disable}。
+     */
     @ExcelColumn(name = "状态", order = 9, width = 8, dictType = "sys_normal_disable")
     private Integer status;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 10, width = 30)
     private String remark;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 11, width = 20)
     private LocalDateTime createTime;
 

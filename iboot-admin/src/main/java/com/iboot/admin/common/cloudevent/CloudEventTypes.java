@@ -17,9 +17,10 @@
 package com.iboot.admin.common.cloudevent;
 
 /**
- * CloudEvents 事件类型常量
- * <p>
- * 定义系统中所有业务事件类型，遵循 CloudEvents 规范 命名格式：com.iboot.{domain}.{action}
+ * CloudEvents 事件类型常量。
+ *
+ * <p>集中定义系统内所有业务事件类型，命名格式为 {@code com.iboot.{domain}.{action}}。
+ * 事件类型用于 CloudEvents 的 {@code type} 字段，供消费者路由和过滤。
  *
  * @author iBoot Team
  * @since 1.0.0

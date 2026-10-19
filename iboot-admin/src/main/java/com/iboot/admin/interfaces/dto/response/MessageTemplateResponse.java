@@ -21,37 +21,67 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
- * 消息模板响应 DTO
+ * 消息模板响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "消息模板响应")
 public class MessageTemplateResponse {
 
+    /**
+     * 模板ID。
+     */
     @Schema(description = "模板ID")
     private Long id;
 
+    /**
+     * 模板编码。
+     */
     @Schema(description = "模板编码")
     private String templateCode;
 
+    /**
+     * 模板名称。
+     */
     @Schema(description = "模板名称")
     private String templateName;
 
+    /**
+     * 模板内容。
+     */
     @Schema(description = "模板内容")
     private String templateContent;
 
+    /**
+     * 消息类型。
+     */
     @Schema(description = "消息类型")
     private String messageType;
 
+    /**
+     * 状态。
+     */
     @Schema(description = "状态")
     private Integer status;
 
+    /**
+     * 创建人。
+     */
     @Schema(description = "创建人")
     private String createBy;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     private String remark;
 

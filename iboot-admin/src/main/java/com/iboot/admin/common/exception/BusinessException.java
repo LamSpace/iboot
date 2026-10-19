@@ -17,42 +17,74 @@
 package com.iboot.admin.common.exception;
 
 /**
- * 业务异常类
+ * 业务异常。
  *
- * @author iBoot
+ * <p>用于表达可预期的业务规则失败，例如数据不存在、唯一性冲突、状态不允许等。
+ * 默认错误码为 {@code 500}；需要区分错误类型时可使用带 {@code code} 的构造器。
+ *
+ * <p>该异常是 {@link RuntimeException}，由 {@link GlobalExceptionHandler} 统一转换为
+ * 标准响应。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see GlobalExceptionHandler
  */
 public class BusinessException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 错误码
+     * 业务错误码，默认 500。
      */
     private final Integer code;
 
     /**
-     * 错误消息
+     * 业务错误消息。
      */
     private final String message;
 
+    /**
+     * 使用默认错误码 500 创建业务异常。
+     *
+     * @param message 错误消息
+     */
     public BusinessException(String message) {
         super(message);
         this.message = message;
         this.code = 500;
     }
 
+    /**
+     * 使用指定错误码创建业务异常。
+     *
+     * @param code 错误码
+     * @param message 错误消息
+     */
     public BusinessException(Integer code, String message) {
         super(message);
         this.code = code;
         this.message = message;
     }
 
+    /**
+     * 使用默认错误码 500 和根因创建业务异常。
+     *
+     * @param message 错误消息
+     * @param cause 根因
+     */
     public BusinessException(String message, Throwable cause) {
         super(message, cause);
         this.message = message;
         this.code = 500;
     }
 
+    /**
+     * 使用指定错误码和根因创建业务异常。
+     *
+     * @param code 错误码
+     * @param message 错误消息
+     * @param cause 根因
+     */
     public BusinessException(Integer code, String message, Throwable cause) {
         super(message, cause);
         this.code = code;

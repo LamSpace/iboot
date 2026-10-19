@@ -24,7 +24,10 @@ import java.time.LocalDateTime;
  * 对应数据库表：sys_notice_read
  * </p>
  *
- * @author iBoot
+ * <p>仅用于 MyBatis 持久化映射，不包含业务行为；与领域模型之间的转换由仓储实现负责。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class NoticeReadPO {
 

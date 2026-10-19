@@ -21,39 +21,72 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 文件导出VO
+ * 文件导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class FileExportVO {
 
+    /**
+     * 导出列：文件ID。
+     */
     @ExcelColumn(name = "文件ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：文件名称。
+     */
     @ExcelColumn(name = "文件名称", order = 2, width = 35)
     private String fileName;
 
+    /**
+     * 导出列：文件大小。
+     */
     @ExcelColumn(name = "文件大小", order = 3, width = 15)
     private String readableSize;
 
+    /**
+     * 导出列：文件类型。
+     */
     @ExcelColumn(name = "文件类型", order = 4, width = 15)
     private String fileType;
 
+    /**
+     * 导出列：扩展名。
+     */
     @ExcelColumn(name = "扩展名", order = 5, width = 10)
     private String fileExt;
 
+    /**
+     * 导出列：文件分类；字典类型 {@code sys_file_category}。
+     */
     @ExcelColumn(name = "文件分类", order = 6, width = 12, dictType = "sys_file_category")
     private String fileCategory;
 
+    /**
+     * 导出列：上传人。
+     */
     @ExcelColumn(name = "上传人", order = 7, width = 15)
     private String uploadBy;
 
+    /**
+     * 导出列：上传时间。
+     */
     @ExcelColumn(name = "上传时间", order = 8, width = 20)
     private LocalDateTime uploadTime;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 9, width = 30)
     private String remark;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 10, width = 20)
     private LocalDateTime createTime;
 

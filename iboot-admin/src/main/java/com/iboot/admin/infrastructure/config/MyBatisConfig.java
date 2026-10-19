@@ -27,14 +27,30 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import javax.sql.DataSource;
 
 /**
- * MyBatis 配置类
+ * MyBatis 配置。
  *
- * @author iBoot
+ * <p>注册 {@link org.apache.ibatis.session.SqlSessionFactory} 并挂载数据权限拦截器，
+ * 同时扫描 {@code com.iboot.admin.infrastructure.persistence.mapper} 下的 Mapper 接口。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.infrastructure.interceptor.DataScopeInterceptor
  */
 @Configuration
 @MapperScan("com.iboot.admin.infrastructure.persistence.mapper")
 public class MyBatisConfig {
 
+    /**
+     * 创建 MyBatis {@link SqlSessionFactory}。
+     *
+     * <p>注册数据权限拦截器，开启驼峰映射、二级缓存和延迟加载，并加载
+     * {@code mapper} 目录下的 XML 映射文件。
+     *
+     * @param dataSource 数据源
+     * @param dataScopeInterceptor 数据权限拦截器
+     * @return SqlSessionFactory 实例
+     * @throws Exception 初始化失败时抛出
+     */
     @Bean
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource, DataScopeInterceptor dataScopeInterceptor)
             throws Exception {

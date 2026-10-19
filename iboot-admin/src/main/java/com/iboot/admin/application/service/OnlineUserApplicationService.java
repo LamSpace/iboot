@@ -35,7 +35,8 @@ import java.util.stream.Collectors;
  * 提供在线用户列表查询、强制退出用户、统计在线人数等功能 用户登录信息存储在 Redis 中，通过令牌进行会话管理
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class OnlineUserApplicationService {

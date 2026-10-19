@@ -19,13 +19,13 @@ package com.iboot.admin.infrastructure.config;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Elasticsearch 配置类
- * <p>
- * 使用 Spring Boot 自动配置的 Elasticsearch 客户端
- * 配置项位于 application.yml 的 spring.elasticsearch 节点
- * </p>
+ * Elasticsearch 配置。
  *
- * @author iBoot
+ * <p>使用 Spring Boot 自动配置的 Elasticsearch 客户端，配置项位于
+ * {@code application.yml} 的 {@code spring.elasticsearch} 节点；本类不额外定义 Bean。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Configuration
 public class ElasticsearchConfig {

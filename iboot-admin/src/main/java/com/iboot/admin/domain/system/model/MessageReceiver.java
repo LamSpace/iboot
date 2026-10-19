@@ -19,9 +19,13 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 消息接收记录实体
+ * 消息接收记录实体。
  *
- * @author iBoot
+ * <p>记录消息与接收用户的一对一关系，以及已读状态、阅读时间和用户侧删除标记。
+ * 同一条消息对每个接收用户都有一条独立记录。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class MessageReceiver {
 
@@ -31,12 +35,12 @@ public class MessageReceiver {
     private Long id;
 
     /**
-     * 消息ID
+     * 消息 ID
      */
     private Long messageId;
 
     /**
-     * 接收者用户ID
+     * 接收者用户 ID
      */
     private Long userId;
 
@@ -63,8 +67,8 @@ public class MessageReceiver {
      * Creates a new {@code MessageReceiver} instance.
      *
      * @param id        记录ID
-     * @param messageId 消息ID
-     * @param userId    接收者用户ID
+     * @param messageId 消息 ID
+     * @param userId    接收者用户 ID
      * @param isRead    是否已读：0-未读，1-已读
      * @param readTime  阅读时间
      * @param isDeleted 用户侧删除：0-未删除，1-已删除
@@ -86,7 +90,9 @@ public class MessageReceiver {
     }
 
     /**
-     * 标记已读
+     * 标记消息为已读。
+     *
+     * <p>同时把阅读时间设置为当前时间。
      */
     public void markAsRead() {
         this.isRead = 1;
@@ -94,7 +100,9 @@ public class MessageReceiver {
     }
 
     /**
-     * 用户侧软删除
+     * 在当前用户侧软删除消息。
+     *
+     * <p>只设置删除标记，不物理删除记录。
      */
     public void softDelete() {
         this.isDeleted = 1;
@@ -117,7 +125,7 @@ public class MessageReceiver {
     }
 
     /**
-     * 消息ID
+     * 消息 ID
      */
     @SuppressWarnings("all")
     public Long getMessageId() {
@@ -125,7 +133,7 @@ public class MessageReceiver {
     }
 
     /**
-     * 消息ID
+     * 消息 ID
      */
     @SuppressWarnings("all")
     public void setMessageId(final Long messageId) {
@@ -133,7 +141,7 @@ public class MessageReceiver {
     }
 
     /**
-     * 接收者用户ID
+     * 接收者用户 ID
      */
     @SuppressWarnings("all")
     public Long getUserId() {
@@ -141,7 +149,7 @@ public class MessageReceiver {
     }
 
     /**
-     * 接收者用户ID
+     * 接收者用户 ID
      */
     @SuppressWarnings("all")
     public void setUserId(final Long userId) {
@@ -303,7 +311,7 @@ public class MessageReceiver {
         }
 
         /**
-         * 消息ID
+         * 消息 ID
          *
          * @return {@code this}.
          */
@@ -314,7 +322,7 @@ public class MessageReceiver {
         }
 
         /**
-         * 接收者用户ID
+         * 接收者用户 ID
          *
          * @return {@code this}.
          */

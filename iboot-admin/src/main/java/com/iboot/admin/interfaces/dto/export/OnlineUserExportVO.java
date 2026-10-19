@@ -19,36 +19,66 @@ package com.iboot.admin.interfaces.dto.export;
 import com.iboot.admin.common.annotation.ExcelColumn;
 
 /**
- * 在线用户导出VO
+ * 在线用户导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class OnlineUserExportVO {
 
+    /**
+     * 导出列：用户ID。
+     */
     @ExcelColumn(name = "用户ID", order = 1, width = 10)
     private Long userId;
 
+    /**
+     * 导出列：用户名。
+     */
     @ExcelColumn(name = "用户名", order = 2, width = 15)
     private String username;
 
+    /**
+     * 导出列：昵称。
+     */
     @ExcelColumn(name = "昵称", order = 3, width = 15)
     private String nickname;
 
+    /**
+     * 导出列：部门名称。
+     */
     @ExcelColumn(name = "部门名称", order = 4, width = 20)
     private String deptName;
 
+    /**
+     * 导出列：登录IP。
+     */
     @ExcelColumn(name = "登录IP", order = 5, width = 18)
     private String loginIp;
 
+    /**
+     * 导出列：浏览器。
+     */
     @ExcelColumn(name = "浏览器", order = 6, width = 20)
     private String browser;
 
+    /**
+     * 导出列：操作系统。
+     */
     @ExcelColumn(name = "操作系统", order = 7, width = 20)
     private String os;
 
+    /**
+     * 导出列：登录时间。
+     */
     @ExcelColumn(name = "登录时间", order = 8, width = 20)
     private String loginTime;
 
+    /**
+     * 导出列：角色。
+     */
     @ExcelColumn(name = "角色", order = 9, width = 30)
     private String roles;
 

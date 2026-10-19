@@ -36,7 +36,8 @@ import java.util.stream.Collectors;
  * 负责菜单的创建、更新、删除、查询等业务逻辑处理， 支持菜单树形结构构建和用户权限菜单过滤
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class MenuApplicationService {

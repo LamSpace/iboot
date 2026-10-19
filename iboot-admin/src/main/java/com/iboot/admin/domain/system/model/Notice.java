@@ -19,14 +19,18 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 系统公告实体
+ * 系统公告实体。
  *
- * @author iBoot
+ * <p>表示一条面向全体或指定用户的公告，状态按草稿、已发布、已撤回流转；
+ * {@code isTop} 为 1 表示置顶展示。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class Notice {
 
     /**
-     * 公告ID
+     * 公告 ID
      */
     private Long id;
 
@@ -92,7 +96,7 @@ public class Notice {
     /**
      * Creates a new {@code Notice} instance.
      *
-     * @param id            公告ID
+     * @param id            公告 ID
      * @param noticeTitle   公告标题
      * @param noticeType    公告类型（字典 sys_notice_type）
      * @param noticeContent 公告内容
@@ -129,42 +133,50 @@ public class Notice {
     }
 
     /**
-     * 发布公告
+     * 将公告标记为已发布。
+     *
+     * <p>只修改内存中的状态，持久化由仓储层完成。
      */
     public void publish() {
         this.status = "1";
     }
 
     /**
-     * 撤回公告
+     * 将公告标记为已撤回。
      */
     public void revoke() {
         this.status = "2";
     }
 
     /**
-     * 是否为草稿状态
+     * 判断是否为草稿状态。
+     *
+     * @return 状态为 {@code 0} 时返回 {@code true}
      */
     public boolean isDraft() {
         return "0".equals(this.status);
     }
 
     /**
-     * 是否为已发布状态
+     * 判断是否为已发布状态。
+     *
+     * @return 状态为 {@code 1} 时返回 {@code true}
      */
     public boolean isPublished() {
         return "1".equals(this.status);
     }
 
     /**
-     * 是否为已撤回状态
+     * 判断是否为已撤回状态。
+     *
+     * @return 状态为 {@code 2} 时返回 {@code true}
      */
     public boolean isRevoked() {
         return "2".equals(this.status);
     }
 
     /**
-     * 公告ID
+     * 公告 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -172,7 +184,7 @@ public class Notice {
     }
 
     /**
-     * 公告ID
+     * 公告 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -507,7 +519,7 @@ public class Notice {
         }
 
         /**
-         * 公告ID
+         * 公告 ID
          *
          * @return {@code this}.
          */

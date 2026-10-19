@@ -20,24 +20,39 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
 
 /**
- * 文件信息更新请求 DTO
+ * 文件信息更新请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "文件信息更新请求")
 public class FileUpdateRequest {
 
+    /**
+     * 文件ID。
+     */
     @Schema(description = "文件ID")
     private Long id;
 
+    /**
+     * 文件名称。
+     */
     @Schema(description = "文件名称")
     @Size(max = 255, message = "文件名称长度不能超过255")
     private String fileName;
 
+    /**
+     * 文件分类。
+     */
     @Schema(description = "文件分类")
     @Size(max = 100, message = "文件分类长度不能超过100")
     private String fileCategory;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;

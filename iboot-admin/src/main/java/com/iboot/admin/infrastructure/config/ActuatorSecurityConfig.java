@@ -20,12 +20,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 /**
- * Actuator 安全配置
- * <p>
- * Actuator 端点的访问控制已由 {@link SecurityWhitelistConfig} 统一管理： - /actuator/** 路径在白名单中，允许匿名访问 - Spring Boot Admin 需要无障碍访问
- * Actuator 端点完成注册和数据采集 - 生产环境建议通过网络层（防火墙/Nginx）限制 Actuator 端点的外部访问
+ * Actuator 端点安全配置。
  *
- * @author iBoot
+ * <p>Actuator 的访问控制由 {@link SecurityWhitelistConfig} 和 {@code SecurityConfig}
+ * 统一处理：{@code /actuator/**} 在白名单中允许匿名访问，便于 Spring Boot Admin
+ * 注册和采集数据。生产环境应通过网络层（防火墙或 Nginx）限制外部访问。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see SecurityWhitelistConfig
  */
 @Configuration
 @Order(1)

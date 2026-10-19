@@ -35,7 +35,8 @@ import java.util.List;
  * 提供系统配置的增删改查功能，支持二级缓存（Caffeine + Redis）优化查询性能
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class ConfigApplicationService {

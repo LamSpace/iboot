@@ -28,7 +28,11 @@ import java.util.Optional;
  * 负责部门数据的持久化操作，提供部门树形结构管理和用户统计功能
  * </p>
  *
- * @author iBoot
+ * <p>查询约定：列表方法没有数据时返回空列表而不是 {@code null}。
+ * 部门树由 {@code parentId} 组织，顶级部门的父 ID 为 {@code 0}。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface DeptRepository {
 

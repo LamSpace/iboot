@@ -30,9 +30,12 @@ import java.util.Date;
 import java.util.Map;
 
 /**
- * JWT 工具类
+ * JWT 令牌工具。
  *
- * @author iBoot
+ * <p>负责生成、解析和校验 JWT，读取 {@code jwt.*} 配置中的密钥和过期时间。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 public class JwtTokenUtil {

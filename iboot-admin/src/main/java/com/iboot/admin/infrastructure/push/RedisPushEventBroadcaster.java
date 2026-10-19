@@ -30,12 +30,14 @@ import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.stereotype.Component;
 
 /**
- * Redis 推送事件广播器
- * <p>
- * 基于 Redis Pub/Sub 实现多实例间的推送事件广播 用于在集群环境下将推送事件广播到所有应用实例
+ * Redis 推送事件广播器。
+ *
+ * <p>基于 Redis Pub/Sub 在多个应用实例之间广播推送事件，使集群环境下所有节点
+ * 都能收到事件并转发给各自维护的 SSE 连接。
  *
  * @author iBoot Team
  * @since 1.0.0
+ * @see PushEventService
  */
 @Component
 public class RedisPushEventBroadcaster implements MessageListener {
@@ -118,6 +120,12 @@ public class RedisPushEventBroadcaster implements MessageListener {
     }
 
     @Override
+    /**
+     * 接收 Redis 广播的推送事件并转发给本地 SSE 连接。
+     *
+     * @param message Redis 消息
+     * @param pattern 订阅模式；使用频道订阅时可能为 {@code null}
+     */
     public void onMessage(Message message, byte[] pattern) {
         try {
             byte[] body = message.getBody();

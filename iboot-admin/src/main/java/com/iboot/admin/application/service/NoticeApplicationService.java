@@ -36,7 +36,8 @@ import java.util.List;
  * 负责公告的创建、编辑、发布、撤回、删除和查询等业务逻辑处理。 支持公告状态管理（草稿/已发布）、置顶控制、已读记录管理等功能。 公告最大显示数量和置顶数量上限通过 sys_config 参数配置动态读取。
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class NoticeApplicationService {

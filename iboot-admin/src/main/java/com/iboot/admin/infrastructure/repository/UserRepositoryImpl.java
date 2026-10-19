@@ -33,7 +33,11 @@ import java.util.stream.Collectors;
  * 基于 MyBatis Mapper 实现用户数据的持久化操作，处理用户与角色、岗位的关联关系
  * </p>
  *
- * @author iBoot
+ * <p>负责 PO 与领域模型之间的转换以及关联关系的读写；不包含业务规则，
+ * 事务边界由应用服务控制。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Repository
 public class UserRepositoryImpl implements UserRepository {

@@ -28,9 +28,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * 任务执行工具类
+ * 定时任务调用工具。
  *
- * @author iBoot
+ * <p>解析 {@code beanName.methodName} 形式的调用目标并反射执行，
+ * 支持普通方法和带参数的 Spring Bean 方法。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public final class JobInvokeUtil {
 

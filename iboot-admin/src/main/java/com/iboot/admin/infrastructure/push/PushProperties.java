@@ -20,9 +20,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * 推送配置属性
- * <p>
- * 读取 application.yml 中的 iboot.push 配置
+ * 推送配置属性。
+ *
+ * <p>绑定 {@code application.yml} 中的 {@code iboot.push} 配置，包括 SSE 超时、
+ * 心跳间隔等参数。
  *
  * @author iBoot Team
  * @since 1.0.0

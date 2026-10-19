@@ -19,9 +19,12 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 公告已读记录
+ * 公告已读记录。
  *
- * @author iBoot
+ * <p>记录公告与用户的一对一阅读关系及阅读时间，用于判断公告是否已读和统计阅读情况。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class NoticeRead {
 
@@ -31,12 +34,12 @@ public class NoticeRead {
     private Long id;
 
     /**
-     * 公告ID
+     * 公告 ID
      */
     private Long noticeId;
 
     /**
-     * 用户ID
+     * 用户 ID
      */
     private Long userId;
 
@@ -53,8 +56,8 @@ public class NoticeRead {
      * Creates a new {@code NoticeRead} instance.
      *
      * @param id       记录ID
-     * @param noticeId 公告ID
-     * @param userId   用户ID
+     * @param noticeId 公告 ID
+     * @param userId   用户 ID
      * @param readTime 阅读时间
      */
     @SuppressWarnings("all")
@@ -87,7 +90,7 @@ public class NoticeRead {
     }
 
     /**
-     * 公告ID
+     * 公告 ID
      */
     @SuppressWarnings("all")
     public Long getNoticeId() {
@@ -95,7 +98,7 @@ public class NoticeRead {
     }
 
     /**
-     * 公告ID
+     * 公告 ID
      */
     @SuppressWarnings("all")
     public void setNoticeId(final Long noticeId) {
@@ -103,7 +106,7 @@ public class NoticeRead {
     }
 
     /**
-     * 用户ID
+     * 用户 ID
      */
     @SuppressWarnings("all")
     public Long getUserId() {
@@ -111,7 +114,7 @@ public class NoticeRead {
     }
 
     /**
-     * 用户ID
+     * 用户 ID
      */
     @SuppressWarnings("all")
     public void setUserId(final Long userId) {
@@ -222,7 +225,7 @@ public class NoticeRead {
         }
 
         /**
-         * 公告ID
+         * 公告 ID
          *
          * @return {@code this}.
          */
@@ -233,7 +236,7 @@ public class NoticeRead {
         }
 
         /**
-         * 用户ID
+         * 用户 ID
          *
          * @return {@code this}.
          */

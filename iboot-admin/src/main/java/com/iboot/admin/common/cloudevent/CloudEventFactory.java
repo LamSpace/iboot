@@ -30,17 +30,24 @@ import java.time.ZoneId;
 import java.util.UUID;
 
 /**
- * CloudEvents 事件工厂
- * <p>
- * 提供统一的 CloudEvent 事件创建方法
+ * CloudEvents 事件工厂。
+ *
+ * <p>统一创建 CloudEvents 1.0 事件：生成事件 ID、确定事件源、设置时间与
+ * JSON 数据内容类型，并把业务数据序列化为字节。事件类型通常取自
+ * {@link CloudEventTypes}。
+ *
+ * <p>事件源以 {@code /} 开头时直接使用，否则拼接到默认源 {@value #DEFAULT_SOURCE} 之后。
+ * 序列化失败时以 {@link RuntimeException} 包装抛出。
  *
  * @author iBoot Team
  * @since 1.0.0
+ * @see CloudEventTypes
+ * @see CloudEventBody
  */
 public final class CloudEventFactory {
 
     /**
-     * 默认事件源
+     * 默认事件源，用于补全不以 {@code /} 开头的事件源。
      */
     private static final String DEFAULT_SOURCE = "/iboot";
 

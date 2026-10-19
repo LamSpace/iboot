@@ -33,7 +33,8 @@ import java.util.Map;
  * 提供消息模板的创建、更新、删除、查询以及模板内容填充等功能
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class MessageTemplateApplicationService {

@@ -40,9 +40,14 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Spring Security 配置类
+ * Spring Security 配置。
  *
- * @author iBoot
+ * <p>定义安全过滤器链、认证入口、访问拒绝处理器、密码编码器和 CORS 等基础设施；
+ * 具体白名单路径由 {@link SecurityWhitelistConfig} 提供。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see SecurityWhitelistConfig
  */
 @Configuration
 @EnableWebSecurity
@@ -69,6 +74,16 @@ public class SecurityConfig {
         this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
     }
 
+    /**
+     * 构建安全过滤器链。
+     *
+     * <p>禁用 CSRF，启用 CORS 和无状态会话；白名单路径放行，其余请求要求认证，
+     * 并注册 JWT 过滤器与认证/授权失败处理器。
+     *
+     * @param http HttpSecurity 配置器
+     * @return 安全过滤器链
+     * @throws Exception 配置失败时抛出
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 

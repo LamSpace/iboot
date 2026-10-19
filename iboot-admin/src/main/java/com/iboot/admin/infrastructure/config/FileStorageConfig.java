@@ -28,9 +28,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 /**
- * 文件存储配置类 根据系统配置动态选择文件存储策略
+ * 文件存储配置。
  *
- * @author iBoot
+ * <p>根据系统配置动态选择本地存储或 MinIO 存储策略，并向容器暴露对应的
+ * {@link com.iboot.admin.domain.system.service.FileStorageStrategy} Bean。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.domain.system.service.FileStorageStrategy
  */
 @Configuration
 public class FileStorageConfig {

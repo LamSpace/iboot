@@ -51,9 +51,15 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 文件管理控制器
+ * 文件管理控制器。
  *
- * @author iBoot
+ * <p>提供文件上传、列表、详情、下载 URL、下载、信息修改、删除和导出接口，
+ * 对应 {@code file:*} 权限。下载接口在 MinIO 模式下重定向到预签名 URL，
+ * 本地模式下直接返回文件流。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see FileApplicationService
  */
 @Tag(name = "文件管理", description = "文件上传下载管理相关接口")
 @RestController
@@ -67,6 +73,13 @@ public class FileController {
         this.fileApplicationService = fileApplicationService;
     }
 
+    /**
+     * 上传文件。
+     *
+     * @param file 上传的文件
+     * @param fileCategory 文件分类，可为 {@code null}
+     * @return 文件元数据
+     */
     @Operation(summary = "上传文件")
     @PostMapping(version = "1", value = "/upload")
     @PreAuthorize("hasAuthority('file:upload')")
@@ -78,6 +91,18 @@ public class FileController {
         return Result.success(convertToResponse(fileInfo));
     }
 
+    /**
+     * 分页查询文件列表。
+     *
+     * <p>任一带条件参数非空时走条件查询，否则查询全部文件。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param fileName 文件名关键字，可为 {@code null}
+     * @param fileCategory 文件分类，可为 {@code null}
+     * @param fileExt 文件扩展名，可为 {@code null}
+     * @return 文件分页结果
+     */
     @Operation(summary = "查询文件列表")
     @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('file:list')")
@@ -100,6 +125,13 @@ public class FileController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 查询文件详情。
+     *
+     * @param id 文件 ID
+     * @return 文件详情
+     * @throws com.iboot.admin.common.exception.BusinessException 文件不存在时抛出
+     */
     @Operation(summary = "查询文件详情")
     @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('file:list')")
@@ -108,6 +140,12 @@ public class FileController {
         return Result.success(convertToResponse(fileInfo));
     }
 
+    /**
+     * 获取文件下载 URL。
+     *
+     * @param id 文件 ID
+     * @return 下载 URL 和存储类型；本地模式返回下载接口路径
+     */
     @Operation(summary = "获取文件下载URL", description = "MinIO模式返回预签名URL，本地模式返回下载接口路径")
     @GetMapping(version = "1", value = "/download-url/{id}")
     @PreAuthorize("hasAuthority('file:download')")
@@ -121,6 +159,15 @@ public class FileController {
         return Result.success(Map.of("url", downloadUrl, "storageType", storageType));
     }
 
+    /**
+     * 下载文件。
+     *
+     * <p>MinIO 模式返回 302 重定向到预签名 URL；本地模式直接写出文件流。
+     *
+     * @param id 文件 ID
+     * @return MinIO 模式下的重定向响应，或本地模式下的文件流响应
+     * @throws IOException 文件不存在于磁盘或读取失败时抛出
+     */
     @Operation(summary = "下载文件")
     @GetMapping(version = "1", value = "/download/{id}")
     @PreAuthorize("hasAuthority('file:download')")
@@ -145,6 +192,14 @@ public class FileController {
                 .body(resource);
     }
 
+    /**
+     * 修改文件信息。
+     *
+     * <p>只更新文件名、分类和备注，不改变存储内容。
+     *
+     * @param request 文件信息更新请求
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改文件信息")
     @PutMapping
     @PreAuthorize("hasAuthority('file:list')")
@@ -161,6 +216,12 @@ public class FileController {
         return Result.success();
     }
 
+    /**
+     * 删除文件。
+     *
+     * @param id 文件 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除文件")
     @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('file:remove')")
@@ -170,6 +231,14 @@ public class FileController {
         return Result.success();
     }
 
+    /**
+     * 导出文件列表。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param fileName 文件名关键字，可为 {@code null}
+     * @param fileCategory 文件分类，可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出文件列表")
     @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('file:export')")

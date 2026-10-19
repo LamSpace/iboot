@@ -21,32 +21,53 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 公告请求 DTO
+ * 公告请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "公告请求")
 public class NoticeRequest {
 
+    /**
+     * 公告ID。
+     */
     @Schema(description = "公告ID")
     private Long id;
 
+    /**
+     * 公告标题。
+     */
     @Schema(description = "公告标题")
     @NotBlank(message = "公告标题不能为空")
     @Size(max = 200, message = "公告标题长度不能超过200")
     private String noticeTitle;
 
+    /**
+     * 公告类型（字典 sys_notice_type）。
+     */
     @Schema(description = "公告类型（字典 sys_notice_type）")
     @NotBlank(message = "公告类型不能为空")
     private String noticeType;
 
+    /**
+     * 公告内容。
+     */
     @Schema(description = "公告内容")
     @NotBlank(message = "公告内容不能为空")
     private String noticeContent;
 
+    /**
+     * 是否置顶：0-否，1-是。
+     */
     @Schema(description = "是否置顶：0-否，1-是")
     private Integer isTop;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;

@@ -31,18 +31,26 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import java.util.Objects;
 
 /**
- * CloudEvents 响应体拦截器
- * <p>
- * 自动将 {@link Result} 格式响应包装为 {@link CloudEventBody} 格式
- * <p>
- * 拦截范围：/api/** 路径下的所有响应
+ * CloudEvents 响应体拦截器。
+ *
+ * <p>对 {@code /api/**} 下返回 {@link Result} 的接口，将响应体自动包装为
+ * {@link CloudEventBody}，并把请求路径作为事件源；非 {@code /api/**} 请求、
+ * 已包装的响应和 springdoc 返回类型保持原样。
  *
  * @author iBoot Team
  * @since 1.0.0
+ * @see CloudEventBody
  */
 @RestControllerAdvice(basePackages = "com.iboot.admin.interfaces")
 public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
+    /**
+     * 判断是否需要对当前返回值应用响应包装。
+     *
+     * @param returnType 方法返回类型
+     * @param converterType 选中的消息转换器类型
+     * @return 返回类型为 {@link Result} 且不是 {@link CloudEventBody} 时返回 {@code true}
+     */
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
         // 排除 springdoc 相关的返回类型
@@ -56,6 +64,19 @@ public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> 
                 && !CloudEventBody.class.isAssignableFrom(returnType.getParameterType());
     }
 
+    /**
+     * 将 {@link Result} 响应包装为 {@link CloudEventBody}。
+     *
+     * <p>非 {@code /api/**} 请求、空响应和已包装的响应直接返回原值。
+     *
+     * @param body 原始响应体
+     * @param returnType 方法返回类型
+     * @param selectedContentType 选中的内容类型
+     * @param selectedConverterType 选中的消息转换器类型
+     * @param request 当前请求
+     * @param response 当前响应
+     * @return 包装后的 CloudEventBody，或原始响应体
+     */
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
                                   Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request,

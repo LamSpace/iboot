@@ -47,7 +47,8 @@ import java.util.stream.Collectors;
  * 参数配置动态读取，支持自动推断文件分类。
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class FileApplicationService {

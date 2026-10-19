@@ -19,16 +19,25 @@ package com.iboot.admin.interfaces.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 公开系统配置响应 DTO 用于前端登录页、页头等场景获取系统公开配置
+ * 公开系统配置响应 DTO 用于前端登录页、页头等场景获取系统公开配置。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "公开系统配置响应")
 public class PublicConfigResponse {
 
+    /**
+     * 系统名称。
+     */
     @Schema(description = "系统名称")
     private String systemName;
 
+    /**
+     * 是否允许用户注册。
+     */
     @Schema(description = "是否允许用户注册")
     private Boolean registerEnabled;
 

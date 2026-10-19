@@ -21,45 +21,84 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 操作日志导出VO
+ * 操作日志导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class OperateLogExportVO {
 
+    /**
+     * 导出列：日志ID。
+     */
     @ExcelColumn(name = "日志ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：模块标题。
+     */
     @ExcelColumn(name = "模块标题", order = 2, width = 15)
     private String title;
 
+    /**
+     * 导出列：业务类型；字典类型 {@code sys_oper_type}。
+     */
     @ExcelColumn(name = "业务类型", order = 3, width = 10, dictType = "sys_oper_type")
     private Integer businessType;
 
+    /**
+     * 导出列：请求方式。
+     */
     @ExcelColumn(name = "请求方式", order = 4, width = 10)
     private String requestMethod;
 
+    /**
+     * 导出列：操作人员。
+     */
     @ExcelColumn(name = "操作人员", order = 5, width = 15)
     private String operatorName;
 
+    /**
+     * 导出列：部门名称。
+     */
     @ExcelColumn(name = "部门名称", order = 6, width = 15)
     private String deptName;
 
+    /**
+     * 导出列：请求URL。
+     */
     @ExcelColumn(name = "请求URL", order = 7, width = 40)
     private String operUrl;
 
+    /**
+     * 导出列：操作IP。
+     */
     @ExcelColumn(name = "操作IP", order = 8, width = 18)
     private String operIp;
 
+    /**
+     * 导出列：操作地点。
+     */
     @ExcelColumn(name = "操作地点", order = 9, width = 20)
     private String operLocation;
 
+    /**
+     * 导出列：操作状态；字典类型 {@code sys_common_status}。
+     */
     @ExcelColumn(name = "操作状态", order = 10, width = 10, dictType = "sys_common_status")
     private Integer status;
 
+    /**
+     * 导出列：耗时(ms)。
+     */
     @ExcelColumn(name = "耗时(ms)", order = 11, width = 12)
     private Long costTime;
 
+    /**
+     * 导出列：操作时间。
+     */
     @ExcelColumn(name = "操作时间", order = 12, width = 20)
     private LocalDateTime operTime;
 

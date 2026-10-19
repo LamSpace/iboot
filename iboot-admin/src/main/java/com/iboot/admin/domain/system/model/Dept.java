@@ -21,19 +21,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 部门实体（聚合根）
+ * 部门实体（聚合根）。
  *
- * @author iBoot
+ * <p>表示组织架构中的一个部门，通过 {@code parentId} 组成树形结构；
+ * {@code children} 为非持久化字段，用于构建树形响应。
+ * 顶级部门的 {@code parentId} 为 {@code null} 或 {@code 0}。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class Dept {
 
     /**
-     * 部门ID
+     * 部门 ID
      */
     private Long id;
 
     /**
-     * 父部门ID
+     * 父部门 ID
      */
     private Long parentId;
 
@@ -110,8 +115,8 @@ public class Dept {
     /**
      * Creates a new {@code Dept} instance.
      *
-     * @param id         部门ID
-     * @param parentId   父部门ID
+     * @param id         部门 ID
+     * @param parentId   父部门 ID
      * @param deptName   部门名称
      * @param deptCode   部门编码
      * @param orderNum   显示顺序
@@ -159,28 +164,34 @@ public class Dept {
     }
 
     /**
-     * 启用部门
+     * 启用部门。
      */
     public void enable() {
         this.status = 1;
     }
 
     /**
-     * 停用部门
+     * 停用部门。
      */
     public void disable() {
         this.status = 0;
     }
 
     /**
-     * 检查部门是否启用
+     * 判断部门是否启用。
+     *
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isEnabled() {
         return this.status != null && this.status == 1;
     }
 
     /**
-     * 更新负责人信息
+     * 更新负责人信息。
+     *
+     * @param leader 负责人姓名
+     * @param phone 联系电话
+     * @param email 邮箱
      */
     public void updateLeader(String leader, String phone, String email) {
         this.leader = leader;
@@ -189,14 +200,16 @@ public class Dept {
     }
 
     /**
-     * 检查是否为顶级部门
+     * 判断是否为顶级部门。
+     *
+     * @return {@code parentId} 为 {@code null} 或 {@code 0} 时返回 {@code true}
      */
     public boolean isRoot() {
         return this.parentId == null || this.parentId == 0L;
     }
 
     /**
-     * 部门ID
+     * 部门 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -204,7 +217,7 @@ public class Dept {
     }
 
     /**
-     * 部门ID
+     * 部门 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -212,7 +225,7 @@ public class Dept {
     }
 
     /**
-     * 父部门ID
+     * 父部门 ID
      */
     @SuppressWarnings("all")
     public Long getParentId() {
@@ -220,7 +233,7 @@ public class Dept {
     }
 
     /**
-     * 父部门ID
+     * 父部门 ID
      */
     @SuppressWarnings("all")
     public void setParentId(final Long parentId) {
@@ -618,7 +631,7 @@ public class Dept {
         }
 
         /**
-         * 部门ID
+         * 部门 ID
          *
          * @return {@code this}.
          */
@@ -629,7 +642,7 @@ public class Dept {
         }
 
         /**
-         * 父部门ID
+         * 父部门 ID
          *
          * @return {@code this}.
          */

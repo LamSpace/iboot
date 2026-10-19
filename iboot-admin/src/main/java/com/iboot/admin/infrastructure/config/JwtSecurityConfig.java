@@ -20,9 +20,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * JWT 安全配置
+ * JWT 安全配置。
  *
- * @author iBoot
+ * <p>绑定 {@code jwt.*} 配置项，包括令牌过期时间、密钥等参数，
+ * 供令牌生成和校验逻辑使用。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 @ConfigurationProperties(prefix = "jwt")

@@ -19,9 +19,13 @@ package com.iboot.admin.domain.job.model;
 import java.time.LocalDateTime;
 
 /**
- * 定时任务执行日志领域模型
+ * 定时任务执行日志领域模型。
  *
- * @author iBoot
+ * <p>记录一次任务执行的开始/结束时间、耗时、结果和异常信息，
+ * 用于任务监控和故障排查。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class JobLog {
 
@@ -36,12 +40,12 @@ public class JobLog {
     public static final int STATUS_SUCCESS = 1;
 
     /**
-     * 日志ID
+     * 日志 ID
      */
     private Long id;
 
     /**
-     * 任务ID
+     * 任务 ID
      */
     private Long jobId;
 
@@ -102,8 +106,8 @@ public class JobLog {
     /**
      * Creates a new {@code JobLog} instance.
      *
-     * @param id            日志ID
-     * @param jobId         任务ID
+     * @param id            日志 ID
+     * @param jobId         任务 ID
      * @param jobName       任务名称
      * @param jobGroup      任务组名
      * @param invokeTarget  调用目标字符串
@@ -140,14 +144,16 @@ public class JobLog {
     }
 
     /**
-     * 判断执行是否成功
+     * 判断执行是否成功。
+     *
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isSuccess() {
         return STATUS_SUCCESS == this.status;
     }
 
     /**
-     * 日志ID
+     * 日志 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -155,7 +161,7 @@ public class JobLog {
     }
 
     /**
-     * 日志ID
+     * 日志 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -163,7 +169,7 @@ public class JobLog {
     }
 
     /**
-     * 任务ID
+     * 任务 ID
      */
     @SuppressWarnings("all")
     public Long getJobId() {
@@ -171,7 +177,7 @@ public class JobLog {
     }
 
     /**
-     * 任务ID
+     * 任务 ID
      */
     @SuppressWarnings("all")
     public void setJobId(final Long jobId) {
@@ -490,7 +496,7 @@ public class JobLog {
         }
 
         /**
-         * 日志ID
+         * 日志 ID
          *
          * @return {@code this}.
          */
@@ -501,7 +507,7 @@ public class JobLog {
         }
 
         /**
-         * 任务ID
+         * 任务 ID
          *
          * @return {@code this}.
          */

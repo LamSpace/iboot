@@ -49,7 +49,8 @@ import java.util.concurrent.TimeUnit;
  * 连接健康检查。
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class ServerMonitorApplicationService {

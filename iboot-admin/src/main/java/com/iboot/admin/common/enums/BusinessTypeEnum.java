@@ -17,46 +17,52 @@
 package com.iboot.admin.common.enums;
 
 /**
- * 业务操作类型枚举
+ * 业务操作类型枚举。
  *
- * @author iBoot
+ * <p>用于标识操作日志中记录的业务动作，与
+ * {@link com.iboot.admin.common.annotation.Log#businessType()} 配合使用。
+ * {@code code} 持久化到数据库，{@code description} 用于展示和日志文本。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.common.annotation.Log
  */
 public enum BusinessTypeEnum {
 
     /**
-     * 其它
+     * 其他未分类的业务操作。
      */
     OTHER(0, "其它"),
     /**
-     * 新增
+     * 新增数据。
      */
     INSERT(1, "新增"),
     /**
-     * 修改
+     * 修改数据。
      */
     UPDATE(2, "修改"),
     /**
-     * 删除
+     * 删除数据。
      */
     DELETE(3, "删除"),
     /**
-     * 授权
+     * 授权操作，例如分配角色或权限。
      */
     GRANT(4, "授权"),
     /**
-     * 导出
+     * 导出数据。
      */
     EXPORT(5, "导出"),
     /**
-     * 导入
+     * 导入数据。
      */
     IMPORT(6, "导入"),
     /**
-     * 强退
+     * 强制退出在线用户。
      */
     FORCE_LOGOUT(7, "强退"),
     /**
-     * 清空数据
+     * 清空业务数据。
      */
     CLEAN(8, "清空");
 

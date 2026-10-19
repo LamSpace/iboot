@@ -24,48 +24,84 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
- * 更新用户请求 DTO
+ * 更新用户请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "更新用户请求")
 public class UpdateUserRequest {
 
+    /**
+     * 用户ID。
+     */
     @Schema(description = "用户ID")
     @NotNull(message = "用户ID不能为空")
     private Long id;
 
+    /**
+     * 昵称。
+     */
     @Schema(description = "昵称")
     @Size(max = 30, message = "昵称长度不能超过30")
     private String nickname;
 
+    /**
+     * 邮箱。
+     */
     @Schema(description = "邮箱")
     @Email(message = "邮箱格式不正确")
     @Size(max = 50, message = "邮箱长度不能超过50")
     private String email;
 
+    /**
+     * 手机号码。
+     */
     @Schema(description = "手机号码")
     @Size(max = 11, message = "手机号码长度不能超过11")
     private String phone;
 
+    /**
+     * 性别：0-未知，1-男，2-女。
+     */
     @Schema(description = "性别：0-未知，1-男，2-女")
     private Integer gender;
 
+    /**
+     * 用户类型：1-系统用户，2-普通用户。
+     */
     @Schema(description = "用户类型：1-系统用户，2-普通用户")
     private Integer userType;
 
+    /**
+     * 部门ID。
+     */
     @Schema(description = "部门ID")
     private Long deptId;
 
+    /**
+     * 岗位ID列表。
+     */
     @Schema(description = "岗位ID列表")
     private List<Long> postIds;
 
+    /**
+     * 角色ID列表。
+     */
     @Schema(description = "角色ID列表")
     private List<Long> roleIds;
 
+    /**
+     * 状态：0-停用，1-正常。
+     */
     @Schema(description = "状态：0-停用，1-正常")
     private Integer status;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;

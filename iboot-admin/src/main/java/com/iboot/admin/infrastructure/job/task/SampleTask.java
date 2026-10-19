@@ -21,9 +21,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * 示例定时任务 用于演示定时任务的调用方式
+ * 示例定时任务。
  *
- * @author iBoot
+ * <p>演示通过 {@code beanName.methodName} 调用 Spring Bean 的方式，仅用于开发参考。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component("sampleTask")
 public class SampleTask {

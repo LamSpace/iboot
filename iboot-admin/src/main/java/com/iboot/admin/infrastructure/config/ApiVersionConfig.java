@@ -21,10 +21,14 @@ import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * API 版本控制配置
- * 配置 Spring Framework 7.0+ 的 API 版本控制支持
+ * API 版本控制配置。
  *
- * @author iBoot
+ * <p>启用 Spring Framework 7 的 API 版本控制，通过 {@code Accept-Version}
+ * 请求头解析版本号。SSE 端点 {@code /api/push/**} 不要求版本号，
+ * 因为 {@code EventSource} 无法自定义请求头。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Configuration
 public class ApiVersionConfig implements WebMvcConfigurer {

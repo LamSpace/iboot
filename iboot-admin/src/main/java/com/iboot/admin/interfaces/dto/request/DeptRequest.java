@@ -21,44 +21,74 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 部门请求 DTO
+ * 部门请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "部门请求")
 public class DeptRequest {
 
+    /**
+     * 部门ID。
+     */
     @Schema(description = "部门ID")
     private Long id;
 
+    /**
+     * 父部门ID。
+     */
     @Schema(description = "父部门ID")
     private Long parentId;
 
+    /**
+     * 部门编码。
+     */
     @Schema(description = "部门编码")
     @NotBlank(message = "部门编码不能为空")
     @Size(max = 50, message = "部门编码长度不能超过50")
     private String deptCode;
 
+    /**
+     * 部门名称。
+     */
     @Schema(description = "部门名称")
     @NotBlank(message = "部门名称不能为空")
     @Size(max = 50, message = "部门名称长度不能超过50")
     private String deptName;
 
+    /**
+     * 显示顺序。
+     */
     @Schema(description = "显示顺序")
     private Integer orderNum;
 
+    /**
+     * 负责人。
+     */
     @Schema(description = "负责人")
     @Size(max = 30, message = "负责人长度不能超过30")
     private String leader;
 
+    /**
+     * 负责人电话。
+     */
     @Schema(description = "负责人电话")
     @Size(max = 11, message = "负责人电话长度不能超过11")
     private String phone;
 
+    /**
+     * 负责人邮箱。
+     */
     @Schema(description = "负责人邮箱")
     @Size(max = 50, message = "负责人邮箱长度不能超过50")
     private String email;
 
+    /**
+     * 状态：0-停用，1-正常。
+     */
     @Schema(description = "状态：0-停用，1-正常")
     private Integer status;
 

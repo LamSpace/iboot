@@ -17,9 +17,12 @@
 package com.iboot.admin.infrastructure.job;
 
 /**
- * 调度常量
+ * 定时任务调度常量。
  *
- * @author iBoot
+ * <p>定义任务状态、并发策略、错过执行策略以及调度器使用的键名。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public final class ScheduleConstants {
 

@@ -19,9 +19,10 @@ package com.iboot.admin.infrastructure.push;
 import org.springframework.context.ApplicationEvent;
 
 /**
- * 消息发送事件
- * <p>
- * 当消息发送成功时发布此事件
+ * 消息发送事件。
+ *
+ * <p>消息发送成功后发布，携带消息内容、类型、优先级和发送者信息，
+ * 供推送监听器构建新消息通知。
  *
  * @author iBoot Team
  * @since 1.0.0

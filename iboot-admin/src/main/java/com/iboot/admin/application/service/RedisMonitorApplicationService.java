@@ -43,7 +43,8 @@ import java.util.stream.Collectors;
  * 服务器信息、内存使用、命令统计、键空间信息，以及缓存键的浏览、查询和删除操作。
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class RedisMonitorApplicationService {

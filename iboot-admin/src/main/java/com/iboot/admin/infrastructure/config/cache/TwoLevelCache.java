@@ -25,13 +25,15 @@ import org.springframework.data.redis.core.RedisTemplate;
 import java.util.concurrent.Callable;
 
 /**
- * 二级缓存实现
- * <p>
- * L1: Caffeine 本地缓存（毫秒级响应） L2: Redis 分布式缓存（跨节点共享）
- * <p>
- * 读取策略：L1 -> L2 -> DB（穿透写回） 写入策略：同时写入 L1 + L2 失效策略：同时清除 L1 + L2，并通过 Redis Pub/Sub 通知其他节点清除 L1
+ * 二级缓存实现。
  *
- * @author iBoot
+ * <p>L1 使用 Caffeine 本地缓存（毫秒级响应），L2 使用 Redis 分布式缓存（跨节点共享）。
+ * 读取顺序为 L1 → L2 → 数据源；写入同时更新 L1 和 L2；失效时清除两层缓存，
+ * 并通过 Redis Pub/Sub 通知其他节点清除 L1。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see TwoLevelCacheManager
  */
 public class TwoLevelCache implements Cache {
 
@@ -49,6 +51,15 @@ public class TwoLevelCache implements Cache {
 
     private BusinessMetricsService metricsService;
 
+    /**
+     * 创建二级缓存实例。
+     *
+     * @param name 缓存名称
+     * @param l1Cache 本地缓存
+     * @param l2Cache Redis 缓存
+     * @param redisTemplate Redis 模板
+     * @param evictChannel 失效消息通道
+     */
     public TwoLevelCache(String name, Cache l1Cache, Cache l2Cache, RedisTemplate<String, Object> redisTemplate,
                          String evictChannel) {
         this.name = name;
@@ -58,20 +69,43 @@ public class TwoLevelCache implements Cache {
         this.evictChannel = evictChannel;
     }
 
+    /**
+     * 注入业务指标服务。
+     *
+     * @param metricsService 业务指标服务
+     */
     public void setMetricsService(BusinessMetricsService metricsService) {
         this.metricsService = metricsService;
     }
 
+    /**
+     * 获取缓存名称。
+     *
+     * @return 缓存名称
+     */
     @Override
     public String getName() {
         return this.name;
     }
 
+    /**
+     * 获取底层缓存实现。
+     *
+     * @return 当前缓存实例本身
+     */
     @Override
     public Object getNativeCache() {
         return this;
     }
 
+    /**
+     * 读取缓存值。
+     *
+     * <p>先查 L1，未命中再查 L2 并回填 L1。
+     *
+     * @param key 缓存键
+     * @return 缓存值包装；未命中时返回 {@code null}
+     */
     @Override
     public ValueWrapper get(Object key) {
         // 1. 先查 L1 本地缓存
@@ -101,6 +135,15 @@ public class TwoLevelCache implements Cache {
         return null;
     }
 
+    /**
+     * 按类型读取缓存值。
+     *
+     * @param key 缓存键
+     * @param type 期望类型
+     * @param <T> 值类型
+     * @return 缓存值；未命中时返回 {@code null}
+     * @throws IllegalStateException 缓存值类型不匹配时抛出
+     */
     @Override
     @SuppressWarnings("unchecked")
     public <T> T get(Object key, Class<T> type) {
@@ -115,6 +158,15 @@ public class TwoLevelCache implements Cache {
         return (T) value;
     }
 
+    /**
+     * 读取缓存值，未命中时加载并写入。
+     *
+     * @param key 缓存键
+     * @param valueLoader 值加载器
+     * @param <T> 值类型
+     * @return 缓存值
+     * @throws ValueRetrievalException 加载失败时抛出
+     */
     @Override
     @SuppressWarnings("unchecked")
     public <T> T get(Object key, Callable<T> valueLoader) {
@@ -132,6 +184,14 @@ public class TwoLevelCache implements Cache {
         }
     }
 
+    /**
+     * 写入缓存。
+     *
+     * <p>同时写入 L1 和 L2；值为 {@code null} 时忽略。
+     *
+     * @param key 缓存键
+     * @param value 缓存值
+     */
     @Override
     public void put(Object key, Object value) {
         if (value == null) {
@@ -142,6 +202,13 @@ public class TwoLevelCache implements Cache {
         l2Cache.put(key, value);
     }
 
+    /**
+     * 仅当键不存在时写入缓存。
+     *
+     * @param key 缓存键
+     * @param value 缓存值
+     * @return 已存在的值；写入成功时返回 {@code null}
+     */
     @Override
     public ValueWrapper putIfAbsent(Object key, Object value) {
         ValueWrapper existingValue = get(key);
@@ -152,6 +219,13 @@ public class TwoLevelCache implements Cache {
         return existingValue;
     }
 
+    /**
+     * 清除指定键。
+     *
+     * <p>同时清除 L1、L2，并广播失效消息。
+     *
+     * @param key 缓存键
+     */
     @Override
     public void evict(Object key) {
         log.debug("Evict cache: {}:{}", name, key);
@@ -161,6 +235,12 @@ public class TwoLevelCache implements Cache {
         publishEvictMessage(key.toString());
     }
 
+    /**
+     * 清除指定键。
+     *
+     * @param key 缓存键
+     * @return 键存在并已清除时返回 {@code true}
+     */
     @Override
     public boolean evictIfPresent(Object key) {
         boolean existed = get(key) != null;
@@ -168,6 +248,11 @@ public class TwoLevelCache implements Cache {
         return existed;
     }
 
+    /**
+     * 清空当前缓存的所有键。
+     *
+     * <p>同时清空 L1、L2，并广播全量失效消息。
+     */
     @Override
     public void clear() {
         log.debug("Clear cache: {}", name);
@@ -177,6 +262,11 @@ public class TwoLevelCache implements Cache {
         publishEvictMessage("*");
     }
 
+    /**
+     * 清空缓存。
+     *
+     * @return 始终返回 {@code true}
+     */
     @Override
     public boolean invalidate() {
         clear();

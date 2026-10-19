@@ -26,9 +26,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Map;
 
 /**
- * 安全工具类
+ * 安全上下文工具。
  *
- * @author iBoot
+ * <p>从 Spring Security 的 {@link org.springframework.security.core.context.SecurityContextHolder}
+ * 读取当前登录用户 ID、用户名等信息，供控制器和应用服务使用。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class SecurityUtils {
 

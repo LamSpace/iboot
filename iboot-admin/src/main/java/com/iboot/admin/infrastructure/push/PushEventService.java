@@ -23,12 +23,15 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * 推送事件服务
- * <p>
- * 提供统一的推送事件发送接口，支持单播、组播、广播 支持本地模式和 Redis Pub/Sub 集群模式
+ * 推送事件服务。
+ *
+ * <p>提供单播、组播和广播能力，支持本地直接推送和 Redis Pub/Sub 集群广播；
+ * 具体连接管理由 {@link SseEmitterManager} 负责。
  *
  * @author iBoot Team
  * @since 1.0.0
+ * @see SseEmitterManager
+ * @see RedisPushEventBroadcaster
  */
 @Service
 public class PushEventService {

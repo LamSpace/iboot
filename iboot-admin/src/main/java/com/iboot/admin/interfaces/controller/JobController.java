@@ -45,9 +45,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 定时任务控制器
+ * 定时任务控制器。
  *
- * @author iBoot
+ * <p>提供定时任务的分页查询、详情、增删改、状态切换、立即执行、cron 校验、导出，
+ * 以及任务执行日志的查询、详情和清理接口，对应 {@code job:*} 权限。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see JobApplicationService
  */
 @Tag(name = "定时任务管理", description = "定时任务管理相关接口")
 @RestController
@@ -62,6 +67,18 @@ public class JobController {
     }
 
     // ==================== 任务管理接口 ====================
+    /**
+     * 分页查询定时任务。
+     *
+     * <p>任一带条件参数非空时走条件查询，否则查询全部任务。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param jobName 任务名称关键字，可为 {@code null}
+     * @param jobGroup 任务组，可为 {@code null}
+     * @param status 状态：0-暂停，1-正常；可为 {@code null}
+     * @return 定时任务分页结果
+     */
     @Operation(summary = "查询定时任务列表")
     @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('job:list')")
@@ -84,6 +101,13 @@ public class JobController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 获取定时任务详情。
+     *
+     * @param id 任务 ID
+     * @return 任务详情
+     * @throws BusinessException 任务不存在时抛出
+     */
     @Operation(summary = "获取定时任务详情")
     @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('job:query')")
@@ -92,6 +116,12 @@ public class JobController {
         return Result.success(convertJobToResponse(job));
     }
 
+    /**
+     * 新增定时任务。
+     *
+     * @param request 任务创建请求
+     * @return 创建后的任务详情
+     */
     @Operation(summary = "新增定时任务")
     @PostMapping
     @PreAuthorize("hasAuthority('job:add')")
@@ -103,6 +133,13 @@ public class JobController {
         return Result.success(convertJobToResponse(savedJob));
     }
 
+    /**
+     * 修改定时任务。
+     *
+     * @param request 任务更新请求，{@code id} 不能为空
+     * @return 更新后的任务详情
+     * @throws BusinessException 任务 ID 为空时抛出
+     */
     @Operation(summary = "修改定时任务")
     @PutMapping
     @PreAuthorize("hasAuthority('job:edit')")
@@ -117,6 +154,12 @@ public class JobController {
         return Result.success(convertJobToResponse(updatedJob));
     }
 
+    /**
+     * 删除定时任务。
+     *
+     * @param id 任务 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除定时任务")
     @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('job:remove')")
@@ -126,6 +169,13 @@ public class JobController {
         return Result.success();
     }
 
+    /**
+     * 修改任务状态。
+     *
+     * @param id 任务 ID
+     * @param status 目标状态：0-暂停，1-正常
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改任务状态")
     @PutMapping(version = "1", value = "/{id}/status")
     @PreAuthorize("hasAuthority('job:changeStatus')")
@@ -135,6 +185,12 @@ public class JobController {
         return Result.success();
     }
 
+    /**
+     * 立即执行一次任务。
+     *
+     * @param id 任务 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "立即执行一次任务")
     @PostMapping(version = "1", value = "/{id}/run")
     @PreAuthorize("hasAuthority('job:run')")
@@ -144,6 +200,15 @@ public class JobController {
         return Result.success();
     }
 
+    /**
+     * 导出定时任务列表。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param jobName 任务名称关键字，可为 {@code null}
+     * @param jobGroup 任务组，可为 {@code null}
+     * @param status 状态：0-暂停，1-正常；可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出定时任务列表")
     @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('job:export')")
@@ -161,6 +226,12 @@ public class JobController {
         ExcelExportUtil.exportExcel(response, exportList, JobExportVO.class, "定时任务", "任务数据");
     }
 
+    /**
+     * 校验 cron 表达式。
+     *
+     * @param cronExpression cron 表达式
+     * @return 表达式合法返回 {@code true}，否则返回 {@code false}
+     */
     @Operation(summary = "校验cron表达式")
     @GetMapping(version = "1", value = "/checkCron")
     public Result<Boolean> checkCronExpression(@RequestParam String cronExpression) {
@@ -168,6 +239,19 @@ public class JobController {
     }
 
     // ==================== 任务日志接口 ====================
+    /**
+     * 分页查询任务执行日志。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param jobId 任务 ID，可为 {@code null}
+     * @param jobName 任务名称关键字，可为 {@code null}
+     * @param jobGroup 任务组，可为 {@code null}
+     * @param status 执行状态：0-失败，1-成功；可为 {@code null}
+     * @param beginTime 开始时间，可为 {@code null}
+     * @param endTime 结束时间，可为 {@code null}
+     * @return 任务日志分页结果
+     */
     @Operation(summary = "查询任务执行日志列表")
     @GetMapping(version = "1", value = "/log/list")
     @PreAuthorize("hasAuthority('job:log')")
@@ -199,6 +283,13 @@ public class JobController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 获取任务日志详情。
+     *
+     * @param id 日志 ID
+     * @return 任务日志详情
+     * @throws BusinessException 日志不存在时抛出
+     */
     @Operation(summary = "获取任务日志详情")
     @GetMapping(version = "1", value = "/log/{id}")
     @PreAuthorize("hasAuthority('job:log')")
@@ -207,6 +298,16 @@ public class JobController {
         return Result.success(convertJobLogToResponse(log));
     }
 
+    /**
+     * 清理任务执行日志。
+     *
+     * <p>指定 {@code jobId} 时只清理该任务的日志；否则清理 {@code days} 天前的日志；
+     * 两者都为空时默认清理 30 天前的日志。
+     *
+     * @param jobId 任务 ID，可为 {@code null}
+     * @param days 保留天数，可为 {@code null}
+     * @return 实际清理的日志数量
+     */
     @Operation(summary = "清理任务执行日志")
     @DeleteMapping(version = "1", value = "/log/clean")
     @PreAuthorize("hasAuthority('job:log')")

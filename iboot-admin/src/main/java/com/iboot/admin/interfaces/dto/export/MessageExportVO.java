@@ -21,39 +21,72 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 消息导出VO
+ * 消息导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class MessageExportVO {
 
+    /**
+     * 导出列：消息ID。
+     */
     @ExcelColumn(name = "消息ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：消息标题。
+     */
     @ExcelColumn(name = "消息标题", order = 2, width = 30)
     private String title;
 
+    /**
+     * 导出列：消息内容。
+     */
     @ExcelColumn(name = "消息内容", order = 3, width = 50)
     private String content;
 
+    /**
+     * 导出列：消息类型；字典类型 {@code sys_message_type}。
+     */
     @ExcelColumn(name = "消息类型", order = 4, width = 12, dictType = "sys_message_type")
     private String messageType;
 
+    /**
+     * 导出列：优先级；字典类型 {@code sys_message_priority}。
+     */
     @ExcelColumn(name = "优先级", order = 5, width = 10, dictType = "sys_message_priority")
     private String priority;
 
+    /**
+     * 导出列：接收类型；字典类型 {@code sys_message_receiver_type}。
+     */
     @ExcelColumn(name = "接收类型", order = 6, width = 12, dictType = "sys_message_receiver_type")
     private String receiverType;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_message_status}。
+     */
     @ExcelColumn(name = "状态", order = 7, width = 10, dictType = "sys_message_status")
     private String status;
 
+    /**
+     * 导出列：创建人。
+     */
     @ExcelColumn(name = "创建人", order = 8, width = 15)
     private String createBy;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 9, width = 30)
     private String remark;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 10, width = 20)
     private LocalDateTime createTime;
 

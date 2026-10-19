@@ -34,9 +34,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
- * 统计分析控制器
+ * 统计分析控制器。
  *
- * @author iBoot
+ * <p>提供数据统计报表和系统使用分析接口，日期范围分别默认为最近 7 天和最近 30 天。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see StatisticsApplicationService
  */
 @Tag(name = "统计分析", description = "统计分析相关接口")
 @RestController
@@ -50,6 +54,13 @@ public class StatisticsController {
         this.statisticsApplicationService = statisticsApplicationService;
     }
 
+    /**
+     * 获取数据统计报表。
+     *
+     * @param startDate 开始日期，为空时取 7 天前
+     * @param endDate 结束日期，为空时取今天
+     * @return 报表统计结果
+     */
     @Operation(summary = "获取数据统计报表")
     @GetMapping(version = "1", value = "/report")
     public Result<ReportResponse> getReport(
@@ -70,6 +81,13 @@ public class StatisticsController {
         return Result.success(data);
     }
 
+    /**
+     * 获取系统使用分析。
+     *
+     * @param startDate 开始日期，为空时取 30 天前
+     * @param endDate 结束日期，为空时取今天
+     * @return 使用分析结果
+     */
     @Operation(summary = "获取系统使用分析")
     @GetMapping(version = "1", value = "/usage")
     public Result<UsageResponse> getUsageAnalysis(

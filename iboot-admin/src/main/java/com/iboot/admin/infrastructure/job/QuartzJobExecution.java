@@ -20,13 +20,23 @@ import com.iboot.admin.domain.job.model.Job;
 import org.quartz.JobExecutionContext;
 
 /**
- * 定时任务执行（允许并发执行）
+ * 允许并发的 Quartz 任务。
  *
- * @author iBoot
+ * <p>同一任务可以多轮并行执行，适用于无共享状态、可重复执行的场景。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class QuartzJobExecution extends AbstractQuartzJob {
 
     @Override
+    /**
+     * 执行具体任务。
+     *
+     * @param context Quartz 执行上下文
+     * @param job 任务配置
+     * @throws Exception 任务执行失败时抛出
+     */
     protected void doExecute(JobExecutionContext context, Job job) throws Exception {
         JobInvokeUtil.invokeMethod(job);
     }

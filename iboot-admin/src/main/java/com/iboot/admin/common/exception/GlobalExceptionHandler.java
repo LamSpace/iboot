@@ -41,9 +41,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 全局异常处理器
+ * 全局异常处理器。
  *
- * @author iBoot
+ * <p>通过 {@link RestControllerAdvice} 把控制器抛出的业务异常、参数校验异常、
+ * 安全异常和未预期异常转换为统一的 {@link Result} 响应，并设置对应的 HTTP 状态码。
+ *
+ * <p>客户端主动断开连接（SSE、文件下载）属于正常场景，只记录 DEBUG 日志，
+ * 不再尝试写响应。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see BusinessException
+ * @see Result
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -51,10 +60,11 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
-     * 业务异常处理
+     * 处理业务异常。
+     *
+     * <p>HTTP 状态码固定为 200，业务错误码由异常携带并放入响应体。
      *
      * @param e 业务异常
-     *
      * @return 错误响应结果
      */
     @ExceptionHandler(BusinessException.class)
@@ -65,7 +75,9 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * SSE 客户端断开异常处理 当客户端(浏览器)关闭连接时触发,属于正常行为,不需要返回响应
+     * 处理 SSE 客户端断开。
+     *
+     * <p>客户端关闭连接属于正常行为，只记录 DEBUG 日志，不返回响应。
      *
      * @param e SSE 异步请求不可用异常
      */
@@ -76,7 +88,9 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 客户端中止异常处理 当客户端主动断开连接时触发(如刷新页面、关闭标签等)
+     * 处理客户端主动断开连接。
+     *
+     * <p>例如刷新页面、关闭标签页；只记录 DEBUG 日志，不返回响应。
      *
      * @param e 客户端中止异常
      */
@@ -231,9 +245,12 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 重置响应的Content-Type为JSON格式 用于处理导出等操作中发生异常时，响应头已被设置为非JSON格式的情况
+     * 将响应的 Content-Type 重置为 JSON。
      *
-     * @param response HTTP响应对象
+     * <p>用于导出等场景：响应头可能已被设置为 Excel 类型，发生异常时需要改回 JSON，
+     * 以便写出统一错误响应。响应已提交时不做修改。
+     *
+     * @param response HTTP 响应对象
      */
     private void resetContentTypeToJson(HttpServletResponse response) {
         if (response != null && !response.isCommitted()) {

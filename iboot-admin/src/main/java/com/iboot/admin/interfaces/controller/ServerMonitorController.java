@@ -27,9 +27,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 服务监控检查控制器 提供服务器系统信息、服务健康状态等监控接口 监控阈值通过参数配置动态调整，检查项通过字典管理灵活定义
+ * 服务监控控制器。
  *
- * @author iBoot
+ * <p>提供服务器系统信息和健康检查结果查询接口，需要 {@code server:list} 权限；
+ * 监控阈值通过系统配置动态调整，检查项由字典管理定义。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see ServerMonitorApplicationService
  */
 @Tag(name = "服务监控检查", description = "服务器监控信息及健康检查接口")
 @RestController
@@ -43,6 +48,11 @@ public class ServerMonitorController {
         this.serverMonitorApplicationService = serverMonitorApplicationService;
     }
 
+    /**
+     * 获取服务器监控信息。
+     *
+     * @return CPU、内存、JVM、磁盘、操作系统信息及健康检查结果
+     */
     @Operation(summary = "获取服务器监控信息", description = "获取CPU、内存、JVM、磁盘、操作系统信息及服务健康检查结果")
     @GetMapping(version = "1")
     @PreAuthorize("hasAuthority('server:list')")

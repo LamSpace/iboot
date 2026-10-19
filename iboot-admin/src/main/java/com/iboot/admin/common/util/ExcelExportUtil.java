@@ -37,32 +37,53 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Excel导出工具类
+ * Excel 导出工具。
  *
- * @author iBoot
+ * <p>基于 FastExcel 将带 {@link ExcelColumn} 注解的 VO 列表写入 HTTP 响应流。
+ * 支持按 {@code order} 排序、列宽限制、字典值翻译、日期格式化和布尔值中文化；
+ * 导出过程直接写响应，调用方不再返回 JSON。
+ *
+ * <p>工具类无状态，所有方法均为静态方法；字典服务不可用时跳过翻译并输出原值。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see ExcelColumn
  */
 public class ExcelExportUtil {
 
     private static final Logger log = LoggerFactory.getLogger(ExcelExportUtil.class);
 
+    /**
+     * 未指定列宽时使用的默认宽度，单位为字符数。
+     */
     private static final int DEFAULT_COLUMN_WIDTH = 15;
 
+    /**
+     * 列宽上限，单位为字符数。
+     */
     private static final int MAX_COLUMN_WIDTH = 50;
 
+    /**
+     * 表头背景色，RGB 十六进制值。
+     */
     private static final String HEADER_FILL_COLOR = "C0C0C0";
 
     private ExcelExportUtil() {
     }
 
     /**
-     * 导出Excel文件
+     * 将数据列表导出为 Excel 并写入 HTTP 响应。
      *
-     * @param response  HTTP响应
-     * @param dataList  数据列表
-     * @param clazz     数据类型
-     * @param fileName  文件名（不含后缀）
-     * @param sheetName Sheet名称
-     * @param <T>       数据类型
+     * <p>按 {@link ExcelColumn#order()} 升序生成列；没有带注解的字段时记录警告并直接返回。
+     * 单元格值依次按字典、日期、数字、布尔、字符串处理，日期格式由注解指定。
+     *
+     * @param response HTTP 响应，用于设置下载头和写入文件
+     * @param dataList 待导出的数据列表
+     * @param clazz 数据类型，用于读取 {@link ExcelColumn} 注解
+     * @param fileName 文件名，不含扩展名
+     * @param sheetName 工作表名称
+     * @param <T> 数据类型
+     * @throws IOException 写入响应流失败时抛出
      */
     public static <T> void exportExcel(HttpServletResponse response, List<T> dataList, Class<T> clazz, String fileName,
                                        String sheetName) throws IOException {

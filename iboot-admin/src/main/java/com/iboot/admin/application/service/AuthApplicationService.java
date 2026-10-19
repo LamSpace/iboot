@@ -44,7 +44,8 @@ import java.util.concurrent.TimeUnit;
  * 负责用户登录、登出、注册等认证相关业务逻辑处理。 支持 JWT 令牌生成和验证、Redis 会话管理、登录失败锁定、独占会话控制等功能。 会话超时时间、最大重试次数、锁定时间等参数通过 sys_config 配置动态读取。
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class AuthApplicationService {

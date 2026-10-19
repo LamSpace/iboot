@@ -30,9 +30,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * SSE 连接管理器
- * <p>
- * 维护用户与 SseEmitter 的映射关系，提供连接、断开、发送、心跳等方法 支持广播、组播、单播功能
+ * SSE 连接管理器。
+ *
+ * <p>维护用户与 {@link org.springframework.web.servlet.mvc.method.annotation.SseEmitter}
+ * 的映射，提供连接、断开、单播、组播、广播和心跳能力。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -51,6 +52,12 @@ public class SseEmitterManager {
 
     private final PushProperties pushProperties;
 
+    /**
+     * 创建 SSE 连接管理器。
+     *
+     * @param businessMetricsService 业务指标服务
+     * @param pushProperties 推送配置
+     */
     public SseEmitterManager(BusinessMetricsService businessMetricsService, PushProperties pushProperties) {
         this.businessMetricsService = businessMetricsService;
         this.pushProperties = pushProperties;

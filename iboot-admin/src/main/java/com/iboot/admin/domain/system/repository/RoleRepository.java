@@ -27,7 +27,11 @@ import java.util.Optional;
  * 负责角色数据的持久化操作，支持角色管理、菜单关联和数据权限管理
  * </p>
  *
- * @author iBoot
+ * <p>查询约定：列表方法没有数据时返回空列表而不是 {@code null}；分页方法的页码从 1 开始；
+ * 按 ID 查找的方法返回 {@link java.util.Optional}，不存在时为空。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface RoleRepository {
 

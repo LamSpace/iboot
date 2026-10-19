@@ -19,14 +19,18 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 操作日志实体（值对象）
+ * 操作日志实体（值对象）。
  *
- * @author iBoot
+ * <p>记录一次受 {@code @Log} 标记的接口调用的操作人、业务类型、请求参数、
+ * 响应数据、耗时和结果，用于审计和问题排查。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class OperateLog {
 
     /**
-     * 日志ID
+     * 日志 ID
      */
     private Long id;
 
@@ -117,7 +121,7 @@ public class OperateLog {
     /**
      * Creates a new {@code OperateLog} instance.
      *
-     * @param id            日志ID
+     * @param id            日志 ID
      * @param title         模块标题
      * @param businessType  业务类型：0-其它，1-新增，2-修改，3-删除，4-查询，5-导出，6-导入
      * @param method        方法名称
@@ -165,14 +169,16 @@ public class OperateLog {
     }
 
     /**
-     * 检查是否操作成功
+     * 判断操作是否成功。
+     *
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isSuccess() {
         return this.status != null && this.status == 1;
     }
 
     /**
-     * 日志ID
+     * 日志 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -180,7 +186,7 @@ public class OperateLog {
     }
 
     /**
-     * 日志ID
+     * 日志 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -642,7 +648,7 @@ public class OperateLog {
         }
 
         /**
-         * 日志ID
+         * 日志 ID
          *
          * @return {@code this}.
          */

@@ -21,30 +21,54 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 系统配置导出VO
+ * 系统配置导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class ConfigExportVO {
 
+    /**
+     * 导出列：配置ID。
+     */
     @ExcelColumn(name = "配置ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：配置名称。
+     */
     @ExcelColumn(name = "配置名称", order = 2, width = 25)
     private String configName;
 
+    /**
+     * 导出列：配置键。
+     */
     @ExcelColumn(name = "配置键", order = 3, width = 30)
     private String configKey;
 
+    /**
+     * 导出列：配置值。
+     */
     @ExcelColumn(name = "配置值", order = 4, width = 40)
     private String configValue;
 
+    /**
+     * 导出列：配置类型；字典类型 {@code sys_config_type}。
+     */
     @ExcelColumn(name = "配置类型", order = 5, width = 10, dictType = "sys_config_type")
     private Integer configType;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 6, width = 30)
     private String remark;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 7, width = 20)
     private LocalDateTime createTime;
 

@@ -21,58 +21,109 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
- * 操作日志响应 DTO
+ * 操作日志响应 DTO。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "操作日志响应")
 public class OperateLogResponse {
 
+    /**
+     * 日志ID。
+     */
     @Schema(description = "日志ID")
     private Long id;
 
+    /**
+     * 模块标题。
+     */
     @Schema(description = "模块标题")
     private String title;
 
+    /**
+     * 业务类型：0-其它，1-新增，2-修改，3-删除，4-授权，5-导出，6-导入，7-强退，8-清空。
+     */
     @Schema(description = "业务类型：0-其它，1-新增，2-修改，3-删除，4-授权，5-导出，6-导入，7-强退，8-清空")
     private Integer businessType;
 
+    /**
+     * 请求方法。
+     */
     @Schema(description = "请求方法")
     private String method;
 
+    /**
+     * 请求方式。
+     */
     @Schema(description = "请求方式")
     private String requestMethod;
 
+    /**
+     * 操作人员。
+     */
     @Schema(description = "操作人员")
     private String operatorName;
 
+    /**
+     * 部门名称。
+     */
     @Schema(description = "部门名称")
     private String deptName;
 
+    /**
+     * 请求URL。
+     */
     @Schema(description = "请求URL")
     private String operUrl;
 
+    /**
+     * 操作IP。
+     */
     @Schema(description = "操作IP")
     private String operIp;
 
+    /**
+     * 操作地点。
+     */
     @Schema(description = "操作地点")
     private String operLocation;
 
+    /**
+     * 请求参数。
+     */
     @Schema(description = "请求参数")
     private String operParam;
 
+    /**
+     * 返回结果。
+     */
     @Schema(description = "返回结果")
     private String jsonResult;
 
+    /**
+     * 操作状态：0-失败，1-成功。
+     */
     @Schema(description = "操作状态：0-失败，1-成功")
     private Integer status;
 
+    /**
+     * 错误消息。
+     */
     @Schema(description = "错误消息")
     private String errorMsg;
 
+    /**
+     * 操作耗时（毫秒）。
+     */
     @Schema(description = "操作耗时（毫秒）")
     private Long costTime;
 
+    /**
+     * 操作时间。
+     */
     @Schema(description = "操作时间")
     private LocalDateTime operTime;
 

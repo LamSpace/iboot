@@ -1,7 +1,13 @@
 package com.iboot.admin.common.constant;
 
 /**
- * 监控相关常量
+ * 监控与 Actuator 相关常量。
+ *
+ * <p>集中定义 Micrometer 指标名前缀、Actuator 端点路径和监控账号标识，
+ * 供监控配置、指标绑定器和健康检查复用。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class MonitorConstants {
 

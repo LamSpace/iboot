@@ -21,36 +21,66 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 公告导出VO
+ * 公告导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class NoticeExportVO {
 
+    /**
+     * 导出列：公告ID。
+     */
     @ExcelColumn(name = "公告ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：公告标题。
+     */
     @ExcelColumn(name = "公告标题", order = 2, width = 30)
     private String noticeTitle;
 
+    /**
+     * 导出列：公告类型；字典类型 {@code sys_notice_type}。
+     */
     @ExcelColumn(name = "公告类型", order = 3, width = 12, dictType = "sys_notice_type")
     private String noticeType;
 
+    /**
+     * 导出列：公告内容。
+     */
     @ExcelColumn(name = "公告内容", order = 4, width = 50)
     private String noticeContent;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_notice_status}。
+     */
     @ExcelColumn(name = "状态", order = 5, width = 10, dictType = "sys_notice_status")
     private String status;
 
+    /**
+     * 导出列：是否置顶。
+     */
     @ExcelColumn(name = "是否置顶", order = 6, width = 10)
     private Integer isTop;
 
+    /**
+     * 导出列：创建人。
+     */
     @ExcelColumn(name = "创建人", order = 7, width = 15)
     private String createBy;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 8, width = 30)
     private String remark;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 9, width = 20)
     private LocalDateTime createTime;
 

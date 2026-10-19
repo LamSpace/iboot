@@ -17,22 +17,26 @@
 package com.iboot.admin.common.enums;
 
 /**
- * 性别枚举
+ * 性别枚举。
  *
- * @author iBoot
+ * <p>{@code code} 与数据库中的性别字段一致，{@code description} 用于前端展示。
+ * 未知或非法编码统一按 {@link #UNKNOWN} 处理。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public enum GenderEnum {
 
     /**
-     * 未知
+     * 未知或未填写。
      */
     UNKNOWN(0, "未知"),
     /**
-     * 男
+     * 男性。
      */
     MALE(1, "男"),
     /**
-     * 女
+     * 女性。
      */
     FEMALE(2, "女");
 

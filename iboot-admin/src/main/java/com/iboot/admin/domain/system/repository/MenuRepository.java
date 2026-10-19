@@ -27,7 +27,11 @@ import java.util.Optional;
  * 负责菜单数据的持久化操作，支持菜单树形结构管理和权限关联
  * </p>
  *
- * @author iBoot
+ * <p>查询约定：列表方法没有数据时返回空列表而不是 {@code null}。
+ * 菜单树由 {@code parentId} 组织，顶级菜单的父 ID 为 {@code 0}。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface MenuRepository {
 

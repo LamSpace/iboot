@@ -26,9 +26,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Dashboard 控制器
+ * Dashboard 控制器。
  *
- * @author iBoot
+ * <p>提供首页汇总数据接口，聚合用户、日志、消息等模块的统计信息，
+ * 数据由 {@link DashboardApplicationService} 计算。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see DashboardApplicationService
  */
 @Tag(name = "Dashboard", description = "Dashboard 相关接口")
 @RestController
@@ -42,6 +47,11 @@ public class DashboardController {
         this.dashboardApplicationService = dashboardApplicationService;
     }
 
+    /**
+     * 获取 Dashboard 汇总数据。
+     *
+     * @return 各模块统计数量和最新记录
+     */
     @Operation(summary = "获取 Dashboard 汇总数据")
     @GetMapping(version = "1", value = "/summary")
     public Result<DashboardSummaryResponse> summary() {

@@ -24,7 +24,11 @@ import java.util.Optional;
 /**
  * 字典数据仓储接口
  *
- * @author iBoot
+ * <p>查询约定：列表方法没有数据时返回空列表而不是 {@code null}；
+ * 按 {@code dictType} 查询时只返回未删除的数据。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public interface DictDataRepository {
 

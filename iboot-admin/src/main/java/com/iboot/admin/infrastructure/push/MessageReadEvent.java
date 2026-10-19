@@ -19,9 +19,9 @@ package com.iboot.admin.infrastructure.push;
 import org.springframework.context.ApplicationEvent;
 
 /**
- * 消息已读事件
- * <p>
- * 当消息被标记为已读时发布此事件
+ * 消息已读事件。
+ *
+ * <p>消息被标记为已读后发布，携带消息 ID 和用户 ID，供推送监听器转发已读通知。
  *
  * @author iBoot Team
  * @since 1.0.0

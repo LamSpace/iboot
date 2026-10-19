@@ -29,9 +29,13 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 /**
- * 认证失败处理器
+ * 认证失败处理器。
  *
- * @author iBoot
+ * <p>当请求没有有效令牌或认证失败时，返回状态码 401 和统一的 JSON 错误响应，
+ * 并保持响应内容类型为 JSON。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
@@ -46,6 +50,14 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     }
 
     @Override
+    /**
+     * 处理认证失败。
+     *
+     * @param request HTTP 请求
+     * @param response HTTP 响应
+     * @param authException 认证异常
+     * @throws IOException 写入响应失败时抛出
+     */
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
         String requestURI = request.getRequestURI();

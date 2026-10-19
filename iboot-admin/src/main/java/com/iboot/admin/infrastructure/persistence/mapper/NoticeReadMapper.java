@@ -28,7 +28,11 @@ import java.util.List;
  * 负责公告已读记录的数据库操作，跟踪用户阅读公告的状态
  * </p>
  *
- * @author iBoot
+ * <p>只负责数据库访问，不包含业务规则；写方法返回受影响行数，查询方法返回实体或集合，
+ * 与领域模型之间的转换由仓储实现负责。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Mapper
 public interface NoticeReadMapper {

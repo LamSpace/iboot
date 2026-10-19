@@ -21,37 +21,61 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 消息模板请求 DTO
+ * 消息模板请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "消息模板请求")
 public class MessageTemplateRequest {
 
+    /**
+     * 模板ID。
+     */
     @Schema(description = "模板ID")
     private Long id;
 
+    /**
+     * 模板编码。
+     */
     @Schema(description = "模板编码")
     @NotBlank(message = "模板编码不能为空")
     @Size(max = 100, message = "模板编码长度不能超过100")
     private String templateCode;
 
+    /**
+     * 模板名称。
+     */
     @Schema(description = "模板名称")
     @NotBlank(message = "模板名称不能为空")
     @Size(max = 200, message = "模板名称长度不能超过200")
     private String templateName;
 
+    /**
+     * 模板内容（支持${变量名}占位符）。
+     */
     @Schema(description = "模板内容（支持${变量名}占位符）")
     @NotBlank(message = "模板内容不能为空")
     private String templateContent;
 
+    /**
+     * 消息类型（字典 sys_message_type）。
+     */
     @Schema(description = "消息类型（字典 sys_message_type）")
     @NotBlank(message = "消息类型不能为空")
     private String messageType;
 
+    /**
+     * 状态：0-停用，1-正常。
+     */
     @Schema(description = "状态：0-停用，1-正常")
     private Integer status;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;

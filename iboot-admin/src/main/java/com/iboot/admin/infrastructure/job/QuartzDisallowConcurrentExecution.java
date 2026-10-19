@@ -21,14 +21,24 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 
 /**
- * 定时任务执行（禁止并发执行）
+ * 禁止并发的 Quartz 任务。
  *
- * @author iBoot
+ * <p>同一任务在上一轮尚未结束时不会再次触发，适用于有共享状态或外部副作用的场景。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @DisallowConcurrentExecution
 public class QuartzDisallowConcurrentExecution extends AbstractQuartzJob {
 
     @Override
+    /**
+     * 执行具体任务。
+     *
+     * @param context Quartz 执行上下文
+     * @param job 任务配置
+     * @throws Exception 任务执行失败时抛出
+     */
     protected void doExecute(JobExecutionContext context, Job job) throws Exception {
         JobInvokeUtil.invokeMethod(job);
     }

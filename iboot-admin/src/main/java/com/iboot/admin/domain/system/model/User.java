@@ -20,9 +20,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 用户实体（聚合根）
+ * 用户实体（聚合根）。
  *
- * @author iBoot
+ * <p>表示系统用户，包含账号、密码、联系方式、组织归属（部门、岗位、角色）
+ * 和登录状态。{@code password} 保存的是加密后的值，加密由应用服务负责。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see Role
+ * @see Dept
  */
 public class User {
 
@@ -195,45 +201,43 @@ public class User {
     }
 
     /**
-     * 修改用户密码
+     * 设置用户密码。
      *
-     * @param newPassword 新密码
+     * <p>直接写入密码字段，不在此处加密；调用方应传入已加密的密码。
+     *
+     * @param newPassword 新密码，应为加密后的值
      */
     public void changePassword(String newPassword) {
         this.password = newPassword;
     }
 
     /**
-     * 启用用户
-     *
-     * @return 启用后的用户对象
+     * 启用用户。
      */
     public void enable() {
         this.status = 1;
     }
 
     /**
-     * 停用用户
-     *
-     * @return 停用后的用户对象
+     * 停用用户。
      */
     public void disable() {
         this.status = 0;
     }
 
     /**
-     * 检查用户是否启用
+     * 判断用户是否启用。
      *
-     * @return 如果用户启用则返回true，否则返回false
+     * @return 状态为 1 时返回 {@code true}
      */
     public boolean isEnabled() {
         return this.status != null && this.status == 1;
     }
 
     /**
-     * 更新登录信息
+     * 更新最后登录信息。
      *
-     * @param loginIp   登录IP地址
+     * @param loginIp 登录 IP 地址
      * @param loginTime 登录时间
      */
     public void updateLoginInfo(String loginIp, LocalDateTime loginTime) {

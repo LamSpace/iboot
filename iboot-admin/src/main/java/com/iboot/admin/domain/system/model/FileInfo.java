@@ -19,14 +19,18 @@ package com.iboot.admin.domain.system.model;
 import java.time.LocalDateTime;
 
 /**
- * 文件信息实体
+ * 文件信息实体。
  *
- * @author iBoot
+ * <p>记录上传文件的元数据，包括原始文件名、存储路径、大小、MIME 类型和分类。
+ * 实际文件内容由存储策略（本地或 MinIO）保存，本实体只保存索引信息。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class FileInfo {
 
     /**
-     * 文件ID
+     * 文件 ID
      */
     private Long id;
 
@@ -107,7 +111,7 @@ public class FileInfo {
     /**
      * Creates a new {@code FileInfo} instance.
      *
-     * @param id           文件ID
+     * @param id           文件 ID
      * @param fileName     原始文件名
      * @param filePath     存储路径
      * @param fileSize     文件大小（字节）
@@ -151,7 +155,11 @@ public class FileInfo {
     }
 
     /**
-     * 获取可读的文件大小
+     * 获取可读的文件大小。
+     *
+     * <p>按 1024 进制自动选择 B、KB、MB、GB、TB 单位，保留两位小数。
+     *
+     * @return 带单位的文件大小；大小为 {@code null} 或 0 时返回 {@code 0 B}
      */
     public String getReadableSize() {
         if (fileSize == null || fileSize == 0) {
@@ -168,14 +176,16 @@ public class FileInfo {
     }
 
     /**
-     * 判断是否为图片文件
+     * 判断是否为图片文件。
+     *
+     * @return MIME 类型以 {@code image/} 开头时返回 {@code true}
      */
     public boolean isImage() {
         return fileType != null && fileType.startsWith("image/");
     }
 
     /**
-     * 文件ID
+     * 文件 ID
      */
     @SuppressWarnings("all")
     public Long getId() {
@@ -183,7 +193,7 @@ public class FileInfo {
     }
 
     /**
-     * 文件ID
+     * 文件 ID
      */
     @SuppressWarnings("all")
     public void setId(final Long id) {
@@ -594,7 +604,7 @@ public class FileInfo {
         }
 
         /**
-         * 文件ID
+         * 文件 ID
          *
          * @return {@code this}.
          */

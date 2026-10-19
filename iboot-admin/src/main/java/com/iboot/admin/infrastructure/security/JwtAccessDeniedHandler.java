@@ -29,9 +29,13 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 /**
- * 授权失败处理器
+ * 授权失败处理器。
  *
- * @author iBoot
+ * <p>当已认证用户访问无权限资源（例如 {@code @PreAuthorize} 校验失败）时，
+ * 返回状态码 403 和统一的 JSON 错误响应，而不是 Spring Security 默认的错误页。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 public class JwtAccessDeniedHandler implements AccessDeniedHandler {
@@ -46,6 +50,14 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
     }
 
     @Override
+    /**
+     * 处理授权失败。
+     *
+     * @param request HTTP 请求
+     * @param response HTTP 响应
+     * @param accessDeniedException 授权异常
+     * @throws IOException 写入响应失败时抛出
+     */
     public void handle(HttpServletRequest request, HttpServletResponse response,
                        AccessDeniedException accessDeniedException) throws IOException {
         log.error("授权失败: {}", accessDeniedException.getMessage());

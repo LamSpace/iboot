@@ -21,27 +21,48 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 字典类型导出VO
+ * 字典类型导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class DictTypeExportVO {
 
+    /**
+     * 导出列：字典ID。
+     */
     @ExcelColumn(name = "字典ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：字典名称。
+     */
     @ExcelColumn(name = "字典名称", order = 2, width = 20)
     private String dictName;
 
+    /**
+     * 导出列：字典类型。
+     */
     @ExcelColumn(name = "字典类型", order = 3, width = 25)
     private String dictType;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_normal_disable}。
+     */
     @ExcelColumn(name = "状态", order = 4, width = 8, dictType = "sys_normal_disable")
     private Integer status;
 
+    /**
+     * 导出列：备注。
+     */
     @ExcelColumn(name = "备注", order = 5, width = 30)
     private String remark;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 6, width = 20)
     private LocalDateTime createTime;
 

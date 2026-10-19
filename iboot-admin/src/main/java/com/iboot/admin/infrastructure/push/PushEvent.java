@@ -19,9 +19,10 @@ package com.iboot.admin.infrastructure.push;
 import java.io.Serializable;
 
 /**
- * 推送事件定义
- * <p>
- * 与 CloudEvents 规范兼容，用于 SSE 推送
+ * 推送事件。
+ *
+ * <p>与 CloudEvents 规范兼容，包含事件类型、来源、时间和数据，
+ * 通过 SSE 发送给客户端。
  *
  * @author iBoot Team
  * @since 1.0.0

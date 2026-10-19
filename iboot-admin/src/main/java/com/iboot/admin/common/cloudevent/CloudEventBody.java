@@ -23,14 +23,19 @@ import com.iboot.admin.common.result.Result;
 import java.io.Serializable;
 
 /**
- * CloudEvents 响应体包装器
- * <p>
- * 将 {@link Result} 包装为 CloudEvents 规范格式
+ * CloudEvents 响应体。
  *
- * @param <T> 数据类型
+ * <p>把统一响应 {@link Result} 包装为 CloudEvents 1.0 结构，包含 {@code specversion}、
+ * {@code id}、{@code type}、{@code source}、{@code time}、{@code datacontenttype}
+ * 和 {@code data}；{@code null} 字段不参与 JSON 序列化。
  *
+ * <p>通过静态工厂方法创建成功或错误事件；事件 ID 使用 UUID 生成，时间取系统默认时区。
+ *
+ * @param <T> 业务数据类型
  * @author iBoot Team
  * @since 1.0.0
+ * @see CloudEventTypes
+ * @see CloudEventFactory
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CloudEventBody<T> implements Serializable {
@@ -38,59 +43,59 @@ public class CloudEventBody<T> implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * CloudEvents 规范版本
+     * CloudEvents 规范版本，默认 {@code 1.0}。
      */
     @JsonProperty("specversion")
     private String specversion = "1.0";
 
     /**
-     * 事件 ID，确保唯一性
+     * 事件 ID，使用 UUID 生成，确保唯一。
      */
     @JsonProperty("id")
     private String id;
 
     /**
-     * 事件类型
+     * 事件类型，取值见 {@link CloudEventTypes}。
      */
     @JsonProperty("type")
     private String type;
 
     /**
-     * 事件源
+     * 事件源，通常是请求路径。
      */
     @JsonProperty("source")
     private String source;
 
     /**
-     * 事件发生时间
+     * 事件发生时间，ISO-8601 字符串。
      */
     @JsonProperty("time")
     private String time;
 
     /**
-     * 数据内容类型
+     * 数据内容类型，默认 {@code application/json}。
      */
     @JsonProperty("datacontenttype")
     private String datacontenttype = "application/json";
 
     /**
-     * 实际的业务数据（原有的 Result 响应）
+     * 业务响应数据。
      */
     @JsonProperty("data")
     private Result<T> data;
 
     /**
-     * 默认构造函数
+     * 创建空响应体，供框架反序列化使用。
      */
     public CloudEventBody() {
     }
 
     /**
-     * 从 Result 构建 CloudEventBody
+     * 创建响应体并生成事件 ID 与时间。
      *
-     * @param type   事件类型
+     * @param type 事件类型
      * @param source 事件源
-     * @param data   业务数据
+     * @param data 业务响应数据
      */
     public CloudEventBody(String type, String source, Result<T> data) {
         this.id = generateId();

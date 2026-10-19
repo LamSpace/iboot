@@ -97,6 +97,9 @@
 
         <!-- CycloneDX Maven Plugin -->
         <cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
+
+        <!-- Maven Javadoc Plugin -->
+        <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
     </properties>
 
     <dependencies>
@@ -466,6 +469,22 @@
                     <outputName>bom</outputName>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven-javadoc-plugin.version}</version>
+                <configuration>
+                    <release>25</release>
+                    <encoding>UTF-8</encoding>
+                    <docencoding>UTF-8</docencoding>
+                    <charset>UTF-8</charset>
+                    <doclint>all,-missing</doclint>
+                    <show>public</show>
+                    <notimestamp>true</notimestamp>
+                    <quiet>true</quiet>
+                </configuration>
+            </plugin>
         </plugins>
 
         <resources>
@@ -477,4 +496,28 @@
             </resource>
         </resources>
     </build>
+
+    <profiles>
+        <profile>
+            <id>javadoc</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${maven-javadoc-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

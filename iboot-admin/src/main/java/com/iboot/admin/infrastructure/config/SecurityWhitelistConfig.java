@@ -19,9 +19,14 @@ package com.iboot.admin.infrastructure.config;
 import org.springframework.stereotype.Component;
 
 /**
- * 安全白名单配置类 统一管理不需要身份验证的路径配置
+ * 安全白名单配置。
  *
- * @author iBoot
+ * <p>集中维护无需身份验证的请求路径，例如登录、验证码、Actuator 和 API 文档；
+ * 白名单由 {@link SecurityConfig} 在构建过滤器链时读取。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see SecurityConfig
  */
 @Component
 public class SecurityWhitelistConfig {

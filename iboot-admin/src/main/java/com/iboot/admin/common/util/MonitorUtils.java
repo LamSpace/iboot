@@ -26,23 +26,40 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 监控工具类
+ * Micrometer 监控指标工具。
+ *
+ * <p>为 API 请求计数和耗时提供便捷方法，内部按 URI、HTTP 方法和结果缓存
+ * {@link Counter} / {@link Timer}，避免重复注册。{@link MeterRegistry} 为可选依赖，
+ * 未注入时所有记录方法静默跳过。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Component
 public class MonitorUtils {
 
+    /**
+     * Micrometer 注册表；未启用监控时为 {@code null}。
+     */
     @Autowired(required = false)
     private MeterRegistry meterRegistry;
 
+    /**
+     * 按指标键缓存的请求计数器。
+     */
     private final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<>();
+
+    /**
+     * 按指标键缓存的请求耗时计时器。
+     */
     private final ConcurrentHashMap<String, Timer> timers = new ConcurrentHashMap<>();
 
     /**
-     * 增加 API 请求计数
+     * 增加 API 请求计数。
      *
-     * @param uri     请求 URI
-     * @param method  HTTP 方法
-     * @param outcome 请求结果
+     * @param uri 请求 URI
+     * @param method HTTP 方法
+     * @param outcome 请求结果标签，例如 success、failure
      */
     public void incrementRequest(String uri, String method, String outcome) {
         if (meterRegistry != null) {
@@ -59,11 +76,12 @@ public class MonitorUtils {
     }
 
     /**
-     * 记录 API 请求耗时
+     * 记录 API 请求耗时。
      *
-     * @param uri      请求 URI
-     * @param method   HTTP 方法
+     * @param uri 请求 URI
+     * @param method HTTP 方法
      * @param duration 请求耗时
+     * @param unit 耗时单位
      */
     public void recordRequestTime(String uri, String method, long duration, TimeUnit unit) {
         if (meterRegistry != null) {
@@ -79,11 +97,11 @@ public class MonitorUtils {
     }
 
     /**
-     * 记录 API 请求耗时（秒）
+     * 以秒为单位记录 API 请求耗时。
      *
-     * @param uri             请求 URI
-     * @param method          HTTP 方法
-     * @param durationSeconds 请求耗时（秒）
+     * @param uri 请求 URI
+     * @param method HTTP 方法
+     * @param durationSeconds 请求耗时，单位秒
      */
     public void recordRequestTimeSeconds(String uri, String method, double durationSeconds) {
         if (meterRegistry != null) {
@@ -92,7 +110,9 @@ public class MonitorUtils {
     }
 
     /**
-     * 获取 MeterRegistry 实例
+     * 获取 Micrometer 注册表。
+     *
+     * @return 当前 {@link MeterRegistry}；未启用监控时为 {@code null}
      */
     public MeterRegistry getMeterRegistry() {
         return meterRegistry;

@@ -21,51 +21,96 @@ import com.iboot.admin.common.annotation.ExcelColumn;
 import java.time.LocalDateTime;
 
 /**
- * 菜单导出VO
+ * 菜单导出VO。
  *
- * @author iBoot
+ * <p>用于 Excel 导出；字段通过 {@link com.iboot.admin.common.annotation.ExcelColumn} 定义表头、顺序、列宽和字典翻译。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class MenuExportVO {
 
+    /**
+     * 导出列：菜单ID。
+     */
     @ExcelColumn(name = "菜单ID", order = 1, width = 10)
     private Long id;
 
+    /**
+     * 导出列：层级。
+     */
     @ExcelColumn(name = "层级", order = 2, width = 8)
     private Integer level;
 
+    /**
+     * 导出列：菜单名称。
+     */
     @ExcelColumn(name = "菜单名称", order = 3, width = 20)
     private String menuName;
 
+    /**
+     * 导出列：菜单类型。
+     */
     @ExcelColumn(name = "菜单类型", order = 4, width = 10)
     private String menuType;
 
+    /**
+     * 导出列：路由地址。
+     */
     @ExcelColumn(name = "路由地址", order = 5, width = 25)
     private String path;
 
+    /**
+     * 导出列：组件路径。
+     */
     @ExcelColumn(name = "组件路径", order = 6, width = 30)
     private String component;
 
+    /**
+     * 导出列：权限标识。
+     */
     @ExcelColumn(name = "权限标识", order = 7, width = 25)
     private String perms;
 
+    /**
+     * 导出列：图标。
+     */
     @ExcelColumn(name = "图标", order = 8, width = 15)
     private String icon;
 
+    /**
+     * 导出列：排序。
+     */
     @ExcelColumn(name = "排序", order = 9, width = 8)
     private Integer orderNum;
 
+    /**
+     * 导出列：是否外链。
+     */
     @ExcelColumn(name = "是否外链", order = 10, width = 10)
     private Integer isFrame;
 
+    /**
+     * 导出列：是否缓存。
+     */
     @ExcelColumn(name = "是否缓存", order = 11, width = 10)
     private Integer isCache;
 
+    /**
+     * 导出列：是否可见。
+     */
     @ExcelColumn(name = "是否可见", order = 12, width = 10)
     private Integer visible;
 
+    /**
+     * 导出列：状态；字典类型 {@code sys_normal_disable}。
+     */
     @ExcelColumn(name = "状态", order = 13, width = 8, dictType = "sys_normal_disable")
     private Integer status;
 
+    /**
+     * 导出列：创建时间。
+     */
     @ExcelColumn(name = "创建时间", order = 14, width = 20)
     private LocalDateTime createTime;
 

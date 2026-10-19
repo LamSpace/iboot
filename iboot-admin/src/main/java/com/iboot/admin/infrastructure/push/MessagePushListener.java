@@ -32,12 +32,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 消息推送监听器
- * <p>
- * 监听消息事件并触发推送通知
+ * 消息推送监听器。
+ *
+ * <p>监听消息发送和已读事件，将其转换为 {@link PushEvent} 并通过推送服务发送给
+ * 在线客户端。
  *
  * @author iBoot Team
  * @since 1.0.0
+ * @see PushEventService
  */
 @Component
 public class MessagePushListener {

@@ -21,34 +21,55 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 配置请求 DTO
+ * 配置请求 DTO。
  *
- * @author iBoot
+ * <p>用于接收客户端提交的数据；字段格式和取值范围由 Jakarta Validation 注解约束，Controller 通过 {@code @Valid} 触发校验。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "配置请求")
 public class ConfigRequest {
 
+    /**
+     * 配置ID。
+     */
     @Schema(description = "配置ID")
     private Long id;
 
+    /**
+     * 配置名称。
+     */
     @Schema(description = "配置名称")
     @NotBlank(message = "配置名称不能为空")
     @Size(max = 100, message = "配置名称长度不能超过100")
     private String configName;
 
+    /**
+     * 配置键。
+     */
     @Schema(description = "配置键")
     @NotBlank(message = "配置键不能为空")
     @Size(max = 100, message = "配置键长度不能超过100")
     private String configKey;
 
+    /**
+     * 配置值。
+     */
     @Schema(description = "配置值")
     @NotBlank(message = "配置值不能为空")
     @Size(max = 500, message = "配置值长度不能超过500")
     private String configValue;
 
+    /**
+     * 配置类型：0-默认，1-系统内置。
+     */
     @Schema(description = "配置类型：0-默认，1-系统内置")
     private Integer configType;
 
+    /**
+     * 备注。
+     */
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不能超过500")
     private String remark;

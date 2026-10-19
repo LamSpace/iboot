@@ -21,43 +21,79 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
- * 用户消息响应 DTO（收件箱）
+ * 用户消息响应 DTO（收件箱）。
  *
- * @author iBoot
+ * <p>用于向客户端返回数据；字段与领域模型或数据库字段对应，不包含业务行为。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "用户消息响应")
 public class UserMessageResponse {
 
+    /**
+     * 消息ID。
+     */
     @Schema(description = "消息ID")
     private Long id;
 
+    /**
+     * 消息标题。
+     */
     @Schema(description = "消息标题")
     private String title;
 
+    /**
+     * 消息内容。
+     */
     @Schema(description = "消息内容")
     private String content;
 
+    /**
+     * 消息类型。
+     */
     @Schema(description = "消息类型")
     private String messageType;
 
+    /**
+     * 优先级。
+     */
     @Schema(description = "优先级")
     private String priority;
 
+    /**
+     * 发送者类型。
+     */
     @Schema(description = "发送者类型")
     private String senderType;
 
+    /**
+     * 发送者ID。
+     */
     @Schema(description = "发送者ID")
     private Long senderId;
 
+    /**
+     * 创建人。
+     */
     @Schema(description = "创建人")
     private String createBy;
 
+    /**
+     * 创建时间。
+     */
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
+    /**
+     * 是否已读。
+     */
     @Schema(description = "是否已读")
     private Integer isRead;
 
+    /**
+     * 阅读时间。
+     */
     @Schema(description = "阅读时间")
     private LocalDateTime readTime;
 

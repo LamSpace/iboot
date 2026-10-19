@@ -21,31 +21,55 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * 登录响应 DTO
+ * 登录响应 DTO。
  *
- * @author iBoot
+ * <p>返回 JWT 令牌、用户基本信息和权限/角色集合，供前端建立会话。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Schema(description = "登录响应")
 public class LoginResponse {
 
+    /**
+     * 访问令牌。
+     */
     @Schema(description = "访问令牌")
     private String token;
 
+    /**
+     * 用户ID。
+     */
     @Schema(description = "用户ID")
     private Long userId;
 
+    /**
+     * 用户名。
+     */
     @Schema(description = "用户名")
     private String username;
 
+    /**
+     * 昵称。
+     */
     @Schema(description = "昵称")
     private String nickname;
 
+    /**
+     * 头像。
+     */
     @Schema(description = "头像")
     private String avatar;
 
+    /**
+     * 权限列表。
+     */
     @Schema(description = "权限列表")
     private List<String> permissions;
 
+    /**
+     * 角色列表。
+     */
     @Schema(description = "角色列表")
     private List<String> roles;
 

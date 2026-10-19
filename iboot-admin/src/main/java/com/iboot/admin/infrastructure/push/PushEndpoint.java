@@ -28,12 +28,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
- * 推送端点 Controller
- * <p>
- * 提供 SSE 连接建立接口
+ * SSE 推送端点。
+ *
+ * <p>提供建立 SSE 连接的接口，连接建立后由 {@link SseEmitterManager} 按用户维护，
+ * 后续推送事件通过该连接发送。
  *
  * @author iBoot Team
  * @since 1.0.0
+ * @see SseEmitterManager
  */
 @RestController
 @RequestMapping("/api/push")

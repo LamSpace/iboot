@@ -33,7 +33,8 @@ import java.util.Optional;
  * 提供操作日志的记录、查询、统计、清理等功能 日志记录支持异步处理，不影响主业务流程
  * </p>
  *
- * @author iBoot
+ * @author iBoot Team
+ * @since 1.0.0
  */
 @Service
 public class OperateLogApplicationService {

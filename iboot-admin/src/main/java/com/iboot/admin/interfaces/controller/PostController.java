@@ -38,9 +38,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 岗位管理控制器
+ * 岗位管理控制器。
  *
- * @author iBoot
+ * <p>提供岗位的分页查询、详情、新增、修改、删除、状态切换和导出接口，
+ * 对应 {@code post:*} 权限。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see PostApplicationService
  */
 @Tag(name = "岗位管理", description = "岗位管理相关接口")
 @RestController
@@ -54,6 +59,18 @@ public class PostController {
         this.postApplicationService = postApplicationService;
     }
 
+    /**
+     * 分页查询岗位列表。
+     *
+     * <p>任一带条件参数非空时走条件查询，否则查询全部岗位。
+     *
+     * @param pageNum 页码，从 1 开始
+     * @param pageSize 每页数量
+     * @param postName 岗位名称关键字，可为 {@code null}
+     * @param postCode 岗位编码关键字，可为 {@code null}
+     * @param status 状态：0-停用，1-正常；可为 {@code null}
+     * @return 岗位分页结果
+     */
     @Operation(summary = "查询岗位列表")
     @GetMapping(version = "1", value = "/list")
     @PreAuthorize("hasAuthority('post:list')")
@@ -76,6 +93,11 @@ public class PostController {
         return Result.success(pageResult);
     }
 
+    /**
+     * 查询所有岗位。
+     *
+     * @return 岗位列表；没有数据时返回空列表
+     */
     @Operation(summary = "查询所有岗位")
     @GetMapping(version = "1", value = "/all")
     @PreAuthorize("hasAuthority('post:list')")
@@ -85,6 +107,13 @@ public class PostController {
         return Result.success(responses);
     }
 
+    /**
+     * 查询岗位详情。
+     *
+     * @param id 岗位 ID
+     * @return 岗位详情
+     * @throws com.iboot.admin.common.exception.BusinessException 岗位不存在时抛出
+     */
     @Operation(summary = "查询岗位详情")
     @GetMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('post:query')")
@@ -93,6 +122,12 @@ public class PostController {
         return Result.success(convertToResponse(post));
     }
 
+    /**
+     * 新增岗位。
+     *
+     * @param request 岗位创建请求
+     * @return 创建后的岗位详情
+     */
     @Operation(summary = "新增岗位")
     @PostMapping
     @PreAuthorize("hasAuthority('post:add')")
@@ -103,6 +138,12 @@ public class PostController {
         return Result.success(convertToResponse(createdPost));
     }
 
+    /**
+     * 修改岗位。
+     *
+     * @param request 岗位更新请求，{@code id} 不能为空
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改岗位")
     @PutMapping
     @PreAuthorize("hasAuthority('post:edit')")
@@ -114,6 +155,12 @@ public class PostController {
         return Result.success();
     }
 
+    /**
+     * 删除岗位。
+     *
+     * @param id 岗位 ID
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "删除岗位")
     @DeleteMapping(version = "1", value = "/{id}")
     @PreAuthorize("hasAuthority('post:remove')")
@@ -123,6 +170,13 @@ public class PostController {
         return Result.success();
     }
 
+    /**
+     * 修改岗位状态。
+     *
+     * @param id 岗位 ID
+     * @param status 目标状态：1-启用，0-停用
+     * @return 无数据的成功响应
+     */
     @Operation(summary = "修改岗位状态")
     @PutMapping(version = "1", value = "/changeStatus")
     @PreAuthorize("hasAuthority('post:edit')")
@@ -132,6 +186,15 @@ public class PostController {
         return Result.success();
     }
 
+    /**
+     * 导出岗位列表。
+     *
+     * @param response HTTP 响应，用于写入 Excel 文件
+     * @param postName 岗位名称关键字，可为 {@code null}
+     * @param postCode 岗位编码关键字，可为 {@code null}
+     * @param status 状态：0-停用，1-正常；可为 {@code null}
+     * @throws IOException 写入响应流失败时抛出
+     */
     @Operation(summary = "导出岗位列表")
     @GetMapping(version = "1", value = "/export")
     @PreAuthorize("hasAuthority('post:export')")

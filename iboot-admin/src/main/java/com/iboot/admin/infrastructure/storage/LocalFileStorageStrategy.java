@@ -31,9 +31,13 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 /**
- * 本地文件存储策略实现 将文件存储到本地文件系统
+ * 本地文件存储策略。
  *
- * @author iBoot
+ * <p>把文件保存到本地文件系统，并通过下载接口提供访问 URL。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see com.iboot.admin.domain.system.service.FileStorageStrategy
  */
 public class LocalFileStorageStrategy implements FileStorageStrategy {
 
@@ -51,6 +55,14 @@ public class LocalFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 保存文件到本地文件系统。
+     *
+     * @param file 上传的文件
+     * @param relativePath 相对存储路径
+     * @return 保存后的相对路径
+     * @throws IOException 文件保存失败时抛出
+     */
     public String save(MultipartFile file, String relativePath) throws IOException {
         Path uploadPath = getUploadBasePath();
         Path targetFile = uploadPath.resolve(relativePath);
@@ -63,12 +75,25 @@ public class LocalFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 获取文件访问 URL。
+     *
+     * @param filePath 相对文件路径
+     * @return 本地下载接口路径
+     */
     public String getFileUrl(String filePath) {
         // 本地存储返回相对路径，由Controller处理实际下载
         return filePath;
     }
 
     @Override
+    /**
+     * 获取文件流和元数据。
+     *
+     * @param filePath 相对文件路径
+     * @return 存储对象
+     * @throws IOException 文件读取失败时抛出
+     */
     public StorageObject getFileStream(String filePath) throws IOException {
         Path fullPath = getUploadBasePath().resolve(filePath);
         if (!Files.exists(fullPath)) {
@@ -86,6 +111,12 @@ public class LocalFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 删除文件。
+     *
+     * @param filePath 相对文件路径
+     * @return 删除成功返回 {@code true}
+     */
     public boolean delete(String filePath) {
         try {
             Path fullPath = getUploadBasePath().resolve(filePath);
@@ -101,12 +132,23 @@ public class LocalFileStorageStrategy implements FileStorageStrategy {
     }
 
     @Override
+    /**
+     * 判断文件是否存在。
+     *
+     * @param filePath 相对文件路径
+     * @return 存在返回 {@code true}
+     */
     public boolean exists(String filePath) {
         Path fullPath = getUploadBasePath().resolve(filePath);
         return Files.exists(fullPath);
     }
 
     @Override
+    /**
+     * 获取存储类型标识。
+     *
+     * @return 固定返回 {@code local}
+     */
     public String getStorageType() {
         return "local";
     }

@@ -20,52 +20,116 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 菜单实体（聚合根）
+ * 菜单实体（聚合根）。
  *
- * @author iBoot
+ * <p>表示前端路由、页面或按钮权限，通过 {@code parentId} 组成树形结构。
+ * {@code menuType} 取值：{@code M}-目录、{@code C}-菜单、{@code F}-按钮；
+ * 按钮类型通常只承载 {@code permission} 权限标识。
+ *
+ * <p>{@code children} 为非持久化字段，用于构建树形响应。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
  */
 public class Menu {
 
+    /**
+     * 菜单 ID，数据库主键。
+     */
     private Long id;
 
+    /**
+     * 菜单名称。
+     */
     private String menuName;
 
+    /**
+     * 父菜单 ID，顶级菜单为 0。
+     */
     private Long parentId;
 
+    /**
+     * 菜单类型：M-目录，C-菜单，F-按钮。
+     */
     private String menuType;
 
+    /**
+     * 前端路由地址。
+     */
     private String path;
 
+    /**
+     * 前端组件路径。
+     */
     private String component;
 
+    /**
+     * 权限标识，例如 {@code user:list}。
+     */
     private String permission;
 
+    /**
+     * 菜单图标。
+     */
     private String icon;
 
+    /**
+     * 同级菜单的显示顺序，数值越小越靠前。
+     */
     private Integer orderNum;
 
+    /**
+     * 是否外链：0-否，1-是。
+     */
     private Integer isFrame;
 
+    /**
+     * 是否缓存：0-不缓存，1-缓存。
+     */
     private Integer isCache;
 
+    /**
+     * 是否可见：0-隐藏，1-显示。
+     */
     private Integer visible;
 
+    /**
+     * 状态：0-停用，1-正常。
+     */
     private Integer status;
 
+    /**
+     * 创建人。
+     */
     private String createBy;
 
+    /**
+     * 创建时间。
+     */
     private LocalDateTime createTime;
 
+    /**
+     * 更新人。
+     */
     private String updateBy;
 
+    /**
+     * 更新时间。
+     */
     private LocalDateTime updateTime;
 
+    /**
+     * 逻辑删除：0-未删除，1-已删除。
+     */
     private Integer deleted;
 
+    /**
+     * 备注。
+     */
     private String remark;
 
     /**
-     * 子菜单列表（非持久化字段，用于树形结构构建）
+     * 子菜单列表（非持久化字段，用于树形结构构建）。
      */
     private List<Menu> children;
 
@@ -137,54 +201,50 @@ public class Menu {
     }
 
     /**
-     * 检查是否为目录类型菜单
+     * 判断是否为目录类型菜单。
      *
-     * @return 如果是目录类型则返回true，否则返回false
+     * @return {@code menuType} 为 {@code M} 时返回 {@code true}
      */
     public boolean isDirectory() {
         return "M".equals(this.menuType);
     }
 
     /**
-     * 检查是否为菜单类型
+     * 判断是否为菜单类型。
      *
-     * @return 如果是菜单类型则返回true，否则返回false
+     * @return {@code menuType} 为 {@code C} 时返回 {@code true}
      */
     public boolean isMenu() {
         return "C".equals(this.menuType);
     }
 
     /**
-     * 检查是否为按钮类型
+     * 判断是否为按钮类型。
      *
-     * @return 如果是按钮类型则返回true，否则返回false
+     * @return {@code menuType} 为 {@code F} 时返回 {@code true}
      */
     public boolean isButton() {
         return "F".equals(this.menuType);
     }
 
     /**
-     * 检查菜单是否可见
+     * 判断菜单是否可见。
      *
-     * @return 如果菜单可见则返回true，否则返回false
+     * @return {@code visible} 为 1 时返回 {@code true}
      */
     public boolean isVisible() {
         return this.visible != null && this.visible == 1;
     }
 
     /**
-     * 启用菜单
-     *
-     * @return 启用后的菜单对象
+     * 启用菜单。
      */
     public void enable() {
         this.status = 1;
     }
 
     /**
-     * 停用菜单
-     *
-     * @return 停用后的菜单对象
+     * 停用菜单。
      */
     public void disable() {
         this.status = 0;
