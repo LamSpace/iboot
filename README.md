@@ -158,6 +158,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 
 ```
 iboot/
+├── pom.xml                # 父 POM（聚合 iboot-admin）
 ├── scripts/               # 脚本目录
 │   ├── build.sh          # 构建脚本
 │   └── install-dependencies.sh  # 依赖安装脚本
@@ -308,6 +309,7 @@ docker run -d -p 80:80 --name iboot-portal iboot-portal
 
 ```
 iboot/
+├── pom.xml                # 父 POM（聚合 iboot-admin）
 ├── scripts/               # 脚本目录
 │   ├── build.sh          # 构建脚本
 │   └── install-dependencies.sh  # 依赖安装脚本
