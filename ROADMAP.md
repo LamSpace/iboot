@@ -6,7 +6,7 @@
 >
 > 本文只定义"做什么、用什么、受什么约束、带来什么价值、怎么算完成",不含实施排期。每个条目都带验收判据,判据不成立的条目不进路线图。
 >
-> 最近更新:2026-10-18
+> 最近更新:2026-10-19
 
 ---
 
@@ -31,7 +31,7 @@
 
 ### 1.1 架构形态
 
-单体应用,Maven 单模块(`iboot-admin/pom.xml`),内部遵循 DDD 四层:
+单体应用,Maven 多模块(根 `pom.xml` 聚合 `iboot-admin`),内部遵循 DDD 四层:
 
 ```
 interfaces  → controller / dto / advisor / config
@@ -163,7 +163,7 @@ graph LR
 
 | 编号 | 子项 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|---|
-| **0.1** | 父 POM 多模块预备 | Maven 聚合 `iboot-parent`,`modules = iboot-admin` + 预留 `iboot-ai`;依赖版本集中到 `dependencyManagement` | 纯构建结构改造,**不动一行业务代码** | `mvn verify` 绿;Docker 中间件环境与前端联调行为零变化 |
+| **0.1** | 父 POM 多模块预备(**已完成**) | Maven 聚合 `iboot-parent`,`modules = iboot-admin` + 预留 `iboot-ai`;依赖版本集中到 `dependencyManagement` | 纯构建结构改造,**不动一行业务代码** | `mvn verify` 绿;Docker 中间件环境与前端联调行为零变化 |
 | **0.2** | 数据备份与恢复(**暂不做**) | Quartz(已有)+ `mysqldump` + MinIO(已有)+ AES-GCM 加密 + 元数据表 `db_backup_record` + 恢复演练 | 恢复目标必须是独立演练库,**禁止覆盖原库**;`mysqldump` 版本须与 MySQL 8.0.45 匹配;大库逻辑备份耗时,binlog 增量留作选做 | 定时备份产物落 MinIO;一次完整恢复演练成功且行数 / 校验和一致 |
 | **0.3** | 业务全文检索 | 复用已部署的 ES 9(目前仅存运行日志),公告 / 消息 / 文件内容建索引;写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 定时对账 | ES 客户端已随 Boot 4.0.3 升至 **9.2.5**,与 ES **9.2.3** 同属 9.2.x,兼容前置已满足;不引入 Canal(重) | 公告/消息/文件内容可检索;源数据删改后 5 分钟内索引一致 |
 | **0.4** | 行级业务多语言(**暂不做**) | 翻译表 `sys_i18n_value(lang, table, row_id, field, value)` + MyBatis 拦截器自动替换与默认语言回退 + 复用二级缓存 | 与 `DataScopeInterceptor` 的拦截器链顺序敏感;与 PageHelper 的分页改写需兼容;回退规则须先定死(默认语言缺失 → 空还是回退) | 同一记录中/英切换返回正确字段;数据权限过滤仍生效 |
