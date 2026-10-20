@@ -80,6 +80,15 @@
         <!-- MinIO Object Storage -->
         <minio.version>8.5.7</minio.version>
 
+        <!-- Aliyun OSS SDK -->
+        <aliyun-oss.version>3.18.5</aliyun-oss.version>
+
+        <!-- Testcontainers -->
+        <testcontainers.version>2.0.5</testcontainers.version>
+
+        <!-- Surefire：默认排除需要真实云凭据的 cloud 分组，可用 -Dsurefire.excludedGroups=disabled 覆盖 -->
+        <surefire.excludedGroups>cloud</surefire.excludedGroups>
+
         <!-- FastExcel for Excel Export -->
         <fastexcel.version>0.19.0</fastexcel.version>
 
@@ -104,6 +113,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- Database & Migration -->
             <dependency>
                 <groupId>com.alibaba</groupId>
@@ -212,6 +228,12 @@
                 <groupId>io.minio</groupId>
                 <artifactId>minio</artifactId>
                 <version>${minio.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.aliyun.oss</groupId>
+                <artifactId>aliyun-sdk-oss</artifactId>
+                <version>${aliyun-oss.version}</version>
             </dependency>
 
             <!-- Cache -->

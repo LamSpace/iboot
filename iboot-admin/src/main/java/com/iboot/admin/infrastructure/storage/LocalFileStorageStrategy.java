@@ -18,10 +18,10 @@ package com.iboot.admin.infrastructure.storage;
 
 import com.iboot.admin.application.service.ConfigApplicationService;
 import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.admin.domain.system.model.StorageObject;
 import com.iboot.admin.domain.system.service.FileStorageStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,18 +58,18 @@ public class LocalFileStorageStrategy implements FileStorageStrategy {
     /**
      * 保存文件到本地文件系统。
      *
-     * @param file 上传的文件
+     * @param source 待保存的内容与元数据
      * @param relativePath 相对存储路径
      * @return 保存后的相对路径
      * @throws IOException 文件保存失败时抛出
      */
-    public String save(MultipartFile file, String relativePath) throws IOException {
+    public String save(StorageObject source, String relativePath) throws IOException {
         Path uploadPath = getUploadBasePath();
         Path targetFile = uploadPath.resolve(relativePath);
         // 创建目录
         Files.createDirectories(targetFile.getParent());
         // 保存文件
-        Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(source.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
         log.debug("文件已保存到本地: {}", targetFile);
         return relativePath;
     }
@@ -154,18 +154,21 @@ public class LocalFileStorageStrategy implements FileStorageStrategy {
     }
 
     /**
+     * 本地存储不属于对象存储语义。
+     *
+     * @return 固定返回 {@code false}
+     */
+    @Override
+    public boolean isObjectStorage() {
+        return false;
+    }
+
+    /**
      * 获取上传文件的基础路径
      */
     private Path getUploadBasePath() {
         String path = configApplicationService.getConfigValue(CONFIG_KEY_UPLOAD_PATH);
         return Paths.get(path != null ? path : DEFAULT_UPLOAD_PATH);
-    }
-
-    /**
-     * 获取文件的完整磁盘路径
-     */
-    public Path getFullPath(String filePath) {
-        return getUploadBasePath().resolve(filePath);
     }
 
 }

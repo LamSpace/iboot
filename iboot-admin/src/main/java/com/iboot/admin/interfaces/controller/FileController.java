@@ -23,6 +23,7 @@ import com.iboot.admin.common.result.PageResult;
 import com.iboot.admin.common.result.Result;
 import com.iboot.admin.common.util.ExcelExportUtil;
 import com.iboot.admin.domain.system.model.FileInfo;
+import com.iboot.admin.domain.system.model.StorageObject;
 import com.iboot.admin.infrastructure.security.SecurityUtils;
 import com.iboot.admin.interfaces.dto.export.FileExportVO;
 import com.iboot.admin.interfaces.dto.request.FileUpdateRequest;
@@ -31,8 +32,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -43,9 +44,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,8 +53,8 @@ import java.util.stream.Collectors;
  * 文件管理控制器。
  *
  * <p>提供文件上传、列表、详情、下载 URL、下载、信息修改、删除和导出接口，
- * 对应 {@code file:*} 权限。下载接口在 MinIO 模式下重定向到预签名 URL，
- * 本地模式下直接返回文件流。
+ * 对应 {@code file:*} 权限。下载接口在对象存储模式下重定向到预签名 URL，
+ * 本地模式下直接输出文件流。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -162,34 +161,41 @@ public class FileController {
     /**
      * 下载文件。
      *
-     * <p>MinIO 模式返回 302 重定向到预签名 URL；本地模式直接写出文件流。
+     * <p>对象存储模式返回 302 重定向到预签名 URL；本地模式直接写出文件流。
      *
      * @param id 文件 ID
-     * @return MinIO 模式下的重定向响应，或本地模式下的文件流响应
-     * @throws IOException 文件不存在于磁盘或读取失败时抛出
+     * @return 对象存储模式下的重定向响应，或本地模式下的文件流响应
+     * @throws IOException 文件读取失败时抛出
      */
     @Operation(summary = "下载文件")
     @GetMapping(version = "1", value = "/download/{id}")
     @PreAuthorize("hasAuthority('file:download')")
-    @Log(title = "文件管理", businessType = BusinessTypeEnum.EXPORT)
+    @Log(title = "文件管理", businessType = BusinessTypeEnum.EXPORT, isSaveResponseData = false)
     public ResponseEntity<?> download(@PathVariable Long id) throws IOException {
         FileInfo fileInfo = fileApplicationService.getFileById(id);
-        // MinIO模式：重定向到预签名URL
-        if (fileApplicationService.isMinioStorage()) {
+        // 对象存储模式：重定向到预签名URL
+        if (fileApplicationService.isObjectStorage()) {
             String presignedUrl = fileApplicationService.getFileDownloadUrl(id);
             return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(presignedUrl)).build();
         }
-        // 本地模式：返回文件流
-        Path diskPath = fileApplicationService.getFileDiskPath(fileInfo);
-        Resource resource = new UrlResource(diskPath.toUri());
-        if (!resource.exists()) {
-            throw new IOException("文件不存在于磁盘：" + fileInfo.getFilePath());
+        // 本地模式：直接输出文件流
+        StorageObject stored = fileApplicationService.getFileStream(id);
+        // 附件名使用数据库中的原始文件名，存储路径中的 UUID 名不应暴露给用户
+        String fileName = fileInfo.getFileName() != null ? fileInfo.getFileName() : stored.getFileName();
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(fileName, StandardCharsets.UTF_8)
+                .build();
+        ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString());
+        if (stored.getContentType() != null) {
+            builder.contentType(MediaType.parseMediaType(stored.getContentType()));
+        } else {
+            builder.contentType(MediaType.APPLICATION_OCTET_STREAM);
         }
-        String encodedFileName = URLEncoder.encode(fileInfo.getFileName(), StandardCharsets.UTF_8).replace("+", "%20");
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName)
-                .body(resource);
+        if (stored.getSize() != null) {
+            builder.contentLength(stored.getSize());
+        }
+        return builder.body(new InputStreamResource(stored.getInputStream()));
     }
 
     /**
