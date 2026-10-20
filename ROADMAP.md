@@ -6,7 +6,7 @@
 >
 > 本文只定义"做什么、用什么、受什么约束、带来什么价值、怎么算完成",不含实施排期。每个条目都带验收判据,判据不成立的条目不进路线图。
 >
-> 最近更新:2026-10-19
+> 最近更新:2026-10-20
 
 ---
 
@@ -138,7 +138,7 @@ graph LR
     P0 --> P1 --> P2 --> P3 --> P4
 
     P0 -. "0.3 业务全文检索<br/>是 RAG 向量检索前置" .-> P1
-    P0 -. "0.7 MinioService 抽<br/>StorageProvider SPI" .-> P3
+    P0 -. "0.7 文件存储 SPI<br/>FileStorageStrategy" .-> P3
     P1 -. "iboot-ai 已独立可部署<br/>阶段 2 零迁移成本" .-> P2
     P2 -. "服务清单与镜像<br/>是 Helm 化对象" .-> P3
 ```
@@ -169,7 +169,7 @@ graph LR
 | **0.4** | 行级业务多语言(**暂不做**) | 翻译表 `sys_i18n_value(lang, table, row_id, field, value)` + MyBatis 拦截器自动替换与默认语言回退 + 复用二级缓存 | 与 `DataScopeInterceptor` 的拦截器链顺序敏感;与 PageHelper 的分页改写需兼容;回退规则须先定死(默认语言缺失 → 空还是回退) | 同一记录中/英切换返回正确字段;数据权限过滤仍生效 |
 | **0.5** | 审批流 / 工作流 | **Spike 决定**:Flowable 7 on Boot 4.0.3(判据:引擎启动 + 一条请假流程单测通过);不通则 Spring Statemachine + 自研状态持久化 | Flowable × Boot 4 兼容性**未经验证**;二者只取其一,不并存(原 TODO#8 由此消化) | 一条真实流程可跑通:发起 → 审批 → 驳回 → 归档 |
 | **0.6** | 多渠道通知 | 渠道 SPI(站内 SSE 已有 / Spring Mail / 阿里云短信 Dysmsapi / 钉钉 webhook)+ 复用 `message_template` 表 + 失败重试 | 需真实阿里云密钥,密钥不入仓(env / Nacos);短信签名与模板有云侧审核周期;阶段 2 后重投职责移交 RocketMQ | 同一业务事件按渠道可达;失败可见且可重试 |
-| **0.7** | 衔接性抽象 | 把文件存储收敛为 `FileStorageStrategy` SPI(Local / MinIO / OSS / 内存实现),提供方由 `sys.file.storageType` 选择 | 阶段 3 的 MinIO→OSS 替换依赖它;两者 SDK 不兼容,不做抽象则上云要改遍文件相关代码 | 本地跑 MinIO 实现、测试跑内存实现,行为一致 |
+| **0.7** | 衔接性抽象(**已完成**) | 把文件存储收敛为 `FileStorageStrategy` SPI(Local / MinIO / OSS / 内存实现),提供方由 `sys.file.storageType` 选择 | 阶段 3 的 MinIO→OSS 替换依赖它;两者 SDK 不兼容,不做抽象则上云要改遍文件相关代码 | 本地跑 MinIO 实现、测试跑内存实现,行为一致 |
 | **0.8** | 文档修正(**已完成**) | `doc/02-技术栈.md` 版本号 3.5.9 → 4.0.3;ES 客户端版本描述 | — | 文档与 pom 一致 |
 
 ### 4.1 阶段 1:AI 工作台
@@ -245,7 +245,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 |---|---|---|
 | `iboot-gateway` | 新建 | Spring Cloud Gateway:路由、鉴权前置、统一 CORS、限流入口 |
 | `iboot-auth` | 从 admin 抽出 `AuthController` + JWT + Redis 会话 | 认证中心 / SSO,其余服务的依赖前置 |
-| `iboot-file` | 文件管理 + 0.7 `StorageProvider`(0.2 备份恢复暂不做) | 边界清晰、依赖少 |
+| `iboot-file` | 文件管理 + 0.7 `FileStorageStrategy`(0.2 备份恢复暂不做) | 边界清晰、依赖少 |
 | `iboot-notify` | 消息中心 + SSE 推送 + 0.6 多渠道通知 | **有状态连接**,独立最能体现价值 |
 | `iboot-job` | 定时任务 | 调度语义独立 |
 | `iboot-monitor` | 监控运维 + 日志 + ES | 读多写少,可独立扩缩 |
@@ -288,7 +288,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | 3.1 | 镜像工程 | 每服务多阶段 Dockerfile + distroless + 非 root 运行 + 推 **ACR** | 当前后端镜像不存在,portal 是唯一已有 Dockerfile;基础镜像需与 GraalVM/native 路线兼容 | 每服务镜像 < 200MB 且可启动 |
 | 3.2 | Helm 组织 | **Helmfile + 一个通用 library chart** | 避免 8 份重复 chart 样板 | `helmfile sync` 幂等 |
 | 3.3 | K8s 清单 | Deployment / Service / ConfigMap / Secret / HPA / PDB / NetworkPolicy / Ingress(ALB) / 命名空间(dev, prod) | Secret 走 KMS 或 ACK Secret 管理,不入仓 | 滚动升级零 5xx;删 Pod 自愈 |
-| 3.4 | 中间件分层混合 | 本地 Kind 全自建(MySQL/Redis/ES/Nacos/RocketMQ)练手;云上数据层用 RDS MySQL / Tair / 阿里云 ES / **OSS(替 MinIO)** / MSE Nacos / 云 RocketMQ | 云上跑有状态中间件的学习收益 < 运维成本;MinIO→OSS 依赖 0.7 的 `StorageProvider` 抽象 | 本地与云上同一份镜像、不同 values 可跑 |
+| 3.4 | 中间件分层混合 | 本地 Kind 全自建(MySQL/Redis/ES/Nacos/RocketMQ)练手;云上数据层用 RDS MySQL / Tair / 阿里云 ES / **OSS(替 MinIO)** / MSE Nacos / 云 RocketMQ | 云上跑有状态中间件的学习收益 < 运维成本;MinIO→OSS 依赖 0.7 的 `FileStorageStrategy` 抽象 | 本地与云上同一份镜像、不同 values 可跑 |
 | 3.5 | 可观测上云 | 指标:ARMS 托管 Prometheus 或 kube-prometheus-stack;日志:Logtail→SLS(本地 ELK 保留);追踪:Tempo / ARMS | SLS 按量计费需设采集白名单;Thanos 在云上可被托管方案替代 | 云上 Grafana 看到同一套业务面板 |
 | 3.6 | CI/CD | GitHub Actions 或云效 Flow:构建 → 镜像推 ACR → `helmfile sync` → dev 晋升 prod → `helm rollback` | 密钥走 CI Secrets,不入仓 | 一次提交自动完成 dev 发布与回滚演练 |
 | 3.7 | 弹性与成本 | request/limit 调优、HPA 按 CPU + 自定义 QPS 指标、突发负载用 ECI/ASK | 常驻资源是主要账单 | 压测触发 HPA 扩容且账单可观测 |
