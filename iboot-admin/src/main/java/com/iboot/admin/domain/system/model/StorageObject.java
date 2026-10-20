@@ -14,14 +14,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.iboot.admin.infrastructure.storage;
+package com.iboot.admin.domain.system.model;
 
 import java.io.InputStream;
 
 /**
  * 文件存储对象。
  *
- * <p>封装从存储系统读取的输入流、内容长度和内容类型，用于下载响应。
+ * <p>封装待写入或已读出的文件输入流、内容长度、内容类型和文件名，
+ * 在文件存储策略与应用/接口层之间传递内容与元数据。
  *
  * @author iBoot Team
  * @since 1.0.0

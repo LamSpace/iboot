@@ -21,17 +21,22 @@ import com.iboot.admin.domain.system.service.FileStorageStrategy;
 import com.iboot.admin.infrastructure.storage.LocalFileStorageStrategy;
 import com.iboot.admin.infrastructure.storage.MinioFileStorageStrategy;
 import com.iboot.admin.infrastructure.storage.MinioProperties;
+import com.iboot.admin.infrastructure.storage.OssFileStorageStrategy;
+import com.iboot.admin.infrastructure.storage.OssProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
+import java.util.Locale;
+
 /**
  * 文件存储配置。
  *
- * <p>根据系统配置动态选择本地存储或 MinIO 存储策略，并向容器暴露对应的
- * {@link com.iboot.admin.domain.system.service.FileStorageStrategy} Bean。
+ * <p>按 {@code sys.file.storageType} 在启动期选择唯一生效的存储策略：
+ * {@code local}、{@code minio} 或 {@code oss}；缺省为 {@code local}，非法值直接
+ * 阻止应用启动。切换提供方需要重启应用。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -42,38 +47,57 @@ public class FileStorageConfig {
 
     private static final Logger log = LoggerFactory.getLogger(FileStorageConfig.class);
 
+    private static final String CONFIG_KEY_STORAGE_TYPE = "sys.file.storageType";
+
+    private static final String STORAGE_TYPE_LOCAL = "local";
+
+    private static final String STORAGE_TYPE_MINIO = "minio";
+
+    private static final String STORAGE_TYPE_OSS = "oss";
+
     private final ConfigApplicationService configApplicationService;
 
     private final MinioProperties minioProperties;
 
+    private final OssProperties ossProperties;
+
     @SuppressWarnings("all")
     public FileStorageConfig(final ConfigApplicationService configApplicationService,
-                             final MinioProperties minioProperties) {
+                             final MinioProperties minioProperties, final OssProperties ossProperties) {
         this.configApplicationService = configApplicationService;
         this.minioProperties = minioProperties;
+        this.ossProperties = ossProperties;
     }
 
     /**
-     * 创建文件存储策略Bean 根据配置选择本地存储或MinIO存储
+     * 创建唯一生效的文件存储策略。
+     *
+     * @return 配置指定的存储策略
+     * @throws IllegalStateException 配置了不支持的存储类型时抛出
      */
     @Bean
     @Primary
     public FileStorageStrategy fileStorageStrategy() {
-        if (minioProperties.isMinioEnabled()) {
-            log.info("使用MinIO对象存储策略");
-            return new MinioFileStorageStrategy(minioProperties);
-        } else {
-            log.info("使用本地文件存储策略");
-            return new LocalFileStorageStrategy(configApplicationService);
+        String storageType = configApplicationService.getConfigValue(CONFIG_KEY_STORAGE_TYPE);
+        if (storageType == null || storageType.isBlank()) {
+            storageType = STORAGE_TYPE_LOCAL;
         }
-    }
-
-    /**
-     * 本地文件存储策略（始终可用，用于兼容旧文件下载）
-     */
-    @Bean
-    public LocalFileStorageStrategy localFileStorageStrategy() {
-        return new LocalFileStorageStrategy(configApplicationService);
+        return switch (storageType.toLowerCase(Locale.ROOT)) {
+            case STORAGE_TYPE_LOCAL -> {
+                log.info("使用本地文件存储策略");
+                yield new LocalFileStorageStrategy(configApplicationService);
+            }
+            case STORAGE_TYPE_MINIO -> {
+                log.info("使用 MinIO 对象存储策略");
+                yield new MinioFileStorageStrategy(minioProperties);
+            }
+            case STORAGE_TYPE_OSS -> {
+                log.info("使用阿里云 OSS 对象存储策略");
+                yield new OssFileStorageStrategy(ossProperties);
+            }
+            default -> throw new IllegalStateException("不支持的存储类型: " + storageType
+                    + "，可选值: local、minio、oss");
+        };
     }
 
 }

@@ -17,6 +17,7 @@
 package com.iboot.admin.infrastructure.storage;
 
 import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.admin.domain.system.model.StorageObject;
 import com.iboot.admin.domain.system.service.FileStorageStrategy;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
@@ -24,7 +25,6 @@ import io.minio.http.Method;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -91,19 +91,19 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     /**
      * 保存文件到 MinIO。
      *
-     * @param file 上传的文件
+     * @param source 待保存的内容与元数据
      * @param relativePath 对象键的相对路径
      * @return 保存后的相对路径
      * @throws IOException 上传失败时抛出
      */
-    public String save(MultipartFile file, String relativePath) throws IOException {
+    public String save(StorageObject source, String relativePath) throws IOException {
         try {
             String bucketName = minioProperties.getBucketName();
-            String contentType = file.getContentType();
+            String contentType = source.getContentType();
             if (contentType == null) {
                 contentType = "application/octet-stream";
             }
-            long fileSize = file.getSize();
+            long fileSize = source.getSize();
             log.info("准备上传文件到 MinIO: bucket={}, object={}, size={}, contentType={}", bucketName, relativePath, fileSize,
                     contentType);
             // 验证文件大小
@@ -112,7 +112,7 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
                 throw new IOException("文件大小为 0 或负数，无法上传");
             }
             // 获取输入流
-            InputStream inputStream = file.getInputStream();
+            InputStream inputStream = source.getInputStream();
             // 包装为带缓冲的流，确保数据完整读取
             java.io.BufferedInputStream bufferedStream = new java.io.BufferedInputStream(inputStream);
             // 上传文件（流会在上传完成后关闭）
@@ -214,6 +214,10 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
      */
     public boolean delete(String filePath) {
         try {
+            if (!exists(filePath)) {
+                log.debug("MinIO文件不存在，跳过删除: {}", filePath);
+                return false;
+            }
             minioClient.removeObject(
                     RemoveObjectArgs.builder().bucket(minioProperties.getBucketName()).object(filePath).build());
             log.debug("MinIO文件已删除: {}", filePath);
@@ -256,6 +260,16 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
      */
     public String getStorageType() {
         return "minio";
+    }
+
+    /**
+     * MinIO 属于对象存储语义。
+     *
+     * @return 固定返回 {@code true}
+     */
+    @Override
+    public boolean isObjectStorage() {
+        return true;
     }
 
 }

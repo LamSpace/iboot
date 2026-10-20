@@ -18,10 +18,9 @@ package com.iboot.admin.application.service;
 
 import com.iboot.admin.common.exception.BusinessException;
 import com.iboot.admin.domain.system.model.FileInfo;
+import com.iboot.admin.domain.system.model.StorageObject;
 import com.iboot.admin.domain.system.repository.FileRepository;
 import com.iboot.admin.domain.system.service.FileStorageStrategy;
-import com.iboot.admin.infrastructure.storage.LocalFileStorageStrategy;
-import com.iboot.admin.infrastructure.storage.StorageObject;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -67,16 +65,13 @@ public class FileApplicationService {
 
     private final FileStorageStrategy fileStorageStrategy;
 
-    private final LocalFileStorageStrategy localFileStorageStrategy;
-
     @SuppressWarnings("all")
     public FileApplicationService(final FileRepository fileRepository,
-                                  final ConfigApplicationService configApplicationService, final FileStorageStrategy fileStorageStrategy,
-                                  final LocalFileStorageStrategy localFileStorageStrategy) {
+                                  final ConfigApplicationService configApplicationService,
+                                  final FileStorageStrategy fileStorageStrategy) {
         this.fileRepository = fileRepository;
         this.configApplicationService = configApplicationService;
         this.fileStorageStrategy = fileStorageStrategy;
-        this.localFileStorageStrategy = localFileStorageStrategy;
     }
 
     /**
@@ -105,7 +100,13 @@ public class FileApplicationService {
         String relativePath = datePath + "/" + storedFileName;
         // 3. 使用存储策略保存文件
         try {
-            fileStorageStrategy.save(file, relativePath);
+            StorageObject source = StorageObject.builder()
+                    .inputStream(file.getInputStream())
+                    .size(file.getSize())
+                    .contentType(file.getContentType())
+                    .fileName(originalFilename)
+                    .build();
+            fileStorageStrategy.save(source, relativePath);
         } catch (IOException e) {
             throw new BusinessException("文件保存失败：" + e.getMessage());
         }
@@ -179,32 +180,21 @@ public class FileApplicationService {
     }
 
     /**
-     * 获取文件的磁盘完整路径（仅用于本地存储的兼容）
+     * 获取当前存储类型。
      *
-     * @param fileInfo 文件信息实体
-     *
-     * @return 文件的完整磁盘路径
-     */
-    public Path getFileDiskPath(FileInfo fileInfo) {
-        return localFileStorageStrategy.getFullPath(fileInfo.getFilePath());
-    }
-
-    /**
-     * 获取当前存储类型
-     *
-     * @return 存储类型标识，如 "local" 或 "minio"
+     * @return 存储类型标识，如 {@code local}、{@code minio} 或 {@code oss}
      */
     public String getStorageType() {
         return fileStorageStrategy.getStorageType();
     }
 
     /**
-     * 检查是否为 MinIO 存储模式
+     * 判断当前是否为对象存储模式。
      *
-     * @return 是否为 MinIO 存储
+     * @return 对象存储返回 {@code true}，下载时使用预签名 URL 重定向
      */
-    public boolean isMinioStorage() {
-        return "minio".equals(fileStorageStrategy.getStorageType());
+    public boolean isObjectStorage() {
+        return fileStorageStrategy.isObjectStorage();
     }
 
     /**

@@ -16,16 +16,15 @@
 
 package com.iboot.admin.domain.system.service;
 
-import com.iboot.admin.infrastructure.storage.StorageObject;
-import org.springframework.web.multipart.MultipartFile;
+import com.iboot.admin.domain.system.model.StorageObject;
 
 import java.io.IOException;
 
 /**
  * 文件存储策略接口。
  *
- * <p>抽象文件保存、读取、删除和 URL 生成等操作，由本地存储和对象存储（MinIO）
- * 分别实现。上层服务通过该接口屏蔽具体存储介质。
+ * <p>抽象文件保存、读取、删除和 URL 生成等操作，由本地存储、MinIO、阿里云 OSS
+ * 及测试用内存存储分别实现。上层服务通过该接口屏蔽具体存储介质，不感知提供方差异。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -33,16 +32,16 @@ import java.io.IOException;
 public interface FileStorageStrategy {
 
     /**
-     * 保存文件
+     * 保存文件。
      *
-     * @param file         上传的文件
+     * @param source       待保存的内容与元数据
      * @param relativePath 相对路径（如 2024/02/27/uuid.jpg）
      *
      * @return 存储后的文件路径
      *
      * @throws IOException 文件保存失败时抛出
      */
-    String save(MultipartFile file, String relativePath) throws IOException;
+    String save(StorageObject source, String relativePath) throws IOException;
 
     /**
      * 获取文件访问URL 本地存储返回下载接口路径，对象存储返回预签名URL
@@ -83,10 +82,20 @@ public interface FileStorageStrategy {
     boolean exists(String filePath);
 
     /**
-     * 获取存储类型标识
+     * 获取存储类型标识。
      *
-     * @return 存储类型（如 "local" 或 "minio"）
+     * @return 存储类型（如 {@code local}、{@code minio} 或 {@code oss}）
      */
     String getStorageType();
+
+    /**
+     * 判断是否属于对象存储语义。
+     *
+     * <p>对象存储实现返回 {@code true}，下载时使用预签名 URL 重定向；
+     * 本地与内存实现返回 {@code false}，下载时由应用直接输出文件流。
+     *
+     * @return 对象存储返回 {@code true}
+     */
+    boolean isObjectStorage();
 
 }
