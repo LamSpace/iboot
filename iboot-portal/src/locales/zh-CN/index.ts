@@ -47,6 +47,9 @@ import analysisUsage from "./analysis/usage.json";
 // File module
 import fileManage from "./file/file-manage.json";
 
+// Approval module
+import approval from "./approval.json";
+
 export default {
   common,
   login,
@@ -96,4 +99,5 @@ export default {
   file: {
     fileManage: fileManage,
   },
+  approval,
 };

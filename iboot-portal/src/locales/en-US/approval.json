@@ -1,0 +1,69 @@
+{
+  "title": "Approval Center",
+  "tabs": {
+    "todo": "To Do",
+    "done": "Completed",
+    "mine": "My Requests"
+  },
+  "actions": {
+    "apply": "Apply for Leave",
+    "approve": "Approve",
+    "reject": "Reject",
+    "detail": "Detail",
+    "refresh": "Refresh",
+    "submit": "Submit",
+    "cancel": "Cancel"
+  },
+  "status": {
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected"
+  },
+  "leaveType": {
+    "ANNUAL": "Annual",
+    "SICK": "Sick",
+    "PERSONAL": "Personal"
+  },
+  "columns": {
+    "applicant": "Applicant",
+    "approver": "Approver",
+    "leaveType": "Type",
+    "period": "Period",
+    "reason": "Reason",
+    "status": "Status",
+    "submittedAt": "Submitted At",
+    "completedAt": "Completed At",
+    "comment": "Comment",
+    "actions": "Actions"
+  },
+  "form": {
+    "approver": "Approver",
+    "approverPlaceholder": "Select an approver",
+    "leaveType": "Leave Type",
+    "leaveTypePlaceholder": "Select a type",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "reason": "Reason",
+    "reasonPlaceholder": "Enter the reason",
+    "rejectCommentPlaceholder": "Enter a comment or rejection reason"
+  },
+  "validation": {
+    "approverRequired": "Please select an approver",
+    "leaveTypeRequired": "Please select a leave type",
+    "startRequired": "Please select the start time",
+    "endRequired": "Please select the end time",
+    "reasonRequired": "Please enter the reason",
+    "rejectCommentRequired": "A rejection reason is required"
+  },
+  "messages": {
+    "applied": "Leave request submitted",
+    "approved": "Request approved",
+    "rejected": "Request rejected"
+  },
+  "detail": {
+    "title": "Request Detail",
+    "history": "Approval History",
+    "emptyHistory": "No approval records"
+  },
+  "empty": "No data"
+}

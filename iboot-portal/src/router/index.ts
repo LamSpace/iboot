@@ -97,6 +97,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
       {
+        path: "approval",
+        name: "ApprovalCenter",
+        component: () => import("../views/approval/ApprovalCenterView.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
         path: "login-log",
         name: "LoginLog",
         component: () => import("../views/security/LoginLogView.vue"),

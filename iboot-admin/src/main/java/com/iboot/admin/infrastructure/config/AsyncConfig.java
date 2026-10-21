@@ -18,9 +18,10 @@ package com.iboot.admin.infrastructure.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.support.TaskExecutorAdapter;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 /**
@@ -37,12 +38,16 @@ import java.util.concurrent.Executors;
 public class AsyncConfig {
 
     /**
-     * 虚拟线程执行器
-     * 用于@Async 注解的异步任务
+     * 创建基于虚拟线程的异步任务执行器。
+     *
+     * <p>以 {@link AsyncTaskExecutor} 暴露，使依赖 {@code @ConditionalOnMissingBean} 按类型判断
+     * 的第三方自动配置（如 Flowable）能够识别并退让，避免同名 Bean 冲突。
+     *
+     * @return 虚拟线程执行器
      */
     @Bean(name = "taskExecutor")
-    public Executor taskExecutor() {
-        return Executors.newVirtualThreadPerTaskExecutor();
+    public AsyncTaskExecutor taskExecutor() {
+        return new TaskExecutorAdapter(Executors.newVirtualThreadPerTaskExecutor());
     }
 
 }
