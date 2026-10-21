@@ -24,7 +24,7 @@
 - [x] 4.1 带 Flowable 依赖启动完整 `iboot-admin`（compose 中间件已启动），验证应用启动成功且 `/actuator/health` 返回正常
 - [x] 4.2 验证 `DataScopeInterceptor` 不影响 Flowable 自建 `SqlSessionFactory`：在同一上下文中执行一次带数据权限的 Mapper 查询与一次流程推进，验证前者仍被重写、后者 SQL 未被改写（日志或单测断言）
 - [x] 4.3 验证事务一致性：在同一事务内写业务表 + 推进流程并强制抛出异常，确认业务表与 `ACT_RU_*` 同步回滚
-- [ ] 4.4 运行全量 `TESTCONTAINERS_RYUK_CONTAINER_IMAGE=testcontainers/ryuk:0.12.0 mvn -s /home/lam/repo/settings.xml clean verify`，验证现有 17 个测试类全部通过、无回归
+- [x] 4.4 运行全量 `TESTCONTAINERS_RYUK_CONTAINER_IMAGE=testcontainers/ryuk:0.12.0 mvn -s /home/lam/repo/settings.xml clean verify`，验证现有 17 个测试类全部通过、无回归
 - [x] 4.5 采集增量指标：启动耗时、RSS、线程数、`ACT_*` 表数量、Flyway 与引擎自建表的共存情况；记录到报告草稿的对比表
 
 ## 5. Spike 报告与决策
