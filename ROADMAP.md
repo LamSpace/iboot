@@ -165,7 +165,7 @@ graph LR
 |---|---|---|---|---|
 | **0.1** | 父 POM 多模块预备(**已完成**) | Maven 聚合 `iboot-parent`,`modules = iboot-admin` + 预留 `iboot-ai`;依赖版本集中到 `dependencyManagement` | 纯构建结构改造,**不动一行业务代码** | `mvn verify` 绿;Docker 中间件环境与前端联调行为零变化 |
 | **0.2** | 数据备份与恢复(**暂不做**) | Quartz(已有)+ `mysqldump` + MinIO(已有)+ AES-GCM 加密 + 元数据表 `db_backup_record` + 恢复演练 | 恢复目标必须是独立演练库,**禁止覆盖原库**;`mysqldump` 版本须与 MySQL 8.0.45 匹配;大库逻辑备份耗时,binlog 增量留作选做 | 定时备份产物落 MinIO;一次完整恢复演练成功且行数 / 校验和一致 |
-| **0.3** | 业务全文检索 | 复用已部署的 ES 9(目前仅存运行日志),公告 / 站内消息建索引(中文 `cjk` 分析器);写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 每 5 分钟无状态对账 | ES 客户端已随 Boot 4.0.3 升至 **9.2.5**,与 ES **9.2.3** 同属 9.2.x,兼容前置已满足;不引入 Canal(重);**文件内容检索并入阶段 1**(与 RAG 解析管线、文件数据权限一起做) | 公告/消息可检索且消息按接收人隔离;源数据删改后 5 分钟内索引一致 |
+| **0.3** | 业务全文检索(**已完成**) | 复用已部署的 ES 9(原先仅存运行日志,现新增 `iboot-content-v1`),公告 / 站内消息建索引(中文 `cjk` 分析器);写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 每 5 分钟无状态对账 | ES 客户端已随 Boot 4.0.3 升至 **9.2.5**,与 ES **9.2.3** 同属 9.2.x,兼容前置已满足;不引入 Canal(重);**文件内容检索并入阶段 1**(与 RAG 解析管线、文件数据权限一起做);能力契约见 `openspec/specs/content-search/spec.md` | 公告/消息可检索且消息按接收人隔离;源数据删改后 5 分钟内索引一致 |
 | **0.4** | 行级业务多语言(**暂不做**) | 翻译表 `sys_i18n_value(lang, table, row_id, field, value)` + MyBatis 拦截器自动替换与默认语言回退 + 复用二级缓存 | 与 `DataScopeInterceptor` 的拦截器链顺序敏感;与 PageHelper 的分页改写需兼容;回退规则须先定死(默认语言缺失 → 空还是回退) | 同一记录中/英切换返回正确字段;数据权限过滤仍生效 |
 | **0.5** | 审批流 / 工作流 | **Spike 决定**:Flowable 7 on Boot 4.0.3(判据:引擎启动 + 一条请假流程单测通过);不通则 Spring Statemachine + 自研状态持久化 | Flowable × Boot 4 兼容性**未经验证**;二者只取其一,不并存(原 TODO#8 由此消化) | 一条真实流程可跑通:发起 → 审批 → 驳回 → 归档 |
 | **0.6** | 多渠道通知 | 渠道 SPI(站内 SSE 已有 / Spring Mail / 阿里云短信 Dysmsapi / 钉钉 webhook)+ 复用 `message_template` 表 + 失败重试 | 需真实阿里云密钥,密钥不入仓(env / Nacos);短信签名与模板有云侧审核周期;阶段 2 后重投职责移交 RocketMQ | 同一业务事件按渠道可达;失败可见且可重试 |
@@ -194,7 +194,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | # | 能力 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|---|
 | 1 | 智能对话 | Spring AI `ChatClient` + 会话记忆(Redis)+ **复用现有 SSE 基建**做流式 token | SSE 超时/心跳沿用现配置;流式通道与业务推送通道分离;LLM 调用是阻塞 I/O,与已启用的虚拟线程契合 | 多轮上下文正确;首 token < 3s;模型不可用时降级可见 |
-| 2 | 知识库 RAG | 上传复用 MinIO/File → 解析 → 分块 → Embedding → **ES 9 `dense_vector` + KNN + BM25 混合检索(RRF)** → 引用溯源 | ES 客户端已随 Boot 4.0.3 升至 9.2.5;前置依赖 0.3 的索引与检索能力;分块策略需调优;embedding 产生持续 token 成本 | 50 篇自建测试集 Top-5 召回 ≥ 80%;答案带可点击溯源 |
+| 2 | 知识库 RAG | 上传复用 MinIO/File → 解析 → 分块 → Embedding → **ES 9 `dense_vector` + KNN + BM25 混合检索(RRF)** → 引用溯源 | ES 客户端已随 Boot 4.0.3 升至 9.2.5;前置依赖 0.3 的索引与检索能力,文件内容检索沿用 `openspec/specs/content-search/spec.md` 的可见性契约;分块策略需调优;embedding 产生持续 token 成本 | 50 篇自建测试集 Top-5 召回 ≥ 80%;答案带可点击溯源 |
 | 3 | 智能体编排 | AgentScope Java 2.0.1;工具 = 既有管理端 API(查用户 / 查日志 / 统计 / 备份状态);Agent Card 注册 Nacos | JDK 25 未在官方声明范围内(社区对 JDK 21 仍是实验性验证)→ **须 Spike**;写操作工具必须 HITL 确认;提示词注入 → 工具白名单 + 只读/可写分级 | 3 个只读工具端到端正确;写操作二次确认不可绕过 |
 | 4 | **RAG 权限一致性** | 检索前置过滤 RBAC + 数据权限(复用 `DataScopeInterceptor` 语义) | **不做鉴权的 RAG 等于把全量数据泄漏给最低权限用户**,这是安全缺陷而非功能缺陷 | 红队用例:低权限用户提问**不得**召回越权内容 |
 | 5 | 知识图谱 | Neo4j + GraphRAG;**最小可用图 = 把 `sys_dept` / `sys_user` / `sys_role` / `sys_menu` 入图**(数据现成,回答"谁能访问什么""跨部门协作路径"这类多跳问题) | 新增中间件 +1;GraphRAG 建模需真实语料支撑 | 组织架构 + RBAC 入图;2 跳关系查询正确 |
