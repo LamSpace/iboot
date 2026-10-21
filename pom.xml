@@ -86,6 +86,9 @@
         <!-- Testcontainers -->
         <testcontainers.version>2.0.5</testcontainers.version>
 
+        <!-- Workflow Engine -->
+        <flowable.version>8.0.0</flowable.version>
+
         <!-- Surefire：默认排除需要真实云凭据的 cloud 分组，可用 -Dsurefire.excludedGroups=disabled 覆盖 -->
         <surefire.excludedGroups>cloud</surefire.excludedGroups>
 
@@ -265,6 +268,13 @@
                 <groupId>io.cloudevents</groupId>
                 <artifactId>cloudevents-http-basic</artifactId>
                 <version>${cloudevents.version}</version>
+            </dependency>
+
+            <!-- Workflow Engine -->
+            <dependency>
+                <groupId>org.flowable</groupId>
+                <artifactId>flowable-spring-boot-starter-process</artifactId>
+                <version>${flowable.version}</version>
             </dependency>
 
             <!-- Excel -->

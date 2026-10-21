@@ -674,6 +674,34 @@ export function uploadFile(file) {
 }
 ```
 
+### 6.18.2 审批接口
+
+审批中心接口统一前缀 `/api/approval`，请求需携带 `Accept-Version: 1`。
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| POST | `/api/approval/leave` | `approval:apply` | 发起请假 |
+| GET | `/api/approval/todo` | `approval:approve` | 我的待办 |
+| GET | `/api/approval/done` | `approval:approve` | 我的已办 |
+| GET | `/api/approval/mine` | `approval:apply` | 我的申请，支持 `status` 筛选 |
+| GET | `/api/approval/{id}` | 登录 + 参与人校验 | 申请详情与审批历史 |
+| POST | `/api/approval/{id}/approve` | `approval:approve` | 审批通过 |
+| POST | `/api/approval/{id}/reject` | `approval:approve` | 审批驳回，`comment` 必填 |
+
+发起请求示例：
+
+```json
+{
+  "approverId": 2,
+  "leaveType": "ANNUAL",
+  "startTime": "2026-11-02T09:00:00",
+  "endTime": "2026-11-03T18:00:00",
+  "reason": "回家"
+}
+```
+
+状态值为 `PENDING`、`APPROVED`、`REJECTED`；待办/已办/我的申请均返回分页结构。
+
 ## 数据格式
 
 ### 6.19 统一响应格式

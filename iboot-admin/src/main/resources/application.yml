@@ -113,6 +113,19 @@ spring:
       org.quartz.jobStore.isClustered: false
       org.quartz.jobStore.misfireThreshold: 60000
       org.quartz.threadPool.threadCount: 10
+
+# 工作流引擎配置
+flowable:
+  # 表结构由 Flyway 管理，禁止引擎自动建表
+  database-schema-update: false
+  # 暂不启用异步作业执行器，定时职责由 Quartz 承担
+  async-executor-activate: false
+  # 启动时自动部署 classpath:/processes 下的流程定义
+  check-process-definitions: true
+  idm:
+    enabled: false
+  eventregistry:
+    enabled: false
   boot:
     admin:
       client:

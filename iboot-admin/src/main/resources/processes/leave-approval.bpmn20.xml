@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://iboot.com/workflow">
+    <process id="leaveApproval" name="请假审批" isExecutable="true">
+        <startEvent id="start" name="发起"/>
+        <sequenceFlow id="flowStartToApprove" sourceRef="start" targetRef="approve"/>
+
+        <userTask id="approve" name="审批" flowable:assignee="${approverId}"/>
+        <sequenceFlow id="flowApproveToDecision" sourceRef="approve" targetRef="decision"/>
+
+        <exclusiveGateway id="decision" default="flowRejected"/>
+        <sequenceFlow id="flowApproved" sourceRef="decision" targetRef="archivedEnd">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approved}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flowRejected" sourceRef="decision" targetRef="rejectedEnd"/>
+
+        <endEvent id="archivedEnd" name="归档"/>
+        <endEvent id="rejectedEnd" name="驳回"/>
+    </process>
+</definitions>
