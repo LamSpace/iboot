@@ -51,4 +51,4 @@
 
 - [x] 8.1 运行 `TESTCONTAINERS_RYUK_CONTAINER_IMAGE=testcontainers/ryuk:0.12.0 mvn -s /home/lam/repo/settings.xml clean verify`；验证全部测试通过
 - [x] 8.2 启动后端与前端，用两个账号完成「发起 → 待办 → 通过/驳回 → 查看历史」手工冒烟；验证界面状态与后端一致
-- [ ] 8.3 在功能分支提交并用 `gh pr create --base master` 创建 PR，按 CLAUDE.md 流程合并；验证 PR 已合并且本地 `master` 已 `pull --ff-only`
+- [x] 8.3 在功能分支提交并用 `gh pr create --base master` 创建 PR，按 CLAUDE.md 流程合并；验证 PR 已合并且本地 `master` 已 `pull --ff-only`
