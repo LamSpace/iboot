@@ -31,11 +31,11 @@
 
 - [x] 5.1 编写 `doc/spike/flowable-8-spike-report.md`：包含版本事实、硬门槛逐项结论、依赖冲突清单、实测指标、风险与备选方案
 - [x] 5.2 按 design.md 的硬门槛 + 加权评分给出明确的 Go / No-Go 建议，并写明若 No-Go 时的 fallback 候选；验证报告对每条硬门槛都有结论
-- [ ] 5.3 依据报告与用户确认最终决策，随后删除 `spike/flowable-workflow` 分支；验证分支已删除且 `master` 无 Spike 代码
+- [x] 5.3 依据报告与用户确认最终决策，随后删除 `spike/flowable-workflow` 分支；验证分支已删除且 `master` 无 Spike 代码
 
 ## 6. ROADMAP 修正
 
 - [x] 6.1 更新 `ROADMAP.md` 0.5 行的技术栈与约束（Flowable 7 → Flowable 8.0.0）；验证 `grep -n "Flowable 7" ROADMAP.md` 无残留
 - [x] 6.2 更新 §6.1 版本矩阵中的 Flowable 行（`7.x（未验证）` → `8.0.0`）；验证表格与 design.md 的事实一致
 - [x] 6.3 更新 R7 风险登记为"Flowable 8 与现有技术栈共存"，处置改为 Spike 门禁 + fallback 待定；验证不再引用 Spring Statemachine 作为既定降级方案
-- [ ] 6.4 在 `docs/flowable-spike-roadmap` 分支提交文档修正，用 `gh pr create --base master` 创建 PR 并按 CLAUDE.md 流程合并；验证 PR 已合并且本地 `master` 已 `pull --ff-only`
+- [x] 6.4 在 `docs/flowable-spike-roadmap` 分支提交文档修正，用 `gh pr create --base master` 创建 PR 并按 CLAUDE.md 流程合并；验证 PR 已合并且本地 `master` 已 `pull --ff-only`
