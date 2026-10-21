@@ -54,7 +54,8 @@
 
     <update id="updateDeleted">
         UPDATE sys_message_receiver
-        SET is_deleted = 1
+        SET is_deleted  = 1,
+            update_time = NOW()
         WHERE message_id = #{messageId}
           AND user_id = #{userId}
     </update>
@@ -120,6 +121,13 @@
         SELECT id, message_id, user_id, is_read, read_time, is_deleted
         FROM sys_message_receiver
         WHERE message_id = #{messageId}
+    </select>
+
+    <!-- 对账窗口内的接收记录变更（含用户侧删除），窗口在数据库侧计算以避免时区偏差 -->
+    <select id="selectChangedSince" resultMap="MessageReceiverResultMap">
+        SELECT *
+        FROM sys_message_receiver
+        WHERE update_time >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
     </select>
 
 </mapper>

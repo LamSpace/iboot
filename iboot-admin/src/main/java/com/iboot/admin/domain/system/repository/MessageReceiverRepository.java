@@ -148,4 +148,15 @@ public interface MessageReceiverRepository {
      */
     List<MessageReceiver> findByMessageId(Long messageId);
 
+    /**
+     * 查询对账窗口内发生变更的接收记录
+     * <p>
+     * 用于全文检索对账；结果包含用户侧已删除的记录，调用方需依据 {@code isDeleted}
+     * 判断是刷新还是移除索引文档。
+     * </p>
+     *
+     * @return 窗口内变更的接收记录列表
+     */
+    List<MessageReceiver> findChangedSince();
+
 }

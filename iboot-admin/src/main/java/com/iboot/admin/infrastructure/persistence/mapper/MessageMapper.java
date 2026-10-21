@@ -112,4 +112,15 @@ public interface MessageMapper {
     List<MessagePO> selectAllByCondition(@Param("title") String title, @Param("messageType") String messageType,
                                          @Param("status") String status);
 
+    /**
+     * 查询对账窗口内发生变更的消息
+     * <p>
+     * 窗口固定为最近 10 分钟，在数据库侧用 {@code NOW()} 计算以避免 JVM 与 MySQL 时区偏差；
+     * 结果包含已逻辑删除的消息，供全文检索对账判断是否需要移除索引文档。
+     * </p>
+     *
+     * @return 窗口内变更的消息列表
+     */
+    List<MessagePO> selectChangedSince();
+
 }

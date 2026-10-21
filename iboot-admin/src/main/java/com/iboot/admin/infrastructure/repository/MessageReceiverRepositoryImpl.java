@@ -201,6 +201,37 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
     }
 
     /**
+     * 查询对账窗口内发生变更的接收记录
+     *
+     * @return 窗口内变更的接收记录列表
+     */
+    @Override
+    public List<MessageReceiver> findChangedSince() {
+        return messageReceiverMapper.selectChangedSince()
+                .stream()
+                .map(this::convertPOToDomain)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 将持久化对象转换为领域对象
+     *
+     * @param po 消息接收记录持久化对象
+     *
+     * @return 消息接收记录领域对象
+     */
+    private MessageReceiver convertPOToDomain(MessageReceiverPO po) {
+        MessageReceiver receiver = new MessageReceiver();
+        receiver.setId(po.getId());
+        receiver.setMessageId(po.getMessageId());
+        receiver.setUserId(po.getUserId());
+        receiver.setIsRead(po.getIsRead());
+        receiver.setReadTime(po.getReadTime());
+        receiver.setIsDeleted(po.getIsDeleted());
+        return receiver;
+    }
+
+    /**
      * 将领域对象转换为持久化对象
      *
      * @param domain 消息接收记录领域对象

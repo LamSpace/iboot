@@ -406,7 +406,7 @@ Content-Type: application/json
 
 {
   "username": "admin",
-  "password": "admin123",
+  "password": "admin123456",
   "captcha": "1234",
   "rememberMe": true
 }
@@ -617,6 +617,46 @@ Authorization: Bearer <JWT_TOKEN>
 5. **心跳保活**：服务端每 30 秒发送一次心跳，保持连接活跃
 
 详细实现请参考 [15-SSE 推送集成](./15-SSE 推送集成.md)。
+
+### 6.18.1 检索接口
+
+**接口路径**：`GET /api/search`
+
+**权限**：登录即可，无独立权限码。
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| keyword | string | 是 | 检索关键字，空白时返回空结果 |
+| type | string | 否 | `notice` 或 `message`，缺省检索全部 |
+| pageNum | integer | 否 | 页码，默认 1 |
+| pageSize | integer | 否 | 每页数量，默认 10，最大 100 |
+
+**响应示例**：
+
+```json
+{
+  "code": 200,
+  "message": "查询成功",
+  "data": [
+    {
+      "docType": "notice",
+      "sourceId": 12,
+      "title": "年度绩效评估安排",
+      "highlights": ["年度<em>绩效</em>评估安排"],
+      "updatedAt": "2026-10-21T09:00:00"
+    }
+  ],
+  "total": 1,
+  "pageNum": 1,
+  "pageSize": 10
+}
+```
+
+**说明**：
+
+- 空白关键字返回空结果，不执行全量检索。
+- `type` 非法取值返回 400。
+- Elasticsearch 不可用时返回空结果（HTTP 200），业务写入不受影响。
 
 ```typescript
 export function uploadFile(file) {

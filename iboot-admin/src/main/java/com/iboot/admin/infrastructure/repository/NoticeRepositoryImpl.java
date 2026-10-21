@@ -182,6 +182,19 @@ public class NoticeRepositoryImpl implements NoticeRepository {
     }
 
     /**
+     * 查询对账窗口内发生变更的公告
+     *
+     * @return 窗口内变更的公告列表
+     */
+    @Override
+    public List<Notice> findChangedSince() {
+        return noticeMapper.selectChangedSince()
+                .stream()
+                .map(this::convertToDomain)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 将持久化对象转换为领域对象
      *
      * @param po 公告持久化对象

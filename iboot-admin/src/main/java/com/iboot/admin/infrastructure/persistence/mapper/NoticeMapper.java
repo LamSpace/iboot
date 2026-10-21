@@ -129,4 +129,15 @@ public interface NoticeMapper {
      */
     long countTopPublishedNotices();
 
+    /**
+     * 查询对账窗口内发生变更的公告
+     * <p>
+     * 窗口固定为最近 10 分钟，在数据库侧用 {@code NOW()} 计算以避免 JVM 与 MySQL 时区偏差；
+     * 结果包含已逻辑删除的公告，供全文检索对账判断是否需要移除索引文档。
+     * </p>
+     *
+     * @return 窗口内变更的公告列表
+     */
+    List<NoticePO> selectChangedSince();
+
 }

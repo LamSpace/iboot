@@ -149,4 +149,15 @@ public interface MessageReceiverMapper {
      */
     List<Map<String, Object>> findByMessageId(@Param("messageId") Long messageId);
 
+    /**
+     * 查询对账窗口内发生变更的接收记录
+     * <p>
+     * 窗口固定为最近 10 分钟，在数据库侧用 {@code NOW()} 计算以避免 JVM 与 MySQL 时区偏差；
+     * 结果包含用户侧已删除的记录，供全文检索对账移除对应索引文档。
+     * </p>
+     *
+     * @return 窗口内变更的接收记录列表
+     */
+    List<MessageReceiverPO> selectChangedSince();
+
 }

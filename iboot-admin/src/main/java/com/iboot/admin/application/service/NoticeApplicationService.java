@@ -21,9 +21,11 @@ import com.iboot.admin.domain.system.model.Notice;
 import com.iboot.admin.domain.system.model.NoticeRead;
 import com.iboot.admin.domain.system.repository.NoticeReadRepository;
 import com.iboot.admin.domain.system.repository.NoticeRepository;
+import com.iboot.admin.infrastructure.search.ContentIndexEvent;
 import com.iboot.admin.infrastructure.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,14 +60,19 @@ public class NoticeApplicationService {
 
     private final ConfigApplicationService configApplicationService;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     // ==================== 后台管理方法 ====================
 
     @SuppressWarnings("all")
     public NoticeApplicationService(final NoticeRepository noticeRepository,
-                                    final NoticeReadRepository noticeReadRepository, final ConfigApplicationService configApplicationService) {
+                                    final NoticeReadRepository noticeReadRepository,
+                                    final ConfigApplicationService configApplicationService,
+                                    final ApplicationEventPublisher eventPublisher) {
         this.noticeRepository = noticeRepository;
         this.noticeReadRepository = noticeReadRepository;
         this.configApplicationService = configApplicationService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -109,7 +116,11 @@ public class NoticeApplicationService {
         }
         notice.setUpdateBy(SecurityUtils.getCurrentUsername());
         notice.setUpdateTime(LocalDateTime.now());
-        return noticeRepository.update(notice);
+        boolean updated = noticeRepository.update(notice);
+        if (updated) {
+            eventPublisher.publishEvent(ContentIndexEvent.refreshNotice(this, notice.getId()));
+        }
+        return updated;
     }
 
     /**
@@ -132,7 +143,11 @@ public class NoticeApplicationService {
         }
         // 删除关联的已读记录
         noticeReadRepository.deleteByNoticeId(id);
-        return noticeRepository.deleteById(id);
+        boolean deleted = noticeRepository.deleteById(id);
+        if (deleted) {
+            eventPublisher.publishEvent(ContentIndexEvent.deleteNotice(this, id));
+        }
+        return deleted;
     }
 
     /**
@@ -164,7 +179,11 @@ public class NoticeApplicationService {
         notice.publish();
         notice.setUpdateBy(SecurityUtils.getCurrentUsername());
         notice.setUpdateTime(LocalDateTime.now());
-        return noticeRepository.update(notice);
+        boolean published = noticeRepository.update(notice);
+        if (published) {
+            eventPublisher.publishEvent(ContentIndexEvent.refreshNotice(this, id));
+        }
+        return published;
     }
 
     /**
@@ -188,7 +207,11 @@ public class NoticeApplicationService {
         notice.revoke();
         notice.setUpdateBy(SecurityUtils.getCurrentUsername());
         notice.setUpdateTime(LocalDateTime.now());
-        return noticeRepository.update(notice);
+        boolean revoked = noticeRepository.update(notice);
+        if (revoked) {
+            eventPublisher.publishEvent(ContentIndexEvent.deleteNotice(this, id));
+        }
+        return revoked;
     }
 
     /**

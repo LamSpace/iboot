@@ -125,4 +125,15 @@ public interface NoticeRepository {
      */
     long countTopPublishedNotices();
 
+    /**
+     * 查询对账窗口内发生变更的公告
+     * <p>
+     * 用于全文检索对账；结果包含已逻辑删除的公告，调用方需依据 {@code deleted} 与 {@code status}
+     * 判断是写入还是移除索引。
+     * </p>
+     *
+     * @return 窗口内变更的公告列表
+     */
+    List<Notice> findChangedSince();
+
 }
