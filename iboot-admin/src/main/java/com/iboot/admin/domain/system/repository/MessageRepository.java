@@ -106,4 +106,15 @@ public interface MessageRepository {
      */
     List<Message> findAllByCondition(String title, String messageType, String status);
 
+    /**
+     * 查询对账窗口内发生变更的消息
+     * <p>
+     * 用于全文检索对账；结果包含已逻辑删除的消息，调用方需依据 {@code deleted} 与 {@code status}
+     * 判断是写入还是移除索引。
+     * </p>
+     *
+     * @return 窗口内变更的消息列表
+     */
+    List<Message> findChangedSince();
+
 }

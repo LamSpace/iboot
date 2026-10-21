@@ -157,6 +157,19 @@ public class MessageRepositoryImpl implements MessageRepository {
     }
 
     /**
+     * 查询对账窗口内发生变更的消息
+     *
+     * @return 窗口内变更的消息列表
+     */
+    @Override
+    public List<Message> findChangedSince() {
+        return messageMapper.selectChangedSince()
+                .stream()
+                .map(this::convertToDomain)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 将持久化对象转换为领域对象
      *
      * @param po 消息持久化对象

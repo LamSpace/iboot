@@ -117,4 +117,11 @@
           AND deleted = 0
     </select>
 
+    <!-- 对账窗口内的公告变更（含逻辑删除），窗口在数据库侧计算以避免时区偏差 -->
+    <select id="selectChangedSince" resultMap="NoticeResultMap">
+        SELECT *
+        FROM sys_notice
+        WHERE update_time >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+    </select>
+
 </mapper>

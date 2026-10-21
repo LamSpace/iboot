@@ -25,6 +25,7 @@ import com.iboot.admin.domain.system.repository.MessageRepository;
 import com.iboot.admin.domain.system.repository.UserRepository;
 import com.iboot.admin.infrastructure.push.MessageReadEvent;
 import com.iboot.admin.infrastructure.push.MessageSentEvent;
+import com.iboot.admin.infrastructure.search.ContentIndexEvent;
 import com.iboot.admin.infrastructure.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +122,11 @@ public class MessageApplicationService {
         }
         message.setUpdateBy(SecurityUtils.getCurrentUsername());
         message.setUpdateTime(LocalDateTime.now());
-        return messageRepository.update(message);
+        boolean updated = messageRepository.update(message);
+        if (updated) {
+            eventPublisher.publishEvent(ContentIndexEvent.refreshMessage(this, message.getId()));
+        }
+        return updated;
     }
 
     /**
@@ -143,7 +148,11 @@ public class MessageApplicationService {
             throw new BusinessException("只有草稿状态的消息才能删除");
         }
         messageReceiverRepository.deleteByMessageId(id);
-        return messageRepository.deleteById(id);
+        boolean deleted = messageRepository.deleteById(id);
+        if (deleted) {
+            eventPublisher.publishEvent(ContentIndexEvent.deleteMessage(this, id));
+        }
+        return deleted;
     }
 
     /**
@@ -195,6 +204,7 @@ public class MessageApplicationService {
             MessageSentEvent sentEvent = new MessageSentEvent(this, messageId, message.getTitle(), message.getContent(),
                     message.getMessageType(), message.getPriority(), message.getSenderId());
             eventPublisher.publishEvent(sentEvent);
+            eventPublisher.publishEvent(ContentIndexEvent.refreshMessage(this, messageId));
             log.info("消息发送事件已发布，messageId: {}", messageId);
         }
         return success;
@@ -223,7 +233,11 @@ public class MessageApplicationService {
         message.revoke();
         message.setUpdateBy(SecurityUtils.getCurrentUsername());
         message.setUpdateTime(LocalDateTime.now());
-        return messageRepository.update(message);
+        boolean revoked = messageRepository.update(message);
+        if (revoked) {
+            eventPublisher.publishEvent(ContentIndexEvent.deleteMessage(this, id));
+        }
+        return revoked;
     }
 
     /**
@@ -375,13 +389,17 @@ public class MessageApplicationService {
      * 用户删除消息（软删除）
      * <p>
      * 用户从收件箱删除消息，采用软删除方式（isDeleted=1），不影响其他用户的接收记录。
+     * 删除成功后发布内容索引事件，在事务提交后异步移除该用户的检索文档。
      * </p>
      *
      * @param messageId 消息 ID
      * @param userId    用户 ID
      */
+    @Transactional(rollbackFor = Exception.class)
     public void deleteUserMessage(Long messageId, Long userId) {
-        messageReceiverRepository.softDelete(messageId, userId);
+        if (messageReceiverRepository.softDelete(messageId, userId)) {
+            eventPublisher.publishEvent(ContentIndexEvent.deleteReceiver(this, messageId, userId));
+        }
     }
 
     /**
