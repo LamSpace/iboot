@@ -6,7 +6,7 @@
 >
 > 本文只定义"做什么、用什么、受什么约束、带来什么价值、怎么算完成",不含实施排期。每个条目都带验收判据,判据不成立的条目不进路线图。
 >
-> 最近更新:2026-10-21
+> 最近更新:2026-10-23
 
 ---
 
@@ -167,7 +167,7 @@ graph LR
 | **0.2** | 数据备份与恢复(**暂不做**) | Quartz(已有)+ `mysqldump` + MinIO(已有)+ AES-GCM 加密 + 元数据表 `db_backup_record` + 恢复演练 | 恢复目标必须是独立演练库,**禁止覆盖原库**;`mysqldump` 版本须与 MySQL 8.0.45 匹配;大库逻辑备份耗时,binlog 增量留作选做 | 定时备份产物落 MinIO;一次完整恢复演练成功且行数 / 校验和一致 |
 | **0.3** | 业务全文检索(**已完成**) | 复用已部署的 ES 9(原先仅存运行日志,现新增 `iboot-content-v1`),公告 / 站内消息建索引(中文 `cjk` 分析器);写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 每 5 分钟无状态对账 | ES 客户端已随 Boot 4.0.3 升至 **9.2.5**,与 ES **9.2.3** 同属 9.2.x,兼容前置已满足;不引入 Canal(重);**文件内容检索并入阶段 1**(与 RAG 解析管线、文件数据权限一起做);能力契约见 `openspec/specs/content-search/spec.md` | 公告/消息可检索且消息按接收人隔离;源数据删改后 5 分钟内索引一致 |
 | **0.4** | 行级业务多语言(**暂不做**) | 翻译表 `sys_i18n_value(lang, table, row_id, field, value)` + MyBatis 拦截器自动替换与默认语言回退 + 复用二级缓存 | 与 `DataScopeInterceptor` 的拦截器链顺序敏感;与 PageHelper 的分页改写需兼容;回退规则须先定死(默认语言缺失 → 空还是回退) | 同一记录中/英切换返回正确字段;数据权限过滤仍生效 |
-| **0.5** | 审批流 / 工作流 | **已选型**:Flowable **8.0.0** on Boot 4.0.3(Spike 已通过:引擎启动 + 一条请假流程单测通过,见 `doc/spike/flowable-8-spike-report.md`) | 7.x 不支持 Boot 4,8.0.0 为唯一版本线;原 fallback Spring Statemachine 已归档,不再作为既定降级方案;需适配 `taskExecutor` 并排除 HikariCP | 一条真实流程可跑通:发起 → 审批 → 驳回 → 归档 |
+| **0.5** | 审批流 / 工作流(**已完成**) | Flowable **8.0.0** on Boot 4.0.3:domain `WorkflowService` + infrastructure 适配器,请假流程与审批中心;能力契约见 `openspec/specs/approval-workflow/spec.md`,选型依据见 `doc/spike/flowable-8-spike-report.md` | 7.x 不支持 Boot 4,8.0.0 为唯一版本线;原 fallback Spring Statemachine 已归档,不再作为既定降级方案;`taskExecutor` 已适配为 `AsyncTaskExecutor`,HikariCP 已排除,`ACT_*` 表由 Flyway `V17` 管理 | 一条真实流程已跑通:发起 → 审批 → 驳回 → 归档 |
 | **0.6** | 多渠道通知 | 渠道 SPI(站内 SSE 已有 / Spring Mail / 阿里云短信 Dysmsapi / 钉钉 webhook)+ 复用 `message_template` 表 + 失败重试 | 需真实阿里云密钥,密钥不入仓(env / Nacos);短信签名与模板有云侧审核周期;阶段 2 后重投职责移交 RocketMQ | 同一业务事件按渠道可达;失败可见且可重试 |
 | **0.7** | 衔接性抽象(**已完成**) | 把文件存储收敛为 `FileStorageStrategy` SPI(Local / MinIO / OSS / 内存实现),提供方由 `sys.file.storageType` 选择 | 阶段 3 的 MinIO→OSS 替换依赖它;两者 SDK 不兼容,不做抽象则上云要改遍文件相关代码 | 本地跑 MinIO 实现、测试跑内存实现,行为一致 |
 | **0.8** | 文档修正(**已完成**) | `doc/02-技术栈.md` 版本号 3.5.9 → 4.0.3;ES 客户端版本描述 | — | 文档与 pom 一致 |
