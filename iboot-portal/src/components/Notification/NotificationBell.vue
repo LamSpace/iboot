@@ -1,5 +1,5 @@
 <template>
-  <div class="notification-bell" @click="toggleDropdown">
+  <div class="notification-bell" @click.stop="toggleDropdown">
     <el-badge
       :value="unreadCount"
       :hidden="unreadCount === 0"
@@ -100,6 +100,8 @@
         </el-link>
       </div>
     </div>
+
+    <MessagePopup v-model="showInbox" @read-change="handleReadChange" />
   </div>
 </template>
 
@@ -107,18 +109,23 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { Bell } from "@element-plus/icons-vue";
-import { usePush } from "@/composables/usePush";
 import { useRouter } from "vue-router";
+import { usePush } from "@/composables/usePush";
+import { markAllMessagesAsRead, markMessageAsRead } from "@/api/system";
+import MessagePopup from "@/components/MessagePopup.vue";
 import type { Notification } from "@/stores/push";
 
 const { t } = useI18n();
-
 const router = useRouter();
+
+const showInbox = ref(false);
+
 const {
   unreadCount,
   notifications,
   hasUnread,
   connect,
+  hydrate,
   markAsRead,
   removeNotification,
   clearUnread,
@@ -143,19 +150,36 @@ const closeDropdown = () => {
 };
 
 // 标记全部已读
-const markAllAsRead = () => {
+const markAllAsRead = async () => {
+  try {
+    await markAllMessagesAsRead();
+  } catch {
+    // 后端不可用时仍保留本地已读效果
+  }
   clearUnread();
-  // TODO: 调用 API 更新后端状态
 };
 
-// 查看消息详情
+// 查看消息详情：审批待办跳转审批中心，其他消息打开个人收件箱
 const handleNotificationClick = (notification: Notification) => {
   if (!notification.read) {
     markAsRead(notification.id);
+    const messageId = Number(notification.id);
+    if (Number.isFinite(messageId)) {
+      markMessageAsRead(messageId).catch(() => {});
+    }
   }
-  // 跳转到消息中心或消息详情
-  router.push("/message/messages");
+  if (notification.businessType === "APPROVAL_TODO") {
+    router.push("/dashboard/approval");
+    closeDropdown();
+    return;
+  }
+  showInbox.value = true;
   closeDropdown();
+};
+
+// 收件箱已读/删除后刷新铃铛数据
+const handleReadChange = () => {
+  hydrate();
 };
 
 // 删除消息
@@ -163,9 +187,9 @@ const handleRemoveNotification = (notificationId: string) => {
   removeNotification(notificationId);
 };
 
-// 查看全部
+// 查看全部：打开个人收件箱
 const viewAll = () => {
-  router.push("/message/messages");
+  showInbox.value = true;
   closeDropdown();
 };
 
@@ -183,18 +207,12 @@ const formatTime = (timeString: string) => {
   // 1 小时内
   if (diff < 60 * 60 * 1000) {
     const minutes = Math.floor(diff / (60 * 1000));
-    return t("message.messageCenter.notification.time.minutes_ago").replace(
-      "{0}",
-      String(minutes),
-    );
+    return t("message.messageCenter.notification.time.minutes_ago", [minutes]);
   }
   // 24 小时内
   if (diff < 24 * 60 * 60 * 1000) {
     const hours = Math.floor(diff / (60 * 60 * 1000));
-    return t("message.messageCenter.notification.time.hours_ago").replace(
-      "{0}",
-      String(hours),
-    );
+    return t("message.messageCenter.notification.time.hours_ago", [hours]);
   }
   // 更久
   const locale = document.documentElement.lang || "zh-CN";
@@ -215,7 +233,8 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
-  // 连接推送服务
+  // 先补齐离线期间未读消息，再建立实时推送连接
+  hydrate();
   connect();
 });
 

@@ -106,6 +106,8 @@
       "unread": "未读",
       "read": "已读"
     },
+    "mark_all_read": "全部已读",
+    "view_approval": "查看审批",
     "no_message": "暂无消息",
     "delete_confirm": "确认删除该消息吗？",
     "delete_success": "删除成功",

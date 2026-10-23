@@ -7,6 +7,7 @@
         <result property="title" column="title"/>
         <result property="content" column="content"/>
         <result property="messageType" column="message_type"/>
+        <result property="businessType" column="business_type"/>
         <result property="priority" column="priority"/>
         <result property="senderType" column="sender_type"/>
         <result property="senderId" column="sender_id"/>
@@ -21,10 +22,10 @@
     </resultMap>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_message (title, content, message_type, priority, sender_type, sender_id, receiver_type, status,
-                                 create_by, create_time, deleted, remark)
-        VALUES (#{title}, #{content}, #{messageType}, #{priority}, #{senderType}, #{senderId}, #{receiverType},
-                #{status}, #{createBy}, #{createTime}, 0, #{remark})
+        INSERT INTO sys_message (title, content, message_type, business_type, priority, sender_type, sender_id,
+                                 receiver_type, status, create_by, create_time, deleted, remark)
+        VALUES (#{title}, #{content}, #{messageType}, #{businessType}, #{priority}, #{senderType}, #{senderId},
+                #{receiverType}, #{status}, #{createBy}, #{createTime}, 0, #{remark})
     </insert>
 
     <update id="update">
@@ -33,6 +34,7 @@
             <if test="title != null">title = #{title},</if>
             <if test="content != null">content = #{content},</if>
             <if test="messageType != null">message_type = #{messageType},</if>
+            <if test="businessType != null">business_type = #{businessType},</if>
             <if test="priority != null">priority = #{priority},</if>
             <if test="senderType != null">sender_type = #{senderType},</if>
             <if test="senderId != null">sender_id = #{senderId},</if>

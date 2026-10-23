@@ -27,6 +27,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -66,10 +67,20 @@ public class MessagePushListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(MessageSentEvent event) {
         log.info("接收到消息发送事件，messageId: {}, eventId: {}", event.getMessageId(), event.getEventId());
-        // 构建推送数据
-        Map<String, Object> pushData = Map.of("messageId", event.getMessageId(), "title", event.getTitle(), "content",
-                event.getContent(), "messageType", event.getMessageType(), "priority", event.getPriority(), "senderId",
-                event.getSenderId(), "sentAt", LocalDateTime.now().toString());
+        // 构建推送数据；系统消息的 senderId 为空，使用可空 Map
+        Map<String, Object> pushData = new LinkedHashMap<>();
+        pushData.put("messageId", event.getMessageId());
+        pushData.put("title", event.getTitle());
+        pushData.put("content", event.getContent());
+        pushData.put("messageType", event.getMessageType());
+        pushData.put("priority", event.getPriority());
+        pushData.put("sentAt", LocalDateTime.now().toString());
+        if (event.getBusinessType() != null) {
+            pushData.put("businessType", event.getBusinessType());
+        }
+        if (event.getSenderId() != null) {
+            pushData.put("senderId", event.getSenderId());
+        }
         // 构建推送事件
         PushEvent pushEvent = PushEvent.builder()
                 .id("push-msg-" + java.util.UUID.randomUUID())

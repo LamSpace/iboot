@@ -318,11 +318,21 @@ public class MessageController {
     }
 
     private UserMessageResponse convertToUserMessageResponse(MessageReceiver receiver) {
-        return UserMessageResponse.builder()
+        UserMessageResponse response = UserMessageResponse.builder()
                 .id(receiver.getMessageId())
+                .title(receiver.getTitle())
+                .content(receiver.getContent())
+                .messageType(receiver.getMessageType())
+                .priority(receiver.getPriority())
+                .senderType(receiver.getSenderType())
+                .senderId(receiver.getSenderId())
+                .createBy(receiver.getCreateBy())
+                .createTime(receiver.getCreateTime())
                 .isRead(receiver.getIsRead())
                 .readTime(receiver.getReadTime())
                 .build();
+        response.setBusinessType(receiver.getBusinessType());
+        return response;
     }
 
     private MessageExportVO convertToExportVO(Message message) {

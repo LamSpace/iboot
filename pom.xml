@@ -83,6 +83,9 @@
         <!-- Aliyun OSS SDK -->
         <aliyun-oss.version>3.18.5</aliyun-oss.version>
 
+        <!-- Aliyun SMS SDK (Dysmsapi) -->
+        <aliyun-sms.version>4.1.1</aliyun-sms.version>
+
         <!-- Testcontainers -->
         <testcontainers.version>2.0.5</testcontainers.version>
 
@@ -237,6 +240,12 @@
                 <groupId>com.aliyun.oss</groupId>
                 <artifactId>aliyun-sdk-oss</artifactId>
                 <version>${aliyun-oss.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.aliyun</groupId>
+                <artifactId>dysmsapi20170525</artifactId>
+                <version>${aliyun-sms.version}</version>
             </dependency>
 
             <!-- Cache -->

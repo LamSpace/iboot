@@ -262,6 +262,15 @@ public class MessageReceiverRepositoryImpl implements MessageReceiverRepository 
         receiver.setUserId(null);
         receiver.setIsRead(toInt(row.get("isRead")));
         receiver.setReadTime(row.get("readTime") != null ? (LocalDateTime) row.get("readTime") : null);
+        receiver.setTitle((String) row.get("title"));
+        receiver.setContent((String) row.get("content"));
+        receiver.setMessageType((String) row.get("messageType"));
+        receiver.setBusinessType((String) row.get("businessType"));
+        receiver.setPriority((String) row.get("priority"));
+        receiver.setSenderType((String) row.get("senderType"));
+        receiver.setSenderId(toLong(row.get("senderId")));
+        receiver.setCreateBy((String) row.get("createBy"));
+        receiver.setCreateTime(row.get("createTime") != null ? (LocalDateTime) row.get("createTime") : null);
         return receiver;
     }
 

@@ -16,8 +16,11 @@
 
 package com.iboot.admin.application.service;
 
+import com.iboot.admin.application.service.notification.NotificationApplicationService;
+import com.iboot.admin.application.service.notification.NotificationCommand;
 import com.iboot.admin.common.exception.BusinessException;
 import com.iboot.admin.common.result.PageResult;
+import com.iboot.admin.domain.notification.model.NotificationEventType;
 import com.iboot.admin.domain.system.model.User;
 import com.iboot.admin.domain.system.repository.UserRepository;
 import com.iboot.admin.domain.workflow.model.LeaveApplication;
@@ -31,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,13 +61,28 @@ public class ApprovalApplicationService {
 
     private final UserRepository userRepository;
 
+    private final NotificationApplicationService notificationApplicationService;
+
+    private static final DateTimeFormatter NOTIFICATION_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    /**
+     * 创建审批应用服务。
+     *
+     * @param leaveApplicationRepository     请假申请仓储
+     * @param workflowService               工作流服务
+     * @param userRepository                 用户仓储
+     * @param notificationApplicationService 通知编排服务
+     */
     @SuppressWarnings("all")
     public ApprovalApplicationService(final LeaveApplicationRepository leaveApplicationRepository,
                                       final WorkflowService workflowService,
-                                      final UserRepository userRepository) {
+                                      final UserRepository userRepository,
+                                      final NotificationApplicationService notificationApplicationService) {
         this.leaveApplicationRepository = leaveApplicationRepository;
         this.workflowService = workflowService;
         this.userRepository = userRepository;
+        this.notificationApplicationService = notificationApplicationService;
     }
 
     /**
@@ -105,7 +124,20 @@ public class ApprovalApplicationService {
         application.setCreateBy(applicantName);
         application.setCreateTime(LocalDateTime.now());
         application.setDeleted(0);
+
+        notificationApplicationService.enqueue(new NotificationCommand(
+                "approval-todo-" + processInstanceId,
+                NotificationEventType.APPROVAL_TODO,
+                "APPROVAL_TODO",
+                approverId,
+                Map.of("taskName", leaveType == null ? "" : leaveType,
+                        "initiator", applicantName == null ? "" : applicantName,
+                        "applyTime", formatApplyTime(startTime, endTime))));
         return leaveApplicationRepository.save(application);
+    }
+
+    private String formatApplyTime(final LocalDateTime startTime, final LocalDateTime endTime) {
+        return startTime.format(NOTIFICATION_TIME_FORMATTER) + " ~ " + endTime.format(NOTIFICATION_TIME_FORMATTER);
     }
 
     /**

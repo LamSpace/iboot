@@ -177,7 +177,7 @@ public class MessageRepositoryImpl implements MessageRepository {
      * @return 消息领域对象
      */
     private Message convertToDomain(MessagePO po) {
-        return Message.builder()
+        Message message = Message.builder()
                 .id(po.getId())
                 .title(po.getTitle())
                 .content(po.getContent())
@@ -194,6 +194,8 @@ public class MessageRepositoryImpl implements MessageRepository {
                 .deleted(po.getDeleted())
                 .remark(po.getRemark())
                 .build();
+        message.setBusinessType(po.getBusinessType());
+        return message;
     }
 
     /**
@@ -209,6 +211,7 @@ public class MessageRepositoryImpl implements MessageRepository {
         po.setTitle(domain.getTitle());
         po.setContent(domain.getContent());
         po.setMessageType(domain.getMessageType());
+        po.setBusinessType(domain.getBusinessType());
         po.setPriority(domain.getPriority());
         po.setSenderType(domain.getSenderType());
         po.setSenderId(domain.getSenderId());

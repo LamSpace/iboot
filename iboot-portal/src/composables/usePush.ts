@@ -19,6 +19,11 @@ export function usePush() {
   };
 
   /**
+   * 加载服务端未读消息
+   */
+  const hydrate = () => pushStore.hydrate();
+
+  /**
    * 断开推送服务
    */
   const disconnect = () => {
@@ -99,6 +104,7 @@ export function usePush() {
 
     // Actions
     connect,
+    hydrate,
     disconnect,
     onPushEvent,
     onNewMessage,

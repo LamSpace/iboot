@@ -16,6 +16,7 @@
 
 package com.iboot.admin.application.service;
 
+import com.iboot.admin.application.service.notification.NotificationApplicationService;
 import com.iboot.admin.common.exception.BusinessException;
 import com.iboot.admin.domain.system.model.User;
 import com.iboot.admin.domain.system.repository.UserRepository;
@@ -75,7 +76,8 @@ import static org.mockito.Mockito.when;
                 "flowable.eventregistry.enabled=false",
                 "flowable.check-process-definitions=true",
                 "spring.flyway.enabled=false",
-                "spring.autoconfigure.exclude=org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration"
+                "spring.autoconfigure.exclude=org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration,"
+                        + "de.codecentric.boot.admin.server.config.AdminServerNotifierAutoConfiguration"
         })
 @Testcontainers
 class ApprovalApplicationServiceIntegrationTest {
@@ -204,6 +206,16 @@ class ApprovalApplicationServiceIntegrationTest {
                     .load()
                     .migrate();
             return dataSource;
+        }
+
+        /**
+         * 提供通知编排服务的 Mock，避免集成测试触发真实外部渠道。
+         *
+         * @return 通知编排服务
+         */
+        @Bean
+        NotificationApplicationService notificationApplicationService() {
+            return mock(NotificationApplicationService.class);
         }
 
         /**

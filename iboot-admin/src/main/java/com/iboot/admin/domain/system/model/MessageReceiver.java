@@ -59,6 +59,51 @@ public class MessageReceiver {
      */
     private Integer isDeleted;
 
+    /**
+     * 消息标题；仅在收件箱联表查询时填充。
+     */
+    private String title;
+
+    /**
+     * 消息内容；仅在收件箱联表查询时填充。
+     */
+    private String content;
+
+    /**
+     * 消息类型；仅在收件箱联表查询时填充。
+     */
+    private String messageType;
+
+    /**
+     * 业务类型，例如 {@code APPROVAL_TODO}；仅在收件箱联表查询时填充。
+     */
+    private String businessType;
+
+    /**
+     * 消息优先级；仅在收件箱联表查询时填充。
+     */
+    private String priority;
+
+    /**
+     * 发送者类型；仅在收件箱联表查询时填充。
+     */
+    private String senderType;
+
+    /**
+     * 发送者用户 ID；仅在收件箱联表查询时填充。
+     */
+    private Long senderId;
+
+    /**
+     * 创建人；仅在收件箱联表查询时填充。
+     */
+    private String createBy;
+
+    /**
+     * 消息创建时间；仅在收件箱联表查询时填充。
+     */
+    private LocalDateTime createTime;
+
     @SuppressWarnings("all")
     public MessageReceiver() {
     }
@@ -202,6 +247,168 @@ public class MessageReceiver {
     @SuppressWarnings("all")
     public void setIsDeleted(final Integer isDeleted) {
         this.isDeleted = isDeleted;
+    }
+
+    /**
+     * 消息标题；仅在收件箱联表查询时填充。
+     *
+     * @return 消息标题
+     */
+    public String getTitle() {
+        return title;
+    }
+
+    /**
+     * 设置消息标题。
+     *
+     * @param title 消息标题
+     */
+    public void setTitle(final String title) {
+        this.title = title;
+    }
+
+    /**
+     * 消息内容；仅在收件箱联表查询时填充。
+     *
+     * @return 消息内容
+     */
+    public String getContent() {
+        return content;
+    }
+
+    /**
+     * 设置消息内容。
+     *
+     * @param content 消息内容
+     */
+    public void setContent(final String content) {
+        this.content = content;
+    }
+
+    /**
+     * 消息类型；仅在收件箱联表查询时填充。
+     *
+     * @return 消息类型
+     */
+    public String getMessageType() {
+        return messageType;
+    }
+
+    /**
+     * 设置消息类型。
+     *
+     * @param messageType 消息类型
+     */
+    public void setMessageType(final String messageType) {
+        this.messageType = messageType;
+    }
+
+    /**
+     * 业务类型，例如 {@code APPROVAL_TODO}。
+     *
+     * @return 业务类型
+     */
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    /**
+     * 设置业务类型。
+     *
+     * @param businessType 业务类型
+     */
+    public void setBusinessType(final String businessType) {
+        this.businessType = businessType;
+    }
+
+    /**
+     * 消息优先级；仅在收件箱联表查询时填充。
+     *
+     * @return 消息优先级
+     */
+    public String getPriority() {
+        return priority;
+    }
+
+    /**
+     * 设置消息优先级。
+     *
+     * @param priority 消息优先级
+     */
+    public void setPriority(final String priority) {
+        this.priority = priority;
+    }
+
+    /**
+     * 发送者类型；仅在收件箱联表查询时填充。
+     *
+     * @return 发送者类型
+     */
+    public String getSenderType() {
+        return senderType;
+    }
+
+    /**
+     * 设置发送者类型。
+     *
+     * @param senderType 发送者类型
+     */
+    public void setSenderType(final String senderType) {
+        this.senderType = senderType;
+    }
+
+    /**
+     * 发送者用户 ID；仅在收件箱联表查询时填充。
+     *
+     * @return 发送者用户 ID
+     */
+    public Long getSenderId() {
+        return senderId;
+    }
+
+    /**
+     * 设置发送者用户 ID。
+     *
+     * @param senderId 发送者用户 ID
+     */
+    public void setSenderId(final Long senderId) {
+        this.senderId = senderId;
+    }
+
+    /**
+     * 创建人；仅在收件箱联表查询时填充。
+     *
+     * @return 创建人
+     */
+    public String getCreateBy() {
+        return createBy;
+    }
+
+    /**
+     * 设置创建人。
+     *
+     * @param createBy 创建人
+     */
+    public void setCreateBy(final String createBy) {
+        this.createBy = createBy;
+    }
+
+    /**
+     * 消息创建时间；仅在收件箱联表查询时填充。
+     *
+     * @return 消息创建时间
+     */
+    public LocalDateTime getCreateTime() {
+        return createTime;
+    }
+
+    /**
+     * 设置消息创建时间。
+     *
+     * @param createTime 消息创建时间
+     */
+    public void setCreateTime(final LocalDateTime createTime) {
+        this.createTime = createTime;
     }
 
     @java.lang.Override

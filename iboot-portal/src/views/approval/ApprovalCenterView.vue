@@ -38,7 +38,7 @@
         </el-select>
       </TableToolbar>
 
-      <el-table v-loading="loading" :data="currentItems" border stripe>
+      <el-table v-loading="loading" :data="currentItems" style="width: 100%">
         <el-table-column
           :label="activeTab === 'mine' ? t('approval.columns.approver') : t('approval.columns.applicant')"
           min-width="120"
@@ -58,7 +58,8 @@
         </el-table-column>
         <el-table-column :label="t('approval.columns.period')" min-width="220">
           <template #default="{ row }">
-            {{ formatTime(row.startTime) }} ~ {{ formatTime(row.endTime) }}
+            {{ formatDateTime(row.startTime) }} ~
+            {{ formatDateTime(row.endTime) }}
           </template>
         </el-table-column>
         <el-table-column :label="t('approval.columns.reason')" min-width="160" show-overflow-tooltip>
@@ -76,7 +77,11 @@
           width="180"
         >
           <template #default="{ row }">
-            {{ formatTime(activeTab === "done" ? row.completedTime : row.createTime) }}
+            {{
+              formatDateTime(
+                activeTab === "done" ? row.completedTime : row.createTime,
+              )
+            }}
           </template>
         </el-table-column>
         <el-table-column :label="t('approval.columns.actions')" width="100" fixed="right">
@@ -117,6 +122,7 @@ import { useI18n } from "vue-i18n";
 import PageHeader from "@/components/PageHeader.vue";
 import TableToolbar from "@/components/TableToolbar.vue";
 import { usePermissionStore } from "@/stores/permission";
+import { formatDateTime } from "@/utils/datetime";
 import {
   getDoneList,
   getMyApplications,
@@ -228,9 +234,6 @@ const openDetail = (id: number) => {
   detailVisible.value = true;
 };
 
-const formatTime = (value?: string) =>
-  value ? new Date(value).toLocaleString() : "-";
-
 const statusType = (status: string): "success" | "warning" | "danger" => {
   if (status === "APPROVED") return "success";
   if (status === "REJECTED") return "danger";
@@ -246,9 +249,21 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.content-wrapper {
+  padding: var(--ib-content-gutter);
+}
+
+.content-body {
+  background: var(--ib-color-canvas);
+  padding: var(--ib-space-lg);
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: var(--ib-radius-xl);
+  box-shadow: none;
+}
+
 .pagination {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: var(--ib-space-md);
 }
 </style>

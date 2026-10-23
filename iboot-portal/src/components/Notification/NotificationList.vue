@@ -240,7 +240,7 @@ const handleItemClick = (notification: Notification) => {
     markAsRead(notification.id);
   }
   emit("view", notification);
-  router.push("/message/messages");
+  router.push("/dashboard/message-center");
 };
 
 // 标记全部已读

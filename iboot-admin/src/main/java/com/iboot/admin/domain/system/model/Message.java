@@ -50,6 +50,11 @@ public class Message {
     private String messageType;
 
     /**
+     * 业务类型，例如 {@code APPROVAL_TODO}；普通消息为空。
+     */
+    private String businessType;
+
+    /**
      * 优先级（字典 sys_message_priority）：0-普通，1-重要，2-紧急
      */
     private String priority;
@@ -259,6 +264,24 @@ public class Message {
     @SuppressWarnings("all")
     public void setMessageType(final String messageType) {
         this.messageType = messageType;
+    }
+
+    /**
+     * 业务类型，例如 {@code APPROVAL_TODO}。
+     *
+     * @return 业务类型；普通消息为空
+     */
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    /**
+     * 设置业务类型。
+     *
+     * @param businessType 业务类型
+     */
+    public void setBusinessType(final String businessType) {
+        this.businessType = businessType;
     }
 
     /**
@@ -580,6 +603,9 @@ public class Message {
         private String messageType;
 
         @SuppressWarnings("all")
+        private String businessType;
+
+        @SuppressWarnings("all")
         private String priority;
 
         @SuppressWarnings("all")
@@ -657,6 +683,16 @@ public class Message {
         @SuppressWarnings("all")
         public Message.MessageBuilder messageType(final String messageType) {
             this.messageType = messageType;
+            return this;
+        }
+
+        /**
+         * 业务类型，例如 {@code APPROVAL_TODO}。
+         *
+         * @return {@code this}.
+         */
+        public Message.MessageBuilder businessType(final String businessType) {
+            this.businessType = businessType;
             return this;
         }
 
@@ -783,9 +819,11 @@ public class Message {
 
         @SuppressWarnings("all")
         public Message build() {
-            return new Message(this.id, this.title, this.content, this.messageType, this.priority, this.senderType,
-                    this.senderId, this.receiverType, this.status, this.createBy, this.createTime, this.updateBy,
-                    this.updateTime, this.deleted, this.remark);
+            Message message = new Message(this.id, this.title, this.content, this.messageType, this.priority,
+                    this.senderType, this.senderId, this.receiverType, this.status, this.createBy, this.createTime,
+                    this.updateBy, this.updateTime, this.deleted, this.remark);
+            message.setBusinessType(this.businessType);
+            return message;
         }
 
         @java.lang.Override

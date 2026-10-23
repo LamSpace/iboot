@@ -52,6 +52,11 @@ public class MessageSentEvent extends ApplicationEvent {
     private final String messageType;
 
     /**
+     * 业务类型，例如 {@code APPROVAL_TODO}；普通消息为空。
+     */
+    private final String businessType;
+
+    /**
      * 优先级
      */
     private final String priority;
@@ -79,11 +84,29 @@ public class MessageSentEvent extends ApplicationEvent {
      */
     public MessageSentEvent(Object source, Long messageId, String title, String content, String messageType,
                             String priority, Long senderId) {
+        this(source, messageId, title, content, messageType, null, priority, senderId);
+    }
+
+    /**
+     * 创建带业务类型的消息发送事件。
+     *
+     * @param source       事件源（通常是消息对象或服务）
+     * @param messageId    消息 ID
+     * @param title        消息标题
+     * @param content      消息内容
+     * @param messageType  消息类型
+     * @param businessType 业务类型，可为 {@code null}
+     * @param priority     优先级
+     * @param senderId     发送者 ID
+     */
+    public MessageSentEvent(Object source, Long messageId, String title, String content, String messageType,
+                            String businessType, String priority, Long senderId) {
         super(source);
         this.messageId = messageId;
         this.title = title;
         this.content = content;
         this.messageType = messageType;
+        this.businessType = businessType;
         this.priority = priority;
         this.senderId = senderId;
         this.eventId = "evt-msg-sent-" + java.util.UUID.randomUUID();
@@ -119,6 +142,15 @@ public class MessageSentEvent extends ApplicationEvent {
     @SuppressWarnings("all")
     public String getMessageType() {
         return this.messageType;
+    }
+
+    /**
+     * 业务类型
+     *
+     * @return 业务类型，例如 {@code APPROVAL_TODO}；普通消息为 {@code null}
+     */
+    public String getBusinessType() {
+        return this.businessType;
     }
 
     /**

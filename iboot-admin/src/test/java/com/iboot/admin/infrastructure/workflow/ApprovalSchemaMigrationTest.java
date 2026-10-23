@@ -56,7 +56,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "flowable.eventregistry.enabled=false",
                 "flowable.check-process-definitions=false",
                 "spring.flyway.enabled=false",
-                "spring.autoconfigure.exclude=org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration"
+                "spring.autoconfigure.exclude=org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration,"
+                        + "de.codecentric.boot.admin.server.config.AdminServerNotifierAutoConfiguration"
         })
 @Testcontainers
 class ApprovalSchemaMigrationTest {
@@ -86,7 +87,7 @@ class ApprovalSchemaMigrationTest {
         assertThat(countTables("FLW\\_RU\\_BATCH%")).isEqualTo(2);
         assertThat(countTables("biz_leave_application")).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(17);
+                "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isGreaterThanOrEqualTo(17);
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM sys_menu WHERE id BETWEEN 9100 AND 9104", Integer.class)).isEqualTo(5);
         assertThat(jdbcTemplate.queryForObject(

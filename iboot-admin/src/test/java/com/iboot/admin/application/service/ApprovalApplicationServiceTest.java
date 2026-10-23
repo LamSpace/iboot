@@ -16,7 +16,10 @@
 
 package com.iboot.admin.application.service;
 
+import com.iboot.admin.application.service.notification.NotificationApplicationService;
+import com.iboot.admin.application.service.notification.NotificationCommand;
 import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.admin.domain.notification.model.NotificationEventType;
 import com.iboot.admin.domain.system.model.User;
 import com.iboot.admin.domain.system.repository.UserRepository;
 import com.iboot.admin.domain.workflow.model.LeaveApplication;
@@ -26,6 +29,7 @@ import com.iboot.admin.domain.workflow.repository.LeaveApplicationRepository;
 import com.iboot.admin.domain.workflow.service.WorkflowService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDateTime;
@@ -38,6 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -59,6 +64,8 @@ class ApprovalApplicationServiceTest {
 
     private UserRepository userRepository;
 
+    private NotificationApplicationService notificationApplicationService;
+
     private ApprovalApplicationService service;
 
     @BeforeEach
@@ -66,7 +73,9 @@ class ApprovalApplicationServiceTest {
         repository = mock(LeaveApplicationRepository.class);
         workflowService = mock(WorkflowService.class);
         userRepository = mock(UserRepository.class);
-        service = new ApprovalApplicationService(repository, workflowService, userRepository);
+        notificationApplicationService = mock(NotificationApplicationService.class);
+        service = new ApprovalApplicationService(repository, workflowService, userRepository,
+                notificationApplicationService);
     }
 
     /**
@@ -89,6 +98,50 @@ class ApprovalApplicationServiceTest {
         assertThat(application.getStatus()).isEqualTo(LeaveStatus.PENDING);
         assertThat(application.getProcessInstanceId()).isEqualTo("pid-1");
         verify(workflowService).startProcess(1L, 2L);
+    }
+
+    /**
+     * 验证发起申请时登记审批待办通知。
+     */
+    @Test
+    void submitEnqueuesApprovalTodoNotification() {
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L, 1)));
+        when(workflowService.startProcess(1L, 2L)).thenReturn("pid-1");
+        when(repository.save(any(LeaveApplication.class))).thenAnswer(invocation -> {
+            LeaveApplication application = invocation.getArgument(0);
+            application.setId(10L);
+            return application;
+        });
+
+        service.submit(1L, "alice", 2L, "ANNUAL",
+                LocalDateTime.of(2026, 11, 2, 9, 0), LocalDateTime.of(2026, 11, 3, 18, 0), "回家");
+
+        ArgumentCaptor<NotificationCommand> captor = ArgumentCaptor.forClass(NotificationCommand.class);
+        verify(notificationApplicationService).enqueue(captor.capture());
+        NotificationCommand command = captor.getValue();
+        assertThat(command.getEventId()).isEqualTo("approval-todo-pid-1");
+        assertThat(command.getEventType()).isEqualTo(NotificationEventType.APPROVAL_TODO);
+        assertThat(command.getTemplateCode()).isEqualTo("APPROVAL_TODO");
+        assertThat(command.getRecipientId()).isEqualTo(2L);
+        assertThat(command.getParams()).containsEntry("taskName", "ANNUAL")
+                .containsEntry("initiator", "alice")
+                .containsKey("applyTime");
+    }
+
+    /**
+     * 验证通知登记失败时不保存申请。
+     */
+    @Test
+    void submitDoesNotSaveWhenNotificationEnqueueFails() {
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L, 1)));
+        when(workflowService.startProcess(1L, 2L)).thenReturn("pid-1");
+        doThrow(new BusinessException("消息模板已停用")).when(notificationApplicationService).enqueue(any());
+
+        assertThatThrownBy(() -> service.submit(1L, "alice", 2L, "ANNUAL",
+                LocalDateTime.of(2026, 11, 2, 9, 0), LocalDateTime.of(2026, 11, 3, 18, 0), "回家"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("模板");
+        verify(repository, never()).save(any(LeaveApplication.class));
     }
 
     /**

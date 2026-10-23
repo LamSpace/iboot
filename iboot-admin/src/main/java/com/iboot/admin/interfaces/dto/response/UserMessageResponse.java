@@ -56,6 +56,12 @@ public class UserMessageResponse {
     private String messageType;
 
     /**
+     * 业务类型，例如 APPROVAL_TODO。
+     */
+    @Schema(description = "业务类型")
+    private String businessType;
+
+    /**
      * 优先级。
      */
     @Schema(description = "优先级")
@@ -161,6 +167,24 @@ public class UserMessageResponse {
     @SuppressWarnings("all")
     public void setMessageType(final String messageType) {
         this.messageType = messageType;
+    }
+
+    /**
+     * 业务类型。
+     *
+     * @return 业务类型
+     */
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    /**
+     * 设置业务类型。
+     *
+     * @param businessType 业务类型
+     */
+    public void setBusinessType(final String businessType) {
+        this.businessType = businessType;
     }
 
     @SuppressWarnings("all")

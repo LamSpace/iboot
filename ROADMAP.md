@@ -168,7 +168,7 @@ graph LR
 | **0.3** | 业务全文检索(**已完成**) | 复用已部署的 ES 9(原先仅存运行日志,现新增 `iboot-content-v1`),公告 / 站内消息建索引(中文 `cjk` 分析器);写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 每 5 分钟无状态对账 | ES 客户端已随 Boot 4.0.3 升至 **9.2.5**,与 ES **9.2.3** 同属 9.2.x,兼容前置已满足;不引入 Canal(重);**文件内容检索并入阶段 1**(与 RAG 解析管线、文件数据权限一起做);能力契约见 `openspec/specs/content-search/spec.md` | 公告/消息可检索且消息按接收人隔离;源数据删改后 5 分钟内索引一致 |
 | **0.4** | 行级业务多语言(**暂不做**) | 翻译表 `sys_i18n_value(lang, table, row_id, field, value)` + MyBatis 拦截器自动替换与默认语言回退 + 复用二级缓存 | 与 `DataScopeInterceptor` 的拦截器链顺序敏感;与 PageHelper 的分页改写需兼容;回退规则须先定死(默认语言缺失 → 空还是回退) | 同一记录中/英切换返回正确字段;数据权限过滤仍生效 |
 | **0.5** | 审批流 / 工作流(**已完成**) | Flowable **8.0.0** on Boot 4.0.3:domain `WorkflowService` + infrastructure 适配器,请假流程与审批中心;能力契约见 `openspec/specs/approval-workflow/spec.md`,选型依据见 `doc/spike/flowable-8-spike-report.md` | 7.x 不支持 Boot 4,8.0.0 为唯一版本线;原 fallback Spring Statemachine 已归档,不再作为既定降级方案;`taskExecutor` 已适配为 `AsyncTaskExecutor`,HikariCP 已排除,`ACT_*` 表由 Flyway `V17` 管理 | 一条真实流程已跑通:发起 → 审批 → 驳回 → 归档 |
-| **0.6** | 多渠道通知 | 渠道 SPI(站内 SSE 已有 / Spring Mail / 阿里云短信 Dysmsapi / 钉钉 webhook)+ 复用 `message_template` 表 + 失败重试 | 需真实阿里云密钥,密钥不入仓(env / Nacos);短信签名与模板有云侧审核周期;阶段 2 后重投职责移交 RocketMQ | 同一业务事件按渠道可达;失败可见且可重试 |
+| **0.6** | 多渠道通知(**已完成,短信默认关闭**) | 渠道 SPI(站内 SSE 已落库 / Spring Mail / 阿里云短信 Dysmsapi / 钉钉 webhook)+ 复用 `sys_message_template` + `sys_notification_delivery` 投递表 + Quartz 失败重试 + 管理端投递页 | 短信因个人实名资质限制仅实现不启用,启用需企业或个体工商户资质;密钥不入仓(env / Nacos);阶段 2 后重投职责移交 RocketMQ | 审批待办事件在站内/邮件/钉钉三个真实渠道可达;短信契约测试通过且默认关闭;失败可见且可重试 |
 | **0.7** | 衔接性抽象(**已完成**) | 把文件存储收敛为 `FileStorageStrategy` SPI(Local / MinIO / OSS / 内存实现),提供方由 `sys.file.storageType` 选择 | 阶段 3 的 MinIO→OSS 替换依赖它;两者 SDK 不兼容,不做抽象则上云要改遍文件相关代码 | 本地跑 MinIO 实现、测试跑内存实现,行为一致 |
 | **0.8** | 文档修正(**已完成**) | `doc/02-技术栈.md` 版本号 3.5.9 → 4.0.3;ES 客户端版本描述 | — | 文档与 pom 一致 |
 
@@ -430,6 +430,10 @@ Boot 4.0.3 这一前提改变了可选生态:
 采纳"补功能 → AI → 微服务 → 上云"的原定设想,理由:AI 是**新增部署单元**而非改造存量,不依赖拆分底座;而先补全功能再拆分,能让每个限界上下文在拆出时就是完整可测的业务体。唯一附加的硬性条件是 § 3 所述——AI 必须是独立模块,不能是单体内的包。
 
 **被推迟的选项**:多租户(阶段 0 → 阶段 4),理由是横切改造会污染拆分边界;服务网格(→ 阶段 4),理由是它会改变运维模型,应在服务数量稳定后引入。
+
+### 7.4 0.6 短信渠道为何默认关闭
+
+阿里云自 2025-06-06 起不再接受个人实名账号申请国内短信自用资质,签名必须完成运营商实名报备(平均 5–7 个工作日,部分 7–10 个工作日甚至更长)。本项目当前只有个人账号,因此 0.6 保留阿里云 Dysmsapi 适配器,但 `iboot.notification.sms.enabled=false`,不创建短信投递记录;站内、邮件、钉钉三个真实渠道承担验收。待有企业或个体工商户资质后,只需配置签名与模板 Code 即可启用,渠道 SPI 与投递模型不改。
 
 ---
 
