@@ -101,6 +101,19 @@ spring:
       name: actuator
       password: actuator123
       roles: ACTUATOR
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: ${MAIL_SSL_ENABLED:true}
+      mail.smtp.starttls.enable: ${MAIL_STARTTLS_ENABLED:false}
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   quartz:
     job-store-type: jdbc
     jdbc:
@@ -219,6 +232,28 @@ jwt:
 
 # SSE 推送配置
 iboot:
+  notification:
+    in-app-enabled: ${IBOOT_NOTIFICATION_IN_APP_ENABLED:true}
+    email:
+      enabled: ${IBOOT_NOTIFICATION_EMAIL_ENABLED:true}
+      from: ${MAIL_FROM:}
+    dingtalk:
+      enabled: ${IBOOT_DINGTALK_ENABLED:false}
+      webhook: ${IBOOT_DINGTALK_WEBHOOK:}
+      secret: ${IBOOT_DINGTALK_SECRET:}
+      keyword-prefix: "【iBoot】"
+      rate-per-minute: ${IBOOT_DINGTALK_RATE_PER_MINUTE:20}
+    sms:
+      enabled: ${IBOOT_SMS_ENABLED:false}
+      access-key-id: ${IBOOT_SMS_ACCESS_KEY_ID:}
+      access-key-secret: ${IBOOT_SMS_ACCESS_KEY_SECRET:}
+      sign-name: ${IBOOT_SMS_SIGN_NAME:}
+      template-code: ${IBOOT_SMS_TEMPLATE_CODE:}
+      region: ${IBOOT_SMS_REGION:cn-hangzhou}
+    retry:
+      max-attempts: ${IBOOT_NOTIFICATION_RETRY_MAX:5}
+      backoff-seconds: ${IBOOT_NOTIFICATION_RETRY_BACKOFF_SECONDS:60}
+      batch-size: ${IBOOT_NOTIFICATION_RETRY_BATCH_SIZE:100}
   push:
     enabled: true
     # SSE 配置

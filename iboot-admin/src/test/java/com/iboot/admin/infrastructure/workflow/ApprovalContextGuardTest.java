@@ -58,7 +58,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "flowable.eventregistry.enabled=false",
                 "flowable.check-process-definitions=false",
                 "spring.flyway.enabled=false",
-                "spring.autoconfigure.exclude=org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration"
+                "spring.autoconfigure.exclude=org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration,"
+                        + "de.codecentric.boot.admin.server.config.AdminServerNotifierAutoConfiguration"
         })
 @Testcontainers
 class ApprovalContextGuardTest {

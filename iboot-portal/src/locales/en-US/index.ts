@@ -35,6 +35,7 @@ import monitorKibana from "./monitor/kibana.json";
 import monitorAlertmanager from "./monitor/alertmanager.json";
 import monitorThanos from "./monitor/thanos.json";
 import monitorMinio from "./monitor/minio.json";
+import monitorNotificationDelivery from "./monitor/notification-delivery.json";
 
 // Message module
 import messageNotice from "./message/notice.json";
@@ -87,6 +88,7 @@ export default {
     alertmanager: monitorAlertmanager,
     thanos: monitorThanos,
     minio: monitorMinio,
+    notificationDelivery: monitorNotificationDelivery,
   },
   message: {
     notice: messageNotice,

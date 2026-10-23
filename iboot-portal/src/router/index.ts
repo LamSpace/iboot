@@ -103,6 +103,13 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
       {
+        path: "delivery",
+        name: "NotificationDelivery",
+        component: () =>
+          import("../views/message/NotificationDeliveryView.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
         path: "login-log",
         name: "LoginLog",
         component: () => import("../views/security/LoginLogView.vue"),

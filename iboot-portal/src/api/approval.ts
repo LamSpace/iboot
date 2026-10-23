@@ -1,4 +1,5 @@
 import request from "../utils/request";
+import type { DateTimeValue } from "@/utils/datetime";
 import type { ApiResponse } from "./auth";
 import type { PageResult } from "./system";
 
@@ -19,9 +20,9 @@ export interface ApprovalItem {
   /** 请假类型 */
   leaveType: string;
   /** 开始时间 */
-  startTime: string;
+  startTime: DateTimeValue;
   /** 结束时间 */
-  endTime: string;
+  endTime: DateTimeValue;
   /** 请假事由 */
   reason: string;
   /** 状态：PENDING / APPROVED / REJECTED */
@@ -29,15 +30,15 @@ export interface ApprovalItem {
   /** 审批意见或驳回原因 */
   approveComment?: string;
   /** 提交时间 */
-  createTime: string;
+  createTime: DateTimeValue;
   /** 当前任务 ID */
   taskId?: string;
   /** 当前任务名称 */
   taskName?: string;
   /** 任务创建时间 */
-  taskCreateTime?: string;
+  taskCreateTime?: DateTimeValue;
   /** 任务完成时间 */
-  completedTime?: string;
+  completedTime?: DateTimeValue;
 }
 
 /**
@@ -55,7 +56,7 @@ export interface ApprovalHistoryItem {
   /** 审批意见或驳回原因 */
   comment?: string;
   /** 节点发生时间 */
-  time: string;
+  time: DateTimeValue;
 }
 
 /**

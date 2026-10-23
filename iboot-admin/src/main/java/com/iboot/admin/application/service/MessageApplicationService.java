@@ -189,23 +189,96 @@ public class MessageApplicationService {
         if (targetUserIds.isEmpty()) {
             throw new BusinessException("没有可发送的目标用户");
         }
-        // 批量创建接收记录
+        return persistAndNotify(message, targetUserIds, SecurityUtils.getCurrentUsername());
+    }
+
+    /**
+     * 发送系统消息。
+     *
+     * <p>供通知渠道在无登录上下文的后台线程调用：消息以系统身份落库，批量创建接收记录，
+     * 标记为已发送并发布 {@link MessageSentEvent}，复用现有 SSE 推送链路。
+     *
+     * @param title       消息标题
+     * @param content     消息内容
+     * @param messageType 消息类型（字典 {@code sys_message_type}）
+     * @param priority    优先级（字典 {@code sys_message_priority}）
+     * @param userIds     接收用户 ID 列表
+     * @return 创建的消息 ID
+     * @throws BusinessException 参数为空、接收人列表为空或保存失败时抛出
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Long sendSystemMessage(final String title, final String content, final String messageType,
+                                  final String priority, final List<Long> userIds) {
+        return sendSystemMessage(title, content, messageType, priority, null, userIds);
+    }
+
+    /**
+     * 发送带业务类型的系统消息。
+     *
+     * <p>业务类型用于前端判断点击消息后的跳转目标，例如 {@code APPROVAL_TODO}
+     * 跳转审批中心；普通系统消息传 {@code null}。
+     *
+     * @param title        消息标题
+     * @param content      消息内容
+     * @param messageType  消息类型（字典 {@code sys_message_type}）
+     * @param priority     优先级（字典 {@code sys_message_priority}）
+     * @param businessType 业务类型，可为 {@code null}
+     * @param userIds      接收用户 ID 列表
+     * @return 创建的消息 ID
+     * @throws BusinessException 参数为空、接收人列表为空或保存失败时抛出
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Long sendSystemMessage(final String title, final String content, final String messageType,
+                                  final String priority, final String businessType, final List<Long> userIds) {
+        if (title == null || title.isBlank()) {
+            throw new BusinessException(400, "消息标题不能为空");
+        }
+        if (content == null || content.isBlank()) {
+            throw new BusinessException(400, "消息内容不能为空");
+        }
+        if (messageType == null || messageType.isBlank()) {
+            throw new BusinessException(400, "消息类型不能为空");
+        }
+        if (userIds == null || userIds.isEmpty()) {
+            throw new BusinessException(400, "接收用户不能为空");
+        }
+        Message message = new Message();
+        message.setTitle(title);
+        message.setContent(content);
+        message.setMessageType(messageType);
+        message.setBusinessType(businessType);
+        message.setPriority(priority == null || priority.isBlank() ? "0" : priority);
+        message.setSenderType("0");
+        message.setSenderId(null);
+        message.setReceiverType("1");
+        message.setStatus("0");
+        message.setCreateBy("system");
+        message.setCreateTime(LocalDateTime.now());
+        message.setDeleted(0);
+        Message saved = messageRepository.save(message);
+        if (!persistAndNotify(saved, userIds, "system")) {
+            throw new BusinessException(500, "系统消息发送失败");
+        }
+        return saved.getId();
+    }
+
+    private boolean persistAndNotify(final Message message, final List<Long> targetUserIds, final String actor) {
         List<MessageReceiver> receivers = targetUserIds.stream()
-                .map(userId -> MessageReceiver.builder().messageId(messageId).userId(userId).isRead(0).isDeleted(0).build())
+                .map(userId -> MessageReceiver.builder().messageId(message.getId()).userId(userId).isRead(0)
+                        .isDeleted(0).build())
                 .collect(Collectors.toList());
         messageReceiverRepository.batchSave(receivers);
-        // 更新消息状态为已发送
         message.send();
-        message.setUpdateBy(SecurityUtils.getCurrentUsername());
+        message.setUpdateBy(actor);
         message.setUpdateTime(LocalDateTime.now());
         boolean success = messageRepository.update(message);
-        // 发布消息发送事件（触发推送通知）
         if (success) {
-            MessageSentEvent sentEvent = new MessageSentEvent(this, messageId, message.getTitle(), message.getContent(),
-                    message.getMessageType(), message.getPriority(), message.getSenderId());
+            MessageSentEvent sentEvent = new MessageSentEvent(this, message.getId(), message.getTitle(),
+                    message.getContent(), message.getMessageType(), message.getBusinessType(), message.getPriority(),
+                    message.getSenderId());
             eventPublisher.publishEvent(sentEvent);
-            eventPublisher.publishEvent(ContentIndexEvent.refreshMessage(this, messageId));
-            log.info("消息发送事件已发布，messageId: {}", messageId);
+            eventPublisher.publishEvent(ContentIndexEvent.refreshMessage(this, message.getId()));
+            log.info("消息发送事件已发布，messageId: {}", message.getId());
         }
         return success;
     }

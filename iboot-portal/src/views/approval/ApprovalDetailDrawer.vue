@@ -19,8 +19,8 @@
             {{ t(`approval.leaveType.${detail.application.leaveType}`) }}
           </el-descriptions-item>
           <el-descriptions-item :label="t('approval.columns.period')">
-            {{ formatTime(detail.application.startTime) }} ~
-            {{ formatTime(detail.application.endTime) }}
+            {{ formatDateTime(detail.application.startTime) }} ~
+            {{ formatDateTime(detail.application.endTime) }}
           </el-descriptions-item>
           <el-descriptions-item :label="t('approval.columns.reason')">
             {{ detail.application.reason }}
@@ -43,7 +43,7 @@
           <el-timeline-item
             v-for="(item, index) in detail.history"
             :key="index"
-            :timestamp="formatTime(item.time)"
+            :timestamp="formatDateTime(item.time)"
             :type="timelineType(item)"
           >
             <div class="history-item">
@@ -93,6 +93,7 @@ import {
 } from "@/api/approval";
 import { usePermissionStore } from "@/stores/permission";
 import { useUserStore } from "@/stores/user";
+import { formatDateTime } from "@/utils/datetime";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -158,9 +159,6 @@ const decide = async (approved: boolean) => {
     deciding.value = false;
   }
 };
-
-const formatTime = (value?: string) =>
-  value ? new Date(value).toLocaleString() : "-";
 
 const statusType = (status: string): "success" | "warning" | "danger" => {
   if (status === "APPROVED") return "success";

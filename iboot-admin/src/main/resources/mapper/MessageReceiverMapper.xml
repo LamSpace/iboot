@@ -80,7 +80,7 @@
 
     <select id="selectPageByUserId" resultType="map">
         SELECT m.id AS id, m.title AS title, m.content AS content,
-        m.message_type AS messageType, m.priority AS priority,
+        m.message_type AS messageType, m.business_type AS businessType, m.priority AS priority,
         m.sender_type AS senderType, m.sender_id AS senderId,
         m.create_by AS createBy, m.create_time AS createTime,
         r.is_read AS isRead, r.read_time AS readTime

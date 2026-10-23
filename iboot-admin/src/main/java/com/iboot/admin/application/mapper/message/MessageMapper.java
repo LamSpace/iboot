@@ -95,6 +95,7 @@ public interface MessageMapper {
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "businessType", ignore = true)
     Message toEntity(MessageRequest request);
 
     // ==================== 更新映射 ====================
@@ -114,6 +115,7 @@ public interface MessageMapper {
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "businessType", ignore = true)
     void updateEntityFromRequest(MessageRequest request, @MappingTarget Message message);
 
 }

@@ -1,0 +1,34 @@
+{
+  "title": "通知投递",
+  "id": "记录 ID",
+  "eventId": "事件 ID",
+  "eventType": "事件类型",
+  "channel": "渠道",
+  "recipient": "接收人",
+  "messageTitle": "消息标题",
+  "status": "状态",
+  "attempts": "尝试次数",
+  "nextRetryTime": "下次重试",
+  "lastError": "最后错误",
+  "createTime": "创建时间",
+  "retry": "重试",
+  "retryConfirm": "确定重试这条投递吗？",
+  "retrySuccess": "已触发重试",
+  "statusValues": {
+    "PENDING": "待发送",
+    "SENDING": "发送中",
+    "SUCCESS": "成功",
+    "FAILED": "失败",
+    "DEAD": "已终止",
+    "SKIPPED": "已跳过"
+  },
+  "channelValues": {
+    "IN_APP": "站内",
+    "EMAIL": "邮件",
+    "DINGTALK": "钉钉",
+    "SMS": "短信"
+  },
+  "eventTypeValues": {
+    "APPROVAL_TODO": "审批待办"
+  }
+}

@@ -808,13 +808,14 @@ export interface UserMessage {
   title?: string;
   content?: string;
   messageType?: string;
+  businessType?: string;
   priority?: string;
   senderType?: string;
   senderId?: number;
   createBy?: string;
-  createTime?: string;
+  createTime?: string | number[];
   isRead?: number;
-  readTime?: string;
+  readTime?: string | number[];
 }
 
 export interface UserMessageQuery {

@@ -1,0 +1,34 @@
+{
+  "title": "Notification Delivery",
+  "id": "ID",
+  "eventId": "Event ID",
+  "eventType": "Event Type",
+  "channel": "Channel",
+  "recipient": "Recipient",
+  "messageTitle": "Title",
+  "status": "Status",
+  "attempts": "Attempts",
+  "nextRetryTime": "Next Retry",
+  "lastError": "Last Error",
+  "createTime": "Created At",
+  "retry": "Retry",
+  "retryConfirm": "Retry this delivery?",
+  "retrySuccess": "Retry triggered",
+  "statusValues": {
+    "PENDING": "Pending",
+    "SENDING": "Sending",
+    "SUCCESS": "Success",
+    "FAILED": "Failed",
+    "DEAD": "Dead",
+    "SKIPPED": "Skipped"
+  },
+  "channelValues": {
+    "IN_APP": "In-App",
+    "EMAIL": "Email",
+    "DINGTALK": "DingTalk",
+    "SMS": "SMS"
+  },
+  "eventTypeValues": {
+    "APPROVAL_TODO": "Approval To-do"
+  }
+}

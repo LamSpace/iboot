@@ -52,6 +52,11 @@ public class MessagePO {
     private String messageType;
 
     /**
+     * 业务类型，例如 APPROVAL_TODO；普通消息为空。
+     */
+    private String businessType;
+
+    /**
      * 优先级：LOW-低，MEDIUM-中，HIGH-高
      */
     private String priority;
@@ -172,6 +177,24 @@ public class MessagePO {
     @SuppressWarnings("all")
     public void setMessageType(final String messageType) {
         this.messageType = messageType;
+    }
+
+    /**
+     * 业务类型，例如 APPROVAL_TODO。
+     *
+     * @return 业务类型
+     */
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    /**
+     * 设置业务类型。
+     *
+     * @param businessType 业务类型
+     */
+    public void setBusinessType(final String businessType) {
+        this.businessType = businessType;
     }
 
     /**

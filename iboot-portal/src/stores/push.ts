@@ -7,6 +7,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { pushClient, type PushEvent } from "@/utils/eventsource";
+import { getUserInbox } from "@/api/system";
 import { useUserStore } from "./user";
 
 export interface Notification {
@@ -15,6 +16,7 @@ export interface Notification {
   title: string;
   content: string;
   messageType: string;
+  businessType?: string;
   priority: string;
   senderId: number;
   sentAt: string;
@@ -79,6 +81,55 @@ export const usePushStore = defineStore("push", () => {
   }
 
   /**
+   * 从服务端加载未读消息，补齐离线期间错过的通知。
+   */
+  async function hydrate() {
+    try {
+      const res = await getUserInbox({ pageNum: 1, pageSize: 10, isRead: 0 });
+      if (res.code !== 200) {
+        return;
+      }
+      const rows = res.data.data || [];
+      notifications.value = rows.map((msg) => ({
+        id: String(msg.id ?? ""),
+        type: msg.messageType || "notification",
+        title: msg.title || "",
+        content: msg.content || "",
+        messageType: msg.messageType || "",
+        businessType: msg.businessType,
+        priority: msg.priority || "0",
+        senderId: msg.senderId ?? 0,
+        sentAt: toIsoString(msg.createTime),
+        read: msg.isRead === 1,
+      }));
+      unreadCount.value = notifications.value.filter((item) => !item.read).length;
+    } catch (error) {
+      console.warn("[PushStore] 加载历史未读消息失败", error);
+    }
+  }
+
+  /**
+   * 将后端可能返回的 ISO 字符串或时间数组统一为 ISO 字符串。
+   */
+  function toIsoString(value?: string | number[] | null): string {
+    if (!value) {
+      return "";
+    }
+    if (Array.isArray(value)) {
+      const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+      return new Date(
+        year ?? 1970,
+        (month ?? 1) - 1,
+        day ?? 1,
+        hour,
+        minute,
+        second,
+      ).toISOString();
+    }
+    return value;
+  }
+
+  /**
    * 断开推送服务
    */
   function disconnect() {
@@ -139,6 +190,7 @@ export const usePushStore = defineStore("push", () => {
       title: data.title || "新消息",
       content: data.content || "",
       messageType: data.messageType || "",
+      businessType: data.businessType,
       priority: data.priority || "0",
       senderId: data.senderId,
       sentAt: data.sentAt || new Date().toISOString(),
@@ -251,6 +303,7 @@ export const usePushStore = defineStore("push", () => {
 
     // Actions
     connect,
+    hydrate,
     disconnect,
     addEventListener,
     removeEventListener,

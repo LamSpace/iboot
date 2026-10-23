@@ -65,12 +65,22 @@
             <span class="message-title">{{ msg.title }}</span>
           </div>
           <div class="message-meta">
-            <span class="message-time">{{ msg.createTime }}</span>
+            <span class="message-time">{{
+              formatMessageTime(msg.createTime)
+            }}</span>
           </div>
         </div>
         <div v-if="expandedId === msg.id" class="message-content">
           <div class="message-text">{{ msg.content }}</div>
           <div class="message-actions">
+            <el-button
+              v-if="msg.businessType === 'APPROVAL_TODO'"
+              type="primary"
+              link
+              size="small"
+              @click.stop="handleOpenApproval(msg)"
+              >{{ t("message.messageCenter.inbox.view_approval") }}</el-button
+            >
             <el-button
               type="danger"
               link
@@ -106,6 +116,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   getUserInbox,
@@ -117,6 +128,7 @@ import {
 import { useDictStore } from "@/stores/dict";
 
 const { t } = useI18n();
+const router = useRouter();
 const dictStore = useDictStore();
 
 const props = defineProps<{
@@ -135,6 +147,23 @@ const filter = ref("all");
 const pageNum = ref(1);
 const pageSize = 10;
 const totalMsg = ref(0);
+
+const formatMessageTime = (value?: string | number[]) => {
+  if (!value) {
+    return "";
+  }
+  const date = Array.isArray(value)
+    ? new Date(
+        value[0] ?? 1970,
+        (value[1] ?? 1) - 1,
+        value[2] ?? 1,
+        value[3] ?? 0,
+        value[4] ?? 0,
+        value[5] ?? 0,
+      )
+    : new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+};
 
 const loadMessages = async () => {
   loading.value = true;
@@ -186,6 +215,14 @@ const handleMarkAllRead = async () => {
   } catch {
     // ignore
   }
+};
+
+const handleOpenApproval = (msg: UserMessage) => {
+  if (msg.businessType !== "APPROVAL_TODO") {
+    return;
+  }
+  emit("update:modelValue", false);
+  router.push("/dashboard/approval");
 };
 
 const handleDeleteMsg = (msg: UserMessage) => {
