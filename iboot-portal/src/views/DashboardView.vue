@@ -75,39 +75,37 @@
               <el-breadcrumb-item>{{ currentBreadcrumb }}</el-breadcrumb-item>
             </el-breadcrumb>
           </div>
-          <div class="header-right user-info">
-              <NotificationBell class="notification-bell" />
-              <el-badge
-                :value="unreadNoticeCount"
-                :hidden="unreadNoticeCount === 0"
-                :max="99"
-                class="notice-badge"
-              >
-                <el-icon class="notice-bell" @click="noticePopupVisible = true"
-                  ><Bell
-                /></el-icon>
-              </el-badge>
-              <el-dropdown>
-                <span class="el-dropdown-link">
-                  {{ currentUsername }} <el-icon><ArrowDown /></el-icon>
-                </span>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="handleProfile">{{
-                      t("dashboard.profile")
-                    }}</el-dropdown-item>
-                    <el-dropdown-item @click="handleChangePassword">{{
-                      t("dashboard.change_password")
-                    }}</el-dropdown-item>
-                    <el-dropdown-item divided @click="handleLogout">{{
-                      t("dashboard.logout")
-                    }}</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-              <!-- 主题与语言切换 -->
+          <div class="header-right">
+            <NotificationCenter
+              :notice-unread="unreadNoticeCount"
+              @open-notice="noticePopupVisible = true"
+            />
+            <!-- 主题与语言切换 -->
+            <div class="header-utils">
               <ThemePicker />
-              <LocalePicker class="locale-picker" />
+              <LocalePicker />
+            </div>
+            <div class="header-divider" />
+            <el-dropdown trigger="click">
+              <button type="button" class="user-chip">
+                <span class="user-avatar">{{ avatarText }}</span>
+                <span class="user-name">{{ currentUsername }}</span>
+                <el-icon class="user-caret"><ArrowDown /></el-icon>
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="handleProfile">{{
+                    t("dashboard.profile")
+                  }}</el-dropdown-item>
+                  <el-dropdown-item @click="handleChangePassword">{{
+                    t("dashboard.change_password")
+                  }}</el-dropdown-item>
+                  <el-dropdown-item divided @click="handleLogout">{{
+                    t("dashboard.logout")
+                  }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </el-header>
 
@@ -249,7 +247,6 @@ import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import { useI18n } from "vue-i18n";
 import {
   ArrowDown,
-  Bell,
   Expand,
   Fold,
   Menu as MenuIcon,
@@ -267,7 +264,7 @@ import { usePermissionStore } from "@/stores/permission";
 import { useAppStore } from "@/stores/app";
 import { getIconComponent } from "@/utils/icon-map";
 import NoticePopup from "@/components/NoticePopup.vue";
-import NotificationBell from "@/components/Notification/NotificationBell.vue";
+import NotificationCenter from "@/components/Notification/NotificationCenter.vue";
 import LocalePicker from "@/components/LocalePicker.vue";
 import ThemePicker from "@/components/ThemePicker.vue";
 
@@ -290,6 +287,10 @@ const isCompact = ref(false);
 const compactExpanded = ref(false);
 const drawerVisible = ref(false);
 const currentUsername = ref("admin");
+const avatarText = computed(() => {
+  const name = currentUsername.value.trim();
+  return name ? name.charAt(0).toUpperCase() : "U";
+});
 
 const sidebarCollapsed = computed(
   () =>
@@ -708,38 +709,85 @@ onUnmounted(() => {
 }
 
 .header-right {
-  margin-left: auto;
-}
-
-.user-info {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--ib-space-md);
+  gap: var(--ib-space-xs);
+  margin-left: auto;
 }
 
-.locale-picker {
-  margin-left: var(--ib-space-xs);
-}
-
-.notification-bell {
+.header-utils {
   display: flex;
   align-items: center;
+  gap: 2px;
 }
 
-.notice-bell {
-  font-size: 18px;
-  cursor: pointer;
+.header-utils :deep(.locale-trigger) {
+  height: 32px;
+  padding: 0 var(--ib-space-xs);
+  border-radius: var(--ib-radius-full);
   color: var(--ib-color-steel);
-  transition: color var(--ib-duration-fast) var(--ib-ease);
+  transition:
+    color var(--ib-duration-fast) var(--ib-ease),
+    background var(--ib-duration-fast) var(--ib-ease);
 }
 
-.notice-bell:hover {
+.header-utils :deep(.locale-trigger:hover) {
   color: var(--ib-color-ink);
+  background: var(--ib-color-surface);
 }
 
-.notice-badge {
-  line-height: normal;
+.header-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--ib-space-xs);
+  background: var(--ib-color-hairline);
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ib-space-xs);
+  height: 36px;
+  padding: 0 var(--ib-space-xs) 0 4px;
+  border: 0;
+  border-radius: var(--ib-radius-full);
+  background: transparent;
+  color: var(--ib-color-ink);
+  cursor: pointer;
+  transition: background var(--ib-duration-fast) var(--ib-ease);
+}
+
+.user-chip:hover {
+  background: var(--ib-color-surface);
+}
+
+.user-chip:focus-visible {
+  outline: 2px solid var(--ib-color-brand-blue-deep);
+  outline-offset: 2px;
+}
+
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ib-radius-full);
+  background: var(--ib-color-brand-blue-deep);
+  color: #fff;
+  font-size: 12px;
+  font-weight: var(--ib-weight-semibold);
+}
+
+.user-name {
+  font-size: var(--ib-text-body-sm);
+  font-weight: var(--ib-weight-medium);
+}
+
+.user-caret {
+  font-size: 12px;
+  color: var(--ib-color-steel);
 }
 
 .main-content {
@@ -770,6 +818,28 @@ onUnmounted(() => {
 
   .sidebar.is-drawer.is-drawer-open {
     transform: translateX(0);
+  }
+
+  .header-right {
+    gap: 2px;
+  }
+
+  .header-utils :deep(.locale-trigger) {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .header-utils :deep(.locale-label) {
+    display: none;
+  }
+
+  .header-divider {
+    margin: 0 4px;
+  }
+
+  .user-name {
+    display: none;
   }
 }
 </style>

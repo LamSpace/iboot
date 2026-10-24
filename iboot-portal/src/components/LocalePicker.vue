@@ -2,7 +2,7 @@
   <el-dropdown @command="handleLocaleChange">
     <span class="locale-trigger">
       <el-icon><Switch /></el-icon>
-      {{ currentLabel }}
+      <span class="locale-label">{{ currentLabel }}</span>
     </span>
     <template #dropdown>
       <el-dropdown-menu>
