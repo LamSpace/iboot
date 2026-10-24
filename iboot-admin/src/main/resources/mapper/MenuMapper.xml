@@ -90,7 +90,7 @@
         SELECT *
         FROM sys_menu
         WHERE deleted = 0
-        ORDER BY order_num ASC, create_time ASC
+        ORDER BY order_num ASC, id ASC
     </select>
 
     <!-- 根据父菜单ID查询子菜单列表 -->
@@ -99,7 +99,7 @@
         FROM sys_menu
         WHERE parent_id = #{parentId}
           AND deleted = 0
-        ORDER BY order_num ASC
+        ORDER BY order_num ASC, id ASC
     </select>
 
     <!-- 根据用户ID查询菜单列表 -->
@@ -111,7 +111,7 @@
         WHERE ur.user_id = #{userId}
           AND m.deleted = 0
           AND m.status = 1
-        ORDER BY m.order_num ASC
+        ORDER BY m.order_num ASC, m.id ASC
     </select>
 
     <!-- 根据角色ID查询菜单列表 -->
@@ -121,7 +121,7 @@
                  INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
         WHERE rm.role_id = #{roleId}
           AND m.deleted = 0
-        ORDER BY m.order_num ASC
+        ORDER BY m.order_num ASC, m.id ASC
     </select>
 
     <!-- 检查同级菜单名称是否存在 -->
