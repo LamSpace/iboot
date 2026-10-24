@@ -63,7 +63,7 @@ infrastructure → config / persistence / repository / security / filter / inter
 | 并发模型 | 虚拟线程已启用(Tomcat + 异步执行器) | 见 doc 16 |
 | API 文档 | Springdoc OpenAPI + Swagger UI | `OpenApiConfig` |
 
-数据库版本管理用 Flyway,已推进到 `V22`。
+数据库版本管理用 Flyway,已推进到 `V23`。
 
 ### 1.3 运行环境
 
