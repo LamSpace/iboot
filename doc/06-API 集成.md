@@ -702,6 +702,26 @@ export function uploadFile(file) {
 
 状态值为 `PENDING`、`APPROVED`、`REJECTED`；待办/已办/我的申请均返回分页结构。
 
+### 6.18.3 数据备份接口
+
+数据备份接口统一前缀 `/api/monitor/backup`，请求需携带 `Accept-Version: 1`。
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| GET | `/api/monitor/backup/records` | `backup:record:list` | 分页查询备份记录，支持 `status` 筛选 |
+| GET | `/api/monitor/backup/records/{id}` | `backup:record:list` | 备份记录详情 |
+| POST | `/api/monitor/backup/records` | `backup:record:create` | 手动触发一次全量备份 |
+| GET | `/api/monitor/backup/restores` | `backup:record:list` | 分页查询演练记录，支持 `backupId` 筛选 |
+| GET | `/api/monitor/backup/restores/{id}` | `backup:record:list` | 演练记录详情 |
+| POST | `/api/monitor/backup/records/{id}/restore` | `backup:record:restore` | 对成功备份发起恢复演练 |
+| GET | `/api/monitor/backup/summary` | `backup:record:list` | 备份概览（开关、总数、占用、最近成功） |
+
+约束：
+
+- 只有 `status=SUCCESS` 的备份可以发起演练；
+- 演练目标由服务端固定为 `iboot_restore_drill`，接口不接受客户端传入目标库名；
+- 同一时刻只允许一个备份或一个演练处于运行中。
+
 ## 数据格式
 
 ### 6.19 统一响应格式
