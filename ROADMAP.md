@@ -6,7 +6,7 @@
 >
 > 本文只定义"做什么、用什么、受什么约束、带来什么价值、怎么算完成",不含实施排期。每个条目都带验收判据,判据不成立的条目不进路线图。
 >
-> 最近更新:2026-10-23
+> 最近更新:2026-10-24
 
 ---
 
@@ -36,7 +36,7 @@
 ```
 interfaces  → controller / dto / advisor / config
 application → service / mapper(MapStruct)
-domain      → 实体与仓储接口(system / job)
+domain      → 实体与仓储接口(system / job / backup)
 infrastructure → config / persistence / repository / security / filter / interceptor / aspect / job / push / storage
 ```
 
@@ -47,11 +47,12 @@ infrastructure → config / persistence / repository / security / filter / inter
 | 能力域 | 具体内容 | 关键实现 |
 |---|---|---|
 | 认证授权 | 登录、JWT 签发校验、滑动过期、RBAC、五级数据权限 | `AuthController`、`JwtAuthenticationFilter`、`DataScopeInterceptor` |
-| 系统管理 | 用户 / 角色 / 菜单 / 字典 / 参数配置 | 21 个 Controller 中的 6 个,`sys_*` 表族 |
+| 系统管理 | 用户 / 角色 / 菜单 / 字典 / 参数配置 | 25 个 Controller 中的 6 个,`sys_*` 表族 |
 | 组织架构 | 部门树、岗位、组织架构图 | `DeptController`、`PostController` |
 | 消息中心 | 站内消息、消息模板、公告、已读同步 | `MessageController`、`MessageTemplateController`、`NoticeController` |
 | 实时推送 | SSE 单播/组播/广播,集群下 Redis Pub/Sub 广播,CloudEvents 事件格式 | `SseEmitterManager`、`PushEventService`、`common/cloudevent` |
 | 文件管理 | 上传/下载/预览/分类,MinIO 与本地双存储 | `FileController`、`MinioService` |
+| 数据备份 | 全量逻辑备份、AES-256-GCM 加密、MinIO/本地/OSS 存储、独立演练库恢复校验 | `BackupController`、`BackupApplicationService`、`RestoreDrillService`、`BackupCipher`、doc 21 |
 | 定时任务 | Quartz 任务 CRUD、启停、执行日志 | `JobController`(`isClustered: false`) |
 | 日志 | 操作日志、登录日志、运行日志(入 ES) | `LogController`、`RunLogApplicationService` |
 | 监控运维 | 在线用户、Server 资源(Oshi)、Redis 监控、MinIO 监控、SQL 监控(Druid) | `OnlineUserController`、`ServerMonitorController`、`RedisMonitorController`、`MinioMonitorController` |
@@ -62,7 +63,7 @@ infrastructure → config / persistence / repository / security / filter / inter
 | 并发模型 | 虚拟线程已启用(Tomcat + 异步执行器) | 见 doc 16 |
 | API 文档 | Springdoc OpenAPI + Swagger UI | `OpenApiConfig` |
 
-数据库版本管理用 Flyway,已推进到 `V14`。
+数据库版本管理用 Flyway,已推进到 `V22`。
 
 ### 1.3 运行环境
 
@@ -81,7 +82,6 @@ infrastructure → config / persistence / repository / security / filter / inter
 
 | 缺口 | 证据 |
 |---|---|
-| 数据备份与恢复 | 代码中无任何 backup 实现;已决策**暂不做**(原阶段 0.2) |
 | 业务数据行级多语言 | 现有 i18n 只覆盖 UI 文案与异常消息;已决策**暂不做**(原阶段 0.4) |
 | 链路追踪 | compose 中无 Zipkin / Tempo / SkyWalking / Jaeger,doc 11 提到但环境未落地 |
 | 服务注册 / 配置中心 / MQ / 分布式事务 | 完全未引入 |
@@ -164,7 +164,7 @@ graph LR
 | 编号 | 子项 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|---|
 | **0.1** | 父 POM 多模块预备(**已完成**) | Maven 聚合 `iboot-parent`,`modules = iboot-admin` + 预留 `iboot-ai`;依赖版本集中到 `dependencyManagement` | 纯构建结构改造,**不动一行业务代码** | `mvn verify` 绿;Docker 中间件环境与前端联调行为零变化 |
-| **0.2** | 数据备份与恢复(**暂不做**) | Quartz(已有)+ `mysqldump` + MinIO(已有)+ AES-GCM 加密 + 元数据表 `db_backup_record` + 恢复演练 | 恢复目标必须是独立演练库,**禁止覆盖原库**;`mysqldump` 版本须与 MySQL 8.0.45 匹配;大库逻辑备份耗时,binlog 增量留作选做 | 定时备份产物落 MinIO;一次完整恢复演练成功且行数 / 校验和一致 |
+| **0.2** | 数据备份与恢复(**已完成**) | Quartz(已有)+ `mysqldump`(经 `docker exec` 复用容器内 8.0.45 客户端)+ AES-256-GCM + `FileStorageStrategy`(MinIO/本地/OSS)+ `db_backup_record` / `db_restore_record` + 恢复演练 + 管理端“数据备份”页;能力契约见 `openspec/specs/data-backup/spec.md`,操作指南见 `doc/21` | 恢复目标必须是独立演练库 `iboot_restore_drill`,**禁止覆盖原库**;`mysqldump` 版本须与 MySQL 8.0.45 匹配;大库逻辑备份耗时,binlog 增量留作选做;功能默认关闭,密钥经 `IBOOT_BACKUP_ENCRYPTION_KEY` 注入 | 定时备份产物落 MinIO;一次完整恢复演练成功且行数 / 校验和一致;手动与定时触发均可用;业务库行数与结构不受演练影响 |
 | **0.3** | 业务全文检索(**已完成**) | 复用已部署的 ES 9(原先仅存运行日志,现新增 `iboot-content-v1`),公告 / 站内消息建索引(中文 `cjk` 分析器);写入走 Spring 事件异步(`@TransactionalEventListener` 已有先例)+ Quartz 每 5 分钟无状态对账 | ES 客户端已随 Boot 4.0.3 升至 **9.2.5**,与 ES **9.2.3** 同属 9.2.x,兼容前置已满足;不引入 Canal(重);**文件内容检索并入阶段 1**(与 RAG 解析管线、文件数据权限一起做);能力契约见 `openspec/specs/content-search/spec.md` | 公告/消息可检索且消息按接收人隔离;源数据删改后 5 分钟内索引一致 |
 | **0.4** | 行级业务多语言(**暂不做**) | 翻译表 `sys_i18n_value(lang, table, row_id, field, value)` + MyBatis 拦截器自动替换与默认语言回退 + 复用二级缓存 | 与 `DataScopeInterceptor` 的拦截器链顺序敏感;与 PageHelper 的分页改写需兼容;回退规则须先定死(默认语言缺失 → 空还是回退) | 同一记录中/英切换返回正确字段;数据权限过滤仍生效 |
 | **0.5** | 审批流 / 工作流(**已完成**) | Flowable **8.0.0** on Boot 4.0.3:domain `WorkflowService` + infrastructure 适配器,请假流程与审批中心;能力契约见 `openspec/specs/approval-workflow/spec.md`,选型依据见 `doc/spike/flowable-8-spike-report.md` | 7.x 不支持 Boot 4,8.0.0 为唯一版本线;原 fallback Spring Statemachine 已归档,不再作为既定降级方案;`taskExecutor` 已适配为 `AsyncTaskExecutor`,HikariCP 已排除,`ACT_*` 表由 Flyway `V17` 管理 | 一条真实流程已跑通:发起 → 审批 → 驳回 → 归档 |
@@ -245,9 +245,9 @@ Boot 4.0.3 这一前提改变了可选生态:
 |---|---|---|
 | `iboot-gateway` | 新建 | Spring Cloud Gateway:路由、鉴权前置、统一 CORS、限流入口 |
 | `iboot-auth` | 从 admin 抽出 `AuthController` + JWT + Redis 会话 | 认证中心 / SSO,其余服务的依赖前置 |
-| `iboot-file` | 文件管理 + 0.7 `FileStorageStrategy`(0.2 备份恢复暂不做) | 边界清晰、依赖少 |
+| `iboot-file` | 文件管理 + 0.7 `FileStorageStrategy` | 边界清晰、依赖少 |
 | `iboot-notify` | 消息中心 + SSE 推送 + 0.6 多渠道通知 | **有状态连接**,独立最能体现价值 |
-| `iboot-job` | 定时任务 | 调度语义独立 |
+| `iboot-job` | 定时任务 + 0.2 数据备份(Quartz 驱动) | 调度语义独立 |
 | `iboot-monitor` | 监控运维 + 日志 + ES | 读多写少,可独立扩缩 |
 | `iboot-workflow` | 0.5 审批流 | 流程引擎是重资产,独立部署边界最清晰 |
 | `iboot-system` | 用户/角色/菜单/部门/岗位/字典/配置 | **最后拆**,被所有服务依赖 |
@@ -314,7 +314,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 | # | 原条目 | 去向 | 说明 |
 |---|---|---|---|
-| 1 | 数据备份与恢复 | **阶段 0.2(暂不做)** | 唯一"写了没做"的功能洞 |
+| 1 | 数据备份与恢复 | **阶段 0.2(已完成)** | Quartz + `mysqldump` + AES-256-GCM + MinIO/OSS + 独立演练库恢复校验 |
 | 2 | 零信任网络 | **阶段 4** | mesh mTLS |
 | 3 | 微服务拆分 + SCA(Nacos/Seata/Sentinel/RocketMQ) | **阶段 2** | 彻底拆分 |
 | 4 | SSO 统一认证中心 | **阶段 2.2** | Spring Authorization Server |
