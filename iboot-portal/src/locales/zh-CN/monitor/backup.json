@@ -1,0 +1,66 @@
+{
+  "title": "数据备份",
+  "summary": {
+    "enabled": "备份功能",
+    "enabledYes": "已启用",
+    "enabledNo": "未启用",
+    "totalCount": "备份总数",
+    "totalSize": "存储占用",
+    "lastSuccessAt": "最近成功",
+    "overview": "已启用 · 共 {count} 次备份 · 占用 {size} · 最近成功 {time}"
+  },
+  "create": "立即备份",
+  "createConfirm": "确定立即执行一次全量备份吗？",
+  "createSuccess": "备份任务已提交",
+  "tabs": {
+    "backups": "备份记录",
+    "restores": "演练记录"
+  },
+  "columns": {
+    "id": "ID",
+    "backupNo": "备份编号",
+    "triggerType": "触发方式",
+    "status": "状态",
+    "databaseName": "数据库",
+    "size": "大小",
+    "storageType": "存储",
+    "checksum": "校验和",
+    "duration": "耗时",
+    "startedAt": "开始时间",
+    "finishedAt": "结束时间",
+    "createdBy": "触发人",
+    "targetSchema": "演练库",
+    "tableCount": "表数量",
+    "backupId": "备份ID",
+    "mismatch": "行数差异",
+    "action": "操作"
+  },
+  "triggerTypes": {
+    "SCHEDULED": "定时",
+    "MANUAL": "手动"
+  },
+  "statuses": {
+    "RUNNING": "执行中",
+    "SUCCESS": "成功",
+    "FAILED": "失败",
+    "MISMATCH": "不一致"
+  },
+  "storageTypes": {
+    "local": "本地",
+    "minio": "MinIO",
+    "oss": "OSS",
+    "memory": "内存"
+  },
+  "restore": "恢复演练",
+  "restoreConfirm": "确定对备份 {backupNo} 执行恢复演练吗？只会写入独立演练库，不会影响业务库。",
+  "restoreSuccess": "恢复演练已提交",
+  "view": "查看",
+  "detailTitle": "演练详情",
+  "mismatchTable": {
+    "tableName": "表名",
+    "expected": "备份行数",
+    "actual": "演练行数"
+  },
+  "noMismatch": "无行数差异",
+  "disabledTip": "备份功能未启用，请先配置 IBOOT_BACKUP_ENABLED 与主密钥 IBOOT_BACKUP_ENCRYPTION_KEY"
+}

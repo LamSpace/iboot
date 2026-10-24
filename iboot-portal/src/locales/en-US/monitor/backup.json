@@ -1,0 +1,66 @@
+{
+  "title": "Data Backup",
+  "summary": {
+    "enabled": "Backup Feature",
+    "enabledYes": "Enabled",
+    "enabledNo": "Disabled",
+    "totalCount": "Total Backups",
+    "totalSize": "Storage Used",
+    "lastSuccessAt": "Last Success",
+    "overview": "Enabled · {count} backups · {size} used · last success {time}"
+  },
+  "create": "Backup Now",
+  "createConfirm": "Run a full backup now?",
+  "createSuccess": "Backup task submitted",
+  "tabs": {
+    "backups": "Backups",
+    "restores": "Drills"
+  },
+  "columns": {
+    "id": "ID",
+    "backupNo": "Backup No.",
+    "triggerType": "Trigger",
+    "status": "Status",
+    "databaseName": "Database",
+    "size": "Size",
+    "storageType": "Storage",
+    "checksum": "Checksum",
+    "duration": "Duration",
+    "startedAt": "Started At",
+    "finishedAt": "Finished At",
+    "createdBy": "Triggered By",
+    "targetSchema": "Drill Schema",
+    "tableCount": "Tables",
+    "backupId": "Backup ID",
+    "mismatch": "Row Mismatches",
+    "action": "Action"
+  },
+  "triggerTypes": {
+    "SCHEDULED": "Scheduled",
+    "MANUAL": "Manual"
+  },
+  "statuses": {
+    "RUNNING": "Running",
+    "SUCCESS": "Success",
+    "FAILED": "Failed",
+    "MISMATCH": "Mismatch"
+  },
+  "storageTypes": {
+    "local": "Local",
+    "minio": "MinIO",
+    "oss": "OSS",
+    "memory": "Memory"
+  },
+  "restore": "Restore Drill",
+  "restoreConfirm": "Run a restore drill for backup {backupNo}? It only writes to the isolated drill schema and never touches the business database.",
+  "restoreSuccess": "Restore drill submitted",
+  "view": "View",
+  "detailTitle": "Drill Details",
+  "mismatchTable": {
+    "tableName": "Table",
+    "expected": "Expected Rows",
+    "actual": "Actual Rows"
+  },
+  "noMismatch": "No row mismatches",
+  "disabledTip": "Backup is disabled. Configure IBOOT_BACKUP_ENABLED and IBOOT_BACKUP_ENCRYPTION_KEY first."
+}

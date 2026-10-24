@@ -43,6 +43,7 @@ const ROUTES = [
   "/dashboard/swagger",
   "/dashboard/performance",
   "/dashboard/job",
+  "/dashboard/backup",
   "/dashboard/report",
   "/dashboard/usage",
   "/dashboard/prometheus-monitor",

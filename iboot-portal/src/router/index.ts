@@ -182,6 +182,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
       {
+        path: "backup",
+        name: "Backup",
+        component: () => import("../views/monitor/BackupView.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
         path: "report",
         name: "Report",
         component: () => import("../views/analysis/ReportView.vue"),

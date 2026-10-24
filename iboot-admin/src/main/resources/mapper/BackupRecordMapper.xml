@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iboot.admin.infrastructure.persistence.mapper.BackupRecordMapper">
+
+    <resultMap id="BackupRecordResultMap"
+               type="com.iboot.admin.infrastructure.persistence.po.BackupRecordPO">
+        <id property="id" column="id"/>
+        <result property="backupNo" column="backup_no"/>
+        <result property="triggerType" column="trigger_type"/>
+        <result property="status" column="status"/>
+        <result property="databaseName" column="database_name"/>
+        <result property="storageType" column="storage_type"/>
+        <result property="storagePath" column="storage_path"/>
+        <result property="ciphertextSize" column="ciphertext_size"/>
+        <result property="plaintextSize" column="plaintext_size"/>
+        <result property="checksumSha256" column="checksum_sha256"/>
+        <result property="encryption" column="encryption"/>
+        <result property="dumpTool" column="dump_tool"/>
+        <result property="tableCount" column="table_count"/>
+        <result property="tableStatsJson" column="table_stats_json"/>
+        <result property="startedAt" column="started_at"/>
+        <result property="finishedAt" column="finished_at"/>
+        <result property="durationMs" column="duration_ms"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO db_backup_record (backup_no, trigger_type, status, database_name, storage_type, storage_path,
+                                      ciphertext_size, plaintext_size, checksum_sha256, encryption, dump_tool,
+                                      table_count, table_stats_json, started_at, finished_at, duration_ms,
+                                      error_message, created_by, create_time, update_time)
+        VALUES (#{backupNo}, #{triggerType}, #{status}, #{databaseName}, #{storageType}, #{storagePath},
+                #{ciphertextSize}, #{plaintextSize}, #{checksumSha256}, #{encryption}, #{dumpTool},
+                #{tableCount}, #{tableStatsJson}, #{startedAt}, #{finishedAt}, #{durationMs},
+                #{errorMessage}, #{createdBy}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="update">
+        UPDATE db_backup_record
+        SET status          = #{status},
+            storage_type    = #{storageType},
+            storage_path    = #{storagePath},
+            ciphertext_size = #{ciphertextSize},
+            plaintext_size  = #{plaintextSize},
+            checksum_sha256 = #{checksumSha256},
+            encryption      = #{encryption},
+            dump_tool       = #{dumpTool},
+            table_count     = #{tableCount},
+            table_stats_json = #{tableStatsJson},
+            finished_at     = #{finishedAt},
+            duration_ms     = #{durationMs},
+            error_message   = #{errorMessage},
+            update_time     = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BackupRecordResultMap">
+        SELECT *
+        FROM db_backup_record
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectRunning" resultMap="BackupRecordResultMap">
+        SELECT *
+        FROM db_backup_record
+        WHERE status = 'RUNNING'
+        ORDER BY id ASC
+        LIMIT 1
+    </select>
+
+    <sql id="pageWhere">
+        <where>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectPage" resultMap="BackupRecordResultMap">
+        SELECT *
+        FROM db_backup_record
+        <include refid="pageWhere"/>
+        ORDER BY create_time DESC, id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*)
+        FROM db_backup_record
+        <include refid="pageWhere"/>
+    </select>
+
+    <update id="resetStaleRunning">
+        UPDATE db_backup_record
+        SET status        = 'FAILED',
+            error_message = '备份执行超时，已重置为失败',
+            finished_at   = #{now},
+            duration_ms   = TIMESTAMPDIFF(MICROSECOND, started_at, #{now}) / 1000,
+            update_time   = #{now}
+        WHERE status = 'RUNNING'
+          AND started_at &lt; #{threshold}
+    </update>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*)
+        FROM db_backup_record
+    </select>
+
+    <select id="sumCiphertextSize" resultType="long">
+        SELECT COALESCE(SUM(ciphertext_size), 0)
+        FROM db_backup_record
+        WHERE status = 'SUCCESS'
+    </select>
+
+    <select id="lastSuccessAt" resultType="java.time.LocalDateTime">
+        SELECT MAX(finished_at)
+        FROM db_backup_record
+        WHERE status = 'SUCCESS'
+    </select>
+
+</mapper>
