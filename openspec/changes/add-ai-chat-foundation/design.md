@@ -60,10 +60,10 @@
 
 ### D4：会话记忆与会话索引
 
-- 消息记忆使用 Spring AI 的 `ChatMemory` + `MessageWindowChatMemory`，窗口 20 条，底层用 Redis 仓储；key 前缀 `iboot:ai:chat:`，TTL 24 小时。
+- 消息记忆使用 Spring AI 的 `ChatMemory` + `MessageWindowChatMemory`，窗口 20 条，底层使用**自定义** `ChatMemoryRepository`；key 前缀 `iboot:ai:chat:`，TTL 24 小时。
+- **为什么不用官方 Redis 仓储 starter**：2.0.1 的实现依赖 RediSearch（`FT.CREATE`）与 RedisJSON，而项目的 `redis:7.0.14` 是标准镜像，没有这些模块。自定义仓储只用 Spring Data Redis 的 string/set/list 操作，约 100 行，接口不变。
 - Spring AI 的仓储不提供“会话列表”，另建一个轻量索引：`iboot:ai:conversations:{userId}` 保存 `conversationId / title / updatedAt`，标题取首条用户消息前 30 字。
 - 会话 ID 使用 UUID；读取历史时先校验索引归属，跨用户一律 404。
-- **风险**：Redis 仓储 starter 是否支持 TTL 需在首个任务中确认；若不支持，改为自定义 `ChatMemoryRepository`（约 80 行），接口不变。
 
 ### D5：流式传输
 
@@ -103,7 +103,7 @@
 
 ### D8：portal
 
-- 新增路由 `/dashboard/ai`、`views/ai/ChatView.vue`、`api/ai.ts`、`utils/aiStream.ts`。
+- 新增路由 `/dashboard/chat`、`views/ai/ChatView.vue`、`api/ai.ts`、`utils/aiStream.ts`。路由段用 `chat` 是为了与现有菜单取「路径最后一段」的约定对齐。
 - 视图包含：会话列表、消息区、输入框、停止生成按钮、用量小面板。
 - `vite.config.ts` 增加 `/iboot/ai` → `http://localhost:8081`，并 rewrite 去掉前缀。
 - 中英文文案补齐；沿用 `portal-design-system` 既有的样式变量与组件。
@@ -144,6 +144,6 @@
 
 ## Open Questions
 
-- Redis chat memory starter 是否支持按 key 设置 TTL —— 首个任务确认，不支持则落自定义仓储。
+- ~~Redis chat memory starter 是否支持按 key 设置 TTL~~ **已确认**：starter 支持 TTL，但依赖 RediSearch/RedisJSON，标准 Redis 7.0.14 不具备，改为自定义仓储。
 - 会话标题是否需要在首轮后异步用模型生成 —— 1.1 先用首条消息截断，后续可选。
 - 菜单是否需要同时开放给普通用户 —— 默认只给管理员，按成本策略再放开。

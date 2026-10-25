@@ -1,0 +1,77 @@
+server:
+  port: 8081
+  tomcat:
+    threads:
+      virtual:
+        enabled: true
+
+spring:
+  application:
+    name: iboot-ai
+  threads:
+    virtual:
+      enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 10s
+      lettuce:
+        pool:
+          min-idle: 0
+          max-idle: 8
+          max-active: 8
+          max-wait: -1ms
+  ai:
+    openai:
+      # 全局兜底：OpenAI starter 会同时装配 audio/image 模型，没有 Key 时启动失败
+      api-key: ${DASHSCOPE_CHAT_API_KEY:}
+      base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}/v1
+      chat:
+        api-key: ${DASHSCOPE_CHAT_API_KEY:}
+        base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}/v1
+        options:
+          model: ${IBOOT_AI_CHAT_MODEL:qwen3.8-flash}
+          temperature: 0.7
+          max-tokens: 4096
+          extra-body:
+            enable_thinking: false
+      embedding:
+        api-key: ${DASHSCOPE_EMBEDDING_API_KEY:}
+        base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}/v1
+        options:
+          model: ${IBOOT_AI_EMBEDDING_MODEL:text-embedding-v4}
+          dimensions: 1024
+
+jwt:
+  # 与 iboot-admin 共享同一密钥；生产环境必须通过环境变量注入
+  secret: ${JWT_SECRET:iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits}
+  session-timeout: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: iboot-ai
+      namespace: default
+
+iboot:
+  ai:
+    quota:
+      # 全局与单用户按自然日（北京时间）统计
+      global-daily-tokens: ${IBOOT_AI_GLOBAL_DAILY_TOKENS:20000000}
+      user-daily-tokens: ${IBOOT_AI_USER_DAILY_TOKENS:200000}
+    chat:
+      max-messages: 20
+      conversation-ttl-hours: 24
+      sse-timeout-ms: 300000
+      heartbeat-ms: 20000

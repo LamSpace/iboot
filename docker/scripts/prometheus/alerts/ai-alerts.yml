@@ -1,0 +1,55 @@
+groups:
+  - name: ai-alerts
+    interval: 30s
+    rules:
+      # ==================== 服务可用性 ====================
+      - alert: AiServiceDown
+        expr: up{job="iboot-ai"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AI 服务不可用"
+          description: "iboot-ai 已连续 1 分钟无法被 Prometheus 抓取"
+
+      # ==================== 成本 ====================
+      - alert: AiDailyTokenBudgetHigh
+        expr: sum(increase(iboot_ai_tokens_total[24h])) > 5000000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI 日 token 用量超过告警阈值"
+          description: "过去 24 小时 token 用量为 {{ $value }}，告警阈值为 5,000,000"
+
+      - alert: AiQuotaRejectionSpike
+        expr: sum(increase(iboot_ai_quota_rejected_total[10m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI 配额拒绝次数异常"
+          description: "过去 10 分钟配额拒绝 {{ $value }} 次，可能存在异常调用"
+
+      # ==================== 质量 ====================
+      - alert: AiChatErrorRateHigh
+        expr: |
+          sum(rate(iboot_ai_chat_requests_total{outcome="error"}[5m]))
+          /
+          sum(rate(iboot_ai_chat_requests_total[5m]))
+          * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI 对话错误率过高"
+          description: "5 分钟错误率超过 5%，当前值为 {{ $value | printf \"%.1f\" }}%"
+
+      - alert: AiFirstTokenSlow
+        expr: histogram_quantile(0.95, sum(rate(iboot_ai_first_token_seconds_bucket[5m])) by (le)) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI 首 token 延迟过高"
+          description: "首 token p95 超过 3 秒，当前值为 {{ $value | printf \"%.2f\" }} 秒"
