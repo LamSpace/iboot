@@ -76,4 +76,4 @@
 - [x] 9.2 运行 portal `cnpm run build`、`cnpm run lint`、`cnpm run check:ui`；验证：三项均通过。
 - [x] 9.3 手动端到端验收：上传文本 PDF/DOCX、扫描件 OCR、问答、点击引用、低权限用户越权尝试、重新登录；验证：验收清单逐项记录通过。
 - [x] 9.4 更新 `doc/22-AI 工作台操作指南.md` 与 `ROADMAP.md` 1.2 状态；验证：文档中的命令、配置、验收步骤与实际一致。
-- [ ] 9.5 从 `master` 切出 `feat/knowledge-base-rag`，提交并按 `CLAUDE.md` 流程创建 PR；验证：PR 通过 CI/本地检查，合并后 `master` 以 `pull --ff-only` 同步。
+- [x] 9.5 从 `master` 切出 `feat/knowledge-base-rag`，提交并按 `CLAUDE.md` 流程创建 PR；验证：PR 通过 CI/本地检查，合并后 `master` 以 `pull --ff-only` 同步。
