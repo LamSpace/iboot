@@ -22,6 +22,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/iboot\/api/, '/api')
       },
+      '/iboot/ai': {
+        target: 'http://localhost:8081', // AI 服务地址
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/iboot\/ai/, '/api/ai')
+      },
       '/sba': {
         target: 'http://localhost:8080', // Spring Boot Admin 监控页面
         changeOrigin: true

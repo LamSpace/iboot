@@ -1,0 +1,16 @@
+{
+  "chat": {
+    "title": "AI Workspace",
+    "newConversation": "New chat",
+    "untitled": "Untitled conversation",
+    "noConversations": "No conversations yet",
+    "empty": "Start a new conversation and ask something",
+    "placeholder": "Type a message, Enter to send",
+    "send": "Send",
+    "stop": "Stop",
+    "error": "Chat failed, please try again later"
+  },
+  "usage": {
+    "today": "Today's usage"
+  }
+}

@@ -6,7 +6,7 @@
 >
 > 本文只定义"做什么、用什么、受什么约束、带来什么价值、怎么算完成",不含实施排期。每个条目都带验收判据,判据不成立的条目不进路线图。
 >
-> 最近更新:2026-10-24
+> 最近更新:2026-10-25
 
 ---
 
@@ -57,6 +57,7 @@ infrastructure → config / persistence / repository / security / filter / inter
 | 日志 | 操作日志、登录日志、运行日志(入 ES) | `LogController`、`RunLogApplicationService` |
 | 监控运维 | 在线用户、Server 资源(Oshi)、Redis 监控、MinIO 监控、SQL 监控(Druid) | `OnlineUserController`、`ServerMonitorController`、`RedisMonitorController`、`MinioMonitorController` |
 | 统计分析 | 仪表板、趋势统计、Excel 导出(FastExcel) | `DashboardController`、`StatisticsController` |
+| AI 对话 | 独立 `iboot-ai` 服务:多轮流式对话、Redis 记忆、每日配额、token/延迟观测 | `ChatApplicationService`、`AiChatController`、doc 22 |
 | 国际化 | 前端 vue-i18n + 后端 MessageSource,中英文语言包分层 | `I18nController`、`common/i18n`、doc 17/18 |
 | 二级缓存 | Caffeine(L1)+ Redis(L2),Pub/Sub 失效广播,穿透/击穿/雪崩防护 | `TwoLevelCacheManager` |
 | 可观测性 | Actuator + Micrometer + Prometheus + Alertmanager + Thanos 长期存储 + Grafana + ELK + 各类 exporter | 见 doc 11 |
@@ -111,7 +112,7 @@ infrastructure → config / persistence / repository / security / filter / inter
 |---|---|---|
 | **微服务** | 现有单体按 DDD 限界上下文**彻底拆分**为多个独立可部署服务,Spring Cloud Alibaba 技术栈真实承载(非摆设) | 任一服务可独立启停与发布;单服务故障不雪崩;跨服务强一致写具备可回滚的分布式事务 |
 | **云原生** | 所有服务容器化,Helm 化,运行在阿里云 ACK,具备弹性、可观测、声明式发布 | `helmfile sync` 一条命令完成发布;滚动升级零 5xx;压测触发 HPA;删 Pod 自愈 |
-| **智能 Agent** | 以 DeepSeek 为对话底座的多能力 AI 工作台:对话、RAG、智能体编排、知识图谱 | Agent 能安全地调用既有管理端 API 完成任务;RAG 检索结果继承用户数据权限 |
+| **智能 Agent** | 以百炼 Qwen 为对话底座的多能力 AI 工作台:对话、RAG、智能体编排、知识图谱 | Agent 能安全地调用既有管理端 API 完成任务;RAG 检索结果继承用户数据权限 |
 
 ### 2.2 约束与原则
 
@@ -185,11 +186,12 @@ Boot 4.0.3 这一前提改变了可选生态:
 | Spring AI | 2.0.x 才支持 Boot 4(1.1.x 仅到 Boot 3.5);2.0.1 GA 于 2026-08-21 | **采用 Spring AI 2.0.1** |
 | Spring AI Alibaba | 稳定线 1.1.2.2 要求 Boot 3.x;2.x 仅有 `v2.0.0-M1.1` 预发布且 pin 在 Spring AI 2.0.0-M1(非 GA) | **暂不引入**,其 2.x GA 后作为可选增强(DashScope VectorStore / Graph / Studio) |
 | AgentScope Java | 独立仓库,2.0.1 已 GA(2026-08-05),JDK 17+,Agent Card 可注册 Nacos,支持 MCP / A2A / SSE / HITL | **采用 2.0.1 做智能体编排** |
-| DeepSeek | Spring AI 官方 `spring-ai-deepseek` + OpenAI 兼容端点两条路 | **对话底座** |
+| 百炼 Qwen | `qwen3.8-flash`(1M 上下文,OpenAI 兼容端点);备用 `qwen3.7-flash` | **对话底座** |
+| DeepSeek | Spring AI 官方 `spring-ai-deepseek` + OpenAI 兼容端点 | 备用端点,不默认启用 |
 
-**架构决定**:模型接入 base-url 配置化,百炼(DashScope)与 DeepSeek 官方端点可切换,测试用假模型实现。
+**架构决定**:对话与 Embedding 统一走百炼(DashScope),模型标识与 base-url 配置化;DeepSeek 仅作为故障切换的备用端点。测试用假模型实现。
 
-**一个非可选的约束**:DeepSeek 只提供对话/推理模型,**没有 embedding 模型**。RAG 的向量化必须有第二个供应商(百炼 `text-embedding-v4` 或本地 BGE-M3)。因此**多供应商抽象是架构前提,不是后续优化项**。
+**单一供应商的约束**:对话与 Embedding 都走百炼,故障半径重叠。因此 base-url 与模型必须配置化,并保留 DeepSeek 作为对话备用端点;Embedding 暂无等价兜底。多供应商抽象已由 Spring AI 的 `ChatModel` / `EmbeddingModel` 提供,不再需要自研。
 
 #### 子阶段拆分
 
@@ -197,7 +199,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 | 编号 | 子阶段 | 能力 | 硬前置 | 可独立演示的终态 | 交付状态 |
 |---|---|---|---|---|---|
-| **1.1** | AI 底座与智能对话 | 模块骨架、多供应商抽象、智能对话、LLM 可观测 | 0.1 父 POM(已完成) | portal 多轮流式对话可用;Grafana 有 token 用量看板且超阈值告警 | 必做 |
+| **1.1** | AI 底座与智能对话 | 模块骨架、多供应商抽象、智能对话、LLM 可观测 | 0.1 父 POM(已完成) | portal 多轮流式对话可用;Grafana 有 token 用量看板且超阈值告警 | **已完成(2026-10-25)** |
 | **1.2** | 知识库 RAG 与权限一致性 | 知识库 RAG、RAG 权限一致性、文档解析(文本类) | 1.1;0.3 全文检索(已完成) | 知识库可上传 → 入库 → 带溯源问答;低权限用户红队用例不越权 | 必做 |
 | **1.3** | 智能体编排 | 智能体编排 | 1.1;JDK 25 Spike(§6.2 R8)通过 | 3 个只读工具端到端可用;写操作二次确认不可绕过 | 必做 |
 | **1.4** | 知识图谱 | 知识图谱 | 1.1;Neo4j 中间件 | 组织架构 + RBAC 入图;2 跳关系查询正确 | 选做 |
@@ -216,7 +218,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 | 能力 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|
-| 模块骨架与模型接入 | `iboot-ai` 独立 Maven 模块 + 独立可部署单元;Spring AI 2.0.1;模型 base-url 配置化,百炼(DashScope)与 DeepSeek 官方端点可切换,测试用假模型实现 | 必须独立模块,不能是 `com.iboot.admin.ai` 这样的包(§3 唯一硬约束);embedding 供应商抽象同批落地 | 模块可独立启动并经 portal 访问;切换 base-url 不改代码 |
+| 模块骨架与模型接入 | `iboot-ai` 独立 Maven 模块 + 独立 JVM(8081);Spring AI 2.0.1;模型 base-url 配置化,百炼(DashScope)为主、DeepSeek 为备用端点,测试用假模型实现 | 必须独立模块,不能是 `com.iboot.admin.ai` 这样的包(§3 唯一硬约束);embedding 供应商抽象同批落地;容器化留到阶段 3.1 | 模块可独立启动并经 portal 访问;切换 base-url/模型不改代码 |
 | 智能对话 | Spring AI `ChatClient` + 会话记忆(Redis)+ **复用现有 SSE 基建**做流式 token | SSE 超时/心跳沿用现配置;流式通道与业务推送通道分离;LLM 调用是阻塞 I/O,与已启用的虚拟线程契合 | 多轮上下文正确;首 token < 3s;模型不可用时降级可见 |
 | LLM 可观测 | token 用量 / 延迟 / 失败率 → Micrometer → 既有 Prometheus + Grafana + Alertmanager | 不设配额与告警则云账单失控 | 用量看板有数据;超阈值触发告警 |
 
@@ -246,7 +248,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 |---|---|---|
 | 数字人 | Provider 接口 + 阿里云虚拟数字人单场景 demo(公告播报) | 需 TTS + 前端渲染 + 第三方 SDK,与 Java 主线弱相关;价值最低、成本最高。仅保留 Provider 接口占位,不实现 demo,不计入验收 |
 
-**交付物**:`iboot-ai` 独立 Maven 模块 + 独立可部署单元(进 docker-compose),前端 portal 新增 AI 工作台视图,复用 `utils/eventsource.ts`。视图随增量交付:对话与用量看板随 1.1,知识库管理随 1.2,Agent 配置随 1.3;1.4 不新增独立视图。
+**交付物**:`iboot-ai` 独立 Maven 模块 + 独立 JVM(8081,容器化留到阶段 3.1),前端 portal 新增 AI 工作台视图,流式采用 POST + `fetch`/`ReadableStream`(新增 `utils/aiStream.ts`,业务推送的 `eventsource.ts` 不变)。视图随增量交付:对话与用量看板随 1.1,知识库管理随 1.2,Agent 配置随 1.3;1.4 不新增独立视图。
 
 > 因为 AI 服务从 1.1 起就是独立可部署单元,阶段 2 只需把它注册进 Nacos 并加网关路由,**零迁移成本**。这是它能排在彻底拆分之前的唯一理由。
 
@@ -395,7 +397,8 @@ Boot 4.0.3 这一前提改变了可选生态:
 | Spring AI | **2.0.1(GA)** | Boot 4 必需;1.1.x 仅到 Boot 3.5 |
 | AgentScope Java | 2.0.1(GA) | JDK 17 起;JDK 25 待 Spike |
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
-| DeepSeek | `deepseek-chat` / `deepseek-reasoner`(OpenAI 兼容端点) | **无 embedding 模型** |
+| 对话模型 | **百炼 `qwen3.8-flash`**(备用 `qwen3.7-flash`) | 1.1 已实测;thinking 默认开启,须显式关闭 |
+| DeepSeek(备用) | `deepseek-flash`(OpenAI 兼容端点) | 仅用于故障切换,不默认启用 |
 | Embedding | 百炼 `text-embedding-v4` 或本地 BGE-M3 | 第二供应商必然存在 |
 | Elasticsearch 客户端 | **9.2.5(Boot 4.0.3 托管)** | 与 ES 9.2.3 同属 9.2.x |
 | MySQL / Redis / ES / MinIO | 8.0.45 / 7.0.14 / 9.2.3 / RELEASE.2025-09 | 现状 |
@@ -419,6 +422,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | R10 | 无链路追踪即拆分 | 2 | 追踪后端列为 2.1 硬前置,否则无法排障 |
 | R11 | 拆分导致前端接口路径漂移 | 2 | 网关统一 `/api/**`,路由表吸收变化 |
 | R12 | 存量文档与实现漂移(已发生:Boot 3.5.9 vs 4.0.3) | 全程 | 0.8 修正;新增强能力时文档与代码同 PR |
+| R13 | 对话与 Embedding 同属百炼,单一供应商故障 | 1 / 3 | base-url 与模型配置化;对话可切 DeepSeek,Embedding 暂无等价兜底 |
 
 ### 6.3 成本红线
 
@@ -467,7 +471,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 - **Spring AI Alibaba**:见 § 4.1——Boot 4 上只有预发布 M 版且 pin 在非 GA 的 Spring AI,不满足"稳定线"要求。
 - **LangChain4j**:框架本身成熟且 provider 无关,但与 Spring AI 在抽象层职责重叠;同时引入两套 AI 抽象会挤掉真正要学的东西(模型接入不是难点,权限与检索质量才是)。已在原 TODO#15 中与 SAA 并列,现由 Spring AI 承接。
 - **AgentScope(Python 版)**:会在 Java 微服务旁引入一个 Python 服务,与"练 Java 新技术栈"主线偏离;而 **AgentScope Java 2.0.1 已 GA**,同一生态、同一种语言、且其 Agent Card 可注册进 Nacos,与阶段 2 的微服务底座天然对齐。
-- **模型选 DeepSeek**:成本与推理能力性价比高;代价是无 embedding 能力,已在 § 4.1 转为"多供应商抽象"这一架构前提。
+- **模型全走百炼**:对话与 Embedding 同供应商,一个 Key、一本账单、一个兼容端点;`qwen3.8-flash` 比 DeepSeek Flash 便宜且支持多模态。代价是单一供应商故障半径重叠,已在 § 4.1 用配置化 base-url 与 DeepSeek 备用端点缓解。
 
 ### 7.3 阶段顺序:为什么 AI 在微服务之前
 

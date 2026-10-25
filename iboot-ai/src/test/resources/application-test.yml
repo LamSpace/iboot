@@ -1,0 +1,15 @@
+spring:
+  ai:
+    openai:
+      api-key: test-key
+      base-url: http://localhost:1/v1
+      chat:
+        api-key: test-key
+        base-url: http://localhost:1/v1
+      embedding:
+        api-key: test-key
+        base-url: http://localhost:1/v1
+
+jwt:
+  secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
+  session-timeout: 30

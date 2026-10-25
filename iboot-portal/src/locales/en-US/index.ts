@@ -52,6 +52,9 @@ import fileManage from "./file/file-manage.json";
 // Approval module
 import approval from "./approval.json";
 
+// AI module
+import ai from "./ai.json";
+
 export default {
   common,
   login,
@@ -104,4 +107,5 @@ export default {
     fileManage: fileManage,
   },
   approval,
+  ai,
 };

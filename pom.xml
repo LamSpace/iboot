@@ -36,7 +36,7 @@
 
     <modules>
         <module>iboot-admin</module>
-        <!-- 阶段 1 在此加入 iboot-ai -->
+        <module>iboot-ai</module>
     </modules>
 
     <properties>
@@ -89,6 +89,9 @@
         <!-- Testcontainers -->
         <testcontainers.version>2.0.5</testcontainers.version>
 
+        <!-- Spring AI（阶段 1） -->
+        <spring-ai.version>2.0.1</spring-ai.version>
+
         <!-- Workflow Engine -->
         <flowable.version>8.0.0</flowable.version>
 
@@ -123,6 +126,13 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
                 <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

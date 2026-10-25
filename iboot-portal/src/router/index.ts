@@ -229,6 +229,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import("../views/monitor/ThanosQueryView.vue"),
         meta: { requiresAuth: true },
       },
+      {
+        path: "chat",
+        name: "AiChat",
+        component: () => import("../views/ai/ChatView.vue"),
+        meta: { requiresAuth: true },
+      },
     ],
   },
 ];

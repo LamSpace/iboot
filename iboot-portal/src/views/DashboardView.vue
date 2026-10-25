@@ -775,7 +775,7 @@ onUnmounted(() => {
   height: 28px;
   border-radius: var(--ib-radius-full);
   background: var(--ib-color-brand-blue-deep);
-  color: #fff;
+  color: var(--ib-color-on-brand);
   font-size: 12px;
   font-weight: var(--ib-weight-semibold);
 }
