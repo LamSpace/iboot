@@ -56,6 +56,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 - **Druid**: 阿里巴巴数据库连接池及监控工具
 - **MapStruct 1.6.x**: 对象映射框架（[查看使用指南](doc/14-MapStruct 集成.md)）
 - **SSE 推送**: 实时消息推送（[查看使用指南](doc/15-SSE 推送集成.md)）
+- **Spring AI 2.0.1 + 百炼 Qwen**: AI 对话与 Embedding（[查看 AI 工作台指南](doc/22-AI 工作台操作指南.md)）
 - **Docker**: 容器化部署
 
 ### 前端技术栈
@@ -82,6 +83,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 | 📊 **3D可视化** | 酷炫的3D背景效果 |
 | 🗂️ **数据库版本管理** | 使用Flyway进行数据库迁移 |
 | 📈 **数据库监控** | 使用Druid监控数据库性能 |
+| 🤖 **AI 工作台** | 多轮流式对话、会话隔离、token 配额与用量观测 |
 
 </div>
 
@@ -160,11 +162,17 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 - 系统使用分析
 - 仪表板展示
 
+### 🤖 AI 工作台
+- 独立 `iboot-ai` 服务（8081），与主应用共享登录态
+- 多轮流式对话，默认关闭深度思考
+- Redis 会话记忆、用户会话隔离、每日 token 配额
+- 详见 [22-AI 工作台操作指南](./doc/22-AI 工作台操作指南.md)
+
 ## 📁 项目结构
 
 ```
 iboot/
-├── pom.xml                # 父 POM（聚合 iboot-admin）
+├── pom.xml                # 父 POM（聚合 iboot-admin / iboot-ai）
 ├── scripts/               # 脚本目录
 │   ├── build.sh          # 构建脚本
 │   └── install-dependencies.sh  # 依赖安装脚本
@@ -182,6 +190,15 @@ iboot/
 │   │   │   │       ├── infrastructure/ # 基础设施层
 │   │   │   │       ├── interfaces/     # 接口层
 │   │   │   │       └── common/         # 公共组件
+│   │   │   └── resources/
+│   └── pom.xml
+├── iboot-ai/             # AI 工作台服务（8081）
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/iboot/ai/
+│   │   │   │   ├── application/    # 对话、会话、配额
+│   │   │   │   ├── infrastructure/ # 模型、Redis、鉴权、指标
+│   │   │   │   └── interfaces/     # SSE 控制器与 DTO
 │   │   │   └── resources/
 │   └── pom.xml
 ├── iboot-portal/         # 前端项目
@@ -245,6 +262,19 @@ or
 ```bash
 cnpm run dev --host
 ```
+
+### AI 服务启动（可选）
+
+1. 在根目录 `.env` 中配置 `DASHSCOPE_CHAT_API_KEY`、`DASHSCOPE_EMBEDDING_API_KEY` 与 `DASHSCOPE_BASE_URL`
+2. 启动 AI 服务
+```bash
+set -a; source .env; set +a
+mvn -s /home/lam/repo/settings.xml -pl iboot-ai spring-boot:run
+```
+3. 验证 `http://localhost:8081/actuator/health`
+4. 登录前端后进入「AI 工作台 → 智能对话」
+
+详细配置与排障见 [22-AI 工作台操作指南](./doc/22-AI 工作台操作指南.md)。
 
 ## 🛠️ 构建脚本
 
@@ -315,7 +345,7 @@ docker run -d -p 80:80 --name iboot-portal iboot-portal
 
 ```
 iboot/
-├── pom.xml                # 父 POM（聚合 iboot-admin）
+├── pom.xml                # 父 POM（聚合 iboot-admin / iboot-ai）
 ├── scripts/               # 脚本目录
 │   ├── build.sh          # 构建脚本
 │   └── install-dependencies.sh  # 依赖安装脚本

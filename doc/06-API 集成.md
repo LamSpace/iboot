@@ -352,6 +352,8 @@ export function deleteUser(id) {
 
 ## 接口列表
 
+> AI 对话接口由独立 `iboot-ai` 服务（8081）提供，不在 `iboot-admin` 的接口列表中：`POST /api/ai/chat`、`POST /api/ai/chat/stream`、`GET /api/ai/conversations`、`GET /api/ai/conversations/{id}/messages`、`GET /api/ai/usage`。详见 [22-AI 工作台操作指南](./22-AI 工作台操作指南.md)。
+
 ### 6.11 认证接口
 
 | 接口 | 方法 | 描述 |
