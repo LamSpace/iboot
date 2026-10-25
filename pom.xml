@@ -57,7 +57,7 @@
 
         <!-- Apache Commons -->
         <commons-lang3.version>3.14.0</commons-lang3.version>
-        <commons-io.version>2.15.1</commons-io.version>
+        <commons-io.version>2.20.0</commons-io.version>
         <commons-collections4.version>4.4</commons-collections4.version>
         <commons-codec.version>1.16.1</commons-codec.version>
         <commons-compress.version>1.27.1</commons-compress.version>
@@ -91,6 +91,10 @@
 
         <!-- Spring AI（阶段 1） -->
         <spring-ai.version>2.0.1</spring-ai.version>
+
+        <!-- Document parsing -->
+        <pdfbox.version>3.0.5</pdfbox.version>
+        <poi.version>5.4.1</poi.version>
 
         <!-- Workflow Engine -->
         <flowable.version>8.0.0</flowable.version>
@@ -244,6 +248,18 @@
                 <groupId>io.minio</groupId>
                 <artifactId>minio</artifactId>
                 <version>${minio.version}</version>
+            </dependency>
+
+            <!-- Document parsing -->
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${pdfbox.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
             </dependency>
 
             <dependency>

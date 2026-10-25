@@ -30,7 +30,22 @@
     </aside>
 
     <section class="ai-chat__main">
-      <header class="ai-chat__header">{{ t("ai.chat.title") }}</header>
+      <header class="ai-chat__header">
+        <span>{{ t("ai.chat.title") }}</span>
+        <div v-if="canUseKnowledge" class="ai-chat__toolbar">
+          <el-switch v-model="ragMode" :active-text="t('ai.chat.ragMode')" :disabled="streaming" />
+          <el-select
+            v-if="ragMode"
+            v-model="knowledgeBaseId"
+            clearable
+            :disabled="streaming"
+            :placeholder="t('ai.chat.allKnowledgeBases')"
+            class="ai-chat__kb-select"
+          >
+            <el-option v-for="kb in knowledgeBases" :key="kb.id" :label="kb.name" :value="kb.id" />
+          </el-select>
+        </div>
+      </header>
 
       <div ref="messagesEl" class="ai-chat__messages">
         <p v-if="messages.length === 0" class="ai-chat__hint">
@@ -43,6 +58,26 @@
           :class="`is-${message.role.toLowerCase()}`"
         >
           <div class="ai-chat__bubble">{{ message.text }}</div>
+          <div
+            v-if="index === messages.length - 1 && message.role === 'ASSISTANT' && citations.length > 0"
+            class="ai-chat__citations"
+          >
+            <el-tag
+              v-for="item in citations"
+              :key="item.index"
+              class="ai-chat__citation"
+              @click="openCitation(item)"
+            >
+              [{{ item.index }}] {{ item.docTitle }}
+            </el-tag>
+          </div>
+          <el-tag
+            v-if="index === messages.length - 1 && message.role === 'ASSISTANT' && degraded"
+            type="warning"
+            size="small"
+          >
+            {{ t("ai.chat.degraded") }}
+          </el-tag>
         </div>
       </div>
 
@@ -68,6 +103,22 @@
         </el-button>
       </footer>
     </section>
+
+    <el-drawer
+      v-model="citationDrawer"
+      :title="selectedCitation?.docTitle || t('ai.chat.citation')"
+      size="420px"
+    >
+      <p class="ai-chat__citation-meta">
+        <span v-if="selectedCitation?.pageNo">
+          {{ t("ai.chat.page", { page: selectedCitation.pageNo }) }}
+        </span>
+        <el-button link type="primary" @click="downloadCitation">
+          {{ t("ai.chat.download") }}
+        </el-button>
+      </p>
+      <p class="ai-chat__citation-snippet">{{ selectedCitation?.snippet }}</p>
+    </el-drawer>
   </div>
 </template>
 
@@ -76,6 +127,7 @@ import { computed, nextTick, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import { useUserStore } from "@/stores/user";
+import { usePermissionStore } from "@/stores/permission";
 import {
   getConversations,
   getMessages,
@@ -84,10 +136,12 @@ import {
   type ConversationSummary,
   type UsageSnapshot,
 } from "@/api/ai";
-import { streamChat, type AiStreamEvent } from "@/utils/aiStream";
+import { getDownloadUrl, listKnowledgeBases, type KnowledgeBase } from "@/api/knowledge";
+import { streamChat, type AiCitation, type AiStreamEvent } from "@/utils/aiStream";
 
 const { t } = useI18n();
 const userStore = useUserStore();
+const permissionStore = usePermissionStore();
 
 const conversations = ref<ConversationSummary[]>([]);
 const messages = ref<AiMessage[]>([]);
@@ -98,6 +152,15 @@ const usage = ref<UsageSnapshot | null>(null);
 const messagesEl = ref<HTMLElement>();
 let controller: AbortController | null = null;
 
+const knowledgeBases = ref<KnowledgeBase[]>([]);
+const ragMode = ref(false);
+const knowledgeBaseId = ref<number | undefined>();
+const citations = ref<AiCitation[]>([]);
+const degraded = ref(false);
+const citationDrawer = ref(false);
+const selectedCitation = ref<AiCitation | null>(null);
+const canUseKnowledge = computed(() => permissionStore.hasPermission("ai:kb:query"));
+
 const usedPercent = computed(() => {
   if (!usage.value || usage.value.limit <= 0) {
     return 0;
@@ -107,7 +170,18 @@ const usedPercent = computed(() => {
 
 onMounted(async () => {
   await Promise.all([loadConversations(), loadUsage()]);
+  if (canUseKnowledge.value) {
+    await loadKnowledgeBases();
+  }
 });
+
+async function loadKnowledgeBases(): Promise<void> {
+  try {
+    knowledgeBases.value = await listKnowledgeBases();
+  } catch {
+    // 未开通知识库或服务不可用时不影响普通对话
+  }
+}
 
 async function loadConversations(): Promise<void> {
   try {
@@ -130,6 +204,8 @@ async function openConversation(id: string): Promise<void> {
     return;
   }
   conversationId.value = id;
+  citations.value = [];
+  degraded.value = false;
   try {
     messages.value = await getMessages(id);
     scrollToBottom();
@@ -145,6 +221,8 @@ function startNew(): void {
   conversationId.value = "";
   messages.value = [];
   input.value = "";
+  citations.value = [];
+  degraded.value = false;
 }
 
 async function send(): Promise<void> {
@@ -153,6 +231,8 @@ async function send(): Promise<void> {
     return;
   }
   input.value = "";
+  citations.value = [];
+  degraded.value = false;
   messages.value.push({ role: "USER", text: content });
   messages.value.push({ role: "ASSISTANT", text: "" });
   streaming.value = true;
@@ -163,6 +243,8 @@ async function send(): Promise<void> {
     await streamChat({
       content,
       conversationId: conversationId.value || undefined,
+      knowledgeBaseId: ragMode.value ? knowledgeBaseId.value : undefined,
+      endpoint: ragMode.value ? "/iboot/ai/rag/chat/stream" : undefined,
       token: userStore.token,
       signal: controller.signal,
       onEvent: handleEvent,
@@ -182,15 +264,36 @@ async function send(): Promise<void> {
 function handleEvent(event: AiStreamEvent): void {
   if (event.type === "meta") {
     conversationId.value = event.conversationId;
+  } else if (event.type === "citations") {
+    citations.value = event.items;
   } else if (event.type === "token") {
     const last = messages.value[messages.value.length - 1];
     if (last && last.role === "ASSISTANT") {
       last.text += event.delta;
       scrollToBottom();
     }
+  } else if (event.type === "done") {
+    degraded.value = Boolean(event.degraded);
   } else if (event.type === "error") {
     ElMessage.error(event.message);
     dropEmptyAssistantMessage();
+  }
+}
+
+function openCitation(citation: AiCitation): void {
+  selectedCitation.value = citation;
+  citationDrawer.value = true;
+}
+
+async function downloadCitation(): Promise<void> {
+  if (!selectedCitation.value) {
+    return;
+  }
+  try {
+    const url = await getDownloadUrl(selectedCitation.value.docId);
+    window.open(url, "_blank");
+  } catch (error: any) {
+    ElMessage.error(error?.message || t("ai.chat.downloadError"));
   }
 }
 
@@ -293,10 +396,25 @@ function scrollToBottom(): void {
 }
 
 .ai-chat__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ib-space-md);
   padding: var(--ib-space-sm) var(--ib-space-lg);
   border-bottom: 1px solid var(--ib-color-hairline);
   color: var(--ib-color-ink-strong);
   font-weight: 600;
+}
+
+.ai-chat__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--ib-space-sm);
+  font-weight: 400;
+}
+
+.ai-chat__kb-select {
+  width: 220px;
 }
 
 .ai-chat__messages {
@@ -313,11 +431,40 @@ function scrollToBottom(): void {
 
 .ai-chat__message {
   display: flex;
+  align-items: flex-start;
+  flex-direction: column;
   margin-bottom: var(--ib-space-md);
 }
 
 .ai-chat__message.is-user {
-  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.ai-chat__citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ib-space-xxs);
+  margin-top: var(--ib-space-xs);
+}
+
+.ai-chat__citation {
+  cursor: pointer;
+}
+
+.ai-chat__citation-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ib-color-muted);
+  font-size: 13px;
+}
+
+.ai-chat__citation-snippet {
+  color: var(--ib-color-ink);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .ai-chat__bubble {

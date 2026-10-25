@@ -23,11 +23,13 @@ import com.iboot.admin.common.result.Result;
 import com.iboot.admin.interfaces.dto.request.LoginRequest;
 import com.iboot.admin.interfaces.dto.request.RegisterRequest;
 import com.iboot.admin.interfaces.dto.response.LoginResponse;
+import com.iboot.admin.interfaces.dto.response.UserScopeResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -75,6 +77,20 @@ public class AuthController {
         LoginResponse response = authApplicationService.login(request.getUsername(), request.getPassword(), loginIp,
                 userAgent);
         return Result.success("登录成功", response);
+    }
+
+    /**
+     * 查询当前登录用户的数据权限范围。
+     *
+     * <p>只读接口，不接受用户标识参数，始终返回当前会话对应的用户范围，供 AI 服务做检索前
+     * 权限过滤。
+     *
+     * @return 当前用户的数据权限范围
+     */
+    @Operation(summary = "查询当前用户数据权限范围")
+    @GetMapping(version = "1", value = "/scope")
+    public Result<UserScopeResponse> scope() {
+        return Result.success(authApplicationService.getCurrentUserScope());
     }
 
     /**

@@ -11,21 +11,40 @@ export interface AiUsage {
   totalTokens: number;
 }
 
+export interface AiCitation {
+  index: number;
+  kbId: number;
+  docId: number;
+  docTitle: string;
+  pageNo?: number;
+  chunkIndex?: number;
+  snippet: string;
+}
+
 export type AiStreamEvent =
   | { type: "meta"; conversationId: string }
+  | { type: "citations"; items: AiCitation[] }
   | { type: "token"; delta: string }
-  | { type: "done"; conversationId: string; model: string; usage: AiUsage }
+  | {
+      type: "done";
+      conversationId: string;
+      model: string;
+      usage: AiUsage;
+      degraded?: boolean;
+    }
   | { type: "error"; code: string; message: string; retryable: boolean };
 
 export interface AiStreamOptions {
   content: string;
   conversationId?: string;
+  knowledgeBaseId?: number;
+  endpoint?: string;
   token: string;
   signal?: AbortSignal;
   onEvent: (event: AiStreamEvent) => void;
 }
 
-const ENDPOINT = "/iboot/ai/chat/stream";
+const DEFAULT_ENDPOINT = "/iboot/ai/chat/stream";
 
 /**
  * 发起一次流式对话。
@@ -34,7 +53,7 @@ const ENDPOINT = "/iboot/ai/chat/stream";
  * @throws Error 非 2xx 响应或浏览器不支持流式读取时抛出
  */
 export async function streamChat(options: AiStreamOptions): Promise<void> {
-  const response = await fetch(ENDPOINT, {
+  const response = await fetch(options.endpoint || DEFAULT_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -43,6 +62,7 @@ export async function streamChat(options: AiStreamOptions): Promise<void> {
     body: JSON.stringify({
       content: options.content,
       conversationId: options.conversationId,
+      knowledgeBaseId: options.knowledgeBaseId,
     }),
     signal: options.signal,
   });
@@ -59,9 +79,11 @@ export async function streamChat(options: AiStreamOptions): Promise<void> {
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
 
-  while (true) {
+  let finished = false;
+  while (!finished) {
     const { done, value } = await reader.read();
     if (done) {
+      finished = true;
       break;
     }
     buffer += decoder.decode(value, { stream: true });
@@ -103,6 +125,12 @@ function parseBlock(block: string, onEvent: (event: AiStreamEvent) => void): voi
     case "meta":
       onEvent({ type: "meta", conversationId: data.conversationId });
       break;
+    case "citations":
+      onEvent({
+        type: "citations",
+        items: Array.isArray(data) ? data : (data.items ?? []),
+      });
+      break;
     case "token":
       onEvent({ type: "token", delta: data.delta ?? "" });
       break;
@@ -112,6 +140,7 @@ function parseBlock(block: string, onEvent: (event: AiStreamEvent) => void): voi
         conversationId: data.conversationId,
         model: data.model,
         usage: data.usage ?? { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        degraded: Boolean(data.degraded),
       });
       break;
     case "error":

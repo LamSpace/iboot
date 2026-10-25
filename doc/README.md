@@ -40,7 +40,7 @@
 | [11-可观测性设计](./11-可观测性设计.md) | 监控架构、指标监控、日志系统、告警系统、Grafana 仪表板、Thanos 长期存储 |
 | [20-多渠道通知操作指南](./20-多渠道通知操作指南.md) | 站内/邮件/钉钉/短信渠道配置、站内消息与通知投递使用、失败重试与排障 |
 | [21-数据备份与恢复操作指南](./21-数据备份与恢复操作指南.md) | 数据库逻辑备份启用、加密产物存储、定时/手动触发、恢复演练与排障 |
-| [22-AI 工作台操作指南](./22-AI 工作台操作指南.md) | AI 服务启动、百炼配置、流式接口、配额与告警、故障排查 |
+| [22-AI 工作台操作指南](./22-AI 工作台操作指南.md) | AI 服务启动、百炼配置、流式接口、知识库 RAG、权限一致性、OCR、配额与告警、故障排查 |
 
 ### 特色功能
 
@@ -111,11 +111,12 @@ iboot/
 │   ├── 17-国际化设计.md       # 国际化设计
 │   ├── 18-国际化开发指南.md   # 国际化开发指南
 │   ├── 20-多渠道通知操作指南.md # 多渠道通知操作指南
-│   └── 21-数据备份与恢复操作指南.md # 数据备份与恢复操作指南
+│   ├── 21-数据备份与恢复操作指南.md # 数据备份与恢复操作指南
+│   └── 22-AI 工作台操作指南.md # AI 对话、知识库 RAG 与排障
 ├── iboot-admin/             # 后端项目
+├── iboot-ai/                # AI 服务（8081，对话 + 知识库 RAG）
 ├── iboot-portal/            # 前端项目
 ├── docker/                  # Docker 配置
-├── database/                # 数据库脚本
 └── scripts/                 # 构建脚本
 ```
 
@@ -129,7 +130,8 @@ iboot/
 - **缓存**: Redis 7.x + Caffeine 3.1.8 (二级缓存)
 - **数据库**: MySQL 8.x
 - **连接池**: Druid 1.2.28
-- **AI**: Spring AI 2.0.1 + 百炼 qwen3.8-flash（独立 `iboot-ai` 服务）
+- **AI**: Spring AI 2.0.1 + 百炼 qwen3.8-flash + text-embedding-v4；知识库 RAG 使用 ES 9 `dense_vector` / BM25 / 应用层 RRF（独立 `iboot-ai` 服务）
+- **文档解析**: PDFBox 3.0.5 + Apache POI 5.4.1；OCR 可选 `qwen3.5-ocr`
 - **监控**: Micrometer + Prometheus + Grafana
 - **日志**: Logback + ELK Stack
 - **并发**: JDK 25 虚拟线程 (JEP 444)
@@ -167,6 +169,7 @@ iboot/
 | 监控运维 | 在线用户、服务、Redis、SQL、性能监控 |
 | 定时任务 | 任务调度、执行监控 |
 | 统计分析 | 数据报表、使用分析、仪表板 |
+| AI 工作台 | 智能对话、知识库 RAG、引用溯源、权限一致性、OCR 可选 |
 
 ## 开发环境搭建
 
@@ -174,8 +177,10 @@ iboot/
 
 - JDK 25 (最低 21)
 - Node.js 20 LTS
-- MySQL 8.x
+- MySQL 8.x（AI 知识库使用独立 schema `iboot_ai`）
 - Redis 7.x
+- Elasticsearch 9.x（公告/消息检索与知识库 RAG）
+- MinIO（知识库原文件）
 - Maven 3.9+
 
 ### 快速启动
@@ -228,6 +233,8 @@ docker-compose up -d
 | Vue | 3.x |
 | MySQL | 8.x |
 | Redis | 7.x |
+| Elasticsearch | 9.x |
+| MinIO | RELEASE.2025-09 |
 
 ## 贡献指南
 

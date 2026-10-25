@@ -16,13 +16,9 @@
 
 package com.iboot.admin.infrastructure.interceptor;
 
+import com.iboot.admin.application.service.UserDataScopeResolver;
 import com.iboot.admin.common.annotation.DataScope;
-import com.iboot.admin.common.constant.Constants;
-import com.iboot.admin.common.enums.DataScopeEnum;
-import com.iboot.admin.infrastructure.persistence.mapper.DeptMapper;
-import com.iboot.admin.infrastructure.persistence.mapper.RoleMapper;
-import com.iboot.admin.infrastructure.persistence.mapper.UserMapper;
-import com.iboot.admin.infrastructure.persistence.po.RolePO;
+import com.iboot.admin.domain.system.model.UserDataScope;
 import com.iboot.admin.infrastructure.security.SecurityUtils;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
@@ -38,15 +34,10 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 数据权限拦截器。
@@ -68,43 +59,20 @@ public class DataScopeInterceptor implements Interceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DataScopeInterceptor.class);
 
-    private final ObjectProvider<RoleMapper> roleMapperProvider;
+    private final UserDataScopeResolver userDataScopeResolver;
 
-    private final ObjectProvider<DeptMapper> deptMapperProvider;
-
-    private final ObjectProvider<UserMapper> userMapperProvider;
-
-    /**
-     * 用户数据权限缓存（避免频繁查询数据库）
-     */
-    private final Map<String, UserDataScope> userScopeCache = new ConcurrentHashMap<>();
+    private final DataScopeSqlBuilder dataScopeSqlBuilder;
 
     /**
      * 创建数据权限拦截器。
      *
-     * <p>使用 {@link ObjectProvider} 延迟获取 Mapper，避免与 MyBatis 初始化产生循环依赖。
-     *
-     * @param roleMapperProvider 角色 Mapper 提供者
-     * @param deptMapperProvider 部门 Mapper 提供者
-     * @param userMapperProvider 用户 Mapper 提供者
+     * @param userDataScopeResolver 用户数据权限解析器
+     * @param dataScopeSqlBuilder   SQL 片段构造器
      */
-    public DataScopeInterceptor(ObjectProvider<RoleMapper> roleMapperProvider,
-                                ObjectProvider<DeptMapper> deptMapperProvider, ObjectProvider<UserMapper> userMapperProvider) {
-        this.roleMapperProvider = roleMapperProvider;
-        this.deptMapperProvider = deptMapperProvider;
-        this.userMapperProvider = userMapperProvider;
-    }
-
-    private RoleMapper getRoleMapper() {
-        return roleMapperProvider.getObject();
-    }
-
-    private DeptMapper getDeptMapper() {
-        return deptMapperProvider.getObject();
-    }
-
-    private UserMapper getUserMapper() {
-        return userMapperProvider.getObject();
+    public DataScopeInterceptor(UserDataScopeResolver userDataScopeResolver,
+                                DataScopeSqlBuilder dataScopeSqlBuilder) {
+        this.userDataScopeResolver = userDataScopeResolver;
+        this.dataScopeSqlBuilder = dataScopeSqlBuilder;
     }
 
     /**
@@ -180,29 +148,28 @@ public class DataScopeInterceptor implements Interceptor {
         if (dataScope == null) {
             return invocation.proceed();
         }
-        // 获取当前用户 ID
         Long currentUserId;
+        String currentUsername;
         try {
             currentUserId = SecurityUtils.getCurrentUserId();
+            currentUsername = SecurityUtils.getCurrentUsername();
         } catch (Exception e) {
             // 用户未登录，不应用数据权限（可能是系统查询或定时任务）
             log.debug("无法获取当前用户，跳过数据权限处理：{}", e.getMessage());
             return invocation.proceed();
         }
-        // 超级管理员拥有全部数据权限
-        if (isSuperAdmin(currentUserId)) {
-            return invocation.proceed();
-        }
-        // 获取用户的数据权限范围
-        UserDataScope userDataScope = getUserDataScope(currentUserId);
-        if (userDataScope == null || DataScopeEnum.ALL.getCode().equals(userDataScope.getDataScope())) {
-            // 全部数据权限，不需要过滤
+        UserDataScope userDataScope = userDataScopeResolver.resolve(currentUserId, currentUsername);
+        if (userDataScope == null || userDataScope.superAdmin() || userDataScope.dataScope() == null
+                || userDataScope.isAll()) {
+            // 超级管理员、无角色或全部数据权限，不需要过滤
             return invocation.proceed();
         }
         // 从 SQL 中提取表名
         String tableName = extractTableName(ms);
+        boolean deptTable = "sys_dept".equals(tableName);
         // 生成数据权限 SQL 片段
-        String dataScopeSql = generateDataScopeSql(userDataScope, dataScope, currentUserId, tableName);
+        String dataScopeSql = dataScopeSqlBuilder.build(userDataScope, dataScope.userAlias(), deptTable,
+                currentUserId);
         if (dataScopeSql == null || dataScopeSql.isEmpty()) {
             return invocation.proceed();
         }
@@ -302,192 +269,12 @@ public class DataScopeInterceptor implements Interceptor {
     }
 
     /**
-     * 判断是否为超级管理员
-     */
-    private boolean isSuperAdmin(Long userId) {
-        try {
-            String username = SecurityUtils.getCurrentUsername();
-            return Constants.ADMIN_USERNAME.equals(username);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /**
-     * 获取用户的数据权限范围
-     */
-    private UserDataScope getUserDataScope(Long userId) {
-        String cacheKey = "user_" + userId;
-        // 先从缓存获取
-        UserDataScope cached = userScopeCache.get(cacheKey);
-        if (cached != null && !cached.isExpired()) {
-            return cached;
-        }
-        // 查询用户角色
-        List<RolePO> roles = getRoleMapper().selectByUserId(userId);
-        if (roles == null || roles.isEmpty()) {
-            return null;
-        }
-        // 找到优先级最高的数据权限（数字越小优先级越高）
-        Integer dataScope = null;
-        List<Long> customDeptIds = new ArrayList<>();
-        for (RolePO role : roles) {
-            Integer roleDataScope = role.getDataScope();
-            if (roleDataScope == null) {
-                continue;
-            }
-            // 全部数据权限优先级最高
-            if (DataScopeEnum.ALL.getCode().equals(roleDataScope)) {
-                dataScope = DataScopeEnum.ALL.getCode();
-                break;
-            }
-            // 自定义数据权限需要收集部门 ID
-            if (DataScopeEnum.CUSTOM.getCode().equals(roleDataScope)) {
-                List<Long> deptIds = getRoleMapper().selectDeptIdsByRoleId(role.getId());
-                if (deptIds != null && !deptIds.isEmpty()) {
-                    customDeptIds.addAll(deptIds);
-                }
-                if (dataScope == null) {
-                    dataScope = roleDataScope;
-                }
-            } else {
-                // 其他权限类型，取优先级最高的
-                if (dataScope == null || roleDataScope < dataScope) {
-                    dataScope = roleDataScope;
-                }
-            }
-        }
-        UserDataScope userDataScope = new UserDataScope(dataScope, customDeptIds);
-        userScopeCache.put(cacheKey, userDataScope);
-        return userDataScope;
-    }
-
-    /**
-     * 生成数据权限 SQL 片段
-     */
-    private String generateDataScopeSql(UserDataScope userDataScope, DataScope annotation, Long currentUserId,
-                                        String tableName) {
-        Integer dataScope = userDataScope.getDataScope();
-        if (dataScope == null) {
-            return null;
-        }
-        String userAlias = annotation.userAlias();
-        // 部门表特殊处理：使用 id 而不是 dept_id
-        boolean isDeptTable = "sys_dept".equals(tableName);
-        String deptIdColumn = isDeptTable ? "id" : "dept_id";
-        switch (dataScope) {
-            case 1:
-                // 全部数据权限
-                return null; // 不需要过滤
-            case 2:
-                // 自定义数据权限
-                List<Long> deptIds = userDataScope.getCustomDeptIds();
-                if (deptIds == null || deptIds.isEmpty()) {
-                    return "1=0"; // 无权限
-                }
-                return userAlias + "." + deptIdColumn + " IN (" + buildIdList(deptIds) + ")";
-            case 3:
-                // 本部门数据权限
-                if (isDeptTable) {
-                    // 部门表：直接等于用户所在部门 ID
-                    Long userDeptId = getUserDeptId(currentUserId);
-                    if (userDeptId == null) {
-                        return "1=0";
-                    }
-                    return userAlias + "." + deptIdColumn + " = " + userDeptId;
-                } else {
-                    return userAlias + ".dept_id = (SELECT dept_id FROM sys_user WHERE id = " + currentUserId + ")";
-                }
-            case 4:
-                // 本部门及以下数据权限
-                Long userDeptId = getUserDeptId(currentUserId);
-                if (userDeptId == null) {
-                    return "1=0";
-                }
-                List<Long> childrenDeptIds = getChildrenDeptIds(userDeptId);
-                childrenDeptIds.add(userDeptId);
-                return userAlias + "." + deptIdColumn + " IN (" + buildIdList(childrenDeptIds) + ")";
-            case 5:
-                // 仅本人数据权限
-                return userAlias + ".id = " + currentUserId;
-            default:
-                return null;
-        }
-    }
-
-    /**
-     * 构建 ID 列表字符串
-     */
-    private String buildIdList(List<Long> ids) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < ids.size(); i++) {
-            if (i > 0) {
-                sb.append(",");
-            }
-            sb.append(ids.get(i));
-        }
-        return sb.toString();
-    }
-
-    /**
-     * 获取用户所在部门 ID
-     */
-    private Long getUserDeptId(Long userId) {
-        com.iboot.admin.infrastructure.persistence.po.UserPO user = getUserMapper().selectById(userId);
-        if (user != null) {
-            return user.getDeptId();
-        }
-        return null;
-    }
-
-    /**
-     * 获取部门的所有子部门 ID
-     */
-    private List<Long> getChildrenDeptIds(Long deptId) {
-        return getDeptMapper().selectChildrenIds(deptId);
-    }
-
-    /**
-     * 清除用户权限缓存（当角色或部门数据变更时调用）
+     * 清除用户权限缓存（当角色或部门数据变更时调用）。
+     *
+     * @param userId 用户 ID；为 {@code null} 时清空全部
      */
     public void clearUserScopeCache(Long userId) {
-        if (userId != null) {
-            userScopeCache.remove("user_" + userId);
-        } else {
-            userScopeCache.clear();
-        }
-    }
-
-    /**
-     * 用户数据权限封装类
-     */
-    private static class UserDataScope {
-
-        private final Integer dataScope;
-
-        private final List<Long> customDeptIds;
-
-        private final long expireTime;
-
-        public UserDataScope(Integer dataScope, List<Long> customDeptIds) {
-            this.dataScope = dataScope;
-            this.customDeptIds = customDeptIds != null ? new ArrayList<>(customDeptIds) : new ArrayList<>();
-            // 5 分钟过期
-            this.expireTime = System.currentTimeMillis() + 5 * 60 * 1000;
-        }
-
-        public Integer getDataScope() {
-            return dataScope;
-        }
-
-        public List<Long> getCustomDeptIds() {
-            return customDeptIds;
-        }
-
-        public boolean isExpired() {
-            return System.currentTimeMillis() > expireTime;
-        }
-
+        userDataScopeResolver.clearUserScopeCache(userId);
     }
 
 }

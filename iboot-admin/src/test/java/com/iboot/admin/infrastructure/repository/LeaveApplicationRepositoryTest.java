@@ -19,8 +19,10 @@ package com.iboot.admin.infrastructure.repository;
 import com.iboot.admin.domain.workflow.model.LeaveApplication;
 import com.iboot.admin.domain.workflow.model.LeaveStatus;
 import com.iboot.admin.domain.workflow.repository.LeaveApplicationRepository;
+import com.iboot.admin.application.service.UserDataScopeResolver;
 import com.iboot.admin.infrastructure.config.MyBatisConfig;
 import com.iboot.admin.infrastructure.interceptor.DataScopeInterceptor;
+import com.iboot.admin.infrastructure.interceptor.DataScopeSqlBuilder;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -137,7 +139,8 @@ class LeaveApplicationRepositoryTest {
      * 仓储测试上下文：数据源、Flyway 与 MyBatis。
      */
     @Configuration
-    @Import({MyBatisConfig.class, DataScopeInterceptor.class, LeaveApplicationRepositoryImpl.class})
+    @Import({MyBatisConfig.class, DataScopeInterceptor.class, DataScopeSqlBuilder.class,
+            UserDataScopeResolver.class, LeaveApplicationRepositoryImpl.class})
     static class RepositoryTestConfig {
 
         /**

@@ -41,6 +41,11 @@ public class AiProperties {
     private Chat chat = new Chat();
 
     /**
+     * 权限范围配置。
+     */
+    private Permission permission = new Permission();
+
+    /**
      * 配额配置。
      */
     public static class Quota {
@@ -144,5 +149,45 @@ public class AiProperties {
 
     public void setChat(Chat chat) {
         this.chat = chat;
+    }
+
+    public Permission getPermission() {
+        return permission;
+    }
+
+    public void setPermission(Permission permission) {
+        this.permission = permission;
+    }
+
+    /**
+     * 权限范围配置。
+     */
+    public static class Permission {
+
+        /**
+         * admin 只读 scope 接口地址。
+         */
+        private String scopeUrl = "http://localhost:8080/api/auth/scope";
+
+        /**
+         * 权限范围本地缓存秒数。
+         */
+        private long cacheSeconds = 60L;
+
+        public String getScopeUrl() {
+            return scopeUrl;
+        }
+
+        public void setScopeUrl(String scopeUrl) {
+            this.scopeUrl = scopeUrl;
+        }
+
+        public long getCacheSeconds() {
+            return cacheSeconds;
+        }
+
+        public void setCacheSeconds(long cacheSeconds) {
+            this.cacheSeconds = cacheSeconds;
+        }
     }
 }

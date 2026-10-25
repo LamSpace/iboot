@@ -31,7 +31,7 @@
 
 ### 1.1 架构形态
 
-单体应用,Maven 多模块(根 `pom.xml` 聚合 `iboot-admin`),内部遵循 DDD 四层:
+单体应用,Maven 多模块(根 `pom.xml` 聚合 `iboot-admin` + 独立 AI 服务 `iboot-ai`),内部遵循 DDD 四层:
 
 ```
 interfaces  → controller / dto / advisor / config
@@ -58,13 +58,14 @@ infrastructure → config / persistence / repository / security / filter / inter
 | 监控运维 | 在线用户、Server 资源(Oshi)、Redis 监控、MinIO 监控、SQL 监控(Druid) | `OnlineUserController`、`ServerMonitorController`、`RedisMonitorController`、`MinioMonitorController` |
 | 统计分析 | 仪表板、趋势统计、Excel 导出(FastExcel) | `DashboardController`、`StatisticsController` |
 | AI 对话 | 独立 `iboot-ai` 服务:多轮流式对话、Redis 记忆、每日配额、token/延迟观测 | `ChatApplicationService`、`AiChatController`、doc 22 |
+| AI 知识库 RAG | 知识库 CRUD、PDF/DOCX/TXT/MD 解析、分块、Embedding、BM25+kNN+应用层 RRF、引用溯源、RBAC+五级数据权限前置过滤、OCR 可选 | `KnowledgeIngestionService`、`KnowledgeRetrievalService`、`RagChatController`、doc 22 |
 | 国际化 | 前端 vue-i18n + 后端 MessageSource,中英文语言包分层 | `I18nController`、`common/i18n`、doc 17/18 |
 | 二级缓存 | Caffeine(L1)+ Redis(L2),Pub/Sub 失效广播,穿透/击穿/雪崩防护 | `TwoLevelCacheManager` |
 | 可观测性 | Actuator + Micrometer + Prometheus + Alertmanager + Thanos 长期存储 + Grafana + ELK + 各类 exporter | 见 doc 11 |
 | 并发模型 | 虚拟线程已启用(Tomcat + 异步执行器) | 见 doc 16 |
 | API 文档 | Springdoc OpenAPI + Swagger UI | `OpenApiConfig` |
 
-数据库版本管理用 Flyway,已推进到 `V23`。
+数据库版本管理用 Flyway,`iboot-admin` 已推进到 `V25`;`iboot-ai` 使用独立 schema `iboot_ai`,迁移由自身 Flyway 管理。
 
 ### 1.3 运行环境
 
@@ -200,7 +201,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | 编号 | 子阶段 | 能力 | 硬前置 | 可独立演示的终态 | 交付状态 |
 |---|---|---|---|---|---|
 | **1.1** | AI 底座与智能对话 | 模块骨架、多供应商抽象、智能对话、LLM 可观测 | 0.1 父 POM(已完成) | portal 多轮流式对话可用;Grafana 有 token 用量看板且超阈值告警 | **已完成(2026-10-25)** |
-| **1.2** | 知识库 RAG 与权限一致性 | 知识库 RAG、RAG 权限一致性、文档解析(文本类) | 1.1;0.3 全文检索(已完成) | 知识库可上传 → 入库 → 带溯源问答;低权限用户红队用例不越权 | 必做 |
+| **1.2** | 知识库 RAG 与权限一致性 | 知识库 RAG、RAG 权限一致性、文档解析(文本类) | 1.1;0.3 全文检索(已完成) | 知识库可上传 → 入库 → 带溯源问答;低权限用户红队用例不越权 | **已完成(2026-10-25)** |
 | **1.3** | 智能体编排 | 智能体编排 | 1.1;JDK 25 Spike(§6.2 R8)通过 | 3 个只读工具端到端可用;写操作二次确认不可绕过 | 必做 |
 | **1.4** | 知识图谱 | 知识图谱 | 1.1;Neo4j 中间件 | 组织架构 + RBAC 入图;2 跳关系查询正确 | 选做 |
 | — | ~~数字人~~ | 数字人 | — | 仅保留 Provider 接口,不实现 demo | **剔除** |
@@ -226,9 +227,9 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 | 能力 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|
-| 知识库 RAG | 上传复用 MinIO/File → 解析 → 分块 → Embedding → **ES 9 `dense_vector` + KNN + BM25 混合检索(RRF)** → 引用溯源 | ES 客户端已随 Boot 4.0.3 升至 9.2.5;前置依赖 0.3 的索引与检索能力,文件内容检索沿用 `openspec/specs/content-search/spec.md` 的可见性契约;分块策略需调优;embedding 产生持续 token 成本 | 50 篇自建测试集 Top-5 召回 ≥ 80%;答案带可点击溯源 |
+| 知识库 RAG | 上传复用 MinIO/File → 解析 → 分块 → Embedding → **ES 9 `dense_vector` + KNN + BM25 混合检索(RRF)** → 引用溯源 | ES 客户端已随 Boot 4.0.3 升至 9.2.5;前置依赖 0.3 的索引与检索能力,文件内容检索沿用 `openspec/specs/content-search/spec.md` 的可见性契约;分块策略需调优;embedding 产生持续 token 成本;**ES 基础许可证不含原生 RRF,融合在应用层按 `1/(60+rank)` 完成** | 50 篇自建测试集 Top-5 召回 ≥ 80%;答案带可点击溯源 |
 | **RAG 权限一致性** | 检索前置过滤 RBAC + 数据权限(复用 `DataScopeInterceptor` 语义) | **不做鉴权的 RAG 等于把全量数据泄漏给最低权限用户**,这是安全缺陷而非功能缺陷;与检索同批交付,不得后补 | 红队用例:低权限用户提问**不得**召回越权内容 |
-| 文档解析 | 文本类 PDF/Word 解析器随 1.2 交付;扫描件 OCR(阿里云 OCR 或 DashScope `qwen-vl`)作为可插拔解析器 | 需云密钥;扫描件出云的隐私问题;按次计费 → 默认关闭 | 文本类文档解析入库并被检索命中;启用 OCR 后扫描 PDF 同样可命中 |
+| 文档解析 | 文本类 PDF/Word 解析器随 1.2 交付;扫描件 OCR(百炼 `qwen3.5-ocr`)作为可插拔解析器 | 需云密钥;扫描件出云的隐私问题;按次计费 → 默认关闭;只对无文本页送云 | 文本类文档解析入库并被检索命中;启用 OCR 后扫描 PDF 同样可命中 |
 
 #### 1.3 智能体编排
 
@@ -400,6 +401,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | 对话模型 | **百炼 `qwen3.8-flash`**(备用 `qwen3.7-flash`) | 1.1 已实测;thinking 默认开启,须显式关闭 |
 | DeepSeek(备用) | `deepseek-flash`(OpenAI 兼容端点) | 仅用于故障切换,不默认启用 |
 | Embedding | 百炼 `text-embedding-v4` 或本地 BGE-M3 | 第二供应商必然存在 |
+| OCR 模型 | 百炼 `qwen3.5-ocr`（可回退 `qwen-vl-ocr-2025-11-20`） | 1.2 已实测；默认关闭 |
 | Elasticsearch 客户端 | **9.2.5(Boot 4.0.3 托管)** | 与 ES 9.2.3 同属 9.2.x |
 | MySQL / Redis / ES / MinIO | 8.0.45 / 7.0.14 / 9.2.3 / RELEASE.2025-09 | 现状 |
 | Flowable | **8.0.0** | 唯一支持 Boot 4.0.x 的版本线;0.5 Spike 已通过 |

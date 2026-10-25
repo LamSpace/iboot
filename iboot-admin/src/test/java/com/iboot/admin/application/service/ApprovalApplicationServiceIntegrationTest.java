@@ -26,6 +26,7 @@ import com.iboot.admin.domain.workflow.repository.LeaveApplicationRepository;
 import com.iboot.admin.domain.workflow.service.WorkflowService;
 import com.iboot.admin.infrastructure.config.MyBatisConfig;
 import com.iboot.admin.infrastructure.interceptor.DataScopeInterceptor;
+import com.iboot.admin.infrastructure.interceptor.DataScopeSqlBuilder;
 import com.iboot.admin.infrastructure.repository.LeaveApplicationRepositoryImpl;
 import com.iboot.admin.infrastructure.workflow.FlowableWorkflowAdapter;
 import org.flowable.engine.RuntimeService;
@@ -183,7 +184,8 @@ class ApprovalApplicationServiceIntegrationTest {
      */
     @Configuration
     @EnableAutoConfiguration
-    @Import({MyBatisConfig.class, DataScopeInterceptor.class, LeaveApplicationRepositoryImpl.class,
+    @Import({MyBatisConfig.class, DataScopeInterceptor.class, DataScopeSqlBuilder.class,
+            UserDataScopeResolver.class, LeaveApplicationRepositoryImpl.class,
             FlowableWorkflowAdapter.class, ApprovalApplicationService.class})
     static class IntegrationConfig {
 
