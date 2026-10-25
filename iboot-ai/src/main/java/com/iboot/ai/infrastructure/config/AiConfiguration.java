@@ -30,7 +30,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.0.0
  */
 @Configuration
-@EnableConfigurationProperties(AiProperties.class)
+@EnableConfigurationProperties({AiProperties.class, RagProperties.class})
 public class AiConfiguration {
 
     /**
@@ -47,5 +47,16 @@ public class AiConfiguration {
             @Value("${spring.ai.openai.chat.options.model}") String model,
             @Value("${spring.ai.openai.chat.api-key:}") String apiKey) {
         return new AiConfigValidator(baseUrl, model, apiKey);
+    }
+
+    /**
+     * 注册知识库配置校验器。
+     *
+     * @param properties 知识库配置
+     * @return 校验器
+     */
+    @Bean
+    public RagConfigValidator ragConfigValidator(RagProperties properties) {
+        return new RagConfigValidator(properties);
     }
 }

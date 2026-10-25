@@ -235,6 +235,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import("../views/ai/ChatView.vue"),
         meta: { requiresAuth: true },
       },
+      {
+        path: "knowledge",
+        name: "AiKnowledge",
+        component: () => import("../views/ai/KnowledgeView.vue"),
+        meta: { requiresAuth: true },
+      },
     ],
   },
 ];

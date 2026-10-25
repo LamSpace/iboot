@@ -18,6 +18,7 @@ package com.iboot.ai;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * iBoot AI 服务入口。
@@ -28,6 +29,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @since 1.0.0
  */
 @SpringBootApplication
+@EnableScheduling
 public class AiApplication {
 
     /**

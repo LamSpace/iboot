@@ -76,6 +76,83 @@ public class AiMetrics {
     }
 
     /**
+     * 记录一次知识库问答结果。
+     *
+     * @param outcome  结果：success、error 或 no_hit
+     * @param degraded 是否降级
+     */
+    public void ragRequest(String outcome, boolean degraded) {
+        Counter.builder("iboot.ai.rag.requests")
+                .tag("outcome", outcome)
+                .tag("degraded", Boolean.toString(degraded))
+                .register(registry)
+                .increment();
+    }
+
+    /**
+     * 记录一次知识库空结果。
+     */
+    public void ragEmptyResults() {
+        Counter.builder("iboot.ai.rag.empty_results").register(registry).increment();
+    }
+
+    /**
+     * 记录 OCR 页数。
+     *
+     * @param pages   页数
+     * @param outcome 结果：success 或 failed
+     */
+    public void ocrPages(int pages, String outcome) {
+        Counter.builder("iboot.ai.rag.ocr.pages")
+                .tag("outcome", outcome)
+                .register(registry)
+                .increment(pages);
+    }
+
+    /**
+     * 记录一次 OCR 配额拒绝。
+     */
+    public void ocrQuotaRejected() {
+        Counter.builder("iboot.ai.rag.ocr.quota_rejected").register(registry).increment();
+    }
+
+    /**
+     * 记录 OCR 估算 token 用量。
+     *
+     * @param tokens token 数
+     */
+    public void ocrTokens(long tokens) {
+        Counter.builder("iboot.ai.rag.ocr.tokens").register(registry).increment(tokens);
+    }
+
+    /**
+     * 记录一次 OCR 耗时。
+     *
+     * @param duration 耗时
+     * @param outcome  结果：success 或 failed
+     */
+    public void ocrDuration(Duration duration, String outcome) {
+        Timer.builder("iboot.ai.rag.ocr.duration")
+                .tag("outcome", outcome)
+                .publishPercentiles(0.5, 0.95)
+                .register(registry)
+                .record(duration);
+    }
+
+    /**
+     * 记录 Embedding token 用量。
+     *
+     * @param tokens token 数
+     * @param stage  阶段：document 或 query
+     */
+    public void embeddingTokens(long tokens, String stage) {
+        Counter.builder("iboot.ai.rag.embedding.tokens")
+                .tag("stage", stage)
+                .register(registry)
+                .increment(tokens);
+    }
+
+    /**
      * 记录首 token 延迟。
      *
      * @param duration 延迟

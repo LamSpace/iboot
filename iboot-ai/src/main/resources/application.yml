@@ -11,6 +11,10 @@ spring:
   threads:
     virtual:
       enabled: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -24,6 +28,28 @@ spring:
           max-idle: 8
           max-active: 8
           max-wait: -1ms
+    elasticsearch:
+      repositories:
+        enabled: false
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${IBOOT_AI_MYSQL_DATABASE:iboot_ai}?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: false
+    clean-disabled: true
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+    connection-timeout: 5s
+    socket-timeout: 30s
   ai:
     openai:
       # 全局兜底：OpenAI starter 会同时装配 audio/image 模型，没有 Key 时启动失败
@@ -75,3 +101,40 @@ iboot:
       conversation-ttl-hours: 24
       sse-timeout-ms: 300000
       heartbeat-ms: 20000
+    permission:
+      scope-url: ${IBOOT_AI_SCOPE_URL:http://localhost:8080/api/auth/scope}
+      cache-seconds: ${IBOOT_AI_SCOPE_CACHE_SECONDS:60}
+    rag:
+      enabled: ${IBOOT_AI_RAG_ENABLED:true}
+      index-name: ${IBOOT_AI_RAG_INDEX:iboot-kb-chunk-v1}
+      top-k: ${IBOOT_AI_RAG_TOP_K:5}
+      candidate-k: ${IBOOT_AI_RAG_CANDIDATE_K:20}
+      num-candidates: ${IBOOT_AI_RAG_NUM_CANDIDATES:100}
+      rank-constant: ${IBOOT_AI_RAG_RANK_CONSTANT:60}
+      rank-window-size: ${IBOOT_AI_RAG_RANK_WINDOW_SIZE:50}
+      max-chunks-per-doc: ${IBOOT_AI_RAG_MAX_CHUNKS_PER_DOC:2}
+      chunk-max-chars: ${IBOOT_AI_RAG_CHUNK_MAX_CHARS:800}
+      chunk-overlap-chars: ${IBOOT_AI_RAG_CHUNK_OVERLAP_CHARS:100}
+      min-page-chars: ${IBOOT_AI_RAG_MIN_PAGE_CHARS:20}
+      ingest:
+        poll-interval-ms: ${IBOOT_AI_RAG_INGEST_POLL_INTERVAL_MS:5000}
+        stale-minutes: ${IBOOT_AI_RAG_INGEST_STALE_MINUTES:15}
+        max-attempts: ${IBOOT_AI_RAG_INGEST_MAX_ATTEMPTS:3}
+      embedding:
+        batch-size: ${IBOOT_AI_EMBEDDING_BATCH_SIZE:10}
+        dimensions: ${IBOOT_AI_EMBEDDING_DIMENSIONS:1024}
+        daily-token-limit: ${IBOOT_AI_EMBEDDING_DAILY_TOKENS:5000000}
+      ocr:
+        enabled: ${IBOOT_AI_OCR_ENABLED:false}
+        model: ${IBOOT_AI_OCR_MODEL:qwen3.5-ocr}
+        base-url: ${IBOOT_AI_OCR_BASE_URL:}
+        api-key: ${DASHSCOPE_OCR_API_KEY:}
+        dpi: ${IBOOT_AI_OCR_DPI:150}
+        max-pages: ${IBOOT_AI_OCR_MAX_PAGES:50}
+        daily-page-limit: ${IBOOT_AI_OCR_DAILY_PAGE_LIMIT:200}
+        timeout-seconds: ${IBOOT_AI_OCR_TIMEOUT_SECONDS:60}
+      storage:
+        endpoint: ${IBOOT_AI_MINIO_ENDPOINT:http://localhost:9000}
+        access-key: ${IBOOT_AI_MINIO_ACCESS_KEY:minioadmin}
+        secret-key: ${IBOOT_AI_MINIO_SECRET_KEY:minioadmin}
+        bucket: ${IBOOT_AI_MINIO_BUCKET:iboot-ai}

@@ -8,9 +8,59 @@
     "placeholder": "Type a message, Enter to send",
     "send": "Send",
     "stop": "Stop",
-    "error": "Chat failed, please try again later"
+    "error": "Chat failed, please try again later",
+    "ragMode": "Knowledge Q&A",
+    "allKnowledgeBases": "All visible knowledge bases",
+    "citation": "Sources",
+    "page": "Page {page}",
+    "download": "Download source",
+    "downloadError": "Download failed, please try again",
+    "degraded": "Degraded to keyword search"
   },
   "usage": {
     "today": "Today's usage"
+  },
+  "knowledge": {
+    "title": "Knowledge Bases",
+    "create": "New knowledge base",
+    "name": "Name",
+    "description": "Description",
+    "visibility": "Visibility",
+    "owner": "Owner",
+    "actions": "Actions",
+    "delete": "Delete",
+    "documents": "Documents",
+    "upload": "Upload document",
+    "fileName": "File name",
+    "status": "Status",
+    "chunks": "Chunks",
+    "error": "Failure reason",
+    "retry": "Retry",
+    "reindex": "Reindex",
+    "cancel": "Cancel",
+    "save": "Save",
+    "created": "Knowledge base created",
+    "uploaded": "Document submitted for ingestion",
+    "duplicate": "The same content already exists; not ingested again",
+    "deleteConfirm": "Delete knowledge base \"{name}\" and all its documents?",
+    "deleteDocumentConfirm": "Delete document \"{name}\"?",
+    "confirm": "Confirm",
+    "nameRequired": "Knowledge base name is required",
+    "error": "Operation failed, please try again",
+    "sharedDepts": "Shared departments",
+    "sharedDeptsHint": "Enter department IDs separated by commas",
+    "visibilityValues": {
+      "1": "All",
+      "2": "Custom departments",
+      "3": "Own department",
+      "4": "Own department and children",
+      "5": "Owner only"
+    },
+    "statusValues": {
+      "PENDING": "Pending",
+      "PROCESSING": "Processing",
+      "READY": "Ready",
+      "FAILED": "Failed"
+    }
   }
 }

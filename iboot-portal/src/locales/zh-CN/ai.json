@@ -8,9 +8,59 @@
     "placeholder": "输入消息，Enter 发送",
     "send": "发送",
     "stop": "停止生成",
-    "error": "对话失败，请稍后重试"
+    "error": "对话失败，请稍后重试",
+    "ragMode": "知识库问答",
+    "allKnowledgeBases": "全部可见知识库",
+    "citation": "引用来源",
+    "page": "第 {page} 页",
+    "download": "下载原文",
+    "downloadError": "下载失败，请稍后重试",
+    "degraded": "已降级为关键字检索"
   },
   "usage": {
     "today": "今日用量"
+  },
+  "knowledge": {
+    "title": "知识库",
+    "create": "新建知识库",
+    "name": "名称",
+    "description": "描述",
+    "visibility": "可见范围",
+    "owner": "所有者",
+    "actions": "操作",
+    "delete": "删除",
+    "documents": "文档",
+    "upload": "上传文档",
+    "fileName": "文件名",
+    "status": "状态",
+    "chunks": "分块数",
+    "error": "失败原因",
+    "retry": "重试",
+    "reindex": "重建索引",
+    "cancel": "取消",
+    "save": "保存",
+    "created": "知识库已创建",
+    "uploaded": "文档已提交入库",
+    "duplicate": "相同内容已存在，未重复入库",
+    "deleteConfirm": "确认删除知识库「{name}」及其全部文档？",
+    "deleteDocumentConfirm": "确认删除文档「{name}」？",
+    "confirm": "确认",
+    "nameRequired": "知识库名称不能为空",
+    "error": "操作失败，请稍后重试",
+    "sharedDepts": "共享部门",
+    "sharedDeptsHint": "填写部门 ID，多个用逗号分隔",
+    "visibilityValues": {
+      "1": "全部",
+      "2": "自定义部门",
+      "3": "本部门",
+      "4": "本部门及以下",
+      "5": "仅本人"
+    },
+    "statusValues": {
+      "PENDING": "待处理",
+      "PROCESSING": "处理中",
+      "READY": "就绪",
+      "FAILED": "失败"
+    }
   }
 }

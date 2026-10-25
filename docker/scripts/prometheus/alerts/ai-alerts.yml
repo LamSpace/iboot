@@ -53,3 +53,44 @@ groups:
         annotations:
           summary: "AI 首 token 延迟过高"
           description: "首 token p95 超过 3 秒，当前值为 {{ $value | printf \"%.2f\" }} 秒"
+
+      # ==================== 知识库 / RAG ====================
+      - alert: AiRagErrorRateHigh
+        expr: |
+          sum(rate(iboot_ai_rag_requests_total{outcome="error"}[5m]))
+          /
+          sum(rate(iboot_ai_rag_requests_total[5m]))
+          * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "知识库问答错误率过高"
+          description: "5 分钟错误率超过 10%，当前值为 {{ $value | printf \"%.1f\" }}%"
+
+      - alert: AiRagEmptyResultsHigh
+        expr: sum(increase(iboot_ai_rag_empty_results_total[10m])) > 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "知识库空结果偏多"
+          description: "过去 10 分钟空结果 {{ $value }} 次，检查文档覆盖与召回质量"
+
+      - alert: AiOcrDailyPagesHigh
+        expr: sum(increase(iboot_ai_rag_ocr_pages_total[24h])) > 180
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "OCR 日页数接近配额"
+          description: "过去 24 小时 OCR {{ $value }} 页，默认日上限 200 页"
+
+      - alert: AiOcrQuotaRejected
+        expr: sum(increase(iboot_ai_rag_ocr_quota_rejected_total[10m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "OCR 配额拒绝"
+          description: "过去 10 分钟出现 OCR 配额拒绝，检查用量与预算"

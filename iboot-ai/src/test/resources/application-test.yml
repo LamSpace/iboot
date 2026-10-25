@@ -1,4 +1,8 @@
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration
   ai:
     openai:
       api-key: test-key
@@ -13,3 +17,8 @@ spring:
 jwt:
   secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
   session-timeout: 30
+
+iboot:
+  ai:
+    rag:
+      enabled: false

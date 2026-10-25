@@ -18,6 +18,7 @@ import {
   Document,
   FolderOpened,
   Files,
+  Collection,
   Connection,
   DataLine,
   TrendCharts,
@@ -76,6 +77,7 @@ const iconMap: Record<string, Component> = {
   folder: FolderOpened,
   upload: Upload,
   files: Files,
+  collection: Collection,
   // 数据
   database: Coin,
   // 字典

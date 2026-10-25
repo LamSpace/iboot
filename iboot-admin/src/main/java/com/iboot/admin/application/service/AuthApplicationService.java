@@ -21,15 +21,20 @@ import com.iboot.admin.common.exception.BusinessException;
 import com.iboot.admin.domain.system.model.Menu;
 import com.iboot.admin.domain.system.model.Role;
 import com.iboot.admin.domain.system.model.User;
+import com.iboot.admin.domain.system.model.UserDataScope;
 import com.iboot.admin.domain.system.repository.MenuRepository;
 import com.iboot.admin.domain.system.repository.RoleRepository;
 import com.iboot.admin.domain.system.repository.UserRepository;
 import com.iboot.admin.infrastructure.config.JwtSecurityConfig;
 import com.iboot.admin.infrastructure.security.JwtTokenUtil;
+import com.iboot.admin.infrastructure.security.SecurityUtils;
 import com.iboot.admin.interfaces.dto.response.LoginResponse;
+import com.iboot.admin.interfaces.dto.response.UserScopeResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,8 +102,10 @@ public class AuthApplicationService {
 
     private final BusinessMetricsService businessMetricsService;
 
+    private final UserDataScopeResolver userDataScopeResolver;
+
     @SuppressWarnings("all")
-    public AuthApplicationService(final UserRepository userRepository, final MenuRepository menuRepository, final RoleRepository roleRepository, final PasswordEncoder passwordEncoder, final JwtTokenUtil jwtTokenUtil, final JwtSecurityConfig jwtSecurityConfig, final RedisTemplate<String, Object> redisTemplate, final LoginLogApplicationService loginLogApplicationService, final ConfigApplicationService configApplicationService, final BusinessMetricsService businessMetricsService) {
+    public AuthApplicationService(final UserRepository userRepository, final MenuRepository menuRepository, final RoleRepository roleRepository, final PasswordEncoder passwordEncoder, final JwtTokenUtil jwtTokenUtil, final JwtSecurityConfig jwtSecurityConfig, final RedisTemplate<String, Object> redisTemplate, final LoginLogApplicationService loginLogApplicationService, final ConfigApplicationService configApplicationService, final BusinessMetricsService businessMetricsService, final UserDataScopeResolver userDataScopeResolver) {
         this.userRepository = userRepository;
         this.menuRepository = menuRepository;
         this.roleRepository = roleRepository;
@@ -109,6 +116,7 @@ public class AuthApplicationService {
         this.loginLogApplicationService = loginLogApplicationService;
         this.configApplicationService = configApplicationService;
         this.businessMetricsService = businessMetricsService;
+        this.userDataScopeResolver = userDataScopeResolver;
     }
 
     /**
@@ -391,6 +399,28 @@ public class AuthApplicationService {
      */
     private void clearLoginRetry(String username) {
         redisTemplate.delete(Constants.LOGIN_RETRY_KEY + username);
+    }
+
+    /**
+     * 获取当前登录用户的数据权限范围。
+     *
+     * @return 当前用户的权限范围快照
+     */
+    public UserScopeResponse getCurrentUserScope() {
+        UserDataScope scope = userDataScopeResolver.resolveCurrentUser();
+        Long userId = SecurityUtils.getCurrentUserId();
+        String username = SecurityUtils.getCurrentUsername();
+        Authentication authentication = SecurityUtils.getAuthentication();
+        List<String> permissions = authentication == null
+                ? List.of()
+                : authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+        List<String> roles = List.of();
+        if (authentication != null && authentication.getPrincipal() instanceof Map<?, ?> principal
+                && principal.get(Constants.ROLES) instanceof List<?> roleList) {
+            roles = roleList.stream().map(Object::toString).toList();
+        }
+        return new UserScopeResponse(userId, username, scope.superAdmin(), scope.dataScope(), scope.deptId(),
+                scope.visibleDeptIds(), scope.kbVisibleDeptIds(), permissions, roles);
     }
 
     /**

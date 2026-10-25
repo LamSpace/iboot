@@ -17,8 +17,12 @@
 package com.iboot.ai.interfaces.advisor;
 
 import com.iboot.ai.application.service.ConversationNotFoundException;
+import com.iboot.ai.application.service.KnowledgeAccessDeniedException;
 import com.iboot.ai.application.service.ModelCallException;
 import com.iboot.ai.application.service.QuotaExceededException;
+import com.iboot.ai.application.service.RetrievalUnavailableException;
+import com.iboot.ai.infrastructure.parsing.DocumentParseException;
+import com.iboot.ai.infrastructure.security.PermissionScopeUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -79,6 +83,44 @@ public class AiExceptionHandler {
         body.put("message", exception.getError().message());
         body.put("retryable", exception.getError().retryable());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
+    }
+
+    /**
+     * 知识库访问被拒绝。
+     *
+     * @param exception 异常
+     * @return 403
+     */
+    @ExceptionHandler(KnowledgeAccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(KnowledgeAccessDeniedException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("code", "knowledge_access_denied", "message", exception.getMessage()));
+    }
+
+    /**
+     * 检索后端或权限范围不可用。
+     *
+     * @param exception 异常
+     * @return 503
+     */
+    @ExceptionHandler({RetrievalUnavailableException.class, PermissionScopeUnavailableException.class})
+    public ResponseEntity<Map<String, Object>> handleRetrievalUnavailable(RuntimeException exception) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("code", "retrieval_unavailable", "message", exception.getMessage()));
+    }
+
+    /**
+     * 上传或解析参数错误。
+     *
+     * @param exception 异常
+     * @return 400
+     */
+    @ExceptionHandler({DocumentParseException.class, IllegalArgumentException.class})
+    public ResponseEntity<Map<String, Object>> handleBadRequest(RuntimeException exception) {
+        String code = exception instanceof DocumentParseException parseException
+                ? parseException.code()
+                : "invalid_request";
+        return ResponseEntity.badRequest().body(Map.of("code", code, "message", exception.getMessage()));
     }
 
     /**
