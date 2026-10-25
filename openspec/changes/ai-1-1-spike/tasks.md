@@ -42,5 +42,5 @@
 
 - [x] 7.1 编写 `doc/spike/ai-1.1-spike-report.md`，结构对齐 `doc/spike/flowable-8-spike-report.md`：结论、版本事实、验证环境、硬门槛逐项（H1–H7）、证据索引、风险与 Go / No-Go 建议
 - [x] 7.2 核对报告：H1–H7 每条都有明确结论与对应 `evidence/` 文件；用脚本检查无遗漏章节，且报告中不出现完整 API Key
-- [ ] 7.3 删除 `/tmp/iboot-ai-spike`；验证目录已不存在，仓库中只新增 `openspec/changes/ai-1-1-spike/` 与 `doc/spike/ai-1.1-spike-report.md`
+- [x] 7.3 删除 `/tmp/iboot-ai-spike`；验证目录已不存在，仓库中只新增 `openspec/changes/ai-1-1-spike/` 与 `doc/spike/ai-1.1-spike-report.md`
 - [x] 7.4 从 `master` 切出 `docs/ai-1.1-spike` 分支，提交变更文档与报告，`gh pr create --base master` 创建 PR 并按 CLAUDE.md 流程合并；验证 PR 已合并、本地 `master` 已 `pull --ff-only`
