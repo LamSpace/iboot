@@ -92,6 +92,9 @@
         <!-- Spring AI（阶段 1） -->
         <spring-ai.version>2.0.1</spring-ai.version>
 
+        <!-- AgentScope Java（阶段 1.3 智能体编排） -->
+        <agentscope.version>2.0.1</agentscope.version>
+
         <!-- Document parsing -->
         <pdfbox.version>3.0.5</pdfbox.version>
         <poi.version>5.4.1</poi.version>
@@ -137,6 +140,13 @@
                 <groupId>org.springframework.ai</groupId>
                 <artifactId>spring-ai-bom</artifactId>
                 <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.agentscope</groupId>
+                <artifactId>agentscope-bom</artifactId>
+                <version>${agentscope.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

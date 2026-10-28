@@ -46,6 +46,11 @@ public class AiProperties {
     private Permission permission = new Permission();
 
     /**
+     * 智能体编排配置。
+     */
+    private Agent agent = new Agent();
+
+    /**
      * 配额配置。
      */
     public static class Quota {
@@ -157,6 +162,113 @@ public class AiProperties {
 
     public void setPermission(Permission permission) {
         this.permission = permission;
+    }
+
+    public Agent getAgent() {
+        return agent;
+    }
+
+    public void setAgent(Agent agent) {
+        this.agent = agent;
+    }
+
+    /**
+     * 智能体编排配置。
+     *
+     * <p>控制智能体能力开关、运行边界与下游 admin 地址；工具结果裁剪与确认有效期也在此配置。
+     */
+    public static class Agent {
+
+        /**
+         * 是否启用智能体编排，默认关闭。
+         */
+        private boolean enabled = false;
+
+        /**
+         * 下游 admin 服务基地址，工具经此地址代理调用。
+         */
+        private String adminBaseUrl = "http://localhost:8080";
+
+        /**
+         * 单次运行的最大模型调用步数。
+         */
+        private int maxSteps = 6;
+
+        /**
+         * 单步工具执行超时秒数。
+         */
+        private long stepTimeoutSeconds = 30L;
+
+        /**
+         * 工具结果进入模型上下文前的最大字符数。
+         */
+        private int maxResultChars = 2_000;
+
+        /**
+         * 工具结果最多保留的行数（分页接口）。
+         */
+        private int maxResultRows = 20;
+
+        /**
+         * 写操作待确认动作的有效期秒数。
+         */
+        private long approvalTtlSeconds = 300L;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getAdminBaseUrl() {
+            return adminBaseUrl;
+        }
+
+        public void setAdminBaseUrl(String adminBaseUrl) {
+            this.adminBaseUrl = adminBaseUrl;
+        }
+
+        public int getMaxSteps() {
+            return maxSteps;
+        }
+
+        public void setMaxSteps(int maxSteps) {
+            this.maxSteps = maxSteps;
+        }
+
+        public long getStepTimeoutSeconds() {
+            return stepTimeoutSeconds;
+        }
+
+        public void setStepTimeoutSeconds(long stepTimeoutSeconds) {
+            this.stepTimeoutSeconds = stepTimeoutSeconds;
+        }
+
+        public int getMaxResultChars() {
+            return maxResultChars;
+        }
+
+        public void setMaxResultChars(int maxResultChars) {
+            this.maxResultChars = maxResultChars;
+        }
+
+        public int getMaxResultRows() {
+            return maxResultRows;
+        }
+
+        public void setMaxResultRows(int maxResultRows) {
+            this.maxResultRows = maxResultRows;
+        }
+
+        public long getApprovalTtlSeconds() {
+            return approvalTtlSeconds;
+        }
+
+        public void setApprovalTtlSeconds(long approvalTtlSeconds) {
+            this.approvalTtlSeconds = approvalTtlSeconds;
+        }
     }
 
     /**

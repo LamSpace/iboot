@@ -241,6 +241,18 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import("../views/ai/KnowledgeView.vue"),
         meta: { requiresAuth: true },
       },
+      {
+        path: "agent",
+        name: "AiAgent",
+        component: () => import("../views/ai/AgentChatView.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: "agent-config",
+        name: "AiAgentConfig",
+        component: () => import("../views/ai/AgentConfigView.vue"),
+        meta: { requiresAuth: true },
+      },
     ],
   },
 ];

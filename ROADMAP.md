@@ -59,6 +59,7 @@ infrastructure → config / persistence / repository / security / filter / inter
 | 统计分析 | 仪表板、趋势统计、Excel 导出(FastExcel) | `DashboardController`、`StatisticsController` |
 | AI 对话 | 独立 `iboot-ai` 服务:多轮流式对话、Redis 记忆、每日配额、token/延迟观测 | `ChatApplicationService`、`AiChatController`、doc 22 |
 | AI 知识库 RAG | 知识库 CRUD、PDF/DOCX/TXT/MD 解析、分块、Embedding、BM25+kNN+应用层 RRF、引用溯源、RBAC+五级数据权限前置过滤、OCR 可选 | `KnowledgeIngestionService`、`KnowledgeRetrievalService`、`RagChatController`、doc 22 |
+| 智能体编排 | 受控工具注册（3 只读 + 1 可写）、以用户 JWT 代理 admin、工具级权限继承、写操作两段式确认、运行轨迹审计、确定性回放与真实模型回测 | `AgentRunService`、`AgentScopeRuntime`、`AgentToolRegistry`、`AgentChatController`、doc 22 |
 | 国际化 | 前端 vue-i18n + 后端 MessageSource,中英文语言包分层 | `I18nController`、`common/i18n`、doc 17/18 |
 | 二级缓存 | Caffeine(L1)+ Redis(L2),Pub/Sub 失效广播,穿透/击穿/雪崩防护 | `TwoLevelCacheManager` |
 | 可观测性 | Actuator + Micrometer + Prometheus + Alertmanager + Thanos 长期存储 + Grafana + ELK + 各类 exporter | 见 doc 11 |
@@ -202,7 +203,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 |---|---|---|---|---|---|
 | **1.1** | AI 底座与智能对话 | 模块骨架、多供应商抽象、智能对话、LLM 可观测 | 0.1 父 POM(已完成) | portal 多轮流式对话可用;Grafana 有 token 用量看板且超阈值告警 | **已完成(2026-10-25)** |
 | **1.2** | 知识库 RAG 与权限一致性 | 知识库 RAG、RAG 权限一致性、文档解析(文本类) | 1.1;0.3 全文检索(已完成) | 知识库可上传 → 入库 → 带溯源问答;低权限用户红队用例不越权 | **已完成(2026-10-25)** |
-| **1.3** | 智能体编排 | 智能体编排 | 1.1;JDK 25 Spike(§6.2 R8)通过 | 3 个只读工具端到端可用;写操作二次确认不可绕过 | 必做 |
+| **1.3** | 智能体编排 | 智能体编排 | 1.1;JDK 25 Spike(§6.2 R8)通过 | 3 个只读工具端到端可用;写操作二次确认不可绕过 | **已完成(2026-10-28)** |
 | **1.4** | 知识图谱 | 知识图谱 | 1.1;Neo4j 中间件 | 组织架构 + RBAC 入图;2 跳关系查询正确 | 选做 |
 | — | ~~数字人~~ | 数字人 | — | 仅保留 Provider 接口,不实现 demo | **剔除** |
 
@@ -212,7 +213,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 - **LLM 可观测随 1.1 同批交付**:token 消耗从第一行对话代码就产生;埋点后补要改遍所有调用点,且 §6.3 已把配额与告警列为成本红线。
 - **1.2 中权限一致性不可延后**:无权限过滤的 RAG 是安全缺陷而非功能缺口(§6.2 R5),因此红队用例是 1.2 的验收项,不能留到后续增量补。
 - **文档解析不独立成阶段**:它是 1.2 解析管线的可插拔实现。文本类 PDF/Word 随 1.2 交付;扫描件 OCR 依赖云密钥与出云合规,作为可插拔解析器后接,默认关闭。
-- **1.3 与 1.2 无依赖,可并行**;但受 R8 门禁——AgentScope Java 在 JDK 25 未验证,Spike 不过则退到 Spring AI 原生 tool-calling。
+- **1.3 与 1.2 无依赖,可并行**;R8 已由 Spike 消除。Agent Card 的 Nacos 注册顺延到阶段 2.1(1.3 时 Nacos 尚不存在),1.3 只保留 Agent 定义与工具白名单。
 - **1.4 最后**:Neo4j 是新增中间件,直接撞 §6.2 R4 的本机内存约束;且 GraphRAG 建模需要真实语料才有验证价值。
 
 #### 1.1 AI 底座与智能对话
@@ -235,7 +236,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 | 能力 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|
-| 智能体编排 | AgentScope Java 2.0.1;工具 = 既有管理端 API(查用户 / 查日志 / 统计 / 备份状态);Agent Card 注册 Nacos | JDK 25 未在官方声明范围内(社区对 JDK 21 仍是实验性验证)→ **须 Spike**;写操作工具必须 HITL 确认;提示词注入 → 工具白名单 + 只读/可写分级 | 3 个只读工具端到端正确;写操作二次确认不可绕过 |
+| 智能体编排 | AgentScope Java 2.0.1;工具 = 既有管理端 API(查用户 / 查登录日志 / 查备份状态 / 触发备份) | JDK 25 Spike 已通过;只允许 `AgentTool` 注册(禁用 `@Tool` 与结构化输出,规避 victools 双版本冲突);写操作两段式确认;统计接口先补 `report:view` / `usage:view` | 3 个只读工具端到端正确;写操作二次确认不可绕过 |
 
 #### 1.4 知识图谱(选做)
 
@@ -396,7 +397,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | Nacos | 3.1.1+(client/server) | 注意 bootstrap 已移除 |
 | Sentinel / Seata | 1.8.9 / 2.x | 随 SCA,勿自行混搭 |
 | Spring AI | **2.0.1(GA)** | Boot 4 必需;1.1.x 仅到 Boot 3.5 |
-| AgentScope Java | 2.0.1(GA) | JDK 17 起;JDK 25 待 Spike |
+| AgentScope Java | 2.0.1(GA) | JDK 25 已 Spike 通过;starter 构建于 Boot 4.0.3 |
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
 | 对话模型 | **百炼 `qwen3.8-flash`**(备用 `qwen3.7-flash`) | 1.1 已实测;thinking 默认开启,须显式关闭 |
 | DeepSeek(备用) | `deepseek-flash`(OpenAI 兼容端点) | 仅用于故障切换,不默认启用 |
@@ -419,7 +420,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | R5 | RAG 越权检索导致数据泄漏 | 1 | 检索前置权限过滤 + 红队用例必测(见 § 4.1 子阶段 1.2) |
 | R6 | LLM token 与云账单失控 | 1 / 3 | 配额 + 用量看板 + Alertmanager 告警 |
 | R7 | Flowable 8 与现有技术栈共存(Bean 冲突、DDL 归属、异步执行器) | 0.5 | **已识别**:`taskExecutor` 需暴露为 `AsyncTaskExecutor`、排除 HikariCP、`ACT_*` 表转由 Flyway 管理;详见 `doc/spike/flowable-8-spike-report.md` |
-| R8 | AgentScope Java 在 JDK 25 未验证 | 1 | Spike;不通则用 Spring AI 原生 tool-calling 承载编排 |
+| R8 | AgentScope Java 在 JDK 25 未验证 | 1 | **已消除**:Spike 通过(S1–S8);约束见 `doc/spike/ai-1.3-spike-report.md`——只用 `AgentTool` 注册,禁用 `@Tool` 与结构化输出 |
 | R9 | Nacos bootstrap 配置迁移 | 2 | 列为底座交付项,勿沿用旧式 `bootstrap.yml` |
 | R10 | 无链路追踪即拆分 | 2 | 追踪后端列为 2.1 硬前置,否则无法排障 |
 | R11 | 拆分导致前端接口路径漂移 | 2 | 网关统一 `/api/**`,路由表吸收变化 |
