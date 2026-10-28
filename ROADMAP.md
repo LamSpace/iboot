@@ -218,6 +218,8 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 #### 1.1 AI 底座与智能对话
 
+**交付状态:已完成(2026-10-25)**。能力契约见 `openspec/specs/ai-chat/spec.md`,操作指南见 doc 22,Spike 结论见 `doc/spike/ai-1.1-spike-report.md`。
+
 | 能力 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|
 | 模块骨架与模型接入 | `iboot-ai` 独立 Maven 模块 + 独立 JVM(8081);Spring AI 2.0.1;模型 base-url 配置化,百炼(DashScope)为主、DeepSeek 为备用端点,测试用假模型实现 | 必须独立模块,不能是 `com.iboot.admin.ai` 这样的包(§3 唯一硬约束);embedding 供应商抽象同批落地;容器化留到阶段 3.1 | 模块可独立启动并经 portal 访问;切换 base-url/模型不改代码 |
@@ -225,6 +227,8 @@ Boot 4.0.3 这一前提改变了可选生态:
 | LLM 可观测 | token 用量 / 延迟 / 失败率 → Micrometer → 既有 Prometheus + Grafana + Alertmanager | 不设配额与告警则云账单失控 | 用量看板有数据;超阈值触发告警 |
 
 #### 1.2 知识库 RAG 与权限一致性
+
+**交付状态:已完成(2026-10-25)**。能力契约见 `openspec/specs/knowledge-base-rag/spec.md`,操作指南见 doc 22 §11。
 
 | 能力 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|
