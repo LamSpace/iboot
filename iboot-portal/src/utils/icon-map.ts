@@ -35,6 +35,7 @@ import {
   Warning,
   WarningFilled,
   Box,
+  MagicStick,
 } from "@element-plus/icons-vue";
 
 /**
@@ -110,6 +111,8 @@ const iconMap: Record<string, Component> = {
   report: TrendCharts,
   usage: TrendCharts,
   dashboard: PieChart,
+  // 智能体
+  "magic-stick": MagicStick,
   // 对象存储
   box: Box,
   minio: Box,

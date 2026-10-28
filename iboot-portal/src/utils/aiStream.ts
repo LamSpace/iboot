@@ -22,15 +22,19 @@ export interface AiCitation {
 }
 
 export type AiStreamEvent =
-  | { type: "meta"; conversationId: string }
+  | { type: "meta"; conversationId: string; runId?: number; agentId?: number }
   | { type: "citations"; items: AiCitation[] }
+  | { type: "step"; seq: number; tool: string }
+  | { type: "tool_result"; seq: number; tool: string; state: string }
+  | { type: "pending_approval"; runId: number; tool: string; argsDigest: string }
   | { type: "token"; delta: string }
   | {
       type: "done";
-      conversationId: string;
-      model: string;
+      conversationId?: string;
+      model?: string;
       usage: AiUsage;
       degraded?: boolean;
+      status?: string;
     }
   | { type: "error"; code: string; message: string; retryable: boolean };
 
@@ -38,6 +42,7 @@ export interface AiStreamOptions {
   content: string;
   conversationId?: string;
   knowledgeBaseId?: number;
+  agentId?: number;
   endpoint?: string;
   token: string;
   signal?: AbortSignal;
@@ -63,6 +68,7 @@ export async function streamChat(options: AiStreamOptions): Promise<void> {
       content: options.content,
       conversationId: options.conversationId,
       knowledgeBaseId: options.knowledgeBaseId,
+      ...(options.agentId ? { agentId: options.agentId } : {}),
     }),
     signal: options.signal,
   });
@@ -123,7 +129,31 @@ function parseBlock(block: string, onEvent: (event: AiStreamEvent) => void): voi
 
   switch (eventName) {
     case "meta":
-      onEvent({ type: "meta", conversationId: data.conversationId });
+      onEvent({
+        type: "meta",
+        conversationId: data.conversationId,
+        runId: data.runId,
+        agentId: data.agentId,
+      });
+      break;
+    case "step":
+      onEvent({ type: "step", seq: data.seq ?? 0, tool: data.tool ?? "" });
+      break;
+    case "tool_result":
+      onEvent({
+        type: "tool_result",
+        seq: data.seq ?? 0,
+        tool: data.tool ?? "",
+        state: data.state ?? "UNKNOWN",
+      });
+      break;
+    case "pending_approval":
+      onEvent({
+        type: "pending_approval",
+        runId: data.runId,
+        tool: data.tool ?? "",
+        argsDigest: data.argsDigest ?? "",
+      });
       break;
     case "citations":
       onEvent({
@@ -141,6 +171,7 @@ function parseBlock(block: string, onEvent: (event: AiStreamEvent) => void): voi
         model: data.model,
         usage: data.usage ?? { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
         degraded: Boolean(data.degraded),
+        status: data.status,
       });
       break;
     case "error":

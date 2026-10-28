@@ -17,6 +17,9 @@
 package com.iboot.ai.interfaces.advisor;
 
 import com.iboot.ai.application.service.ConversationNotFoundException;
+import com.iboot.ai.application.service.agent.AgentNotFoundException;
+import com.iboot.ai.application.service.agent.AgentRunConflictException;
+import com.iboot.ai.application.service.agent.AgentRunExpiredException;
 import com.iboot.ai.application.service.KnowledgeAccessDeniedException;
 import com.iboot.ai.application.service.ModelCallException;
 import com.iboot.ai.application.service.QuotaExceededException;
@@ -68,6 +71,42 @@ public class AiExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleNotFound(ConversationNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("code", "conversation_not_found", "message", exception.getMessage()));
+    }
+
+    /**
+     * 智能体或运行不存在。
+     *
+     * @param exception 异常
+     * @return 404
+     */
+    @ExceptionHandler(AgentNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleAgentNotFound(AgentNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("code", "agent_not_found", "message", exception.getMessage()));
+    }
+
+    /**
+     * 运行状态不允许当前操作。
+     *
+     * @param exception 异常
+     * @return 409
+     */
+    @ExceptionHandler(AgentRunConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleAgentConflict(AgentRunConflictException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("code", "agent_run_conflict", "message", exception.getMessage()));
+    }
+
+    /**
+     * 待确认动作已过期。
+     *
+     * @param exception 异常
+     * @return 410
+     */
+    @ExceptionHandler(AgentRunExpiredException.class)
+    public ResponseEntity<Map<String, Object>> handleAgentExpired(AgentRunExpiredException exception) {
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body(Map.of("code", "agent_run_expired", "message", exception.getMessage()));
     }
 
     /**

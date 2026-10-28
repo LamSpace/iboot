@@ -94,3 +94,26 @@ groups:
         annotations:
           summary: "OCR 配额拒绝"
           description: "过去 10 分钟出现 OCR 配额拒绝，检查用量与预算"
+
+      # ==================== 智能体编排 ====================
+      - alert: AiAgentBypassBlocked
+        expr: sum(increase(iboot_ai_agent_approval_bypass_blocked_total[5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "检测到未确认的写操作尝试"
+          description: "过去 5 分钟出现 {{ $value }} 次未授权执行尝试，请立即检查运行轨迹"
+
+      - alert: AiAgentToolErrorRateHigh
+        expr: |
+          sum(rate(iboot_ai_agent_tool_calls_total{outcome=~"failed|error|denied"}[5m]))
+          /
+          sum(rate(iboot_ai_agent_tool_calls_total[5m]))
+          * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "智能体工具失败率过高"
+          description: "5 分钟工具失败率超过 10%，当前值为 {{ $value | printf \"%.1f\" }}%"

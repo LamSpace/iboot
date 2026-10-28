@@ -57,6 +57,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 - **MapStruct 1.6.x**: 对象映射框架（[查看使用指南](doc/14-MapStruct 集成.md)）
 - **SSE 推送**: 实时消息推送（[查看使用指南](doc/15-SSE 推送集成.md)）
 - **Spring AI 2.0.1 + 百炼 Qwen**: AI 对话、Embedding、知识库 RAG（[查看 AI 工作台指南](doc/22-AI 工作台操作指南.md)）
+- **AgentScope Java 2.0.1**: 智能体编排、受控工具调用与人机确认（默认关闭）
 - **Elasticsearch 9 + PDFBox + Apache POI**: 知识库混合检索与 PDF/DOCX 解析
 - **Docker**: 容器化部署
 
@@ -85,6 +86,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 | 🗂️ **数据库版本管理** | 使用Flyway进行数据库迁移 |
 | 📈 **数据库监控** | 使用Druid监控数据库性能 |
 | 🤖 **AI 工作台** | 多轮流式对话、知识库 RAG、引用溯源、权限一致性、token 配额与用量观测 |
+| 🧰 **智能体编排** | 受控工具调用、用户权限继承、写操作二次确认、运行审计、行为回测 |
 
 </div>
 
@@ -170,6 +172,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 - RAG 权限一致性：检索前置 RBAC + 五级数据权限，低权限用户零越权召回
 - OCR 可选（`qwen3.5-ocr`，默认关闭），只对无文本扫描页送云
 - Redis 会话记忆、用户会话隔离、每日 token 配额、RAG / OCR 指标与告警
+- 智能体编排（默认关闭）：查用户、查登录日志、查备份状态、触发备份；写操作需二次确认
 - 详见 [22-AI 工作台操作指南](./doc/22-AI 工作台操作指南.md)
 
 ## 📁 项目结构
@@ -280,6 +283,9 @@ mvn -s /home/lam/repo/settings.xml -pl iboot-ai spring-boot:run
 5. 验证 `http://localhost:8081/actuator/health`
 6. 登录前端后进入「AI 工作台 → 智能对话」或「AI 工作台 → 知识库」
    - 首次执行 admin 的 `V25` 菜单迁移后需重新登录
+7. 如需启用智能体：设置 `IBOOT_AI_AGENT_ENABLED=true` 后重启，并执行 admin 的 `V26`
+   - 进入「AI 工作台 → 智能体」，写操作会先弹出确认
+   - 首次执行 `V26` 后同样需要重新登录
 
 详细配置、RAG 接口与排障见 [22-AI 工作台操作指南](./doc/22-AI 工作台操作指南.md)。
 

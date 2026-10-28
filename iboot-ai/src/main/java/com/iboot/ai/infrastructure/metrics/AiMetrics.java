@@ -195,4 +195,57 @@ public class AiMetrics {
     public void quotaRejected(String scope) {
         Counter.builder("iboot.ai.quota.rejected").tag("scope", scope).register(registry).increment();
     }
+
+    /**
+     * 记录一次智能体运行结果。
+     *
+     * @param outcome 结果标签（completed / pending / error）
+     */
+    public void agentRun(String outcome) {
+        Counter.builder("iboot.ai.agent.runs").tag("outcome", outcome).register(registry).increment();
+    }
+
+    /**
+     * 记录一次工具调用。
+     *
+     * @param tool    工具名
+     * @param outcome 结果标签
+     * @param took    耗时
+     */
+    public void agentToolCall(String tool, String outcome, Duration took) {
+        Counter.builder("iboot.ai.agent.tool.calls")
+                .tag("tool", tool == null ? "unknown" : tool)
+                .tag("outcome", outcome)
+                .register(registry)
+                .increment();
+        Timer.builder("iboot.ai.agent.tool.duration")
+                .tag("tool", tool == null ? "unknown" : tool)
+                .register(registry)
+                .record(took);
+    }
+
+    /**
+     * 记录一次确认决策。
+     *
+     * @param decision 决策标签（approved / rejected）
+     */
+    public void agentApproval(String decision) {
+        Counter.builder("iboot.ai.agent.approvals").tag("decision", decision).register(registry).increment();
+    }
+
+    /**
+     * 记录一次被拦截的写操作绕过尝试。
+     */
+    public void agentBypassBlocked() {
+        Counter.builder("iboot.ai.agent.approval.bypass.blocked").register(registry).increment();
+    }
+
+    /**
+     * 记录一次运行的模型调用步数。
+     *
+     * @param steps 步数
+     */
+    public void agentSteps(int steps) {
+        Counter.builder("iboot.ai.agent.steps").register(registry).increment(steps);
+    }
 }

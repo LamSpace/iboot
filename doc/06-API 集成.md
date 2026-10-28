@@ -724,6 +724,23 @@ export function uploadFile(file) {
 - 演练目标由服务端固定为 `iboot_restore_drill`，接口不接受客户端传入目标库名；
 - 同一时刻只允许一个备份或一个演练处于运行中。
 
+### 6.18.4 智能体工具（iboot-ai → admin）
+
+智能体不直连数据库，工具以调用者令牌代理访问下列 admin 接口，并在本地先做权限前置校验。请求统一携带 `Authorization: Bearer <token>` 与 `Accept-Version: 1`。
+
+| 工具 | 方法 | 下游路径 | 权限 | 只读 |
+|------|------|----------|------|------|
+| `query_users` | GET | `/api/user/list` | `user:list` | 是 |
+| `query_login_logs` | GET | `/api/log/login/list` | `loginlog:list` | 是 |
+| `query_backup_summary` | GET | `/api/monitor/backup/summary` | `backup:record:list` | 是 |
+| `trigger_backup` | POST | `/api/monitor/backup/records` | `backup:record:create` | 否（需确认） |
+
+约束：
+
+- 身份参数只取自登录态，模型传入的 `userId`、`deptId`、`token` 一律忽略；
+- 返回内容去除 `Result` 外层包装、限制行数与字符数，并屏蔽密码、令牌等敏感字段；
+- `trigger_backup` 在未持有一次性授权时不发起下游请求。
+
 ## 数据格式
 
 ### 6.19 统一响应格式

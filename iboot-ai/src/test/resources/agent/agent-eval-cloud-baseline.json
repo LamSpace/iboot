@@ -1,0 +1,5 @@
+{
+  "version": "1",
+  "minSelectionAccuracy": 0.75,
+  "baselineAccuracy": 0.857
+}
