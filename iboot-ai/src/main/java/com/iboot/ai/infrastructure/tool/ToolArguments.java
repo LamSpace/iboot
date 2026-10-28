@@ -89,6 +89,31 @@ public final class ToolArguments {
     }
 
     /**
+     * 读取长整数参数。
+     *
+     * @param arguments 参数表
+     * @param key       键名
+     * @return 长整数值，缺失或非法时返回 {@code null}
+     */
+    public static Long longValue(Map<String, Object> arguments, String key) {
+        if (arguments == null) {
+            return null;
+        }
+        Object value = arguments.get(key);
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Long.valueOf(String.valueOf(value).trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
      * 把参数表序列化为键名有序的 JSON。
      *
      * @param arguments 参数表

@@ -248,4 +248,34 @@ public class AiMetrics {
     public void agentSteps(int steps) {
         Counter.builder("iboot.ai.agent.steps").register(registry).increment(steps);
     }
+
+    /**
+     * 记录一次图查询。
+     *
+     * @param template 查询模板
+     * @param outcome  结果标签
+     * @param took     耗时
+     */
+    public void graphQuery(String template, String outcome, Duration took) {
+        Counter.builder("iboot.ai.graph.queries")
+                .tag("template", template == null ? "unknown" : template)
+                .tag("outcome", outcome)
+                .register(registry)
+                .increment();
+        Timer.builder("iboot.ai.graph.query.duration")
+                .tag("template", template == null ? "unknown" : template)
+                .register(registry)
+                .record(took);
+    }
+
+    /**
+     * 记录一次图同步。
+     *
+     * @param outcome 结果标签
+     * @param took    耗时
+     */
+    public void graphSync(String outcome, Duration took) {
+        Counter.builder("iboot.ai.graph.sync").tag("outcome", outcome).register(registry).increment();
+        Timer.builder("iboot.ai.graph.sync.duration").tag("outcome", outcome).register(registry).record(took);
+    }
 }

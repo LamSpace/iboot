@@ -62,6 +62,10 @@ public final class FakeOpenAiServer {
 
     private volatile String errorBody = "{\"error\":{\"message\":\"test error\"}}";
 
+    private volatile String toolCallName;
+
+    private volatile String toolCallArguments;
+
     /**
      * 启动服务。
      *
@@ -105,6 +109,19 @@ public final class FakeOpenAiServer {
     public void reset() {
         requests.set(0);
         status = 200;
+        toolCallName = null;
+        toolCallArguments = null;
+    }
+
+    /**
+     * 让首次流式请求返回一次工具调用，工具结果回传后的下一次请求返回普通文本。
+     *
+     * @param name           工具名
+     * @param argumentsJson  工具参数 JSON
+     */
+    public void enableToolCall(String name, String argumentsJson) {
+        this.toolCallName = name;
+        this.toolCallArguments = argumentsJson;
     }
 
     /**
@@ -125,6 +142,19 @@ public final class FakeOpenAiServer {
         server.stop(0);
     }
 
+    private String toolCallChunk() {
+        String escaped = toolCallArguments.replace("\\", "\\\\").replace("\"", "\\\"");
+        String delta = "data: {\"id\":\"chatcmpl-test\",\"object\":\"chat.completion.chunk\","
+                + "\"created\":1,\"model\":\"qwen3.8-flash\",\"choices\":[{\"index\":0,\"delta\":{"
+                + "\"role\":\"assistant\",\"tool_calls\":[{\"index\":0,\"id\":\"call_1\","
+                + "\"type\":\"function\",\"function\":{\"name\":\"" + toolCallName + "\","
+                + "\"arguments\":\"" + escaped + "\"}}]},\"finish_reason\":null}]}\n\n";
+        String finish = "data: {\"id\":\"chatcmpl-test\",\"object\":\"chat.completion.chunk\","
+                + "\"created\":1,\"model\":\"qwen3.8-flash\",\"choices\":[{\"index\":0,"
+                + "\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\n";
+        return delta + finish + USAGE_CHUNK;
+    }
+
     private void handle(HttpExchange exchange) throws IOException {
         requests.incrementAndGet();
         String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
@@ -143,6 +173,13 @@ public final class FakeOpenAiServer {
             exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
             exchange.sendResponseHeaders(200, 0);
             try (OutputStream out = exchange.getResponseBody()) {
+                if (toolCallName != null && !requestBody.contains("\"role\":\"tool\"")) {
+                    out.write(toolCallChunk().getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                    out.write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                    return;
+                }
                 out.write(DELTA_ONE.getBytes(StandardCharsets.UTF_8));
                 out.flush();
                 out.write(DELTA_TWO.getBytes(StandardCharsets.UTF_8));

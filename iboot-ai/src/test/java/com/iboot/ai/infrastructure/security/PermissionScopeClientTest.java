@@ -140,4 +140,34 @@ class PermissionScopeClientTest {
         assertThatThrownBy(client::fetchCurrentUserScope)
                 .isInstanceOf(PermissionScopeUnavailableException.class);
     }
+
+    /**
+     * 不在请求线程上时可用显式令牌取范围。
+     */
+    @Test
+    void fetchesScopeWithExplicitTokenOutsideRequestThread() {
+        RequestContextHolder.resetRequestAttributes();
+        server.expect(requestTo(SCOPE_URL))
+                .andExpect(header("Authorization", "Bearer explicit-token"))
+                .andRespond(withSuccess(RESPONSE, MediaType.APPLICATION_JSON));
+
+        PermissionScope scope = client.fetchScope(101L, "explicit-token");
+
+        assertThat(scope.userId()).isEqualTo(101L);
+        assertThat(scope.visibleDeptIds()).containsExactly(2L, 3L);
+        server.verify();
+    }
+
+    /**
+     * 显式令牌路径与请求线程路径共用缓存，同一用户只请求一次。
+     */
+    @Test
+    void explicitTokenReusesCache() {
+        server.expect(requestTo(SCOPE_URL)).andRespond(withSuccess(RESPONSE, MediaType.APPLICATION_JSON));
+
+        client.fetchScope(101L, "explicit-token");
+        client.fetchCurrentUserScope();
+
+        server.verify();
+    }
 }

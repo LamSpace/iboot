@@ -125,6 +125,33 @@ services:
       timeout: 20s
       retries: 3
 
+  # 知识图谱（1.4）：默认不启动，需要时执行 docker compose --profile graph up -d neo4j
+  neo4j:
+    image: neo4j:5.26.29-community
+    container_name: iboot-neo4j
+    profiles: ["graph"]
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-iboot123456}
+      # 受本机内存约束（R4）：堆与页缓存显式限制
+      - NEO4J_server_memory_heap_initial__size=512m
+      - NEO4J_server_memory_heap_max__size=512m
+      - NEO4J_server_memory_pagecache_size=256m
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
   # 监控组件
   prometheus:
     image: prom/prometheus:v2.53.4
@@ -442,6 +469,8 @@ volumes:
   grafana_data:
   alertmanager_data:
   es_data:
+  neo4j_data:
+  neo4j_logs:
   thanos_store_data:
   thanos_compact_data:
   admin_logs:

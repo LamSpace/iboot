@@ -53,4 +53,26 @@ class AiMetricsTest {
         assertThat(registry.get("iboot.ai.quota.rejected").tag("scope", "user").counter().count())
                 .isEqualTo(1.0);
     }
+
+    @Test
+    void recordsGraphMetrics() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        AiMetrics metrics = new AiMetrics(registry, "qwen3.8-flash");
+
+        metrics.graphQuery("colleagues", "success", Duration.ofMillis(12));
+        metrics.graphQuery("dept_members", "error", Duration.ofMillis(30));
+        metrics.graphSync("success", Duration.ofMillis(200));
+        metrics.graphSync("failure", Duration.ofMillis(150));
+
+        assertThat(registry.get("iboot.ai.graph.queries").tag("template", "colleagues")
+                .tag("outcome", "success").counter().count()).isEqualTo(1.0);
+        assertThat(registry.get("iboot.ai.graph.queries").tag("template", "dept_members")
+                .tag("outcome", "error").counter().count()).isEqualTo(1.0);
+        assertThat(registry.get("iboot.ai.graph.query.duration").tag("template", "colleagues").timer().count())
+                .isEqualTo(1);
+        assertThat(registry.get("iboot.ai.graph.sync").tag("outcome", "success").counter().count())
+                .isEqualTo(1.0);
+        assertThat(registry.get("iboot.ai.graph.sync.duration").tag("outcome", "failure").timer().count())
+                .isEqualTo(1);
+    }
 }

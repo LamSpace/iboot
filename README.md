@@ -58,6 +58,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 - **SSE 推送**: 实时消息推送（[查看使用指南](doc/15-SSE 推送集成.md)）
 - **Spring AI 2.0.1 + 百炼 Qwen**: AI 对话、Embedding、知识库 RAG（[查看 AI 工作台指南](doc/22-AI 工作台操作指南.md)）
 - **AgentScope Java 2.0.1**: 智能体编排、受控工具调用与人机确认（默认关闭）
+- **Neo4j 5.26 + 组织图谱（1.4）**: 组织架构与 RBAC 多跳查询，作为只读智能体工具（默认关闭，`graph` profile）
 - **Elasticsearch 9 + PDFBox + Apache POI**: 知识库混合检索与 PDF/DOCX 解析
 - **Docker**: 容器化部署
 
@@ -87,6 +88,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 | 📈 **数据库监控** | 使用Druid监控数据库性能 |
 | 🤖 **AI 工作台** | 多轮流式对话、知识库 RAG、引用溯源、权限一致性、token 配额与用量观测 |
 | 🧰 **智能体编排** | 受控工具调用、用户权限继承、写操作二次确认、运行审计、行为回测 |
+| 🕸️ **知识图谱** | 组织架构与 RBAC 入图、幂等同步、多跳查询、数据权限过滤与失败关闭（默认关闭） |
 
 </div>
 
@@ -414,6 +416,7 @@ docker-compose logs -f
 - **Grafana** (端口 3000) - 可视化面板
 - **AlertManager** (端口 9093) - 告警管理
 - **Elasticsearch** (端口 9200) - 搜索引擎
+- **Neo4j** (端口 7474, 7687) - 知识图谱，仅 `--profile graph` 时启动
 - **Logstash** (端口 5044, 5000) - 日志处理
 - **Kibana** (端口 5601) - ES 可视化
 - **MySQL Exporter** (端口 9104) - MySQL 监控
