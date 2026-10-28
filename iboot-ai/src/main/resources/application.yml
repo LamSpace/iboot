@@ -113,6 +113,19 @@ iboot:
       max-result-chars: ${IBOOT_AI_AGENT_MAX_RESULT_CHARS:2000}
       max-result-rows: ${IBOOT_AI_AGENT_MAX_RESULT_ROWS:20}
       approval-ttl-seconds: ${IBOOT_AI_AGENT_APPROVAL_TTL_SECONDS:300}
+    graph:
+      # 默认关闭：关闭时不连接 Neo4j，也不注册图查询工具
+      enabled: ${IBOOT_AI_GRAPH_ENABLED:false}
+      uri: ${IBOOT_AI_GRAPH_URI:bolt://localhost:7687}
+      username: ${IBOOT_AI_GRAPH_USERNAME:neo4j}
+      password: ${IBOOT_AI_GRAPH_PASSWORD:}
+      database: ${IBOOT_AI_GRAPH_DATABASE:neo4j}
+      sync:
+        page-size: ${IBOOT_AI_GRAPH_SYNC_PAGE_SIZE:200}
+        max-pages: ${IBOOT_AI_GRAPH_SYNC_MAX_PAGES:50}
+      query:
+        max-rows: ${IBOOT_AI_GRAPH_QUERY_MAX_ROWS:50}
+        timeout-seconds: ${IBOOT_AI_GRAPH_QUERY_TIMEOUT_SECONDS:10}
     rag:
       enabled: ${IBOOT_AI_RAG_ENABLED:true}
       index-name: ${IBOOT_AI_RAG_INDEX:iboot-kb-chunk-v1}

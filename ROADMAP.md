@@ -60,21 +60,22 @@ infrastructure → config / persistence / repository / security / filter / inter
 | AI 对话 | 独立 `iboot-ai` 服务:多轮流式对话、Redis 记忆、每日配额、token/延迟观测 | `ChatApplicationService`、`AiChatController`、doc 22 |
 | AI 知识库 RAG | 知识库 CRUD、PDF/DOCX/TXT/MD 解析、分块、Embedding、BM25+kNN+应用层 RRF、引用溯源、RBAC+五级数据权限前置过滤、OCR 可选 | `KnowledgeIngestionService`、`KnowledgeRetrievalService`、`RagChatController`、doc 22 |
 | 智能体编排 | 受控工具注册（3 只读 + 1 可写）、以用户 JWT 代理 admin、工具级权限继承、写操作两段式确认、运行轨迹审计、确定性回放与真实模型回测 | `AgentRunService`、`AgentScopeRuntime`、`AgentToolRegistry`、`AgentChatController`、doc 22 |
+| 知识图谱 | 组织架构与 RBAC 四类节点五类关系入图、幂等同步、5 个固定模板的多跳查询、查询前数据权限过滤与失败关闭、2 个只读智能体工具 | `GraphSyncService`、`GraphQueryService`、`Neo4jGraphRepository`、`QueryOrgGraphTool`、doc 22 §13 |
 | 国际化 | 前端 vue-i18n + 后端 MessageSource,中英文语言包分层 | `I18nController`、`common/i18n`、doc 17/18 |
 | 二级缓存 | Caffeine(L1)+ Redis(L2),Pub/Sub 失效广播,穿透/击穿/雪崩防护 | `TwoLevelCacheManager` |
 | 可观测性 | Actuator + Micrometer + Prometheus + Alertmanager + Thanos 长期存储 + Grafana + ELK + 各类 exporter | 见 doc 11 |
 | 并发模型 | 虚拟线程已启用(Tomcat + 异步执行器) | 见 doc 16 |
 | API 文档 | Springdoc OpenAPI + Swagger UI | `OpenApiConfig` |
 
-数据库版本管理用 Flyway,`iboot-admin` 已推进到 `V26`;`iboot-ai` 使用独立 schema `iboot_ai`,迁移由自身 Flyway 管理(已到 `V2`)。
+数据库版本管理用 Flyway,`iboot-admin` 已推进到 `V27`;`iboot-ai` 使用独立 schema `iboot_ai`,迁移由自身 Flyway 管理(已到 `V2`)。
 
 ### 1.3 运行环境
 
-`docker/docker-compose.yml` 提供 **18 个中间件/可观测容器**:
+`docker/docker-compose.yml` 提供 **19 个中间件/可观测容器**(其中 neo4j 位于 `graph` profile,默认不启动):
 
 | 分组 | 容器 |
 |---|---|
-| 数据 | mysql 8.0.45、redis 7.0.14、minio、elasticsearch 9.2.3 |
+| 数据 | mysql 8.0.45、redis 7.0.14、minio、elasticsearch 9.2.3、neo4j 5.26.29(`graph` profile) |
 | 日志 | logstash 9.2.3、kibana 9.2.3、elasticsearch-exporter |
 | 指标 | prometheus、alertmanager、grafana、thanos(sidecar / store / query / compact)、mysqld-exporter、redis-exporter、node-exporter |
 | 初始化 | minio-init |
@@ -151,7 +152,7 @@ graph LR
 | **0** | 单体补强 | 在仍是最省事的时候补功能洞;DDD 边界因此更完整,后续拆出的服务才有业务含义。同时用父 POM 把"未来拆分"从重写工程结构降级为加一个 module |
 | **1** | AI 工作台 | AI 是**新增一个服务**而非改造现有服务,不需要拆分底座先存在;做成独立模块后,阶段 2 只是给它注册进 Nacos |
 | **2** | 微服务彻底拆分 | 有了完整的单体 + 一个已验证的独立服务作参照,拆分方法论才成立;认证中心是其余所有服务的依赖前置 |
-| **3** | 云原生 | 上云对象是"多个服务",先拆后上才对应 Helm 的价值;提前上云会把单体 + 18 个中间件全塞进 K8s,收益被运维吃掉 |
+| **3** | 云原生 | 上云对象是"多个服务",先拆后上才对应 Helm 的价值;提前上云会把单体 + 19 个中间件全塞进 K8s,收益被运维吃掉 |
 | **4** | 深水区选做 | 服务网格、native、分库分表都会改变运行模型,必须在服务稳定之后 |
 
 **顺序的唯一硬约束**:阶段 1 的 AI 必须是独立模块 / 独立可部署单元,不能是 `com.iboot.admin.ai` 这样的包——否则阶段 2 要把已写好的 AI 能力从单体里挖出来重做。
@@ -204,7 +205,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | **1.1** | AI 底座与智能对话 | 模块骨架、多供应商抽象、智能对话、LLM 可观测 | 0.1 父 POM(已完成) | portal 多轮流式对话可用;Grafana 有 token 用量看板且超阈值告警 | **已完成(2026-10-25)** |
 | **1.2** | 知识库 RAG 与权限一致性 | 知识库 RAG、RAG 权限一致性、文档解析(文本类) | 1.1;0.3 全文检索(已完成) | 知识库可上传 → 入库 → 带溯源问答;低权限用户红队用例不越权 | **已完成(2026-10-25)** |
 | **1.3** | 智能体编排 | 智能体编排 | 1.1;JDK 25 Spike(§6.2 R8)通过 | 3 个只读工具端到端可用;写操作二次确认不可绕过 | **已完成(2026-10-28)** |
-| **1.4** | 知识图谱 | 知识图谱 | 1.1;Neo4j 中间件 | 组织架构 + RBAC 入图;2 跳关系查询正确 | 选做 |
+| **1.4** | 知识图谱 | 知识图谱 | 1.1;Neo4j 中间件 | 组织架构 + RBAC 入图;2 跳关系查询正确 | **已完成(2026-10-28)** |
 | — | ~~数字人~~ | 数字人 | — | 仅保留 Provider 接口,不实现 demo | **剔除** |
 
 排序依据:
@@ -244,11 +245,15 @@ Boot 4.0.3 这一前提改变了可选生态:
 |---|---|---|---|
 | 智能体编排 | AgentScope Java 2.0.1;工具 = 既有管理端 API(查用户 / 查登录日志 / 查备份状态 / 触发备份) | JDK 25 Spike 已通过;只允许 `AgentTool` 注册(禁用 `@Tool` 与结构化输出,规避 victools 双版本冲突);写操作两段式确认;统计接口先补 `report:view` / `usage:view` | 3 个只读工具端到端正确;写操作二次确认不可绕过 |
 
-#### 1.4 知识图谱(选做)
+#### 1.4 知识图谱
+
+**交付状态:已完成(2026-10-28)**。能力契约见 `openspec/specs/knowledge-graph/spec.md`,操作指南见 doc 22 §13,验证报告见 `doc/spike/graph-1.4-report.md`。
 
 | 能力 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|
 | 知识图谱 | Neo4j + GraphRAG;**最小可用图 = 把 `sys_dept` / `sys_user` / `sys_role` / `sys_menu` 入图**(数据现成,回答"谁能访问什么""跨部门协作路径"这类多跳问题) | 新增中间件 +1;受 §6.2 R4 内存约束;GraphRAG 建模需真实语料支撑 | 组织架构 + RBAC 入图;2 跳关系查询正确 |
+
+**已知限制(2026-10-28 验收时确认)**:查询模板的参数是**主键与权限码**(如 `deptId=2`、`permission=user:list`),当前没有"按名称检索节点"的模板。模型无法把「研发部」「用户管理」这类名称直接解析成主键,因此提问需要给出明确标识;模糊问法下模型可能反复换参,最终以 `step_limit` 结束。是否补充名称解析模板,留待后续单独审视(不属于 1.4 范围)。
 
 #### 已剔除
 
@@ -324,7 +329,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 #### 2.5 诚实的成本
 
-- **内存**:8 个 JVM,叠加现有 18 个中间件容器,本机内存是真实瓶颈(每服务 512MB–1GB 堆)。缓解:本地只跑正在改的服务(按需 docker profiles)+ 依赖服务 mock。这也让阶段 4 的 native 化有了**非练手**的理由。
+- **内存**:8 个 JVM,叠加现有 19 个中间件容器,本机内存是真实瓶颈(每服务 512MB–1GB 堆)。缓解:本地只跑正在改的服务(按需 docker profiles)+ 依赖服务 mock。这也让阶段 4 的 native 化有了**非练手**的理由。
 - **复杂度**:部分失败、幂等、调试面扩大——这正是链路追踪必须先行的原因。
 
 #### 2.6 验收判据
@@ -382,7 +387,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | 12 | Kafka | **收敛**:RocketMQ 为主 MQ;Kafka 仅在流处理线引入 | 双 MQ 无收益 |
 | 13 | 大数据技术集成 | **剔除** | 数仓与管理系统主线弱相关;真要分析走 ES/Flink |
 | 14 | 流处理 / 批处理 | **阶段 4**(Flink 选做 / Batch) | — |
-| 15 | AI 工作台(知识图谱、知识库、小模型、数字人、langchain4j/AgentScope/SAA、智能对话与编排) | **阶段 1 拆为 1.1–1.4 覆盖**;知识图谱(1.4)为选做,数字人剔除只留接口;"小模型(文字识别)"由云 API 承接(OCR) | langchain4j 与 SAA 因 Boot 4 约束改为 Spring AI + AgentScope Java,详见 § 7.2 |
+| 15 | AI 工作台(知识图谱、知识库、小模型、数字人、langchain4j/AgentScope/SAA、智能对话与编排) | **阶段 1 拆为 1.1–1.4 覆盖**;知识图谱(1.4)已完成,数字人剔除只留接口;"小模型(文字识别)"由云 API 承接(OCR) | langchain4j 与 SAA 因 Boot 4 约束改为 Spring AI + AgentScope Java,详见 § 7.2 |
 | 16 | ShardingSphere + ElasticJob | ElasticJob → **阶段 2**(调度集群化);ShardingSphere → **阶段 4** | — |
 | 17 | 业务数据全面国际化 | **阶段 0.4(暂不做)** | 续接已完成的 i18n |
 
@@ -412,6 +417,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | Elasticsearch 客户端 | **9.2.5(Boot 4.0.3 托管)** | 与 ES 9.2.3 同属 9.2.x |
 | MySQL / Redis / ES / MinIO | 8.0.45 / 7.0.14 / 9.2.3 / RELEASE.2025-09 | 现状 |
 | Flowable | **8.0.0** | 唯一支持 Boot 4.0.x 的版本线;0.5 Spike 已通过 |
+| Neo4j | **5.26.29-community**;驱动 `neo4j-java-driver` **6.0.2**(Boot 4.0.3 托管) | 5.26 为 5.x LTS;驱动 6.x 官方兼容 4.4 / 5.x / 2025.x 服务端 |
 | Apache Dubbo | **阻塞** | 无 Boot 4 支持 |
 | GraalVM(若做 native) | 工具链必须 **25** | Boot 4 native 构建要求 |
 
@@ -422,7 +428,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | R1 | SAA 无 Boot 4 稳定版 | 1 | **已规避**:主干改用 Spring AI 2.0.1 + AgentScope Java,SAA 等 GA 后再接 |
 | R2 | Dubbo 不支持 Boot 4 | 2 | 服务间 HTTP 先行;延后至阶段 4 重评 |
 | R3 | ES 8.x 客户端连 9.x 服务端 | 0.3 / 1 | **已消除**:Boot 4.0.3 托管 `elasticsearch-java` 9.2.5 |
-| R4 | 本机内存:N×JVM + 18 中间件 | 2 | 按需 profiles 只跑改动服务;mock 依赖服务;native 列为阶段 4 缓解手段 |
+| R4 | 本机内存:N×JVM + 19 中间件 | 2 | 按需 profiles 只跑改动服务;Neo4j 置于 `graph` profile 且堆/页缓存显式限制;mock 依赖服务;native 列为阶段 4 缓解手段 |
 | R5 | RAG 越权检索导致数据泄漏 | 1 | 检索前置权限过滤 + 红队用例必测(见 § 4.1 子阶段 1.2) |
 | R6 | LLM token 与云账单失控 | 1 / 3 | 配额 + 用量看板 + Alertmanager 告警 |
 | R7 | Flowable 8 与现有技术栈共存(Bean 冲突、DDL 归属、异步执行器) | 0.5 | **已识别**:`taskExecutor` 需暴露为 `AsyncTaskExecutor`、排除 HikariCP、`ACT_*` 表转由 Flyway 管理;详见 `doc/spike/flowable-8-spike-report.md` |

@@ -30,7 +30,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.0.0
  */
 @Configuration
-@EnableConfigurationProperties({AiProperties.class, RagProperties.class})
+@EnableConfigurationProperties({AiProperties.class, RagProperties.class, GraphProperties.class})
 public class AiConfiguration {
 
     /**

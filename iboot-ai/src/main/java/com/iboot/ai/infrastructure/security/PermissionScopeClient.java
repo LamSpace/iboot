@@ -83,11 +83,24 @@ public class PermissionScopeClient {
         } catch (RuntimeException e) {
             throw new PermissionScopeUnavailableException("无法获取当前用户", e);
         }
+        return fetchScope(userId, currentToken());
+    }
+
+    /**
+     * 按显式用户与令牌查询权限范围。
+     *
+     * <p>供不在请求线程上执行的调用方使用（如智能体工具）；与请求线程路径共用同一份缓存。
+     *
+     * @param userId 用户 ID
+     * @param token  该用户的 Bearer 令牌
+     * @return 权限范围快照
+     * @throws PermissionScopeUnavailableException admin 不可用或响应非法时抛出
+     */
+    public PermissionScope fetchScope(Long userId, String token) {
         PermissionScope cached = cache.getIfPresent(userId);
         if (cached != null) {
             return cached;
         }
-        String token = currentToken();
         String body;
         try {
             body = restClient.get()

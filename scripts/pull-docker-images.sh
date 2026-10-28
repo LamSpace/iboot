@@ -38,6 +38,15 @@ docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEAS
 echo "MinIO 镜像拉取完成！"
 echo ""
 
+# 拉取 Neo4j 镜像
+echo "======================================"
+echo "正在拉取 Neo4j 镜像..."
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/library/neo4j:5.26.29-community
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/library/neo4j:5.26.29-community  docker.io/library/neo4j:5.26.29-community
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/library/neo4j:5.26.29-community
+echo "Neo4j 镜像拉取完成！"
+echo ""
+
 
 # 拉取 Prometheus 镜像
 echo "======================================"

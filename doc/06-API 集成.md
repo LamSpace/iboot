@@ -352,7 +352,7 @@ export function deleteUser(id) {
 
 ## 接口列表
 
-> AI 对话与知识库接口由独立 `iboot-ai` 服务（8081）提供，不在 `iboot-admin` 的接口列表中：`POST /api/ai/chat`、`POST /api/ai/chat/stream`、`GET /api/ai/conversations`、`GET /api/ai/conversations/{id}/messages`、`GET /api/ai/usage`；知识库 RAG 为 `POST /api/ai/rag/chat`、`POST /api/ai/rag/chat/stream`，知识库/文档 CRUD 为 `/api/ai/knowledge-bases/**` 与 `/api/ai/knowledge-documents/**`。详见 [22-AI 工作台操作指南](./22-AI 工作台操作指南.md)。
+> AI 对话与知识库接口由独立 `iboot-ai` 服务（8081）提供，不在 `iboot-admin` 的接口列表中：`POST /api/ai/chat`、`POST /api/ai/chat/stream`、`GET /api/ai/conversations`、`GET /api/ai/conversations/{id}/messages`、`GET /api/ai/usage`；知识库 RAG 为 `POST /api/ai/rag/chat`、`POST /api/ai/rag/chat/stream`，知识库/文档 CRUD 为 `/api/ai/knowledge-bases/**` 与 `/api/ai/knowledge-documents/**`；知识图谱运维接口为 `POST /api/ai/graph/sync` 与 `GET /api/ai/graph/status`（要求 `ai:graph:use`）。详见 [22-AI 工作台操作指南](./22-AI 工作台操作指南.md)。
 
 ### 6.11 认证接口
 

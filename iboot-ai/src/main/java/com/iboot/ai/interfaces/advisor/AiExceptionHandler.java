@@ -24,6 +24,11 @@ import com.iboot.ai.application.service.KnowledgeAccessDeniedException;
 import com.iboot.ai.application.service.ModelCallException;
 import com.iboot.ai.application.service.QuotaExceededException;
 import com.iboot.ai.application.service.RetrievalUnavailableException;
+import com.iboot.ai.application.service.graph.GraphAccessDeniedException;
+import com.iboot.ai.application.service.graph.GraphDisabledException;
+import com.iboot.ai.application.service.graph.GraphScopeUnavailableException;
+import com.iboot.ai.application.service.graph.GraphSyncException;
+import com.iboot.ai.application.service.graph.GraphUnavailableException;
 import com.iboot.ai.infrastructure.parsing.DocumentParseException;
 import com.iboot.ai.infrastructure.security.PermissionScopeUnavailableException;
 import org.springframework.http.HttpStatus;
@@ -146,6 +151,54 @@ public class AiExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleRetrievalUnavailable(RuntimeException exception) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(Map.of("code", "retrieval_unavailable", "message", exception.getMessage()));
+    }
+
+    /**
+     * 图能力未启用。
+     *
+     * @param exception 异常
+     * @return 503
+     */
+    @ExceptionHandler(GraphDisabledException.class)
+    public ResponseEntity<Map<String, Object>> handleGraphDisabled(GraphDisabledException exception) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("code", "graph_disabled", "message", exception.getMessage(), "retryable", false));
+    }
+
+    /**
+     * 图查询被拒绝。
+     *
+     * @param exception 异常
+     * @return 403
+     */
+    @ExceptionHandler(GraphAccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleGraphAccessDenied(GraphAccessDeniedException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("code", "graph_access_denied", "message", exception.getMessage(), "retryable", false));
+    }
+
+    /**
+     * 图数据库或数据权限范围不可用。
+     *
+     * @param exception 异常
+     * @return 503
+     */
+    @ExceptionHandler({GraphUnavailableException.class, GraphScopeUnavailableException.class})
+    public ResponseEntity<Map<String, Object>> handleGraphUnavailable(RuntimeException exception) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("code", "graph_unavailable", "message", exception.getMessage(), "retryable", true));
+    }
+
+    /**
+     * 图同步失败。
+     *
+     * @param exception 异常
+     * @return 502
+     */
+    @ExceptionHandler(GraphSyncException.class)
+    public ResponseEntity<Map<String, Object>> handleGraphSync(GraphSyncException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(Map.of("code", "graph_sync_failed", "message", exception.getMessage(), "retryable", true));
     }
 
     /**
