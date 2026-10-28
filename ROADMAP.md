@@ -6,7 +6,7 @@
 >
 > 本文只定义"做什么、用什么、受什么约束、带来什么价值、怎么算完成",不含实施排期。每个条目都带验收判据,判据不成立的条目不进路线图。
 >
-> 最近更新:2026-10-25
+> 最近更新:2026-10-28
 
 ---
 
@@ -66,7 +66,7 @@ infrastructure → config / persistence / repository / security / filter / inter
 | 并发模型 | 虚拟线程已启用(Tomcat + 异步执行器) | 见 doc 16 |
 | API 文档 | Springdoc OpenAPI + Swagger UI | `OpenApiConfig` |
 
-数据库版本管理用 Flyway,`iboot-admin` 已推进到 `V25`;`iboot-ai` 使用独立 schema `iboot_ai`,迁移由自身 Flyway 管理。
+数据库版本管理用 Flyway,`iboot-admin` 已推进到 `V26`;`iboot-ai` 使用独立 schema `iboot_ai`,迁移由自身 Flyway 管理(已到 `V2`)。
 
 ### 1.3 运行环境
 
@@ -233,6 +233,8 @@ Boot 4.0.3 这一前提改变了可选生态:
 | 文档解析 | 文本类 PDF/Word 解析器随 1.2 交付;扫描件 OCR(百炼 `qwen3.5-ocr`)作为可插拔解析器 | 需云密钥;扫描件出云的隐私问题;按次计费 → 默认关闭;只对无文本页送云 | 文本类文档解析入库并被检索命中;启用 OCR 后扫描 PDF 同样可命中 |
 
 #### 1.3 智能体编排
+
+**交付状态:已完成(2026-10-28)**。能力契约见 `openspec/specs/ai-agent/spec.md`,操作指南见 doc 22 §12,Spike 结论见 `doc/spike/ai-1.3-spike-report.md`。
 
 | 能力 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|
