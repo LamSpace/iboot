@@ -39,7 +39,7 @@ import java.util.Map;
 /**
  * 组织图谱只读查询工具。
  *
- * <p>模型只能选择模板与填写目标主键，调用者身份与数据范围始终取自运行上下文；
+ * <p>模型只能选择模板并填写目标主键、权限码或名称关键词，调用者身份与数据范围始终取自运行上下文；
  * 模板不支持自由 Cypher。结果行数受 {@code iboot.ai.graph.query.max-rows} 限制，
  * 超出时截断并在返回值中标记 {@code truncated}。
  *
@@ -57,8 +57,10 @@ public class QueryOrgGraphTool implements AgentTool {
 
     private static final String PERMISSION = "ai:graph:use";
 
-    private static final List<String> TEMPLATES = List.of("colleagues", "dept_members", "user_permissions",
-            "perm_holders");
+    private static final List<String> TEMPLATES = List.of("search_nodes", "colleagues", "dept_members",
+            "user_permissions", "perm_holders");
+
+    private static final List<String> NODE_TYPES = List.of("dept", "user", "menu");
 
     private final GraphQueryService queryService;
 
@@ -84,7 +86,10 @@ public class QueryOrgGraphTool implements AgentTool {
 
     @Override
     public String description() {
-        return "按模板查询组织架构与 RBAC 关系：同部门同事、部门成员、用户角色菜单权限、权限持有人。"
+        return "按模板查询组织架构与 RBAC 关系：按名称解析部门/用户/菜单，以及同部门同事、部门成员、"
+                + "用户角色菜单权限、权限持有人。参数中的 deptId、userId 是数字主键，permission 是权限码；"
+                + "只知道名称时，必须先调用 search_nodes 解析主键，再调用对应模板；"
+                + "search_nodes 返回空结果时向用户确认名称，不要更换关键词反复重试。"
                 + "只返回调用者可见范围内的数据。";
     }
 
@@ -92,9 +97,13 @@ public class QueryOrgGraphTool implements AgentTool {
     public Map<String, Object> parameterSchema() {
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("template", Map.of("type", "string", "enum", TEMPLATES,
-                "description", "查询模板：colleagues、dept_members、user_permissions、perm_holders"));
-        properties.put("userId", Map.of("type", "integer", "description", "目标用户 ID，可省略表示本人"));
-        properties.put("deptId", Map.of("type", "integer", "description", "目标部门 ID，dept_members 必填"));
+                "description", "查询模板：search_nodes、colleagues、dept_members、user_permissions、perm_holders"));
+        properties.put("keyword", Map.of("type", "string", "description",
+                "名称关键词，search_nodes 必填；可以只写名称的一部分"));
+        properties.put("nodeType", Map.of("type", "string", "enum", NODE_TYPES, "description",
+                "节点类型：dept、user、menu；省略表示三类都查"));
+        properties.put("userId", Map.of("type", "integer", "description", "目标用户 ID（数字主键），可省略表示本人"));
+        properties.put("deptId", Map.of("type", "integer", "description", "目标部门 ID（数字主键），dept_members 必填"));
         properties.put("permission", Map.of("type", "string", "description", "权限标识，perm_holders 必填"));
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
@@ -125,6 +134,9 @@ public class QueryOrgGraphTool implements AgentTool {
             }
             QueryScope scope = scopeResolver.resolve(context.userId(), context.bearerToken());
             return switch (template) {
+                case SEARCH_NODES -> render(queryService.search(
+                        ToolArguments.string(arguments, "keyword"),
+                        ToolArguments.string(arguments, "nodeType"), scope));
                 case COLLEAGUES -> render(queryService.colleagues(
                         ToolArguments.longValue(arguments, "userId"), context.userId(), scope));
                 case DEPT_MEMBERS -> render(queryService.deptMembers(

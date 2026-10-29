@@ -16,6 +16,7 @@
 
 package com.iboot.ai.application.service.graph;
 
+import com.iboot.ai.domain.graph.GraphNodeMatch;
 import com.iboot.ai.domain.graph.QueryScope;
 import com.iboot.ai.domain.graph.UserRef;
 import com.iboot.ai.infrastructure.config.GraphProperties;
@@ -148,5 +149,65 @@ class GraphQueryServiceTest {
         when(repository.permHolders(anyString(), any(), anyInt())).thenReturn(List.of());
 
         assertThat(service.permHolders("user:list", scope).rows()).isEmpty();
+    }
+
+    @Test
+    void rejectsBlankSearchKeyword() {
+        assertThatThrownBy(() -> service.search("  ", "dept", scope))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("关键词");
+
+        verify(repository, never()).searchDepartments(anyString(), any(), anyInt());
+    }
+
+    @Test
+    void rejectsUnknownNodeType() {
+        assertThatThrownBy(() -> service.search("研发", "role", scope))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("节点类型");
+
+        verify(repository, never()).searchDepartments(anyString(), any(), anyInt());
+    }
+
+    @Test
+    void mergesAllNodeTypesWhenTypeOmitted() {
+        when(repository.searchDepartments("研发", scope, 51)).thenReturn(List.of(
+                new GraphNodeMatch("dept", 2L, "研发部", "RD", "总经办", null)));
+        when(repository.searchUsers("研发", scope, 51)).thenReturn(List.of());
+        when(repository.searchMenus("研发", scope, 51)).thenReturn(List.of(
+                new GraphNodeMatch("menu", 100L, "研发管理", "C", null, "dev:list")));
+
+        GraphRows<GraphNodeMatch> rows = service.search("研发", null, scope);
+
+        assertThat(rows.rows()).extracting(GraphNodeMatch::type).containsExactly("dept", "menu");
+        assertThat(rows.truncated()).isFalse();
+    }
+
+    @Test
+    void delegatesOnlyTheRequestedNodeType() {
+        when(repository.searchUsers("研发", scope, 51)).thenReturn(List.of());
+
+        service.search("研发", "user", scope);
+
+        verify(repository).searchUsers("研发", scope, 51);
+        verify(repository, never()).searchDepartments(anyString(), any(), anyInt());
+        verify(repository, never()).searchMenus(anyString(), any(), anyInt());
+    }
+
+    @Test
+    void truncatesMergedResultsAboveLimit() {
+        GraphProperties properties = new GraphProperties();
+        properties.getQuery().setMaxRows(1);
+        GraphQueryService limited = new GraphQueryService(repository, properties, metrics());
+        when(repository.searchDepartments("研发", scope, 2)).thenReturn(List.of(
+                new GraphNodeMatch("dept", 2L, "研发", "RD-ABBR", "总经办", null),
+                new GraphNodeMatch("dept", 3L, "研发部", "RD", "总经办", null)));
+        when(repository.searchUsers("研发", scope, 2)).thenReturn(List.of());
+        when(repository.searchMenus("研发", scope, 2)).thenReturn(List.of());
+
+        GraphRows<GraphNodeMatch> rows = limited.search("研发", "all", scope);
+
+        assertThat(rows.rows()).hasSize(1);
+        assertThat(rows.truncated()).isTrue();
     }
 }

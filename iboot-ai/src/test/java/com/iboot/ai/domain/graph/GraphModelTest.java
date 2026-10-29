@@ -51,6 +51,7 @@ class GraphModelTest {
     void parsesKnownTemplateNames() {
         assertThat(GraphQueryTemplate.fromWire("colleagues")).isEqualTo(GraphQueryTemplate.COLLEAGUES);
         assertThat(GraphQueryTemplate.fromWire("dept_path")).isEqualTo(GraphQueryTemplate.DEPT_PATH);
+        assertThat(GraphQueryTemplate.fromWire("search_nodes")).isEqualTo(GraphQueryTemplate.SEARCH_NODES);
     }
 
     @Test

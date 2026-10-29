@@ -18,6 +18,7 @@ package com.iboot.ai.infrastructure.graph;
 
 import com.iboot.ai.domain.graph.DeptNode;
 import com.iboot.ai.domain.graph.DeptPath;
+import com.iboot.ai.domain.graph.GraphNodeMatch;
 import com.iboot.ai.domain.graph.GraphSnapshot;
 import com.iboot.ai.domain.graph.GraphStatus;
 import com.iboot.ai.domain.graph.GraphSyncSummary;
@@ -33,6 +34,7 @@ import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.TransactionContext;
+import org.neo4j.driver.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -206,6 +208,46 @@ public class Neo4jGraphRepository {
             LIMIT 1
             """;
 
+    private static final String QUERY_SEARCH_DEPTS = """
+            MATCH (d:Dept)
+            WHERE ($unrestricted OR d.id IN $visibleDeptIds)
+              AND toLower(d.name) CONTAINS toLower($keyword)
+            OPTIONAL MATCH (parent:Dept {id: d.parentId})
+            RETURN d.id AS id, d.name AS name, d.code AS code, parent.name AS parentName
+            ORDER BY CASE WHEN toLower(d.name) = toLower($keyword) THEN 0 ELSE 1 END, d.name
+            LIMIT $limit
+            """;
+
+    private static final String QUERY_SEARCH_USERS = """
+            MATCH (u:User)-[:BELONGS_TO]->(dept:Dept)
+            WHERE ($unrestricted OR dept.id IN $visibleDeptIds)
+              AND (toLower(u.username) CONTAINS toLower($keyword)
+                   OR toLower(coalesce(u.nickname, u.username)) CONTAINS toLower($keyword))
+            RETURN u.id AS id, coalesce(u.nickname, u.username) AS name, u.username AS username,
+                   dept.id AS deptId, dept.name AS deptName
+            ORDER BY CASE WHEN toLower(u.username) = toLower($keyword)
+                               OR toLower(coalesce(u.nickname, u.username)) = toLower($keyword)
+                          THEN 0 ELSE 1 END, u.username
+            LIMIT $limit
+            """;
+
+    private static final String QUERY_SEARCH_MENUS = """
+            MATCH (m:Menu)
+            WHERE m.permission IS NOT NULL
+              AND (toLower(m.name) CONTAINS toLower($keyword)
+                   OR toLower(m.permission) CONTAINS toLower($keyword))
+              AND ($unrestricted OR EXISTS {
+                    MATCH (u:User)-[:BELONGS_TO]->(dept:Dept)
+                    WHERE dept.id IN $visibleDeptIds
+                      AND (u)-[:HAS_ROLE]->(:Role)-[:GRANTS]->(m)
+                  })
+            RETURN m.id AS id, m.name AS name, m.type AS type, m.permission AS permission
+            ORDER BY CASE WHEN toLower(m.name) = toLower($keyword)
+                               OR toLower(m.permission) = toLower($keyword)
+                          THEN 0 ELSE 1 END, m.name
+            LIMIT $limit
+            """;
+
     private final Driver driver;
 
     private final SessionConfig sessionConfig;
@@ -343,6 +385,50 @@ public class Neo4jGraphRepository {
         }
     }
 
+    /**
+     * 按名称检索部门。
+     *
+     * @param keyword 名称关键词
+     * @param scope   调用者数据权限范围
+     * @param limit   返回行数上限
+     * @return 命中的部门节点，完全匹配优先
+     */
+    public List<GraphNodeMatch> searchDepartments(String keyword, QueryScope scope, int limit) {
+        return read(QUERY_SEARCH_DEPTS, Map.of("keyword", keyword, "limit", limit), scope,
+                record -> new GraphNodeMatch("dept", record.get("id").asLong(), record.get("name").asString(),
+                        text(record, "code"), text(record, "parentName"), null));
+    }
+
+    /**
+     * 按名称检索用户。
+     *
+     * @param keyword 用户名或昵称关键词
+     * @param scope   调用者数据权限范围
+     * @param limit   返回行数上限
+     * @return 命中的用户节点，完全匹配优先
+     */
+    public List<GraphNodeMatch> searchUsers(String keyword, QueryScope scope, int limit) {
+        return read(QUERY_SEARCH_USERS, Map.of("keyword", keyword, "limit", limit), scope,
+                record -> new GraphNodeMatch("user", record.get("id").asLong(), record.get("name").asString(),
+                        record.get("username").asString(), text(record, "deptName"), null));
+    }
+
+    /**
+     * 按名称或权限码检索菜单。
+     *
+     * <p>非超管只能检索到可见部门内用户经角色持有的菜单；没有权限码的菜单不作为解析结果。
+     *
+     * @param keyword 菜单名称或权限码关键词
+     * @param scope   调用者数据权限范围
+     * @param limit   返回行数上限
+     * @return 命中的菜单节点，完全匹配优先
+     */
+    public List<GraphNodeMatch> searchMenus(String keyword, QueryScope scope, int limit) {
+        return read(QUERY_SEARCH_MENUS, Map.of("keyword", keyword, "limit", limit), scope,
+                record -> new GraphNodeMatch("menu", record.get("id").asLong(), record.get("name").asString(),
+                        text(record, "type"), null, record.get("permission").asString()));
+    }
+
     private <T> List<T> read(String statement, Map<String, Object> params, QueryScope scope,
                              java.util.function.Function<Record, T> mapper) {
         Map<String, Object> scoped = withScope(params, scope);
@@ -362,6 +448,11 @@ public class Neo4jGraphRepository {
         return new UserRef(record.get("id").asLong(), record.get("username").asString(),
                 record.get("nickname").asString(), record.get("deptId").asLong(),
                 record.get("deptName").asString());
+    }
+
+    private String text(Record record, String key) {
+        Value value = record.get(key);
+        return value == null || value.isNull() ? null : value.asString();
     }
 
     private void writeNodes(TransactionContext transaction, GraphSnapshot snapshot) {

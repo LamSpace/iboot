@@ -49,7 +49,12 @@ public enum GraphQueryTemplate {
     /**
      * 两个部门之间的组织路径。
      */
-    DEPT_PATH("dept_path");
+    DEPT_PATH("dept_path"),
+
+    /**
+     * 按名称解析图节点，返回查询所需的主键或权限码。
+     */
+    SEARCH_NODES("search_nodes");
 
     private final String wireName;
 

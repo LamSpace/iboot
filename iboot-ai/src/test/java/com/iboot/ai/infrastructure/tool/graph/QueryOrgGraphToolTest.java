@@ -21,6 +21,7 @@ import com.iboot.ai.application.service.graph.GraphRows;
 import com.iboot.ai.application.service.graph.GraphScopeUnavailableException;
 import com.iboot.ai.domain.agent.AgentContext;
 import com.iboot.ai.domain.agent.ToolOutcome;
+import com.iboot.ai.domain.graph.GraphNodeMatch;
 import com.iboot.ai.domain.graph.QueryScope;
 import com.iboot.ai.domain.graph.UserRef;
 import com.iboot.ai.infrastructure.graph.GraphScopeResolver;
@@ -107,6 +108,56 @@ class QueryOrgGraphToolTest {
         assertThat(outcome.status()).isEqualTo(ToolOutcome.Status.FAILED);
         assertThat(outcome.content()).contains("query_dept_path");
         verifyNoInteractions(queryService);
+    }
+
+    @Test
+    void delegatesSearchWithKeywordAndType() {
+        when(scopeResolver.resolve(10L, "token")).thenReturn(SCOPE);
+        when(queryService.search("研发部", "dept", SCOPE)).thenReturn(new GraphRows<>(List.of(
+                new GraphNodeMatch("dept", 2L, "研发部", "RD", "总经办", null)), false));
+
+        ToolOutcome outcome = tool.execute(context(Set.of("ai:graph:use")),
+                Map.of("template", "search_nodes", "keyword", "研发部", "nodeType", "dept"));
+
+        assertThat(outcome.status()).isEqualTo(ToolOutcome.Status.OK);
+        assertThat(outcome.content()).contains("研发部").contains("\"truncated\":false");
+    }
+
+    @Test
+    void failsWhenSearchKeywordMissing() {
+        when(scopeResolver.resolve(10L, "token")).thenReturn(SCOPE);
+        when(queryService.search(any(), any(), any()))
+                .thenThrow(new IllegalArgumentException("缺少查询关键词"));
+
+        ToolOutcome outcome = tool.execute(context(Set.of("ai:graph:use")),
+                Map.of("template", "search_nodes"));
+
+        assertThat(outcome.status()).isEqualTo(ToolOutcome.Status.FAILED);
+        assertThat(outcome.content()).contains("关键词");
+    }
+
+    @Test
+    void failsOnUnsupportedNodeType() {
+        when(scopeResolver.resolve(10L, "token")).thenReturn(SCOPE);
+        when(queryService.search("研发", "role", SCOPE))
+                .thenThrow(new IllegalArgumentException("不支持的节点类型：role"));
+
+        ToolOutcome outcome = tool.execute(context(Set.of("ai:graph:use")),
+                Map.of("template", "search_nodes", "keyword", "研发", "nodeType", "role"));
+
+        assertThat(outcome.status()).isEqualTo(ToolOutcome.Status.FAILED);
+        assertThat(outcome.content()).contains("节点类型");
+    }
+
+    @Test
+    void passesSearchTruncationFlag() {
+        when(scopeResolver.resolve(10L, "token")).thenReturn(SCOPE);
+        when(queryService.search("研发", null, SCOPE)).thenReturn(new GraphRows<>(List.of(), true));
+
+        ToolOutcome outcome = tool.execute(context(Set.of("ai:graph:use")),
+                Map.of("template", "search_nodes", "keyword", "研发"));
+
+        assertThat(outcome.content()).contains("\"truncated\":true");
     }
 
     @Test
