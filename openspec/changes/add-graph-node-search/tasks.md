@@ -38,5 +38,5 @@
 
 - [x] 7.1 全量回归：`TESTCONTAINERS_RYUK_CONTAINER_IMAGE=testcontainers/ryuk:0.12.0 mvn -s /home/lam/repo/settings.xml -pl iboot-ai test` 全绿，既有图模板用例无改动仍通过
 - [x] 7.2 运行环境准备（用户执行）：`docker compose --profile graph up -d neo4j`，`.env` 已含 `IBOOT_AI_GRAPH_ENABLED` / `IBOOT_AI_GRAPH_PASSWORD`；启用后用超管登录触发 `POST /api/ai/graph/sync`，确认各类节点数量正常
-- [ ] 7.3 真实模型验收（用户执行）：准备临时重名部门（验收后清理），在门户提问"研发部有哪些人""某人的同事""谁能访问用户管理"；判据：无 `step_limit`，重名时列候选，回答可追溯到解析到的部门/权限
-- [ ] 7.4 红队验收：用可见范围只含单个部门的账号提问范围外部门，验证返回空且不泄漏；确认清理临时验收数据后重跑一次同步，图内不残留测试节点
+- [x] 7.3 真实模型验收（用户执行）：准备临时重名部门（验收后清理），在门户提问"研发部有哪些人""某人的同事""谁能访问用户管理"；判据：无 `step_limit`，重名时列候选，回答可追溯到解析到的部门/权限
+- [x] 7.4 红队验收：用可见范围只含单个部门的账号提问范围外部门，验证返回空且不泄漏；确认清理临时验收数据后重跑一次同步，图内不残留测试节点
