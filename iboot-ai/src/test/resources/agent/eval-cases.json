@@ -90,6 +90,66 @@
         "pending": false,
         "writeExecuted": false
       }
+    },
+    {
+      "id": "g1-name-to-members",
+      "prompt": "研发部有哪些人",
+      "script": [
+        { "type": "tool_call", "tool": "query_org_graph",
+          "args": { "template": "search_nodes", "keyword": "研发部", "nodeType": "dept" } },
+        { "type": "tool_call", "tool": "query_org_graph",
+          "args": { "template": "dept_members", "deptId": 2 } },
+        { "type": "text", "text": "研发部成员：alice、bob、dave。" }
+      ],
+      "expect": {
+        "tools": ["query_org_graph"],
+        "sequence": ["query_org_graph", "query_org_graph"],
+        "pending": false,
+        "writeExecuted": false
+      }
+    },
+    {
+      "id": "g2-unknown-name",
+      "prompt": "「不存在部」有哪些人",
+      "script": [
+        { "type": "tool_call", "tool": "query_org_graph",
+          "args": { "template": "search_nodes", "keyword": "不存在部" } },
+        { "type": "text", "text": "没有找到「不存在部」，请确认部门名称。" }
+      ],
+      "expect": {
+        "tools": ["query_org_graph"],
+        "pending": false,
+        "writeExecuted": false
+      }
+    },
+    {
+      "id": "g3-duplicate-name",
+      "prompt": "算法组有哪些人",
+      "script": [
+        { "type": "tool_call", "tool": "query_org_graph",
+          "args": { "template": "search_nodes", "keyword": "算法组", "nodeType": "dept" } },
+        { "type": "text", "text": "有两个同名部门：总经办/算法组、研发部/算法组，请选择。" }
+      ],
+      "expect": {
+        "tools": ["query_org_graph"],
+        "pending": false,
+        "writeExecuted": false
+      }
+    },
+    {
+      "id": "g4-graph-denied",
+      "prompt": "研发部有哪些人",
+      "permissions": ["ai:agent:use"],
+      "script": [
+        { "type": "tool_call", "tool": "query_org_graph",
+          "args": { "template": "search_nodes", "keyword": "研发部" } }
+      ],
+      "expect": {
+        "tools": ["query_org_graph"],
+        "toolOutcome": "DENIED",
+        "pending": false,
+        "writeExecuted": false
+      }
     }
   ]
 }

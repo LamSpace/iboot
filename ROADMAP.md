@@ -6,7 +6,7 @@
 >
 > 本文只定义"做什么、用什么、受什么约束、带来什么价值、怎么算完成",不含实施排期。每个条目都带验收判据,判据不成立的条目不进路线图。
 >
-> 最近更新:2026-10-28
+> 最近更新:2026-10-29
 
 ---
 
@@ -60,7 +60,7 @@ infrastructure → config / persistence / repository / security / filter / inter
 | AI 对话 | 独立 `iboot-ai` 服务:多轮流式对话、Redis 记忆、每日配额、token/延迟观测 | `ChatApplicationService`、`AiChatController`、doc 22 |
 | AI 知识库 RAG | 知识库 CRUD、PDF/DOCX/TXT/MD 解析、分块、Embedding、BM25+kNN+应用层 RRF、引用溯源、RBAC+五级数据权限前置过滤、OCR 可选 | `KnowledgeIngestionService`、`KnowledgeRetrievalService`、`RagChatController`、doc 22 |
 | 智能体编排 | 受控工具注册（3 只读 + 1 可写）、以用户 JWT 代理 admin、工具级权限继承、写操作两段式确认、运行轨迹审计、确定性回放与真实模型回测 | `AgentRunService`、`AgentScopeRuntime`、`AgentToolRegistry`、`AgentChatController`、doc 22 |
-| 知识图谱 | 组织架构与 RBAC 四类节点五类关系入图、幂等同步、5 个固定模板的多跳查询、查询前数据权限过滤与失败关闭、2 个只读智能体工具 | `GraphSyncService`、`GraphQueryService`、`Neo4jGraphRepository`、`QueryOrgGraphTool`、doc 22 §13 |
+| 知识图谱 | 组织架构与 RBAC 四类节点五类关系入图、幂等同步、6 个固定模板（含名称解析）的多跳查询、查询前数据权限过滤与失败关闭、2 个只读智能体工具 | `GraphSyncService`、`GraphQueryService`、`Neo4jGraphRepository`、`QueryOrgGraphTool`、doc 22 §13 |
 | 国际化 | 前端 vue-i18n + 后端 MessageSource,中英文语言包分层 | `I18nController`、`common/i18n`、doc 17/18 |
 | 二级缓存 | Caffeine(L1)+ Redis(L2),Pub/Sub 失效广播,穿透/击穿/雪崩防护 | `TwoLevelCacheManager` |
 | 可观测性 | Actuator + Micrometer + Prometheus + Alertmanager + Thanos 长期存储 + Grafana + ELK + 各类 exporter | 见 doc 11 |
@@ -206,6 +206,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | **1.2** | 知识库 RAG 与权限一致性 | 知识库 RAG、RAG 权限一致性、文档解析(文本类) | 1.1;0.3 全文检索(已完成) | 知识库可上传 → 入库 → 带溯源问答;低权限用户红队用例不越权 | **已完成(2026-10-25)** |
 | **1.3** | 智能体编排 | 智能体编排 | 1.1;JDK 25 Spike(§6.2 R8)通过 | 3 个只读工具端到端可用;写操作二次确认不可绕过 | **已完成(2026-10-28)** |
 | **1.4** | 知识图谱 | 知识图谱 | 1.1;Neo4j 中间件 | 组织架构 + RBAC 入图;2 跳关系查询正确 | **已完成(2026-10-28)** |
+| **1.5** | 图谱名称解析 | 按名称解析部门 / 用户 / 菜单,消除"必须先知道主键"的门槛 | 1.4 | 以「研发部有哪些人」这类名称提问可正常回答,运行不再以 `step_limit` 收场;解析结果不越权 | **已完成(2026-10-29)** |
 | — | ~~数字人~~ | 数字人 | — | 仅保留 Provider 接口,不实现 demo | **剔除** |
 
 排序依据:
@@ -253,7 +254,15 @@ Boot 4.0.3 这一前提改变了可选生态:
 |---|---|---|---|
 | 知识图谱 | Neo4j + GraphRAG;**最小可用图 = 把 `sys_dept` / `sys_user` / `sys_role` / `sys_menu` 入图**(数据现成,回答"谁能访问什么""跨部门协作路径"这类多跳问题) | 新增中间件 +1;受 §6.2 R4 内存约束;GraphRAG 建模需真实语料支撑 | 组织架构 + RBAC 入图;2 跳关系查询正确 |
 
-**已知限制(2026-10-28 验收时确认)**:查询模板的参数是**主键与权限码**(如 `deptId=2`、`permission=user:list`),当前没有"按名称检索节点"的模板。模型无法把「研发部」「用户管理」这类名称直接解析成主键,因此提问需要给出明确标识;模糊问法下模型可能反复换参,最终以 `step_limit` 结束。是否补充名称解析模板,留待后续单独审视(不属于 1.4 范围)。
+**已知限制(2026-10-28 验收时确认,已由 1.5 解决)**:查询模板的参数是主键与权限码(如 `deptId=2`、`permission=user:list`),1.4 交付时没有"按名称检索节点"的模板,模型无法把「研发部」「用户管理」这类名称直接解析成主键,模糊问法下会反复换参并以 `step_limit` 结束。该限制作为独立增量在 1.5 处理,见下节。
+
+#### 1.5 图谱名称解析
+
+**交付状态:已完成(2026-10-29)**。能力契约见 `openspec/specs/knowledge-graph/spec.md`(名称解析相关需求),操作指南见 doc 22 §13.2。
+
+| 能力 | 技术栈 | 约束 | 验收判据 |
+|---|---|---|---|
+| 名称解析 | 在既有 `query_org_graph` 工具内新增 `search_nodes` 模板(关键词 + 可选节点类型 dept / user / menu);部门返回上级部门名用于消歧,菜单返回权限码 | 不新增智能体工具,工具白名单零改动;解析结果与查询模板走同一数据权限过滤,菜单只能经可见用户暴露;空结果不报错、重名返回候选,由模型向用户确认;不引入全文索引 | 「研发部有哪些人」「某人的同事」「谁能访问用户管理」可用名称直接提问且不以 `step_limit` 结束;范围外名称返回空且不泄漏;重名时列出候选 |
 
 #### 已剔除
 

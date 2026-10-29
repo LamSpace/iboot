@@ -18,6 +18,7 @@ package com.iboot.ai.infrastructure.graph;
 
 import com.iboot.ai.domain.graph.DeptNode;
 import com.iboot.ai.domain.graph.DeptPath;
+import com.iboot.ai.domain.graph.GraphNodeMatch;
 import com.iboot.ai.domain.graph.GraphSnapshot;
 import com.iboot.ai.domain.graph.MenuNode;
 import com.iboot.ai.domain.graph.PermissionRef;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 /**
  * 图查询模板的集成测试。
@@ -152,12 +154,71 @@ class GraphQueryRepositoryTest {
         assertThat(repository.userPermissions(10L, scope, false, 50)).isEmpty();
     }
 
+    @Test
+    void searchesDepartmentsByPartialNameWithParent() {
+        List<GraphNodeMatch> matches = repository.searchDepartments("研发", UNRESTRICTED, 50);
+
+        assertThat(matches).extracting(GraphNodeMatch::name).containsExactly("研发", "研发部");
+        assertThat(matches).extracting(GraphNodeMatch::type).containsOnly("dept");
+        assertThat(matches.get(1).id()).isEqualTo(2L);
+        assertThat(matches.get(1).label()).isEqualTo("RD");
+        assertThat(matches.get(1).parentName()).isEqualTo("总经办");
+    }
+
+    @Test
+    void ranksExactDepartmentNameFirst() {
+        List<GraphNodeMatch> matches = repository.searchDepartments("研发", UNRESTRICTED, 1);
+
+        assertThat(matches).extracting(GraphNodeMatch::name).containsExactly("研发");
+    }
+
+    @Test
+    void searchesUsersByUsernameOrNickname() {
+        assertThat(repository.searchUsers("bob", UNRESTRICTED, 50))
+                .extracting(GraphNodeMatch::name, GraphNodeMatch::label, GraphNodeMatch::parentName)
+                .containsExactly(tuple("鲍勃", "bob", "研发部"));
+        assertThat(repository.searchUsers("爱丽", UNRESTRICTED, 50))
+                .extracting(GraphNodeMatch::label).containsExactly("alice");
+    }
+
+    @Test
+    void searchesMenusByNameOrPermission() {
+        assertThat(repository.searchMenus("用户管理", UNRESTRICTED, 50))
+                .extracting(GraphNodeMatch::permission).containsExactly("user:list");
+        assertThat(repository.searchMenus("role:list", UNRESTRICTED, 50))
+                .extracting(GraphNodeMatch::name).containsExactly("角色管理");
+    }
+
+    @Test
+    void excludesMenusWithoutPermission() {
+        assertThat(repository.searchMenus("系统目录", UNRESTRICTED, 50)).isEmpty();
+    }
+
+    @Test
+    void hidesOutOfScopeNodesFromSearch() {
+        QueryScope scope = new QueryScope(false, List.of(3L));
+
+        assertThat(repository.searchDepartments("研发", scope, 50)).isEmpty();
+        assertThat(repository.searchUsers("alice", scope, 50)).isEmpty();
+        assertThat(repository.searchMenus("用户管理", scope, 50)).isEmpty();
+    }
+
+    @Test
+    void exposesMenusOnlyThroughVisibleUsers() {
+        QueryScope scope = new QueryScope(false, List.of(2L));
+
+        assertThat(repository.searchMenus("用户管理", scope, 50))
+                .extracting(GraphNodeMatch::permission).containsExactly("user:list");
+        assertThat(repository.searchUsers("carol", scope, 50)).isEmpty();
+    }
+
     private GraphSnapshot snapshot() {
         List<DeptNode> departments = List.of(
                 new DeptNode(1L, "总经办", "HQ", null, 1),
                 new DeptNode(2L, "研发部", "RD", 1L, 1),
                 new DeptNode(3L, "市场部", "MKT", 1L, 1),
-                new DeptNode(4L, "后端组", "RD-BE", 2L, 1));
+                new DeptNode(4L, "后端组", "RD-BE", 2L, 1),
+                new DeptNode(5L, "研发", "RD-ABBR", 1L, 1));
         List<UserNode> users = List.of(
                 new UserNode(10L, "alice", "爱丽丝", 2L, 1, List.of(5L)),
                 new UserNode(11L, "bob", "鲍勃", 2L, 1, List.of(5L, 6L)),
@@ -168,7 +229,8 @@ class GraphQueryRepositoryTest {
                 new RoleNode(6L, "viewer", "只读", 4, 1, List.of(100L, 101L), List.of()));
         List<MenuNode> menus = List.of(
                 new MenuNode(100L, "用户管理", "C", "user:list", null, 1),
-                new MenuNode(101L, "角色管理", "C", "role:list", null, 1));
+                new MenuNode(101L, "角色管理", "C", "role:list", null, 1),
+                new MenuNode(102L, "系统目录", "M", null, null, 1));
         return new GraphSnapshot("sync-query", departments, users, roles, menus);
     }
 }

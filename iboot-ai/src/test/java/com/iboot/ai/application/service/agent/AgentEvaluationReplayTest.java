@@ -17,13 +17,19 @@
 package com.iboot.ai.application.service.agent;
 
 import com.iboot.ai.application.service.QuotaService;
+import com.iboot.ai.application.service.graph.GraphQueryService;
+import com.iboot.ai.application.service.graph.GraphRows;
 import com.iboot.ai.domain.agent.AgentContext;
 import com.iboot.ai.domain.agent.AgentDefinition;
 import com.iboot.ai.domain.agent.AgentRunStatus;
 import com.iboot.ai.domain.agent.AgentRuntimeEvent;
 import com.iboot.ai.domain.agent.AgentTool;
 import com.iboot.ai.domain.agent.ToolOutcome;
+import com.iboot.ai.domain.graph.GraphNodeMatch;
+import com.iboot.ai.domain.graph.QueryScope;
+import com.iboot.ai.domain.graph.UserRef;
 import com.iboot.ai.infrastructure.config.AiProperties;
+import com.iboot.ai.infrastructure.graph.GraphScopeResolver;
 import com.iboot.ai.infrastructure.metrics.AiMetrics;
 import com.iboot.ai.infrastructure.persistence.AgentRepository;
 import com.iboot.ai.infrastructure.tool.AdminApiClient;
@@ -33,6 +39,7 @@ import com.iboot.ai.infrastructure.tool.admin.QueryBackupSummaryTool;
 import com.iboot.ai.infrastructure.tool.admin.QueryLoginLogsTool;
 import com.iboot.ai.infrastructure.tool.admin.QueryUsersTool;
 import com.iboot.ai.infrastructure.tool.admin.TriggerBackupTool;
+import com.iboot.ai.infrastructure.tool.graph.QueryOrgGraphTool;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
@@ -49,6 +56,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -76,7 +84,7 @@ class AgentEvaluationReplayTest {
     private static final long RUN_ID = 99L;
 
     private static final Set<String> ALL_PERMISSIONS = Set.of(
-            "user:list", "loginlog:list", "backup:record:list", "backup:record:create");
+            "user:list", "loginlog:list", "backup:record:list", "backup:record:create", "ai:graph:use");
 
     @SuppressWarnings("unchecked")
     @Test
@@ -124,11 +132,29 @@ class AgentEvaluationReplayTest {
         AiProperties properties = new AiProperties();
         properties.getAgent().setEnabled(true);
         ToolResultTrimmer trimmer = new ToolResultTrimmer(properties);
+        GraphQueryService graphQueryService = mock(GraphQueryService.class);
+        GraphScopeResolver scopeResolver = mock(GraphScopeResolver.class);
+        when(scopeResolver.resolve(anyLong(), any())).thenReturn(new QueryScope(true, List.of()));
+        when(graphQueryService.search(any(), any(), any())).thenAnswer(invocation -> {
+            String keyword = invocation.getArgument(0);
+            return switch (keyword) {
+                case "研发部" -> new GraphRows<>(List.of(
+                        new GraphNodeMatch("dept", 2L, "研发部", "RD", "总经办", null)), false);
+                case "算法组" -> new GraphRows<>(List.of(
+                        new GraphNodeMatch("dept", 6L, "算法组", "ALG-HQ", "总经办", null),
+                        new GraphNodeMatch("dept", 7L, "算法组", "ALG-RD", "研发部", null)), false);
+                default -> new GraphRows<>(List.of(), false);
+            };
+        });
+        when(graphQueryService.deptMembers(2L, new QueryScope(true, List.of())))
+                .thenReturn(new GraphRows<>(List.of(
+                        new UserRef(10L, "alice", "爱丽丝", 2L, "研发部")), false));
         AgentToolRegistry registry = new AgentToolRegistry(List.of(
                 new QueryUsersTool(client, trimmer),
                 new QueryLoginLogsTool(client, trimmer),
                 new QueryBackupSummaryTool(client, trimmer),
-                new TriggerBackupTool(client, trimmer)));
+                new TriggerBackupTool(client, trimmer),
+                new QueryOrgGraphTool(graphQueryService, scopeResolver)));
 
         AgentRepository repository = mock(AgentRepository.class);
         when(repository.findEnabledAgent(AGENT_ID)).thenReturn(java.util.Optional.of(definition()));
@@ -155,7 +181,8 @@ class AgentEvaluationReplayTest {
             writeExecuted = true;
         }
         boolean expectedPending = Boolean.TRUE.equals(expect.get("pending"));
-        boolean passed = executed.equals(expect.get("tools"))
+        Object expectedTools = expect.containsKey("sequence") ? expect.get("sequence") : expect.get("tools");
+        boolean passed = executed.equals(expectedTools)
                 && pending == expectedPending
                 && writeExecuted == Boolean.TRUE.equals(expect.get("writeExecuted"))
                 && (!expect.containsKey("toolOutcome") || outcomes.contains(expect.get("toolOutcome")));
@@ -212,7 +239,8 @@ class AgentEvaluationReplayTest {
 
     private AgentDefinition definition() {
         return new AgentDefinition(AGENT_ID, "ops", "运维助手", "你是运维助手", null,
-                List.of("query_users", "query_login_logs", "query_backup_summary", "trigger_backup"));
+                List.of("query_users", "query_login_logs", "query_backup_summary", "trigger_backup",
+                        QueryOrgGraphTool.NAME));
     }
 
     @SuppressWarnings("unchecked")

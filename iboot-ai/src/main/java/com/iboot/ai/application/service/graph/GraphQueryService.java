@@ -17,6 +17,7 @@
 package com.iboot.ai.application.service.graph;
 
 import com.iboot.ai.domain.graph.DeptPath;
+import com.iboot.ai.domain.graph.GraphNodeMatch;
 import com.iboot.ai.domain.graph.PermissionRef;
 import com.iboot.ai.domain.graph.QueryScope;
 import com.iboot.ai.domain.graph.UserRef;
@@ -26,6 +27,9 @@ import com.iboot.ai.infrastructure.metrics.AiMetrics;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -41,6 +45,8 @@ import java.util.Set;
 @Service
 @ConditionalOnProperty(prefix = "iboot.ai.graph", name = "enabled", havingValue = "true")
 public class GraphQueryService {
+
+    private static final Set<String> NODE_TYPES = Set.of("dept", "user", "menu");
 
     private final Neo4jGraphRepository repository;
 
@@ -141,6 +147,43 @@ public class GraphQueryService {
             throw new IllegalArgumentException("缺少部门标识");
         }
         return measured("dept_path", () -> repository.deptPath(fromDeptId, toDeptId, scope));
+    }
+
+    /**
+     * 按名称解析图节点。
+     *
+     * <p>只接受关键词与节点类型，不接受自由查询语句；节点类型为空时按部门、用户、菜单的顺序
+     * 依次检索并合并结果，最终统一收敛到 {@code max-rows}。检索本身不改变数据权限范围。
+     *
+     * @param keyword  名称关键词
+     * @param nodeType 节点类型：{@code dept}、{@code user}、{@code menu}，为空表示全部
+     * @param scope    数据权限范围
+     * @return 命中的节点，超出上限时截断
+     * @throws IllegalArgumentException 关键词为空或节点类型不受支持时抛出
+     */
+    public GraphRows<GraphNodeMatch> search(String keyword, String nodeType, QueryScope scope) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("缺少查询关键词");
+        }
+        String type = nodeType == null || nodeType.isBlank() ? "all" : nodeType.trim().toLowerCase(Locale.ROOT);
+        if (!"all".equals(type) && !NODE_TYPES.contains(type)) {
+            throw new IllegalArgumentException("不支持的节点类型：" + nodeType);
+        }
+        int limit = limit();
+        return measured("search_nodes", () -> {
+            List<GraphNodeMatch> merged = new ArrayList<>();
+            if ("all".equals(type) || "dept".equals(type)) {
+                merged.addAll(repository.searchDepartments(normalized, scope, limit + 1));
+            }
+            if ("all".equals(type) || "user".equals(type)) {
+                merged.addAll(repository.searchUsers(normalized, scope, limit + 1));
+            }
+            if ("all".equals(type) || "menu".equals(type)) {
+                merged.addAll(repository.searchMenus(normalized, scope, limit + 1));
+            }
+            return GraphRows.of(merged, limit);
+        });
     }
 
     private <T> T measured(String template, java.util.function.Supplier<T> query) {
