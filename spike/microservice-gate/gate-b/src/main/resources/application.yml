@@ -1,0 +1,36 @@
+server:
+  port: 18081
+
+spring:
+  application:
+    name: spike-b
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        file-extension: yml
+  # Nacos 3.x 起不再支持 bootstrap.yml，配置一律经 spring.config.import 引入
+  config:
+    import: optional:nacos:spike-b.yml
+
+spike:
+  message: local-default
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${TEMPO_OTLP:http://localhost:4318/v1/traces}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,env
+  endpoint:
+    health:
+      show-details: always
