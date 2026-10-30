@@ -29,7 +29,6 @@ import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.plugin.Intercepts;
 import org.apache.ibatis.plugin.Invocation;
 import org.apache.ibatis.plugin.Signature;
-import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.slf4j.Logger;
@@ -76,32 +75,59 @@ public class DataScopeInterceptor implements Interceptor {
     }
 
     /**
-     * 从 MappedStatement 获取 Mapper 接口上的注解 MyBatis 3.5+ 中 MappedStatement 没有直接的 getAnnotation 方法 需要通过 Configuration 和
-     * MapperRegistry 获取
+     * 从 MappedStatement 解析数据权限注解。
+     *
+     * <p>MyBatis 的 MappedStatement 不直接暴露注解，需要由 statement id
+     * （形如 {@code 接口全限定名.方法名}）反查 Mapper 接口。注解既可能标在方法上，
+     * 也可能标在接口上，因此先查方法、再回退到接口。
+     *
+     * @param ms              MappedStatement
+     * @param annotationClass 目标注解类型
+     * @param <T>             注解类型
+     * @return 找到的注解；方法上与接口上都没有时返回 {@code null}
      */
     private <T extends Annotation> T getAnnotationFromMappedStatement(MappedStatement ms, Class<T> annotationClass) {
+        String statementId = ms.getId();
+        int lastDotIndex = statementId.lastIndexOf('.');
+        if (lastDotIndex <= 0) {
+            return null;
+        }
         try {
-            Configuration configuration = ms.getConfiguration();
-            String mapperName = ms.getId();
-            int lastDotIndex = mapperName.lastIndexOf('.');
-            if (lastDotIndex > 0) {
-                String mapperClassName = mapperName.substring(0, lastDotIndex);
-                Class<?> mapperClass = Class.forName(mapperClassName);
-                if (mapperClass != null) {
-                    return mapperClass.getAnnotation(annotationClass);
-                }
-            }
+            Class<?> mapperClass = Class.forName(statementId.substring(0, lastDotIndex));
+            return findAnnotation(mapperClass, statementId.substring(lastDotIndex + 1), annotationClass);
         } catch (ClassNotFoundException e) {
             log.debug("无法获取 Mapper 类：{}", e.getMessage());
+            return null;
         }
-        return null;
     }
 
     /**
-     * 从 MappedStatement 中提取表名
+     * 在 Mapper 类上解析注解，方法级优先、接口级其次。
+     *
+     * @param mapperClass     Mapper 接口
+     * @param methodName      Mapper 方法名
+     * @param annotationClass 目标注解类型
+     * @param <T>             注解类型
+     * @return 找到的注解；方法上与接口上都没有时返回 {@code null}
      */
-    private String extractTableName(MappedStatement ms) {
-        BoundSql boundSql = ms.getBoundSql(ms.getId());
+    <T extends Annotation> T findAnnotation(Class<?> mapperClass, String methodName, Class<T> annotationClass) {
+        for (Method method : mapperClass.getMethods()) {
+            if (method.getName().equals(methodName) && method.isAnnotationPresent(annotationClass)) {
+                return method.getAnnotation(annotationClass);
+            }
+        }
+        return mapperClass.getAnnotation(annotationClass);
+    }
+
+    /**
+     * 从 MappedStatement 中提取表名。
+     *
+     * @param ms        MappedStatement
+     * @param parameter 查询参数对象，用于生成 BoundSql
+     * @return 表名（小写）；无法识别时返回空串
+     */
+    private String extractTableName(MappedStatement ms, Object parameter) {
+        BoundSql boundSql = ms.getBoundSql(parameter);
         String sql = boundSql.getSql().trim().toUpperCase();
         // 从 SELECT 或 UPDATE 语句中提取表名
         int fromIndex = sql.indexOf("FROM ");
@@ -165,7 +191,7 @@ public class DataScopeInterceptor implements Interceptor {
             return invocation.proceed();
         }
         // 从 SQL 中提取表名
-        String tableName = extractTableName(ms);
+        String tableName = extractTableName(ms, args[1]);
         boolean deptTable = "sys_dept".equals(tableName);
         // 生成数据权限 SQL 片段
         String dataScopeSql = dataScopeSqlBuilder.build(userDataScope, dataScope.userAlias(), deptTable,
@@ -190,6 +216,12 @@ public class DataScopeInterceptor implements Interceptor {
         MappedStatement newMs = createNewMappedStatement(ms, rewrittenSql);
         // 替换第一个参数（MappedStatement）
         args[0] = newMs;
+        if (args.length == 6) {
+            // 6 参数分支由调用方传入 BoundSql 并直接使用，仅替换 MappedStatement 不会生效，
+            // 必须同步替换最后一个参数，否则执行的仍是原始 SQL。
+            args[5] = new BoundSql(ms.getConfiguration(), rewrittenSql,
+                    boundSql.getParameterMappings(), boundSql.getParameterObject());
+        }
         // 获取 Executor 的 query 方法
         Method method;
         if (args.length == 6) {
@@ -216,25 +248,34 @@ public class DataScopeInterceptor implements Interceptor {
         // 查找 WHERE 关键字位置
         int whereIndex = lowerSql.indexOf("where");
         if (whereIndex > 0) {
-            // 已有 WHERE 子句，在 WHERE 后追加 AND 条件
+            // 已有 WHERE 子句：在原条件两侧加括号，避免 AND 与原条件的 OR 混在一起
+            int tailIndex = findTailIndex(lowerSql, whereIndex + 5);
             return originalSql.substring(0, whereIndex + 5) + " " + dataScopeSql + " AND ("
-                    + originalSql.substring(whereIndex + 5);
-        } else {
-            // 没有 WHERE 子句，需要添加
-            // 查找 ORDER BY、LIMIT、GROUP BY 等关键字
-            int orderIndex = lowerSql.indexOf("order by");
-            int limitIndex = lowerSql.indexOf("limit");
-            int groupIndex = lowerSql.indexOf("group by");
-            int insertPosition = originalSql.length();
-            if (orderIndex > 0 && orderIndex < insertPosition)
-                insertPosition = orderIndex;
-            if (limitIndex > 0 && limitIndex < insertPosition)
-                insertPosition = limitIndex;
-            if (groupIndex > 0 && groupIndex < insertPosition)
-                insertPosition = groupIndex;
-            return originalSql.substring(0, insertPosition) + " WHERE " + dataScopeSql
-                    + originalSql.substring(insertPosition);
+                    + originalSql.substring(whereIndex + 5, tailIndex) + ") "
+                    + originalSql.substring(tailIndex);
         }
+        // 没有 WHERE 子句：插入在 ORDER BY / GROUP BY / LIMIT 之前
+        int insertPosition = findTailIndex(lowerSql, 0);
+        return originalSql.substring(0, insertPosition) + " WHERE " + dataScopeSql
+                + originalSql.substring(insertPosition);
+    }
+
+    /**
+     * 定位 ORDER BY / GROUP BY / LIMIT 中最早出现的位置。
+     *
+     * @param lowerSql 已转为小写的 SQL
+     * @param from     起始搜索位置
+     * @return 插入位置；三者都不存在时返回 SQL 长度
+     */
+    private int findTailIndex(String lowerSql, int from) {
+        int position = lowerSql.length();
+        for (String keyword : new String[]{"order by", "group by", "limit"}) {
+            int index = lowerSql.indexOf(keyword, from);
+            if (index >= 0 && index < position) {
+                position = index;
+            }
+        }
+        return position;
     }
 
     /**
@@ -251,6 +292,8 @@ public class DataScopeInterceptor implements Interceptor {
         };
         MappedStatement.Builder msBuilder = new MappedStatement.Builder(originalMs.getConfiguration(),
                 originalMs.getId(), newSqlSource, originalMs.getSqlCommandType());
+        // 数据权限与二级缓存不兼容：CacheKey 由原始语句生成，命中缓存会绕过用户过滤
+        msBuilder.useCache(false);
         // 复制原始 MappedStatement 的属性
         msBuilder.fetchSize(originalMs.getFetchSize());
         msBuilder.timeout(originalMs.getTimeout());
