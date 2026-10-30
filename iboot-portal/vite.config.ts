@@ -18,12 +18,14 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/iboot/api': {
-        target: 'http://localhost:8080', // 后端服务地址
+        // 阶段 2：统一经网关转发；回滚时改回 http://localhost:8080
+        target: 'http://localhost:8088',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/iboot\/api/, '/api')
       },
       '/iboot/ai': {
-        target: 'http://localhost:8081', // AI 服务地址
+        // 阶段 2：统一经网关转发；回滚时改回 http://localhost:8081
+        target: 'http://localhost:8088',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/iboot\/ai/, '/api/ai')
       },
