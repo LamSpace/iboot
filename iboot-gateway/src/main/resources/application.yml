@@ -1,0 +1,35 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: iboot-gateway
+  profiles:
+    # 本地默认走静态地址；接入注册中心后改用 nacos profile
+    active: local
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # 跨域统一在入口处理，后端服务不再各自维护跨域配置
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOriginPatterns: "*"
+                allowedMethods: "*"
+                allowedHeaders: "*"
+                allowCredentials: true
+                maxAge: 3600
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 10s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always

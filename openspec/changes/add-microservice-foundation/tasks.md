@@ -27,20 +27,20 @@
 
 ## 4. 网关模块
 
-- [ ] 4.1 根 `pom.xml` 的 `dependencyManagement` 引入 `spring-cloud-dependencies`（2025.1.x）与 `spring-cloud-alibaba-dependencies:2025.1.0.0`，Boot 保持 `4.0.x`；验证：`mvn -s /home/lam/repo/settings.xml validate` 通过，既有模块依赖无版本冲突
-- [ ] 4.2 新建 `iboot-gateway` 模块（WebFlux，端口 `8088`），先只提供 `local` profile 的静态路由：`/api/ai/**` → `http://localhost:8081`、`/api/**` → `http://localhost:8080`；同时实测控制器上 `version = "1"` 的版本解析来源（默认策略 / header / query），并在网关如实透传；验证：两条路径经 `8088` 访问的响应体与直连后端完全一致，带版本信息的请求经网关后仍命中同一接口
-- [ ] 4.3 在网关统一配置 CORS（预检直接由网关应答、不转发）；验证：`curl -X OPTIONS` 预检请求返回允许头且后端日志无该请求
-- [ ] 4.4 为推送通道单独配置路由：不缓冲响应、保留查询参数中的凭证、不设短于心跳周期的空闲超时；验证：`curl -N` 长连接能持续收到心跳与事件，且后端能读到凭证参数
-- [ ] 4.5 配置上游不可用与超时的失败响应：连接拒绝返回服务不可用状态码、超时返回明确超时、响应体可区分于业务错误；验证：停掉 `8080` 后 `/api/**` 返回降级响应，同时 `/api/ai/**` 仍正常返回
-- [ ] 4.6 为网关补测试：用 `WebTestClient` 覆盖路由匹配优先级、预处理由网关应答、上游超时降级；验证：`mvn -s /home/lam/repo/settings.xml -pl iboot-gateway test` 通过
-- [ ] 4.7 在 `doc/23-微服务底座操作指南.md` 增网关章节：路由表、端口、profile 切换方式、失败响应约定、回滚方式；验证：文档中的端口与路由与实际配置逐条一致
+- [x] 4.1 根 `pom.xml` 的 `dependencyManagement` 引入 `spring-cloud-dependencies`（2025.1.x）与 `spring-cloud-alibaba-dependencies:2025.1.0.0`，Boot 保持 `4.0.x`；验证：`mvn -s /home/lam/repo/settings.xml validate` 通过，既有模块依赖无版本冲突
+- [x] 4.2 新建 `iboot-gateway` 模块（WebFlux，端口 `8088`），先只提供 `local` profile 的静态路由：`/api/ai/**` → `http://localhost:8081`、`/api/**` → `http://localhost:8080`；同时实测控制器上 `version = "1"` 的版本解析来源（默认策略 / header / query），并在网关如实透传；验证：两条路径经 `8088` 访问的响应体与直连后端完全一致，带版本信息的请求经网关后仍命中同一接口
+- [x] 4.3 在网关统一配置 CORS（预检直接由网关应答、不转发）；验证：`curl -X OPTIONS` 预检请求返回允许头且后端日志无该请求
+- [x] 4.4 为推送通道单独配置路由：不缓冲响应、保留查询参数中的凭证、不设短于心跳周期的空闲超时；验证：`curl -N` 长连接能持续收到心跳与事件，且后端能读到凭证参数
+- [x] 4.5 配置上游不可用与超时的失败响应：连接拒绝返回服务不可用状态码、超时返回明确超时、响应体可区分于业务错误；验证：停掉 `8080` 后 `/api/**` 返回降级响应，同时 `/api/ai/**` 仍正常返回
+- [x] 4.6 为网关补测试：用 `WebTestClient` 覆盖路由匹配优先级、预处理由网关应答、上游超时降级；验证：`mvn -s /home/lam/repo/settings.xml -pl iboot-gateway test` 通过
+- [x] 4.7 在 `doc/23-微服务底座操作指南.md` 增网关章节：路由表、端口、profile 切换方式、失败响应约定、回滚方式；验证：文档中的端口与路由与实际配置逐条一致
 
 ## 5. 切流量到网关
 
-- [ ] 5.1 `iboot-portal/vite.config.ts` 的 `/iboot/api` 与 `/iboot/ai` 两条代理目标改为 `http://localhost:8088`，保留原目标作为注释；验证：`cnpm run dev` 后登录与 AI 对话均正常
-- [ ] 5.2 `iboot-portal/nginx.conf` 的代理目标改为网关；验证：本地以生产配置启动后仍能访问接口
-- [ ] 5.3 以网关入口重跑冒烟：`scripts/regress/smoke.sh` 指向 `8088` 后六条链路全通过；验证：退出码为 0
-- [ ] 5.4 回滚演练：把两条代理目标改回 `8080`/`8081`，确认六条链路仍全通过，并把演练步骤写入 `doc/23`；验证：回滚后冒烟全绿，文档可直接照做
+- [x] 5.1 `iboot-portal/vite.config.ts` 的 `/iboot/api` 与 `/iboot/ai` 两条代理目标改为 `http://localhost:8088`，保留原目标作为注释；验证：`cnpm run dev` 后登录与 AI 对话均正常
+- [x] 5.2 `iboot-portal/nginx.conf` 的代理目标改为网关；验证：本地以生产配置启动后仍能访问接口
+- [x] 5.3 以网关入口重跑冒烟：`scripts/regress/smoke.sh` 指向 `8088` 后六条链路全通过；验证：退出码为 0
+- [x] 5.4 回滚演练：把两条代理目标改回 `8080`/`8081`，确认六条链路仍全通过，并把演练步骤写入 `doc/23`；验证：回滚后冒烟全绿，文档可直接照做
 
 ## 6. 注册中心接入
 
