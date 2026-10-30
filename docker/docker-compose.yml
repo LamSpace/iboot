@@ -457,6 +457,61 @@ services:
       elasticsearch:
         condition: service_healthy
 
+  # 注册中心 + 配置中心（阶段 2）：默认不启动，需要时执行 docker compose --profile platform up -d nacos
+  #
+  # 端口说明（Nacos 3.x 起控制台与主端口分离，且控制台路径不再带 /nacos 前缀）：
+  #   8848 HTTP API / 9848 客户端 gRPC / 9849 集群 gRPC / 容器内 8080 为控制台
+  # 控制台映射到宿主机 8849，避免与 iboot-admin 的 8080 冲突。
+  nacos:
+    image: nacos/nacos-server:v3.1.1
+    container_name: iboot-nacos
+    profiles: ["platform"]
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+      - "8849:8080"
+    environment:
+      - MODE=standalone
+      # 本地开发关闭鉴权；但 Nacos 3.x 镜像仍要求提供令牌，否则拒绝启动
+      - NACOS_AUTH_ENABLE=false
+      - NACOS_AUTH_TOKEN=aWJvb3QtZGV2LW5hY29zLWF1dGgtdG9rZW4tMzJieXRl
+      - NACOS_AUTH_IDENTITY_KEY=iboot-dev
+      - NACOS_AUTH_IDENTITY_VALUE=iboot-dev
+      # 受本机内存约束（R4）：显式限制堆与直接内存
+      - JVM_XMS=512m
+      - JVM_XMX=512m
+      - JVM_XMN=256m
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      # Nacos 3.x 移除了 v1 健康检查接口，健康检查走控制台端口的 v3 接口
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v3/console/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # 链路追踪后端（阶段 2）：默认不启动，需要时执行 docker compose --profile platform up -d tempo
+  #
+  # 应用通过 OTLP 直连写入（4317 gRPC / 4318 HTTP），Grafana 经 3200 查询，无需额外 Collector。
+  tempo:
+    image: grafana/tempo:2.10.8
+    container_name: iboot-tempo
+    profiles: ["platform"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "3200:3200"
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    restart: unless-stopped
+    networks:
+      - iboot-network
+
 networks:
   iboot-network:
     driver: bridge
@@ -474,3 +529,4 @@ volumes:
   thanos_store_data:
   thanos_compact_data:
   admin_logs:
+  tempo_data:

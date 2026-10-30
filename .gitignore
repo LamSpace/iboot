@@ -55,3 +55,6 @@ tmp/
 .env
 .env.*
 !.env.example
+
+# 本地文件存储目录（冒烟与手工测试产生）
+uploads/

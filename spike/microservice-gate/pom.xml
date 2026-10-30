@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  阶段 2.0 门禁工程：验证 Spring Cloud Alibaba 2025.1.0.0 在 Boot 4.0.3 上可用。
+
+  独立聚合 POM，不加入根 pom.xml 的 modules，避免门禁代码进入正式构建。
+  门禁结论见 doc/spike/microservice-2-0-spike-report.md。
+-->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.3</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.iboot.spike</groupId>
+    <artifactId>microservice-gate</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>iBoot Microservice Gate Spike</name>
+    <description>阶段 2.0 门禁：Nacos 注册发现 / 配置热更新 / Sentinel 限流 / 链路追踪</description>
+
+    <modules>
+        <module>gate-a</module>
+        <module>gate-b</module>
+    </modules>
+
+    <properties>
+        <java.version>25</java.version>
+        <maven.compiler.release>25</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- SCA 2025.1.0.0 的父 POM 为 spring-cloud-dependencies-parent 5.0.0，对应 2025.1.0 -->
+        <spring-cloud.version>2025.1.0</spring-cloud.version>
+        <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
