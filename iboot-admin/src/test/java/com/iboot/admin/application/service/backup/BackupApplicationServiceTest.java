@@ -142,6 +142,23 @@ class BackupApplicationServiceTest {
     }
 
     /**
+     * 验证备份任务在独立线程执行后，锁仍能被释放、可以再次触发。
+     *
+     * <p>回归用例：原先使用 {@code ReentrantLock}，加锁在请求线程、解锁在执行器线程，
+     * 跨线程解锁抛 {@code IllegalMonitorStateException}，导致每个进程只能备份一次。
+     */
+    @Test
+    void allowsTriggerAgainAfterTaskRunsOnAnotherThread() {
+        service.triggerManual("admin");
+        taskExecutor.runAllOnNewThread();
+
+        service.triggerManual("admin");
+        taskExecutor.runAllOnNewThread();
+
+        assertThat(repository.countAll()).isEqualTo(2);
+    }
+
+    /**
      * 验证导出失败时记录为失败、错误脱敏且不产生产物。
      */
     @Test
@@ -238,6 +255,24 @@ class BackupApplicationServiceTest {
         @Override
         public void execute(final Runnable task) {
             tasks.add(task);
+        }
+
+        /**
+         * 在新线程中执行全部任务，模拟真实的异步执行器。
+         */
+        void runAllOnNewThread() {
+            List<Runnable> pending = new ArrayList<>(tasks);
+            tasks.clear();
+            for (Runnable task : pending) {
+                Thread thread = new Thread(task, "backup-task");
+                thread.start();
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(e);
+                }
+            }
         }
 
         void runAll() {
