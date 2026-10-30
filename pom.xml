@@ -37,6 +37,7 @@
     <modules>
         <module>iboot-admin</module>
         <module>iboot-ai</module>
+        <module>iboot-gateway</module>
     </modules>
 
     <properties>
@@ -125,10 +126,28 @@
 
         <!-- Maven Javadoc Plugin -->
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
+
+        <!-- 阶段 2 微服务底座：版本矩阵见 ROADMAP §6.1，Boot 锁 4.0.x 不升 4.1 -->
+        <spring-cloud.version>2025.1.0</spring-cloud.version>
+        <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>

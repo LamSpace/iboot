@@ -1,0 +1,29 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # 路由按「具体前缀优先」排列：SSE → AI → 管理端兜底。
+          # 每拆出一个服务，就在 admin 兜底之前插入更具体的前缀。
+          routes:
+            # 服务端推送：长连接不能被响应超时截断，查询参数中的凭证需原样透传
+            - id: admin-sse
+              uri: ${IBOOT_ADMIN_URI:http://localhost:8080}
+              order: 0
+              predicates:
+                - Path=/api/push/**
+              metadata:
+                response-timeout: -1
+                connect-timeout: 2000
+
+            - id: ai
+              uri: ${IBOOT_AI_URI:http://localhost:8081}
+              order: 10
+              predicates:
+                - Path=/api/ai/**
+
+            - id: admin
+              uri: ${IBOOT_ADMIN_URI:http://localhost:8080}
+              order: 100
+              predicates:
+                - Path=/api/**

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  iBoot 网关：阶段 2 的统一入口。
+
+  只做转发与入口治理（路由、跨域、限流、故障降级），不做业务逻辑、不做鉴权决策
+  ——鉴权在 add-auth-center 中交付。
+-->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.iboot</groupId>
+        <artifactId>iboot-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>iboot-gateway</artifactId>
+    <name>iBoot Gateway</name>
+    <description>统一入口：路由、跨域、限流与故障降级</description>
+
+    <dependencies>
+        <!-- Spring Cloud 2025.1 起网关 starter 更名为 gateway-server-webflux -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
