@@ -48,7 +48,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Semaphore;
 
 /**
  * 备份应用服务。
@@ -87,7 +87,15 @@ public class BackupApplicationService {
 
     private final Clock clock;
 
-    private final ReentrantLock runningLock = new ReentrantLock();
+    /**
+     * 备份互斥守卫。
+     *
+     * <p>使用 {@link Semaphore} 而不是 {@code ReentrantLock}：备份任务在异步执行器中运行，
+     * 加锁发生在请求线程、释放发生在执行器线程。{@code ReentrantLock} 要求同线程释放，
+     * 跨线程解锁会抛 {@code IllegalMonitorStateException} 并永久占住锁，
+     * 导致进程生命周期内只能备份一次。
+     */
+    private final Semaphore runningGuard = new Semaphore(1);
 
     @SuppressWarnings("all")
     public BackupApplicationService(final BackupProperties properties,
@@ -236,7 +244,7 @@ public class BackupApplicationService {
         if (!properties.isEnabled()) {
             throw new BusinessException("备份功能未启用");
         }
-        if (!runningLock.tryLock()) {
+        if (!runningGuard.tryAcquire()) {
             throw new BusinessException("已有备份正在执行");
         }
         boolean submitted = false;
@@ -258,13 +266,13 @@ public class BackupApplicationService {
                 } catch (Throwable t) {
                     log.error("备份异步执行异常: id={}", record.getId(), t);
                 } finally {
-                    runningLock.unlock();
+                    runningGuard.release();
                 }
             };
             try {
                 taskExecutor.execute(task);
             } catch (RuntimeException e) {
-                runningLock.unlock();
+                runningGuard.release();
                 submitted = true;
                 throw e;
             }
@@ -272,7 +280,7 @@ public class BackupApplicationService {
             return record;
         } finally {
             if (!submitted) {
-                runningLock.unlock();
+                runningGuard.release();
             }
         }
     }
