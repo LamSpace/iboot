@@ -1,0 +1,23 @@
+# Tempo 单机配置（阶段 2 链路追踪后端）
+#
+# 只做两件事：接收 OTLP、落到本地磁盘。指标生成、集群等能力在本地开发用不到，不开启。
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9095
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/blocks
+    wal:
+      path: /var/tempo/wal

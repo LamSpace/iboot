@@ -1,0 +1,14 @@
+apiVersion: 1
+
+# 链路追踪数据源：应用经 OTLP 写入 Tempo，Grafana 直接查询
+datasources:
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: false
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: prometheus
+    editable: true
