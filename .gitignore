@@ -58,3 +58,6 @@ tmp/
 
 # 本地文件存储目录（冒烟与手工测试产生）
 uploads/
+
+# Maven 构建产物
+target/
