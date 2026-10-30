@@ -1,0 +1,1059 @@
+{
+  "components": {
+    "schemas": {
+      "ChatRequest": {
+        "properties": {
+          "content": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "type": "object"
+      },
+      "ChatResponseDto": {
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/UsageDto"
+          }
+        },
+        "type": "object"
+      },
+      "ConversationSummaryDto": {
+        "properties": {
+          "conversationId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "DocumentChunkResponse": {
+        "properties": {
+          "chunkIndex": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "content": {
+            "type": "string"
+          },
+          "headingPath": {
+            "type": "string"
+          },
+          "pageNo": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "GraphStatus": {
+        "properties": {
+          "departments": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "menus": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "relations": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "roles": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "synced": {
+            "type": "boolean"
+          },
+          "syncedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "users": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "GraphSyncSummary": {
+        "properties": {
+          "departments": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "menus": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "relations": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "removed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "roles": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "syncId": {
+            "type": "string"
+          },
+          "syncedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "users": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "KnowledgeBaseRequest": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "sharedDeptIds": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "visibility": {
+            "format": "int32",
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "KnowledgeBaseResponse": {
+        "properties": {
+          "createTime": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ownerDeptId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "ownerUserId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "sharedDeptIds": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "visibility": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "KnowledgeDocumentResponse": {
+        "properties": {
+          "chunkCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "createTime": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "fileExt": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "fileSize": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "kbId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "KnowledgeSubmitResponse": {
+        "properties": {
+          "documentId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "duplicate": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "MessageDto": {
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RagAnswer": {
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/RagCitation"
+            },
+            "type": "array"
+          },
+          "content": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "degraded": {
+            "type": "boolean"
+          },
+          "model": {
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/UsageDto"
+          }
+        },
+        "type": "object"
+      },
+      "RagChatRequest": {
+        "properties": {
+          "content": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "knowledgeBaseId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "type": "object"
+      },
+      "RagCitation": {
+        "properties": {
+          "chunkIndex": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "docId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "docTitle": {
+            "type": "string"
+          },
+          "index": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "kbId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "pageNo": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "snippet": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SseEmitter": {
+        "properties": {
+          "timeout": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "UsageDto": {
+        "properties": {
+          "completionTokens": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "promptTokens": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalTokens": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "UsageSnapshot": {
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "remaining": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "used": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/ai/chat": {
+      "post": {
+        "operationId": "chat_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponseDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "ai-chat-controller"
+        ]
+      }
+    },
+    "/api/ai/chat/stream": {
+      "post": {
+        "operationId": "stream_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseEmitter"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "ai-chat-controller"
+        ]
+      }
+    },
+    "/api/ai/conversations": {
+      "get": {
+        "operationId": "conversations",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationSummaryDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "ai-chat-controller"
+        ]
+      }
+    },
+    "/api/ai/conversations/{conversationId}/messages": {
+      "get": {
+        "operationId": "messages",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MessageDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "ai-chat-controller"
+        ]
+      }
+    },
+    "/api/ai/graph/status": {
+      "get": {
+        "description": "返回上次同步时间与各类节点数量",
+        "operationId": "status",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphStatus"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "查询图谱状态",
+        "tags": [
+          "AI 知识图谱"
+        ]
+      }
+    },
+    "/api/ai/graph/sync": {
+      "post": {
+        "description": "使用调用者登录态读取 admin 组织数据并整体替换图内容",
+        "operationId": "sync",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphSyncSummary"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "同步组织图谱",
+        "tags": [
+          "AI 知识图谱"
+        ]
+      }
+    },
+    "/api/ai/knowledge-bases": {
+      "get": {
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/KnowledgeBaseResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      },
+      "post": {
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeBaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeBaseResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      }
+    },
+    "/api/ai/knowledge-bases/{id}": {
+      "delete": {
+        "operationId": "delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      },
+      "get": {
+        "operationId": "get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeBaseResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      },
+      "put": {
+        "operationId": "update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeBaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeBaseResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      }
+    },
+    "/api/ai/knowledge-bases/{kbId}/documents": {
+      "get": {
+        "operationId": "documents",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kbId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/KnowledgeDocumentResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      },
+      "post": {
+        "operationId": "upload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kbId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeSubmitResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      }
+    },
+    "/api/ai/knowledge-documents/{id}": {
+      "delete": {
+        "operationId": "deleteDocument",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      },
+      "get": {
+        "operationId": "document",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDocumentResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      }
+    },
+    "/api/ai/knowledge-documents/{id}/chunks": {
+      "get": {
+        "operationId": "chunks",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentChunkResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      }
+    },
+    "/api/ai/knowledge-documents/{id}/download": {
+      "get": {
+        "operationId": "download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      }
+    },
+    "/api/ai/knowledge-documents/{id}/reindex": {
+      "post": {
+        "operationId": "reindex",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      }
+    },
+    "/api/ai/knowledge-documents/{id}/retry": {
+      "post": {
+        "operationId": "retry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "knowledge-base-controller"
+        ]
+      }
+    },
+    "/api/ai/ping": {
+      "get": {
+        "operationId": "ping",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "additionalProperties": {},
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "ai-ping-controller"
+        ]
+      }
+    },
+    "/api/ai/rag/chat": {
+      "post": {
+        "operationId": "chat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RagChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagAnswer"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "rag-chat-controller"
+        ]
+      }
+    },
+    "/api/ai/rag/chat/stream": {
+      "post": {
+        "operationId": "stream",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RagChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseEmitter"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "rag-chat-controller"
+        ]
+      }
+    },
+    "/api/ai/usage": {
+      "get": {
+        "operationId": "usage",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageSnapshot"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "ai-chat-controller"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "组织架构与 RBAC 图谱的同步与状态",
+      "name": "AI 知识图谱"
+    }
+  ]
+}
