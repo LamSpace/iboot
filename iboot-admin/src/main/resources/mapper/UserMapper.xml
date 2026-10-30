@@ -112,7 +112,7 @@
     <!-- 分页查询用户记录 -->
     <select id="selectPage" resultMap="UserResultMap">
         SELECT *
-        FROM sys_user
+        FROM sys_user u
         WHERE deleted = 0
         ORDER BY create_time DESC
             LIMIT #{offset}, #{limit}
@@ -121,13 +121,13 @@
     <!-- 统计用户总数 -->
     <select id="count" resultType="long">
         SELECT COUNT(*)
-        FROM sys_user
+        FROM sys_user u
         WHERE deleted = 0
     </select>
 
     <!-- 按条件分页查询用户记录 -->
     <select id="selectPageByCondition" resultMap="UserResultMap">
-        SELECT * FROM sys_user
+        SELECT * FROM sys_user u
         <where>
             deleted = 0
             <if test="username != null and username != ''">
@@ -146,7 +146,7 @@
 
     <!-- 按条件查询所有用户记录（不分页，用于导出） -->
     <select id="selectAllByCondition" resultMap="UserResultMap">
-        SELECT * FROM sys_user
+        SELECT * FROM sys_user u
         <where>
             deleted = 0
             <if test="username != null and username != ''">
@@ -164,7 +164,7 @@
 
     <!-- 按条件统计用户总数 -->
     <select id="countByCondition" resultType="long">
-        SELECT COUNT(*) FROM sys_user
+        SELECT COUNT(*) FROM sys_user u
         <where>
             deleted = 0
             <if test="username != null and username != ''">
@@ -273,7 +273,7 @@
     <!-- 按创建时间统计用户数 -->
     <select id="countByCreateTime" resultType="long">
         SELECT COUNT(*)
-        FROM sys_user
+        FROM sys_user u
         WHERE deleted = 0
           AND create_time &gt;= #{startTime}
           AND create_time &lt;= #{endTime}

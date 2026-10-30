@@ -123,8 +123,11 @@ public interface UserMapper {
     /**
      * 统计用户总数
      *
+     * <p>与 {@link #selectPage(int, int)} 使用同一数据权限范围，保证分页总数与列表内容一致。
+     *
      * @return 用户总数
      */
+    @DataScope(deptAlias = "u", userAlias = "u")
     long count();
 
     /**
