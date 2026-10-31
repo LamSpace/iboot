@@ -5,9 +5,10 @@
 #   dev-init.sh              拉起中间件与后端三个服务
 #   dev-init.sh --build      强制重新构建后端
 #   dev-init.sh --frontend   同时安装前端依赖并启动开发服务器
-#   dev-init.sh --status     查看中间件与后端服务的状态
-#   dev-init.sh --stop       停止后端三个服务（中间件保留）
+#   dev-init.sh --status     查看中间件、后端与前端的状态
+#   dev-init.sh --stop       停止后端与前端（中间件保留）
 #   dev-init.sh --down       停止服务并移除中间件容器（数据卷保留）
+#   dev-init.sh --purge      停止服务并移除中间件容器与数据卷（数据不可恢复）
 #
 # 密钥与私有配置沿用根目录的 .env（已在 .gitignore 中，模板见 .env.example），
 # 与 README 里 `set -a; source .env; set +a` 的既有约定一致；脚本会自动加载。
@@ -42,7 +43,8 @@ for arg in "$@"; do
         --status)   ACTION="status" ;;
         --stop)     ACTION="stop" ;;
         --down)     ACTION="down" ;;
-        -h|--help)  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --purge)    ACTION="purge" ;;
+        -h|--help)  awk 'NR>1 && /^#/ { sub(/^# ?/, ""); print; next } NR>1 { exit }' "$0"; exit 0 ;;
         *) printf '[ERROR] 未知参数：%s\n' "$arg" >&2; exit 2 ;;
     esac
 done
@@ -94,11 +96,39 @@ stop_service() {
     rm -f "$pidfile"
 }
 
+# 前端开发服务器的进程号：优先 pid 文件，失效时按 vite 的命令行匹配。
+# `cnpm run dev` 会 fork 出 vite，只杀父进程会留下孤儿，所以按命令行再兜一次。
+frontend_pids() {
+    local pidfile="$LOG_DIR/portal.pid" pids="" pid
+    if [ -f "$pidfile" ]; then
+        pid="$(cat "$pidfile")"
+        kill -0 "$pid" 2>/dev/null && pids="$pid"
+    fi
+    pids="$(printf '%s\n%s\n' "$pids" "$(pgrep -f 'iboot-portal/node_modules/.bin/vite' 2>/dev/null)" \
+        | grep -v '^$' | sort -u | tr '\n' ' ')"
+    printf '%s' "$pids"
+}
+
+stop_frontend() {
+    local pidfile="$LOG_DIR/portal.pid" pids pid
+    pids="$(frontend_pids)"
+    if [ -n "$pids" ]; then
+        log "  停止前端（pid $pids）"
+        kill $pids 2>/dev/null
+        sleep 2
+        for pid in $pids; do
+            kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
+        done
+    fi
+    rm -f "$pidfile"
+}
+
 stop_all_services() {
     local entry
     for entry in "${SERVICES[@]}"; do
         stop_service "${entry%%:*}"
     done
+    stop_frontend
 }
 
 wait_http() {
@@ -226,6 +256,13 @@ show_status() {
         health="$(curl -sf -m 2 "http://localhost:$port/actuator/health" > /dev/null 2>&1 && echo 健康 || echo 不可用)"
         printf '  %-16s %-24s %s  http://localhost:%s\n' "$name" "$state" "$health" "$port"
     done
+    local portal
+    portal="$(frontend_pids)"
+    if [ -n "$portal" ]; then
+        printf '  %-16s %-24s %s  http://localhost:5173\n' "iboot-portal" "运行中（pid $portal）" "开发服务器"
+    else
+        printf '  %-16s %-24s %s  http://localhost:5173\n' "iboot-portal" "未运行" "-"
+    fi
 }
 
 case "$ACTION" in
@@ -233,15 +270,21 @@ case "$ACTION" in
         show_status
         ;;
     stop)
-        log '=== 停止后端 ==='
+        log '=== 停止后端与前端 ==='
         stop_all_services
-        log '后端已停止；中间件仍在运行（--down 可一并移除）'
+        log '后端与前端已停止；中间件仍在运行（--down 可一并移除）'
         ;;
     down)
         log '=== 停止并移除 ==='
         stop_all_services
         "${COMPOSE[@]}" --profile platform down --remove-orphans > /dev/null 2>&1 || true
-        log '后端与中间件已停止，数据卷保留'
+        log '后端、前端与中间件已停止，数据卷保留'
+        ;;
+    purge)
+        log '=== 停止并清除数据 ==='
+        stop_all_services
+        "${COMPOSE[@]}" --profile platform down -v --remove-orphans > /dev/null 2>&1 || true
+        log '后端、前端、中间件与数据卷均已移除'
         ;;
     up)
         if [ -z "${DASHSCOPE_CHAT_API_KEY:-}" ]; then
