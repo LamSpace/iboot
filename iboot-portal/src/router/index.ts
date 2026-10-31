@@ -3,9 +3,10 @@ import type { RouteRecordRaw } from "vue-router";
 import { useUserStore } from "../stores/user";
 import { usePermissionStore } from "../stores/permission";
 import { ElMessage } from "element-plus";
+import { beginLogin } from "@/utils/oidc";
 
 // 不需要认证的白名单路由
-const whiteList = ["/", "/login", "/register"];
+const whiteList = ["/", "/login", "/register", "/callback"];
 
 // 定义路由
 const routes: Array<RouteRecordRaw> = [
@@ -23,6 +24,11 @@ const routes: Array<RouteRecordRaw> = [
     path: "/register",
     name: "Register",
     component: () => import("../views/RegisterView.vue"),
+  },
+  {
+    path: "/callback",
+    name: "Callback",
+    component: () => import("../views/CallbackView.vue"),
   },
   {
     path: "/dashboard",
@@ -273,9 +279,10 @@ router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore();
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
 
-  // 需要认证但无 token，跳转登录
+  // 需要认证但无令牌，跳转到认证服务的登录页，并记住原本要访问的地址
   if (requiresAuth && !userStore.token) {
-    next("/login");
+    await beginLogin(to.fullPath);
+    next(false);
     return;
   }
 

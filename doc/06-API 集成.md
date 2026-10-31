@@ -356,12 +356,24 @@ export function deleteUser(id) {
 
 ### 6.11 认证接口
 
+认证由 `iboot-auth`（8083）提供，浏览器的标准入口是 OAuth2 / OIDC：
+
 | 接口 | 方法 | 描述 |
 |------|------|------|
-| /auth/login | POST | 用户登录 |
-| /auth/logout | POST | 用户登出 |
-| /auth/refresh | POST | 刷新 Token |
-| /auth/captcha | GET | 获取验证码 |
+| /.well-known/openid-configuration | GET | OIDC 发现文档 |
+| /oauth2/authorize | GET | 授权端点（授权码 + PKCE） |
+| /oauth2/token | POST | 令牌端点（授权码兑换、刷新） |
+| /oauth2/jwks | GET | 公钥集，供资源服务验签 |
+| /connect/logout | GET | 登出（RP-Initiated Logout） |
+| /login | GET | 认证服务托管的登录页 |
+
+双栈窗口内仍保留旧的用户名密码接口，窗口关闭后移除：
+
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| /auth/login | POST | 用户名密码换取令牌（过渡期） |
+| /auth/logout | POST | 删除共享会话（过渡期） |
+| /auth/register | POST | 自助注册（依据系统参数开放） |
 
 ### 6.11.1 国际化接口
 

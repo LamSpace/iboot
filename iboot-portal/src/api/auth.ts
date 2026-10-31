@@ -1,20 +1,5 @@
 import request from "@/utils/request";
 
-export interface LoginParams {
-  username: string;
-  password: string;
-}
-
-export interface LoginResult {
-  token: string;
-  userId: number;
-  username: string;
-  nickname: string;
-  avatar: string;
-  permissions: string[];
-  roles: string[];
-}
-
 export interface RegisterParams {
   username: string;
   password: string;
@@ -62,27 +47,6 @@ export interface CloudEvent<T> {
    * 实际的业务数据（原有的 ApiResponse 响应）
    */
   data: ApiResponse<T>;
-}
-
-/**
- * 用户登录
- */
-export function login(data: LoginParams): Promise<ApiResponse<LoginResult>> {
-  return request({
-    url: "/auth/login",
-    method: "post",
-    data,
-  });
-}
-
-/**
- * 用户登出
- */
-export function logout(): Promise<ApiResponse<void>> {
-  return request({
-    url: "/auth/logout",
-    method: "post",
-  });
 }
 
 /**

@@ -300,31 +300,26 @@ Boot 4.0.3 这一前提改变了可选生态:
 > 数据权限经 `/api/auth/scope` 获取;管理端旧实现已删除,管理端 `sys_file` 表再保留一个发布周期。
 > 退出条件见 `doc/23` §11.3。
 >
-> `iboot-auth` 的当前状态:`/api/auth/login`、`/api/auth/logout`、`/api/auth/register` 已由
-> 独立服务承载(8083),令牌格式、会话键、响应结构与拆分前逐字节一致,前端零改动;
-> `GET /api/auth/scope` **不在**认证服务,它返回的是数据权限范围(部门/角色/用户),属系统域,
-> 随 `iboot-system` 迁移。过渡期认证服务直连 `iboot_admin` 读写用户、角色、菜单、参数与登录日志,
+> `iboot-auth` 的当前状态:**OAuth2 / OIDC 授权服务器**。浏览器走授权码 + PKCE,认证服务自己渲染
+> 登录页;资源服务用 `/oauth2/jwks` 公钥验签并直接读取令牌声明,共享 Redis 的 `login_tokens:<jti>`
+> 只承担撤销与在线名单。旧接口 `/api/auth/login|logout|register` 在双栈窗口内保留(由 `jwt.legacy-enabled`
+> 控制),窗口关闭后移除。`GET /api/auth/scope` **不在**认证服务,它返回数据权限范围,属系统域,
+> 随 `iboot-system` 迁移。认证服务直连 `iboot_admin` 读写用户、角色、菜单、参数与登录日志,
 > 不建自有 schema;退出条件见 `doc/23` §11.5。
 >
-> ### ⚠️ 未实现:OAuth2 / OIDC 认证中心(2026-10-31 登记)
+> ### ✅ OAuth2 / OIDC 认证中心(2026-10-31 落地,双栈窗口未关闭)
 >
-> 本轮只做了**物理拆分**,`iboot-auth` 仍沿用「用户名密码换 JWT + 共享 Redis 会话」的协议。
-> **§2.2 描述的 Spring Authorization Server、授权码流程、SSO 都还没有实现**——不要因为
-> `iboot-auth` 已经存在就认为 §2.2 已完成。下一步变更 `add-authorization-server` 需要交付:
+> 变更 `add-authorization-server` 已交付:Spring Authorization Server(Spring Security 7 内置)、
+> 授权码 + PKCE、JWK 公钥集与 OIDC 发现文档、认证服务托管的登录页、资源服务器改为验签 + 读声明、
+> 共享 Redis 保留为撤销与在线名单。回归装置(`reg_login`)改为脚本化授权码流程并通过全量回归。
 >
-> 1. 引入 `spring-boot-starter-security-oauth2-authorization-server`(Boot 4.0.3 的 BOM 已托管;
->    Spring Authorization Server 自 7.0 起并入 Spring Security,不再是独立版本线);
-> 2. 授权码 + PKCE、客户端注册、JWK 密钥集与令牌内省/撤销端点;
-> 3. 资源服务器从「读取 Redis 会话」切换为「验 JWK + 读令牌声明」,这会改变
->    `iboot-kernel` 的鉴权模型,影响 admin / file / ai / gateway 全部服务;
-> 4. 前端改造:只动登录页与路由守卫(§2.2 已界定范围),44 个业务视图不动;
-> 5. 回归装置升级:现有 `reg_login`、`permission-matrix`、AI 智能体「以用户 JWT 代理 admin」
->    的调用链都要适配新令牌;
-> 6. 迁移期的双栈兼容:旧令牌与新令牌并存一段时间,否则所有在线用户会被强制下线。
+> **一处与设计的偏差需要记住**:Spring Authorization Server 对「公共客户端 + 授权码」不签发刷新令牌,
+> 因此没有静默续期。会话语义仍由共享会话的滑动续期决定——资源服务不因令牌自身过期而拒绝请求,
+> 访问令牌有效期与会话超时(30 分钟)对齐。
 >
-> 排序依据修订:认证中心不是运行时硬前置——资源服务器只依赖 JWT 密钥与共享会话,真正的前置是
-> 「资源服务器契约」(现已落在内核里);而 auth 与 system 的数据归属是全阶段最难的一刀,不宜作为
-> 第一个业务拆分。详见 `openspec/changes/add-shared-kernel/design.md`。
+> 双栈窗口已关闭:`jwt.legacy-enabled=false` 在四个服务生效,旧格式令牌返回业务码 `40101`;
+> `/api/auth/login` 已移除,`/api/auth/logout`(会话撤销)与 `/api/auth/register`(自助注册)作为功能保留。
+> 项目尚未对外发布,不存在需要保护的在线旧令牌,因此没有按「观察一个发布周期」执行收敛。
 >
 > 门禁过程中修正的既有缺陷:数据权限拦截器此前从未生效、备份锁跨线程释放导致只能备份一次。
 

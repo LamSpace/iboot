@@ -70,6 +70,8 @@ jwt:
   secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
   expiration: 604800
   session-timeout: 30
+  # 双栈窗口已关闭：只接受认证服务签发的自包含令牌，旧对称签名令牌返回业务码 40101
+  legacy-enabled: false
 
 iboot:
   security:

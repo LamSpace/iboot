@@ -16,6 +16,7 @@
 
 package com.iboot.kernel.security;
 
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.List;
 import java.util.Map;
 
@@ -55,14 +58,23 @@ class JwtAuthenticationFilterTest {
 
     private SecurityWhitelistProperties whitelistProperties;
 
+    private JwkSetProvider jwkSetProvider;
+
+    private KeyPair keyPair;
+
     @BeforeEach
     @SuppressWarnings("unchecked")
-    void setUp() {
+    void setUp() throws Exception {
         jwtTokenUtil = new JwtTokenUtil(SECRET, 1800L);
         redisTemplate = mock(RedisTemplate.class);
         valueOperations = mock(ValueOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         whitelistProperties = new SecurityWhitelistProperties();
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        keyPair = generator.generateKeyPair();
+        jwkSetProvider = mock(JwkSetProvider.class);
+        when(jwkSetProvider.resolve("k1")).thenReturn(keyPair.getPublic());
     }
 
     @AfterEach
@@ -152,7 +164,54 @@ class JwtAuthenticationFilterTest {
     }
 
     private JwtAuthenticationFilter filter() {
-        return new JwtAuthenticationFilter(jwtTokenUtil, redisTemplate, new JwtSecurityConfig(), whitelistProperties);
+        return filter(true);
+    }
+
+    private JwtAuthenticationFilter filter(boolean legacyEnabled) {
+        JwtTokenVerifier verifier = new JwtTokenVerifier(SECRET, jwkSetProvider, legacyEnabled);
+        return new JwtAuthenticationFilter(verifier, redisTemplate, new JwtSecurityConfig(), whitelistProperties);
+    }
+
+    /**
+     * 自包含令牌在会话未被撤销时应建立认证上下文。
+     */
+    @Test
+    void authenticatesStatelessTokenWhenSessionExists() throws Exception {
+        when(valueOperations.get(anyString()))
+                .thenReturn(Map.of("userId", 7L, "username", "tester"));
+
+        filter().doFilter(request("/api/user/list", rsaToken()), new MockHttpServletResponse(),
+                mock(FilterChain.class));
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+        assertThat(SecurityUtils.getCurrentUserId()).isEqualTo(7L);
+        assertThat(SecurityUtils.getCurrentUsername()).isEqualTo("tester");
+    }
+
+    /**
+     * 会话被撤销（共享存储中无记录）时，自包含令牌不建立认证上下文。
+     */
+    @Test
+    void ignoresStatelessTokenWithoutSession() throws Exception {
+        when(valueOperations.get(anyString())).thenReturn(null);
+
+        filter().doFilter(request("/api/user/list", rsaToken()), new MockHttpServletResponse(),
+                mock(FilterChain.class));
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    /**
+     * 双栈关闭后旧令牌返回 401 与可识别的业务状态码。
+     */
+    @Test
+    void returnsVersionRetiredCodeWhenLegacyDisabled() throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter(false).doFilter(request("/api/user/list", validToken()), response, mock(FilterChain.class));
+
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getContentAsString()).contains("\"code\":" + Constants.TOKEN_VERSION_RETIRED);
     }
 
     private MockHttpServletRequest request(String path, String token) {
@@ -165,5 +224,16 @@ class JwtAuthenticationFilterTest {
 
     private String validToken() {
         return jwtTokenUtil.createToken(Map.of("userId", 7L));
+    }
+
+    private String rsaToken() {
+        return Jwts.builder()
+                .id("jti-1")
+                .subject("7")
+                .header().keyId("k1").and()
+                .claim("username", "tester")
+                .claim(Constants.PERMISSIONS, List.of("user:list"))
+                .signWith(keyPair.getPrivate(), Jwts.SIG.RS256)
+                .compact();
     }
 }

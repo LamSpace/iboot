@@ -85,6 +85,14 @@ reg_expect_status "[功能权限][拒绝] 受限用户访问文件列表（无 f
 
 reg_log "== 文件域：功能权限与数据范围（经网关） =="
 reg_login
+# 种子文件：数据范围对比需要「超管能看到、受限用户看不到」的文件。
+# 冒烟会删除自己上传的文件，若依赖它，全新数据卷上两侧都会是 0。
+seed_file="$(mktemp --suffix=.txt)"
+echo "iBoot 数据范围种子 $(date +%s)" > "$seed_file"
+curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    -F "file=@$seed_file" -F "fileCategory=regress-seed" \
+    "$REG_GATEWAY/api/file/upload" > /dev/null || true
+rm -f "$seed_file"
 admin_files=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/file/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 超管查询文件列表" "$admin_files"

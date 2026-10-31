@@ -17,6 +17,7 @@
 package com.iboot.kernel.security;
 
 import jakarta.servlet.DispatcherType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -90,15 +91,6 @@ public class KernelSecurityAutoConfiguration {
     }
 
     /**
-     * 资源服务器过滤器。
-     *
-     * @param jwtTokenUtil 令牌工具
-     * @param redisTemplate 共享会话所在的 Redis 模板
-     * @param jwtSecurityConfig 会话超时等配置
-     * @param whitelistProperties 宿主白名单
-     * @return JWT 认证过滤器
-     */
-    /**
      * 资源服务器相关组件的容器。
      *
      * <p>只在 Servlet Web 应用中生效；非 Web 上下文（如只加载工作流 Bean 的测试切片）
@@ -111,9 +103,41 @@ public class KernelSecurityAutoConfiguration {
     static class ResourceServerConfiguration {
 
         /**
+         * 认证服务公钥集缓存。
+         *
+         * <p>地址取 {@code jwt.jwk-set-uri}，默认指向本地认证服务；进程内只保留一份，
+         * 首次验签时才回源，启动阶段不阻塞。
+         *
+         * @param jwtSecurityConfig 令牌配置
+         * @return 公钥集缓存
+         */
+        @Bean
+        @ConditionalOnMissingBean
+        public JwkSetProvider jwkSetProvider(JwtSecurityConfig jwtSecurityConfig) {
+            return new JwkSetProvider(jwtSecurityConfig.getJwkSetUri());
+        }
+
+        /**
+         * 令牌校验器，同时支持自包含令牌与旧的对称签名令牌。
+         *
+         * @param jwtSecurityConfig 令牌配置
+         * @param jwkSetProvider 认证服务公钥集
+         * @param secret 旧令牌使用的共享密钥
+         * @return 令牌校验器
+         */
+        @Bean
+        @ConditionalOnMissingBean
+        public JwtTokenVerifier jwtTokenVerifier(JwtSecurityConfig jwtSecurityConfig,
+                                                 JwkSetProvider jwkSetProvider,
+                                                 @Value("${jwt.secret:"
+                                                         + JwtTokenUtil.DEFAULT_SECRET + "}") String secret) {
+            return new JwtTokenVerifier(secret, jwkSetProvider, jwtSecurityConfig.isLegacyEnabled());
+        }
+
+        /**
          * 资源服务器过滤器。
          *
-         * @param jwtTokenUtil 令牌工具
+         * @param tokenVerifier 令牌校验器
          * @param redisTemplate 共享会话所在的 Redis 模板
          * @param jwtSecurityConfig 会话超时等配置
          * @param whitelistProperties 宿主白名单
@@ -122,12 +146,12 @@ public class KernelSecurityAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         @SuppressWarnings("unchecked")
-        public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil,
+        public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenVerifier tokenVerifier,
                                                                 @Qualifier("redisTemplate")
                                                                 RedisTemplate redisTemplate,
                                                                 JwtSecurityConfig jwtSecurityConfig,
                                                                 SecurityWhitelistProperties whitelistProperties) {
-            return new JwtAuthenticationFilter(jwtTokenUtil, redisTemplate, jwtSecurityConfig, whitelistProperties);
+            return new JwtAuthenticationFilter(tokenVerifier, redisTemplate, jwtSecurityConfig, whitelistProperties);
         }
 
         /**

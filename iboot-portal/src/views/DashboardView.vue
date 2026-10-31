@@ -262,6 +262,7 @@ import {
 import { useUserStore } from "@/stores/user";
 import { usePermissionStore } from "@/stores/permission";
 import { useAppStore } from "@/stores/app";
+import { beginLogout } from "@/utils/oidc";
 import { getIconComponent } from "@/utils/icon-map";
 import NoticePopup from "@/components/NoticePopup.vue";
 import NotificationCenter from "@/components/Notification/NotificationCenter.vue";
@@ -529,9 +530,9 @@ const handleSubmitPassword = async () => {
 };
 
 const handleLogout = () => {
-  userStore.clearUser();
-  router.push("/login");
   ElMessage.success(t("dashboard.logout_success"));
+  // 登出由认证服务完成：撤销共享会话后跳回门户登录页
+  beginLogout();
 };
 
 const handleMenuSelect = (index: string) => {

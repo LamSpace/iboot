@@ -7,4 +7,9 @@
 /api/auth/login iboot-auth
 /api/auth/logout iboot-auth
 /api/auth/register iboot-auth
+# OAuth2 / OIDC 标准端点与登录页
+/oauth2 iboot-auth
+/.well-known iboot-auth
+/connect iboot-auth
+/login iboot-auth
 /api    iboot-admin

@@ -56,16 +56,39 @@ spring:
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: 10s
+  # 授权码流程的服务端会话放在共享 Redis，保证多实例下回调可落在任意实例
+  session:
+    timeout: 30m
+    redis:
+      namespace: iboot:auth:session
 
-# 鉴权：与其余服务共用密钥与会话格式，密钥不一致会表现为「登录成功但全站 401」
+# 鉴权：双栈期内仍接受旧的对称签名令牌，自包含令牌由认证服务公钥验签
 jwt:
   secret: ${JWT_SECRET:iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits}
   expiration: 604800
   session-timeout: 30
+  jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8083/oauth2/jwks}
+  legacy-enabled: ${JWT_LEGACY_ENABLED:false}
 
+# 授权服务器：签发者地址必须等于浏览器访问授权服务器所用的地址（开发期即网关地址）
 iboot:
+  auth:
+    server:
+      issuer: ${IBOOT_AUTH_ISSUER:http://localhost:8088}
+      client-id: ${IBOOT_AUTH_CLIENT_ID:iboot-portal}
+      client-name: iBoot Portal
+      redirect-uris:
+        - ${IBOOT_AUTH_REDIRECT_URI:http://localhost:5173/callback}
+      post-logout-redirect-uris:
+        - ${IBOOT_AUTH_LOGOUT_REDIRECT_URI:http://localhost:5173/login}
+      access-token-minutes: ${IBOOT_AUTH_ACCESS_TOKEN_MINUTES:30}
+      refresh-token-minutes: ${IBOOT_AUTH_REFRESH_TOKEN_MINUTES:30}
+      jwk-key-file: ${IBOOT_AUTH_JWK_FILE:}
+      brand-name: ${IBOOT_BRAND_NAME:iBoot}
   security:
     whitelist:
+      # 根路径只做一次到门户的重定向，没有业务含义
+      - /
       # 认证相关：登录与注册必须匿名可达；登出自行解析令牌，过期令牌也应按成功处理
       - /api/auth/login
       - /api/auth/logout
