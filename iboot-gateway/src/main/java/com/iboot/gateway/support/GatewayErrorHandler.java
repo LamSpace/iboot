@@ -81,8 +81,8 @@ public class GatewayErrorHandler implements ErrorWebExceptionHandler {
             message = "网关内部错误";
         }
 
-        log.warn("网关请求失败：{} {} -> {} ({})", exchange.getRequest().getMethod(),
-                exchange.getRequest().getPath(), status.value(), throwable.toString());
+        log.warn("网关请求失败：{} {} -> {}", exchange.getRequest().getMethod(),
+                exchange.getRequest().getPath(), status.value(), throwable);
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("code", status.value());
