@@ -16,10 +16,10 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.system.model.MessageTemplate;
 import com.iboot.admin.domain.system.repository.MessageTemplateRepository;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

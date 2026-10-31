@@ -16,7 +16,7 @@
 
 package com.iboot.ai.interfaces.controller;
 
-import com.iboot.ai.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

@@ -16,8 +16,8 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.common.constant.Constants;
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.security.Constants;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.system.model.User;
 import com.iboot.admin.domain.system.repository.UserRepository;
 import org.slf4j.Logger;

@@ -17,7 +17,7 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.MinioAdminService;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.web.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;

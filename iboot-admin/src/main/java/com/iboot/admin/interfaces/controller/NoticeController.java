@@ -17,13 +17,13 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.NoticeApplicationService;
-import com.iboot.admin.common.annotation.Log;
-import com.iboot.admin.common.enums.BusinessTypeEnum;
-import com.iboot.admin.common.result.PageResult;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.logging.Log;
+import com.iboot.kernel.logging.BusinessTypeEnum;
+import com.iboot.kernel.web.PageResult;
+import com.iboot.kernel.web.Result;
 import com.iboot.admin.common.util.ExcelExportUtil;
 import com.iboot.admin.domain.system.model.Notice;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import com.iboot.admin.interfaces.dto.export.NoticeExportVO;
 import com.iboot.admin.interfaces.dto.request.NoticeRequest;
 import com.iboot.admin.interfaces.dto.response.NoticeResponse;
@@ -93,7 +93,7 @@ public class NoticeController {
      *
      * @param id 公告 ID
      * @return 公告详情
-     * @throws com.iboot.admin.common.exception.BusinessException 公告不存在时抛出
+     * @throws com.iboot.kernel.web.BusinessException 公告不存在时抛出
      */
     @Operation(summary = "查询公告详情")
     @GetMapping(version = "1", value = "/{id}")
@@ -156,7 +156,7 @@ public class NoticeController {
      *
      * @param id 公告 ID
      * @return 无数据的成功响应
-     * @throws com.iboot.admin.common.exception.BusinessException 公告不存在或状态不允许发布时抛出
+     * @throws com.iboot.kernel.web.BusinessException 公告不存在或状态不允许发布时抛出
      */
     @Operation(summary = "发布公告")
     @PutMapping(version = "1", value = "/{id}/publish")
@@ -172,7 +172,7 @@ public class NoticeController {
      *
      * @param id 公告 ID
      * @return 无数据的成功响应
-     * @throws com.iboot.admin.common.exception.BusinessException 公告不存在或状态不允许撤回时抛出
+     * @throws com.iboot.kernel.web.BusinessException 公告不存在或状态不允许撤回时抛出
      */
     @Operation(summary = "撤回公告")
     @PutMapping(version = "1", value = "/{id}/revoke")

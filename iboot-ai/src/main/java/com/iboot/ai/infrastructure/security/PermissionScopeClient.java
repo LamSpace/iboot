@@ -19,6 +19,7 @@ package com.iboot.ai.infrastructure.security;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iboot.ai.infrastructure.config.AiProperties;
+import com.iboot.kernel.security.SecurityUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;

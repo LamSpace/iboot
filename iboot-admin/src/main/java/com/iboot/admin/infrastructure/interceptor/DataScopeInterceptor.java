@@ -19,7 +19,7 @@ package com.iboot.admin.infrastructure.interceptor;
 import com.iboot.admin.application.service.UserDataScopeResolver;
 import com.iboot.admin.common.annotation.DataScope;
 import com.iboot.admin.domain.system.model.UserDataScope;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;

@@ -17,9 +17,9 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.AuthApplicationService;
-import com.iboot.admin.common.constant.Constants;
-import com.iboot.admin.common.exception.BusinessException;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.security.Constants;
+import com.iboot.kernel.web.BusinessException;
+import com.iboot.kernel.web.Result;
 import com.iboot.admin.interfaces.dto.request.LoginRequest;
 import com.iboot.admin.interfaces.dto.request.RegisterRequest;
 import com.iboot.admin.interfaces.dto.response.LoginResponse;

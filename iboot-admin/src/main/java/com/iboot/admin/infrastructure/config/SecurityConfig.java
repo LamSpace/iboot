@@ -16,9 +16,10 @@
 
 package com.iboot.admin.infrastructure.config;
 
-import com.iboot.admin.infrastructure.security.JwtAccessDeniedHandler;
-import com.iboot.admin.infrastructure.security.JwtAuthenticationEntryPoint;
-import com.iboot.admin.infrastructure.security.JwtAuthenticationFilter;
+import com.iboot.kernel.security.JwtAccessDeniedHandler;
+import com.iboot.kernel.security.JwtAuthenticationEntryPoint;
+import com.iboot.kernel.security.JwtAuthenticationFilter;
+import com.iboot.kernel.security.SecurityWhitelistProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -43,21 +44,17 @@ import java.util.List;
  * Spring Security 配置。
  *
  * <p>定义安全过滤器链、认证入口、访问拒绝处理器、密码编码器和 CORS 等基础设施；
- * 具体白名单路径由 {@link SecurityWhitelistConfig} 提供。
+ * 具体白名单路径由共享内核的 {@link SecurityWhitelistProperties} 提供，
+ * 管理端的取值写在 {@code application.yml} 的 {@code iboot.security.whitelist} 下。
  *
  * @author iBoot Team
  * @since 1.0.0
- * @see SecurityWhitelistConfig
+ * @see SecurityWhitelistProperties
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-
-    /**
-     * 白名单路径 - 使用统一配置
-     */
-    private static final String[] WHITE_LIST = SecurityWhitelistConfig.WHITE_LIST_PATHS;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -65,13 +62,17 @@ public class SecurityConfig {
 
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
+    private final SecurityWhitelistProperties whitelistProperties;
+
     @SuppressWarnings("all")
     public SecurityConfig(final JwtAuthenticationFilter jwtAuthenticationFilter,
                           final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
-                          final JwtAccessDeniedHandler jwtAccessDeniedHandler) {
+                          final JwtAccessDeniedHandler jwtAccessDeniedHandler,
+                          final SecurityWhitelistProperties whitelistProperties) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
+        this.whitelistProperties = whitelistProperties;
     }
 
     /**
@@ -99,7 +100,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
-                        authorize -> authorize.requestMatchers(WHITE_LIST).permitAll().anyRequest().authenticated())
+                        authorize -> authorize
+                                .requestMatchers(whitelistProperties.getWhitelist().toArray(String[]::new))
+                                .permitAll().anyRequest().authenticated())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

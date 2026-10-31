@@ -17,7 +17,7 @@
 package com.iboot.admin.interfaces.advisor;
 
 import com.iboot.admin.common.cloudevent.CloudEventBody;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.web.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;

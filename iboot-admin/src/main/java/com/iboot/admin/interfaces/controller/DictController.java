@@ -17,10 +17,10 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.DictApplicationService;
-import com.iboot.admin.common.annotation.Log;
-import com.iboot.admin.common.enums.BusinessTypeEnum;
-import com.iboot.admin.common.result.PageResult;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.logging.Log;
+import com.iboot.kernel.logging.BusinessTypeEnum;
+import com.iboot.kernel.web.PageResult;
+import com.iboot.kernel.web.Result;
 import com.iboot.admin.common.util.ExcelExportUtil;
 import com.iboot.admin.domain.system.model.DictData;
 import com.iboot.admin.domain.system.model.DictType;
@@ -102,7 +102,7 @@ public class DictController {
      *
      * @param id 字典类型 ID
      * @return 字典类型详情
-     * @throws com.iboot.admin.common.exception.BusinessException 字典类型不存在时抛出
+     * @throws com.iboot.kernel.web.BusinessException 字典类型不存在时抛出
      */
     @Operation(summary = "查询字典类型详情")
     @GetMapping(version = "1", value = "/type/{id}")
@@ -200,7 +200,7 @@ public class DictController {
      *
      * @param id 字典数据 ID
      * @return 字典数据详情
-     * @throws com.iboot.admin.common.exception.BusinessException 字典数据不存在时抛出
+     * @throws com.iboot.kernel.web.BusinessException 字典数据不存在时抛出
      */
     @Operation(summary = "查询字典数据详情")
     @GetMapping(version = "1", value = "/data/{id}")

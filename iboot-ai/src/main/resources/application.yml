@@ -123,6 +123,18 @@ management:
       namespace: default
 
 iboot:
+  # 免鉴权路径白名单：AI 服务只暴露健康检查与指标端点
+  security:
+    whitelist:
+      - /actuator/health
+      - /actuator/prometheus
+
+  kernel:
+    exception-handler:
+      # 本服务已有自己的 AiExceptionHandler；引入内核的全局处理器会改变既有错误响应契约，
+      # 保持关闭直到单独评估
+      enabled: false
+
   ai:
     quota:
       # 全局与单用户按自然日（北京时间）统计

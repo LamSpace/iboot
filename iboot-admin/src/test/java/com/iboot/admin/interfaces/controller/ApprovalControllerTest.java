@@ -20,11 +20,11 @@ import com.iboot.admin.application.service.ApprovalApplicationService;
 import com.iboot.admin.application.service.ApprovalDetail;
 import com.iboot.admin.application.service.ApprovalItem;
 import com.iboot.admin.application.service.BusinessMetricsService;
-import com.iboot.admin.common.exception.BusinessException;
-import com.iboot.admin.common.result.PageResult;
+import com.iboot.kernel.web.BusinessException;
+import com.iboot.kernel.web.PageResult;
 import com.iboot.admin.common.util.MonitorUtils;
-import com.iboot.admin.infrastructure.config.JwtSecurityConfig;
-import com.iboot.admin.infrastructure.security.JwtTokenUtil;
+import com.iboot.kernel.security.JwtSecurityConfig;
+import com.iboot.kernel.security.JwtTokenUtil;
 import com.iboot.admin.domain.workflow.model.LeaveApplication;
 import com.iboot.admin.domain.workflow.model.LeaveStatus;
 import com.iboot.admin.domain.workflow.model.WorkflowHistoryItem;
@@ -71,7 +71,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @since 1.0.0
  */
 @WebMvcTest(controllers = ApprovalController.class)
-@Import({ApiVersionConfig.class, MonitorUtils.class, ApprovalControllerTest.SecurityTestConfig.class})
+@Import({ApiVersionConfig.class, MonitorUtils.class, com.iboot.kernel.web.GlobalExceptionHandler.class,
+        ApprovalControllerTest.SecurityTestConfig.class})
 class ApprovalControllerTest {
 
     private static final String VERSION_HEADER = "Accept-Version";

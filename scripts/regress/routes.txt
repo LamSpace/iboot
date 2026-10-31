@@ -3,4 +3,5 @@
 # 匹配规则为最长前缀优先。每拆出一个服务，就在此文件增加一行，
 # 并保证网关路由表与本文件保持一致。route-coverage.sh 以此为唯一事实来源。
 /api/ai iboot-ai
+/api/file iboot-file
 /api    iboot-admin

@@ -32,6 +32,12 @@
     <description>iBoot 通用管理系统后端服务</description>
 
     <dependencies>
+        <!-- ==================== 共享内核 ==================== -->
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-kernel</artifactId>
+        </dependency>
+
         <!-- ==================== Spring Boot Starters ==================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

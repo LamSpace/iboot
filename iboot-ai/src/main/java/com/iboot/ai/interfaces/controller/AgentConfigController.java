@@ -17,7 +17,7 @@
 package com.iboot.ai.interfaces.controller;
 
 import com.iboot.ai.application.service.agent.AgentConfigApplicationService;
-import com.iboot.ai.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import com.iboot.ai.interfaces.dto.AgentConfigRequest;
 import com.iboot.ai.interfaces.dto.AgentConfigResponse;
 import jakarta.validation.Valid;

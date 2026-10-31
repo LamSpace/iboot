@@ -17,7 +17,7 @@
 package com.iboot.ai.interfaces.controller;
 
 import com.iboot.ai.application.service.KnowledgeBaseApplicationService;
-import com.iboot.ai.infrastructure.security.JwtTokenUtil;
+import com.iboot.kernel.security.JwtTokenUtil;
 import com.iboot.ai.infrastructure.security.PermissionScope;
 import com.iboot.ai.infrastructure.security.PermissionScopeClient;
 import com.iboot.ai.interfaces.advisor.AiExceptionHandler;

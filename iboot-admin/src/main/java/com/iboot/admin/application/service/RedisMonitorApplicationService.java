@@ -16,7 +16,7 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.common.result.PageResult;
+import com.iboot.kernel.web.PageResult;
 import com.iboot.admin.interfaces.dto.response.RedisMonitorResponse;
 import com.iboot.admin.interfaces.dto.response.RedisMonitorResponse.*;
 import org.slf4j.Logger;

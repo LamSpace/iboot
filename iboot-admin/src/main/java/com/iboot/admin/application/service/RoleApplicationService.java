@@ -16,8 +16,8 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.common.constant.Constants;
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.security.Constants;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.system.model.Role;
 import com.iboot.admin.domain.system.repository.RoleRepository;
 import com.iboot.admin.infrastructure.interceptor.DataScopeInterceptor;

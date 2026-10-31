@@ -1,0 +1,285 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package com.iboot.file.common.util;
+
+import com.iboot.file.infrastructure.persistence.DictLabelLookup;
+import com.iboot.file.common.annotation.ExcelColumn;
+import jakarta.servlet.http.HttpServletResponse;
+import org.dhatim.fastexcel.Workbook;
+import org.dhatim.fastexcel.Worksheet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * Excel 导出工具。
+ *
+ * <p>基于 FastExcel 将带 {@link ExcelColumn} 注解的 VO 列表写入 HTTP 响应流。
+ * 支持按 {@code order} 排序、列宽限制、字典值翻译、日期格式化和布尔值中文化；
+ * 导出过程直接写响应，调用方不再返回 JSON。
+ *
+ * <p>工具类无状态，所有方法均为静态方法；字典服务不可用时跳过翻译并输出原值。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see ExcelColumn
+ */
+public class ExcelExportUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(ExcelExportUtil.class);
+
+    /**
+     * 未指定列宽时使用的默认宽度，单位为字符数。
+     */
+    private static final int DEFAULT_COLUMN_WIDTH = 15;
+
+    /**
+     * 列宽上限，单位为字符数。
+     */
+    private static final int MAX_COLUMN_WIDTH = 50;
+
+    /**
+     * 表头背景色，RGB 十六进制值。
+     */
+    private static final String HEADER_FILL_COLOR = "C0C0C0";
+
+    private ExcelExportUtil() {
+    }
+
+    /**
+     * 将数据列表导出为 Excel 并写入 HTTP 响应。
+     *
+     * <p>按 {@link ExcelColumn#order()} 升序生成列；没有带注解的字段时记录警告并直接返回。
+     * 单元格值依次按字典、日期、数字、布尔、字符串处理，日期格式由注解指定。
+     *
+     * @param response HTTP 响应，用于设置下载头和写入文件
+     * @param dataList 待导出的数据列表
+     * @param clazz 数据类型，用于读取 {@link ExcelColumn} 注解
+     * @param fileName 文件名，不含扩展名
+     * @param sheetName 工作表名称
+     * @param <T> 数据类型
+     * @throws IOException 写入响应流失败时抛出
+     */
+    public static <T> void exportExcel(HttpServletResponse response, List<T> dataList, Class<T> clazz, String fileName,
+                                       String sheetName) throws IOException {
+        // 获取并排序字段
+        List<FieldInfo> fieldInfos = getExcelFields(clazz);
+        if (fieldInfos.isEmpty()) {
+            log.warn("No @ExcelColumn annotated fields found in {}", clazz.getName());
+            return;
+        }
+        // 设置响应头（必须在获取OutputStream之前）
+        setResponseHeaders(response, fileName);
+        // 获取字典服务（延迟加载）
+        DictLabelLookup dictService = getDictLookup();
+        Workbook workbook = new Workbook(response.getOutputStream(), "iBoot", "1.0");
+        try {
+            Worksheet ws = workbook.newWorksheet(sheetName);
+            // 设置列宽
+            setColumnWidths(ws, fieldInfos);
+            // 创建表头
+            createHeaderRow(ws, fieldInfos);
+            // 填充数据
+            int rowNum = 1;
+            for (T data : dataList) {
+                for (int colNum = 0; colNum < fieldInfos.size(); colNum++) {
+                    FieldInfo fieldInfo = fieldInfos.get(colNum);
+                    Object value = getFieldValue(data, fieldInfo.field);
+                    setCellValue(ws, rowNum, colNum, value, fieldInfo, dictService);
+                }
+                rowNum++;
+            }
+            workbook.finish();
+        } catch (IOException e) {
+            try {
+                workbook.finish();
+            } catch (IOException ignored) {
+            }
+            // 忽略关闭时的异常
+            throw e;
+        }
+    }
+
+    /**
+     * 获取带ExcelColumn注解的字段列表
+     */
+    private static List<FieldInfo> getExcelFields(Class<?> clazz) {
+        List<FieldInfo> fieldInfos = new ArrayList<>();
+        // 获取所有字段（包括父类）
+        Class<?> currentClass = clazz;
+        while (currentClass != null && currentClass != Object.class) {
+            for (Field field : currentClass.getDeclaredFields()) {
+                ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
+                if (annotation != null) {
+                    field.setAccessible(true);
+                    fieldInfos.add(new FieldInfo(field, annotation));
+                }
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+        // 按order排序
+        fieldInfos.sort(Comparator.comparingInt(f -> f.annotation.order()));
+        return fieldInfos;
+    }
+
+    /**
+     * 创建表头行
+     */
+    private static void createHeaderRow(Worksheet ws, List<FieldInfo> fieldInfos) throws IOException {
+        for (int i = 0; i < fieldInfos.size(); i++) {
+            ws.value(0, i, fieldInfos.get(i).annotation.name());
+            ws.style(0, i)
+                    .bold()
+                    .fontSize(11)
+                    .fillColor(HEADER_FILL_COLOR)
+                    .horizontalAlignment("center")
+                    .verticalAlignment("center")
+                    .borderStyle("thin")
+                    .set();
+        }
+    }
+
+    /**
+     * 获取字段值
+     */
+    private static Object getFieldValue(Object obj, Field field) {
+        try {
+            return field.get(obj);
+        } catch (IllegalAccessException e) {
+            log.error("Failed to get field value: {}", field.getName(), e);
+            return null;
+        }
+    }
+
+    /**
+     * 设置单元格值
+     */
+    private static void setCellValue(Worksheet ws, int row, int col, Object value, FieldInfo fieldInfo,
+                                     DictLabelLookup dictService) throws IOException {
+        if (value == null) {
+            ws.value(row, col, "");
+            applyDataStyle(ws, row, col);
+            return;
+        }
+        ExcelColumn annotation = fieldInfo.annotation;
+        // 字典翻译
+        if (!annotation.dictType().isEmpty() && dictService != null) {
+            String dictLabel = dictService.labelOf(annotation.dictType(), String.valueOf(value));
+            ws.value(row, col, dictLabel.isEmpty() ? String.valueOf(value) : dictLabel);
+            applyDataStyle(ws, row, col);
+            return;
+        }
+        // 日期类型处理
+        if (value instanceof LocalDateTime) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(annotation.dateFormat());
+            ws.value(row, col, ((LocalDateTime) value).format(formatter));
+            applyDataStyle(ws, row, col);
+            return;
+        }
+        if (value instanceof LocalDate) {
+            String format = annotation.dateFormat().contains(" ") ? annotation.dateFormat().split(" ")[0]
+                    : annotation.dateFormat();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+            ws.value(row, col, ((LocalDate) value).format(formatter));
+            applyDataStyle(ws, row, col);
+            return;
+        }
+        if (value instanceof Date) {
+            ws.value(row, col, value.toString());
+            applyDataStyle(ws, row, col);
+            return;
+        }
+        // 数字类型
+        if (value instanceof Number) {
+            ws.value(row, col, ((Number) value).doubleValue());
+            applyDataStyle(ws, row, col);
+            return;
+        }
+        // 布尔类型
+        if (value instanceof Boolean) {
+            ws.value(row, col, (Boolean) value ? "是" : "否");
+            applyDataStyle(ws, row, col);
+            return;
+        }
+        // 默认字符串处理
+        ws.value(row, col, String.valueOf(value));
+        applyDataStyle(ws, row, col);
+    }
+
+    /**
+     * 应用数据单元格样式
+     */
+    private static void applyDataStyle(Worksheet ws, int row, int col) throws IOException {
+        ws.style(row, col).horizontalAlignment("center").verticalAlignment("center").borderStyle("thin").set();
+    }
+
+    /**
+     * 设置列宽
+     */
+    private static void setColumnWidths(Worksheet ws, List<FieldInfo> fieldInfos) {
+        for (int i = 0; i < fieldInfos.size(); i++) {
+            int width = fieldInfos.get(i).annotation.width();
+            if (width <= 0) {
+                width = DEFAULT_COLUMN_WIDTH;
+            }
+            width = Math.min(width, MAX_COLUMN_WIDTH);
+            ws.width(i, width);
+        }
+    }
+
+    /**
+     * 设置响应头
+     */
+    private static void setResponseHeaders(HttpServletResponse response, String fileName) {
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedFileName + ".xlsx\";"
+                + "filename*=UTF-8''" + encodedFileName + ".xlsx");
+    }
+
+    /**
+     * 获取字典服务
+     */
+    private static DictLabelLookup getDictLookup() {
+        try {
+            return SpringUtils.getBean(DictLabelLookup.class);
+        } catch (Exception e) {
+            log.warn("字典查询器不可用，导出跳过字典翻译");
+            return null;
+        }
+    }
+
+    /**
+     * 字段信息内部类
+     */
+    private record FieldInfo(Field field, ExcelColumn annotation) {
+
+    }
+
+}

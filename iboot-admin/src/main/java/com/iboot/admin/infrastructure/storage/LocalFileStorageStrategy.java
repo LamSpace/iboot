@@ -17,7 +17,7 @@
 package com.iboot.admin.infrastructure.storage;
 
 import com.iboot.admin.application.service.ConfigApplicationService;
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.system.model.StorageObject;
 import com.iboot.admin.domain.system.service.FileStorageStrategy;
 import org.slf4j.Logger;

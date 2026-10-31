@@ -264,6 +264,46 @@ jwt:
 
 # SSE 推送配置
 iboot:
+  # 免鉴权路径白名单，由共享内核（iboot-kernel）读取并与过滤器链共用
+  security:
+    whitelist:
+      # 认证相关
+      - /api/auth/login
+      - /api/auth/logout
+      - /api/auth/register
+      # 公开配置接口
+      - /api/config/public
+      # 国际化
+      - /api/i18n/**
+      # 接口文档
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /v3/api-docs/**
+      - /v3/api-docs
+      - /v3/api-docs.yaml
+      - /v3/api-docs/swagger-config
+      - /swagger-resources/**
+      - /webjars/**
+      - /doc.html
+      # 静态资源
+      - /favicon.ico
+      - /error
+      - /static/**
+      - /**/*.ico
+      - /**/*.png
+      - /**/*.jpg
+      - /**/*.jpeg
+      - /**/*.gif
+      - /**/*.css
+      - /**/*.js
+      # 监控
+      - /actuator/**
+      - /druid/**
+      # Spring Boot Admin
+      - /sba/**
+      - /instances/**
+      - /applications/**
+
   # 数据备份与恢复
   backup:
     enabled: ${IBOOT_BACKUP_ENABLED:false}

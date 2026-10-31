@@ -1,0 +1,259 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package com.iboot.kernel.web;
+
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import org.apache.catalina.connector.ClientAbortException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * 全局异常处理器。
+ *
+ * <p>通过 {@link RestControllerAdvice} 把控制器抛出的业务异常、参数校验异常、
+ * 安全异常和未预期异常转换为统一的 {@link Result} 响应，并设置对应的 HTTP 状态码。
+ *
+ * <p>客户端主动断开连接（SSE、文件下载）属于正常场景，只记录 DEBUG 日志，
+ * 不再尝试写响应。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ * @see BusinessException
+ * @see Result
+ */
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /**
+     * 处理业务异常。
+     *
+     * <p>HTTP 状态码固定为 200，业务错误码由异常携带并放入响应体。
+     *
+     * @param e 业务异常
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(BusinessException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public Result<Void> handleBusinessException(BusinessException e) {
+        log.error("业务异常: {}", e.getMessage(), e);
+        return Result.error(e.getCode(), e.getMessage());
+    }
+
+    /**
+     * 处理 SSE 客户端断开。
+     *
+     * <p>客户端关闭连接属于正常行为，只记录 DEBUG 日志，不返回响应。
+     *
+     * @param e SSE 异步请求不可用异常
+     */
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleAsyncRequestNotUsableException(AsyncRequestNotUsableException e) {
+        // 客户端断开连接是正常行为,只记录 DEBUG 级别日志
+        log.debug("SSE 客户端断开连接: {}", e.getMessage());
+    }
+
+    /**
+     * 处理客户端主动断开连接。
+     *
+     * <p>例如刷新页面、关闭标签页；只记录 DEBUG 日志，不返回响应。
+     *
+     * @param e 客户端中止异常
+     */
+    @ExceptionHandler(ClientAbortException.class)
+    public void handleClientAbortException(ClientAbortException e) {
+        // 客户端主动断开连接是正常行为,只记录 DEBUG 级别日志
+        log.debug("客户端主动断开连接: {}", e.getMessage());
+    }
+
+    /**
+     * 参数校验异常处理 - @Valid 注解校验失败
+     *
+     * @param e 方法参数校验异常
+     *
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+        log.error("参数校验异常: {}", message);
+        return Result.error(400, message);
+    }
+
+    /**
+     * 参数绑定异常处理
+     *
+     * @param e 参数绑定异常
+     *
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(BindException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleBindException(BindException e) {
+        String message = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+        log.error("参数绑定异常: {}", message);
+        return Result.error(400, message);
+    }
+
+    /**
+     * 约束违反异常处理 - @Validated 注解校验失败
+     *
+     * @param e 约束违反异常
+     *
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleConstraintViolationException(ConstraintViolationException e) {
+        Set<ConstraintViolation<?>> violations = e.getConstraintViolations();
+        String message = violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.joining(", "));
+        log.error("约束违反异常: {}", message);
+        return Result.error(400, message);
+    }
+
+    /**
+     * 非法参数异常处理
+     *
+     * @param e 非法参数异常
+     *
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
+        log.error("非法参数异常: {}", e.getMessage(), e);
+        return Result.error(400, e.getMessage());
+    }
+
+    /**
+     * 数据库唯一键冲突异常处理
+     *
+     * @param e 唯一键冲突异常
+     *
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(DuplicateKeyException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public Result<Void> handleDuplicateKeyException(DuplicateKeyException e) {
+        log.error("数据库唯一键冲突: {}", e.getMessage(), e);
+        return Result.error(400, I18nUtil.getMessage("dict.value.exists"));
+    }
+
+    /**
+     * Spring Security 权限拒绝异常处理 当用户已认证但无权访问特定资源时触发（@PreAuthorize 校验失败等）
+     *
+     * @param e        权限拒绝异常
+     * @param response HTTP响应对象
+     *
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Result<Void> handleAccessDeniedException(AccessDeniedException e, HttpServletResponse response) {
+        log.warn("权限拒绝: {}", e.getMessage());
+        resetContentTypeToJson(response);
+        return Result.error(403, I18nUtil.getMessage("result.forbidden"));
+    }
+
+    /**
+     * Spring Security 认证异常处理 当用户认证失败时触发
+     *
+     * @param e 认证异常
+     *
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Result<Void> handleAuthenticationException(AuthenticationException e) {
+        log.warn("认证失败: {}", e.getMessage());
+        return Result.error(401, I18nUtil.getMessage("result.unauthorized"));
+    }
+
+    /**
+     * 运行时异常处理
+     *
+     * @param e        运行时异常
+     * @param response HTTP响应对象
+     *
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(RuntimeException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Result<Void> handleRuntimeException(RuntimeException e, HttpServletResponse response) {
+        log.error("运行时异常: {}", e.getMessage(), e);
+        resetContentTypeToJson(response);
+        return Result.error(500, "系统内部错误: " + e.getMessage());
+    }
+
+    /**
+     * 通用异常处理
+     *
+     * @param e        通用异常
+     * @param response HTTP响应对象
+     *
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Result<Void> handleException(Exception e, HttpServletResponse response) {
+        log.error("系统异常: {}", e.getMessage(), e);
+        resetContentTypeToJson(response);
+        return Result.error(500, "系统异常，请联系管理员");
+    }
+
+    /**
+     * 将响应的 Content-Type 重置为 JSON。
+     *
+     * <p>用于导出等场景：响应头可能已被设置为 Excel 类型，发生异常时需要改回 JSON，
+     * 以便写出统一错误响应。响应已提交时不做修改。
+     *
+     * @param response HTTP 响应对象
+     */
+    private void resetContentTypeToJson(HttpServletResponse response) {
+        if (response != null && !response.isCommitted()) {
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        }
+    }
+
+}

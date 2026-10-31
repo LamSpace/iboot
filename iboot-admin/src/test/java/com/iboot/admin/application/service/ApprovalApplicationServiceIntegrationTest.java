@@ -17,7 +17,7 @@
 package com.iboot.admin.application.service;
 
 import com.iboot.admin.application.service.notification.NotificationApplicationService;
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.system.model.User;
 import com.iboot.admin.domain.system.repository.UserRepository;
 import com.iboot.admin.domain.workflow.model.LeaveApplication;
