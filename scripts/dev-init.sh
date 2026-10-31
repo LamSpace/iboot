@@ -16,7 +16,8 @@
 # 说明：
 # - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo），
 #   不启动 Prometheus、Kibana、Thanos 等观测组件；
-# - 全新数据卷下 MySQL 会执行 docker/init.sql 建出 iboot_admin，iboot_ai 由本脚本创建；
+# - 全新数据卷下 MySQL 会执行 docker/init.sql 建出 iboot_admin，
+#   iboot_ai 与 iboot_file 由本脚本创建；
 # - 后端日志写入 logs/，进程号写入 logs/<name>.pid。
 
 set -uo pipefail
@@ -160,6 +161,11 @@ start_middleware() {
     docker exec iboot-mysql mysql -uroot -proot \
         -e 'CREATE DATABASE IF NOT EXISTS iboot_ai CHARACTER SET utf8mb4' 2>/dev/null \
         || fail '创建 iboot_ai 库失败'
+
+    # 文件服务的独立 schema：必须早于服务启动，Flyway 只负责建表不建库。
+    docker exec iboot-mysql mysql -uroot -proot \
+        -e 'CREATE DATABASE IF NOT EXISTS iboot_file CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
+        || fail '创建 iboot_file 库失败'
 
     wait_http 'Elasticsearch' 'http://localhost:9200' 180 || fail 'Elasticsearch 未就绪'
     wait_http 'MinIO' 'http://localhost:9000/minio/health/live' 120 || fail 'MinIO 未就绪'

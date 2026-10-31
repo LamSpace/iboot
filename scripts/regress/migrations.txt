@@ -10,4 +10,4 @@
 # 第四列是迁移状态：
 #   transitional — 源服务仍保留旧实现（绞杀者过渡期），只校验目标服务已有该前缀；
 #   done         — 旧实现已删除，源服务不得再出现该前缀。
-/api/file admin file transitional
+/api/file admin file done

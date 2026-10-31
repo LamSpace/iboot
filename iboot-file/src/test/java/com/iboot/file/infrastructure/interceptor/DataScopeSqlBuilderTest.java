@@ -51,7 +51,7 @@ class DataScopeSqlBuilderTest {
     void deptScopeFiltersJoinedUserDept() {
         String sql = builder.build(new FilePermissionScope(3, 1L, List.of(), false), "u", false, 7L);
 
-        assertThat(sql).isEqualTo("u.dept_id = (SELECT dept_id FROM sys_user WHERE id = 7)");
+        assertThat(sql).isEqualTo("u.dept_id = (SELECT dept_id FROM iboot_admin.sys_user WHERE id = 7)");
     }
 
     /**

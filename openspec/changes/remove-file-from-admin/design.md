@@ -9,6 +9,9 @@
 - 管理端固件测试中，`FileApplicationServiceTest`、`FileControllerDownloadTest` 依赖待删除的实现；`FileStorageConfigTest` 与 `InMemoryFileStorageStrategy` 依赖保留的存储 SPI。
 - `iboot-file` 目前**没有** Flyway 依赖，数据源指向 `iboot_admin`。
 - `migrations.txt` 中 `/api/file admin file transitional`，路径守恒允许管理端快照继续包含这 7 条路径。
+- 两个 schema 在**同一个 MySQL 实例**上，但 MySQL 没有跨库搜索路径：数据源切到 `iboot_file`
+  后，文件服务对共享表的读取（`sys_config`、`sys_dict_data`、`sys_user`）必须显式写成
+  `iboot_admin.<table>`。这是 D2「仍只读共享库」的落地方式，不引入服务间调用。
 
 ## Goals / Non-Goals
 

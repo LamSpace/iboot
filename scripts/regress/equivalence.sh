@@ -2,10 +2,11 @@
 # 只读接口的响应等价性：迁移前录制，迁移后经网关重放并比对。
 #
 # 用法：
-#   equivalence.sh --record   从原服务（默认 8080）录制基线
+#   equivalence.sh --record   从录制源录制基线（默认同 REG_BASE）
 #   equivalence.sh --verify   经网关（默认 8088）重放并与基线比对
 #
-# 环境变量：REG_BASE（录制源，默认 http://localhost:8080）、
+# 环境变量：REG_BASE（登录与默认录制源，默认 http://localhost:8080）、
+#           REG_RECORD_BASE（仅 --record 的取数地址；旧实现删除后指向文件服务，默认取 REG_BASE）、
 #           REG_GATEWAY（重放入口，默认 http://localhost:8088）、REG_USER、REG_PASS
 
 set -euo pipefail
@@ -16,6 +17,7 @@ TMP="$HERE/.tmp"
 mkdir -p "$TMP"
 
 REG_BASE="${REG_BASE:-http://localhost:8080}"
+REG_RECORD_BASE="${REG_RECORD_BASE:-$REG_BASE}"
 REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
 export REG_BASE
 
@@ -32,7 +34,7 @@ reg_login
 export REG_TOKEN
 
 if [ "$MODE" = "--record" ]; then
-    python3 -I "$HERE/equivalence.py" "$REG_BASE" "$REG_TOKEN" "$GOLDEN"
+    python3 -I "$HERE/equivalence.py" "$REG_RECORD_BASE" "$REG_TOKEN" "$GOLDEN"
     exit 0
 fi
 

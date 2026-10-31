@@ -291,12 +291,14 @@ Boot 4.0.3 这一前提改变了可选生态:
 > |---|---|---|
 > | `iboot-gateway` | 已完成 | `add-microservice-foundation` |
 > | `iboot-kernel`(库) | 已完成 | `add-shared-kernel` |
-> | `iboot-file` | 已拆分,旧实现待删除 | `add-file-service` / 待办 `remove-file-from-admin` |
+> | `iboot-file` | 已完成 | `add-file-service` / `remove-file-from-admin` |
 > | `iboot-auth` | 待办 | 排在 file 之后 |
 > | `notify` / `job` / `monitor` / `workflow` / `system` | 待办 | 按 2.3 蓝图顺序 |
 >
-> `iboot-file` 的过渡状态:与管理端共用 `sys_file`、只读共享 `sys_config`/`sys_dict_data`、
-> 数据权限经 `/api/auth/scope` 获取;退出条件见 `doc/23` §11.3。
+> `iboot-file` 的当前状态:`sys_file` 已迁至独立 schema `iboot_file`(本服务 Flyway 管理),
+> 仍以 `iboot_admin.` 限定名只读共享库的 `sys_config`/`sys_dict_data`/`sys_user`,
+> 数据权限经 `/api/auth/scope` 获取;管理端旧实现已删除,管理端 `sys_file` 表再保留一个发布周期。
+> 退出条件见 `doc/23` §11.3。
 >
 > 排序依据修订:认证中心不是运行时硬前置——资源服务器只依赖 JWT 密钥与共享会话,真正的前置是
 > 「资源服务器契约」(现已落在内核里);而 auth 与 system 的数据归属是全阶段最难的一刀,不宜作为

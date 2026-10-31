@@ -982,89 +982,6 @@
         },
         "type": "object"
       },
-      "FileResponse": {
-        "description": "文件信息响应",
-        "properties": {
-          "createTime": {
-            "description": "创建时间",
-            "format": "date-time",
-            "type": "string"
-          },
-          "fileCategory": {
-            "description": "文件分类",
-            "type": "string"
-          },
-          "fileExt": {
-            "description": "文件扩展名",
-            "type": "string"
-          },
-          "fileName": {
-            "description": "原始文件名",
-            "type": "string"
-          },
-          "fileSize": {
-            "description": "文件大小（字节）",
-            "format": "int64",
-            "type": "integer"
-          },
-          "fileType": {
-            "description": "MIME类型",
-            "type": "string"
-          },
-          "id": {
-            "description": "文件ID",
-            "format": "int64",
-            "type": "integer"
-          },
-          "readableSize": {
-            "description": "可读文件大小",
-            "type": "string"
-          },
-          "remark": {
-            "description": "备注",
-            "type": "string"
-          },
-          "uploadBy": {
-            "description": "上传人",
-            "type": "string"
-          },
-          "uploadTime": {
-            "description": "上传时间",
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FileUpdateRequest": {
-        "description": "文件信息更新请求",
-        "properties": {
-          "fileCategory": {
-            "description": "文件分类",
-            "maxLength": 100,
-            "minLength": 0,
-            "type": "string"
-          },
-          "fileName": {
-            "description": "文件名称",
-            "maxLength": 255,
-            "minLength": 0,
-            "type": "string"
-          },
-          "id": {
-            "description": "文件ID",
-            "format": "int64",
-            "type": "integer"
-          },
-          "remark": {
-            "description": "备注",
-            "maxLength": 500,
-            "minLength": 0,
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "HourData": {
         "description": "小时分布数据",
         "properties": {
@@ -2571,40 +2488,6 @@
         },
         "type": "object"
       },
-      "PageResultFileResponse": {
-        "properties": {
-          "code": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/FileResponse"
-            },
-            "type": "array"
-          },
-          "message": {
-            "type": "string"
-          },
-          "pageNum": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "pageSize": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "timestamp": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "total": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
       "PageResultJobLogResponse": {
         "properties": {
           "code": {
@@ -3685,25 +3568,6 @@
         },
         "type": "object"
       },
-      "ResultFileResponse": {
-        "properties": {
-          "code": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "data": {
-            "$ref": "#/components/schemas/FileResponse"
-          },
-          "message": {
-            "type": "string"
-          },
-          "timestamp": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
       "ResultInteger": {
         "properties": {
           "code": {
@@ -4261,25 +4125,6 @@
           },
           "data": {
             "$ref": "#/components/schemas/PageResultDictTypeResponse"
-          },
-          "message": {
-            "type": "string"
-          },
-          "timestamp": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "ResultPageResultFileResponse": {
-        "properties": {
-          "code": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "data": {
-            "$ref": "#/components/schemas/PageResultFileResponse"
           },
           "message": {
             "type": "string"
@@ -6659,7 +6504,7 @@
         ]
       },
       "put": {
-        "operationId": "update_9",
+        "operationId": "update_8",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6803,7 +6648,7 @@
     },
     "/api/config/export": {
       "get": {
-        "operationId": "export_10",
+        "operationId": "export_9",
         "parameters": [
           {
             "in": "query",
@@ -6975,7 +6820,7 @@
     },
     "/api/config/list": {
       "get": {
-        "operationId": "list_12",
+        "operationId": "list_11",
         "parameters": [
           {
             "in": "query",
@@ -7240,7 +7085,7 @@
     },
     "/api/config/{id}": {
       "delete": {
-        "operationId": "delete_9",
+        "operationId": "delete_8",
         "parameters": [
           {
             "in": "path",
@@ -7320,7 +7165,7 @@
         ]
       },
       "get": {
-        "operationId": "getById_9",
+        "operationId": "getById_8",
         "parameters": [
           {
             "in": "path",
@@ -7544,7 +7389,7 @@
         ]
       },
       "put": {
-        "operationId": "update_8",
+        "operationId": "update_7",
         "requestBody": {
           "content": {
             "application/json": {
@@ -7615,7 +7460,7 @@
     },
     "/api/dept/export": {
       "get": {
-        "operationId": "export_9",
+        "operationId": "export_8",
         "parameters": [
           {
             "in": "query",
@@ -7698,7 +7543,7 @@
     },
     "/api/dept/list": {
       "get": {
-        "operationId": "list_11",
+        "operationId": "list_10",
         "parameters": [
           {
             "in": "header",
@@ -7917,7 +7762,7 @@
     },
     "/api/dept/{id}": {
       "delete": {
-        "operationId": "delete_8",
+        "operationId": "delete_7",
         "parameters": [
           {
             "in": "path",
@@ -7997,7 +7842,7 @@
         ]
       },
       "get": {
-        "operationId": "getById_8",
+        "operationId": "getById_7",
         "parameters": [
           {
             "in": "path",
@@ -9202,702 +9047,6 @@
         "summary": "查询字典类型详情",
         "tags": [
           "数据字典"
-        ]
-      }
-    },
-    "/api/file": {
-      "put": {
-        "operationId": "update_7",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FileUpdateRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "修改文件信息",
-        "tags": [
-          "文件管理"
-        ]
-      }
-    },
-    "/api/file/download-url/{id}": {
-      "get": {
-        "description": "MinIO模式返回预签名URL，本地模式返回下载接口路径",
-        "operationId": "getDownloadUrl",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Accept-Version",
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultMapStringString"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "获取文件下载URL",
-        "tags": [
-          "文件管理"
-        ]
-      }
-    },
-    "/api/file/download/{id}": {
-      "get": {
-        "operationId": "download",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Accept-Version",
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "下载文件",
-        "tags": [
-          "文件管理"
-        ]
-      }
-    },
-    "/api/file/export": {
-      "get": {
-        "operationId": "export_8",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "fileName",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "fileCategory",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Accept-Version",
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "导出文件列表",
-        "tags": [
-          "文件管理"
-        ]
-      }
-    },
-    "/api/file/list": {
-      "get": {
-        "operationId": "list_10",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "pageNum",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "format": "int32",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "pageSize",
-            "required": false,
-            "schema": {
-              "default": 10,
-              "format": "int32",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "fileName",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "fileCategory",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "fileExt",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Accept-Version",
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultPageResultFileResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "查询文件列表",
-        "tags": [
-          "文件管理"
-        ]
-      }
-    },
-    "/api/file/upload": {
-      "post": {
-        "operationId": "upload",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "fileCategory",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Accept-Version",
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "file": {
-                    "format": "binary",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "file"
-                ],
-                "type": "object"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultFileResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "上传文件",
-        "tags": [
-          "文件管理"
-        ]
-      }
-    },
-    "/api/file/{id}": {
-      "delete": {
-        "operationId": "delete_7",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Accept-Version",
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "删除文件",
-        "tags": [
-          "文件管理"
-        ]
-      },
-      "get": {
-        "operationId": "getById_7",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Accept-Version",
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultFileResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "查询文件详情",
-        "tags": [
-          "文件管理"
         ]
       }
     },
@@ -19851,10 +19000,6 @@
     {
       "description": "菜单管理相关接口",
       "name": "菜单管理"
-    },
-    {
-      "description": "文件上传下载管理相关接口",
-      "name": "文件管理"
     },
     {
       "description": "用户登录、登出、注册相关接口",

@@ -33,8 +33,8 @@ spring:
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      # 过渡期与管理端共用同一 schema，独立 schema 留到删除旧实现时
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_admin?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      # 独立 schema：sys_file 归本服务所有，结构由本服务的 Flyway 管理
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_file?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
       username: ${MYSQL_USERNAME:root}
       password: ${MYSQL_PASSWORD:root}
       initial-size: 2
@@ -48,6 +48,10 @@ spring:
       pool-prepared-statements: true
       max-pool-prepared-statement-per-connection-size: 20
       filters: stat,wall,slf4j
+  # 迁移脚本只作用于本服务 schema；跨 schema 的数据搬迁见 scripts/migrate/
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
   data:
     redis:
       host: ${REDIS_HOST:localhost}

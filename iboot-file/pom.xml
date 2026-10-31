@@ -52,7 +52,17 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- 持久化：与过渡期共用库一致，连接池沿用 Druid -->
+        <!-- 数据库迁移：文件服务拥有自己的 schema，表结构由 Flyway 版本化 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
+        <!-- 持久化：连接池沿用 Druid -->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid-spring-boot-4-starter</artifactId>
