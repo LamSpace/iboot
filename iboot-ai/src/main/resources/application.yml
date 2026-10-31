@@ -103,9 +103,12 @@ management:
       export:
         enabled: false
   tracing:
-    enabled: ${IBOOT_TRACING_ENABLED:true}
+    export:
+      # 总开关：关闭后不再产生 span
+      enabled: ${IBOOT_TRACING_ENABLED:true}
     sampling:
-      probability: ${IBOOT_TRACING_SAMPLE:0.1}
+      # 默认全采：保证开发与验收期链路完整，压测或生产按需用环境变量调低
+      probability: ${IBOOT_TRACING_SAMPLE:1.0}
   endpoints:
     web:
       exposure:
