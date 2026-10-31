@@ -9,8 +9,8 @@
 #   dev-init.sh --stop       停止后端三个服务（中间件保留）
 #   dev-init.sh --down       停止服务并移除中间件容器（数据卷保留）
 #
-# 密钥与私有配置放在 scripts/dev.env（已在 .gitignore 中），脚本会自动加载：
-#   DASHSCOPE_CHAT_API_KEY=sk-xxx
+# 密钥与私有配置沿用根目录的 .env（已在 .gitignore 中，模板见 .env.example），
+# 与 README 里 `set -a; source .env; set +a` 的既有约定一致；脚本会自动加载。
 #
 # 说明：
 # - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo），
@@ -50,11 +50,11 @@ done
 log()  { printf '%s\n' "$*"; }
 fail() { printf '[ERROR] %s\n' "$*" >&2; exit 1; }
 
-# 加载本地密钥；不存在时跳过。
-if [ -f "$ROOT/scripts/dev.env" ]; then
+# 加载本地环境变量；不存在时跳过。
+if [ -f "$ROOT/.env" ]; then
     set -a
     # shellcheck disable=SC1091
-    . "$ROOT/scripts/dev.env"
+    . "$ROOT/.env"
     set +a
 fi
 
@@ -165,11 +165,10 @@ build_backend() {
 start_backend() {
     local entry name port
     log '=== 3. 启动后端 ==='
-    # 本地没有邮件服务器时，邮件健康检查会把整体状态拉成 DOWN；关掉这一项，
-    # 让 /actuator/health 如实反映业务依赖（数据库、注册中心等）。
-    if [ -z "${MAIL_HOST:-}" ]; then
-        export MANAGEMENT_HEALTH_MAIL_ENABLED=false
-    fi
+    # 邮件是可选的外部依赖：.env 里配了邮箱时它会参与健康检查，离线或认证失败就会把
+    # /actuator/health 拉成 503。本地开发把它排除，健康状态只反映数据库、注册中心等
+    # 运行本服务真正需要的东西。
+    export MANAGEMENT_HEALTH_MAIL_ENABLED=false
     for entry in "${SERVICES[@]}"; do
         name="${entry%%:*}"
         port="${entry##*:}"
@@ -247,7 +246,7 @@ case "$ACTION" in
     up)
         if [ -z "${DASHSCOPE_CHAT_API_KEY:-}" ]; then
             fail '缺少 DASHSCOPE_CHAT_API_KEY：iboot-ai 启动时校验该值，缺失会直接退出。
-       请写入 scripts/dev.env（字段参考 scripts/dev.env.example）后重试。'
+       请写入根目录 .env（字段参考 .env.example）后重试。'
         fi
         start_middleware
         build_backend
