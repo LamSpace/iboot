@@ -65,5 +65,5 @@
 - [x] 8.2 契约零漂移：重新导出并比对 `scripts/regress/golden/`，差异只允许出现「新增网关本身」这一项且已登记；验证：`bash scripts/regress/regress.sh` 退出码为 0
 - [x] 8.3 故障演练：停掉 admin 后经网关访问 admin 接口返回明确降级、AI 接口不受影响；停掉 ai 后反之；验证：两种情形均符合预期，无需重启网关
 - [x] 8.4 追踪贯穿验收：一次真实操作在 Tempo 中形成包含三个服务的完整链路；验证：经网关调用 `/api/ai/knowledge-documents/{id}/download`（AI 再调用管理端 `/api/auth/scope`）得到 `gateway → ai → admin` 同 TraceID、父子关系正确，用 `scripts/regress/trace-chain.sh <traceId> --expect iboot-gateway,iboot-ai,iboot-admin` 可复现。**结论订正**：原先判定的"未达成"是查询时间窗边界（请求时间戳落在 `end` 之外）导致的误判，网关一直在为转发请求创建并导出服务端 span；原设想的 `gateway → admin → ai` 方向也不成立——代码中不存在 admin 调用 ai 的路径。详见 `add-gateway-tracing`
-- [ ] 8.5 把快检查接入持续集成：新增 `.github/workflows/regress.yml`，在 PR 上执行契约快照与路由覆盖（不依赖全栈），冒烟与权限矩阵按夜间调度在全栈上执行；验证：工作流在测试 PR 上成功运行，且人为制造一条路径漂移时该工作流失败
+- [x] 8.5 把快检查接入持续集成：新增 `.github/workflows/regress.yml`，在 PR 上执行路由覆盖、构建与网关测试（不依赖全栈），冒烟与权限矩阵按夜间调度在全栈上执行；验证：PR 作业在 #47、#48、#49 上均成功运行；人为在 golden 中加入一条网关没有路由的路径 `/report/list` 后作业失败（run 41166813266，7 秒，日志 `未覆盖路径 /report/list`），撤回后恢复通过。注：契约快照需要连接运行中的服务，无法在 PR 阶段完成，仍只放在全栈作业
 - [x] 8.6 同步文档：更新 `ROADMAP.md` 阶段 2 的实施状态、`doc/README.md` 索引加入 doc 23；验证：文档链接可达，状态描述与本变更有实际交付一致
