@@ -72,7 +72,10 @@ public class GatewayErrorHandler implements ErrorWebExceptionHandler {
             message = "上游服务不可用";
         } else if (throwable instanceof ResponseStatusException statusException) {
             status = HttpStatus.resolve(statusException.getStatusCode().value());
-            message = statusException.getReason() == null ? "请求处理失败" : statusException.getReason();
+            // 服务发现模式下"没有可用实例"由负载均衡器抛出，文案不统一，这里归一化
+            message = status == HttpStatus.SERVICE_UNAVAILABLE
+                    ? "上游服务不可用"
+                    : (statusException.getReason() == null ? "请求处理失败" : statusException.getReason());
         } else {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
             message = "网关内部错误";

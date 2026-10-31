@@ -26,6 +26,19 @@ spring:
             response-timeout: 10s
 
 management:
+  tracing:
+    enabled: ${IBOOT_TRACING_ENABLED:true}
+    sampling:
+      probability: ${IBOOT_TRACING_SAMPLE:0.1}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${TEMPO_OTLP:http://localhost:4318/v1/traces}
+  otlp:
+    metrics:
+      export:
+        enabled: false
   endpoints:
     web:
       exposure:

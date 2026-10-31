@@ -276,6 +276,14 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 ### 4.2 阶段 2:微服务彻底拆分
 
+> **实施状态(2026-10-31)**:拆分底座已交付(变更 `add-microservice-foundation`,38/44 项任务)。
+> 已完成:回归基线(`scripts/regress/`)、2.0 门禁(Nacos + Sentinel + 链路追踪,结论见 `doc/spike/microservice-2-0-spike-report.md`)、
+> `iboot-gateway`(路由 / 跨域 / 长连接 / 故障降级)、前端流量切换、admin 与 ai 接入 Nacos 与追踪。
+> 操作见 `doc/23-微服务底座操作指南.md`。**业务服务尚未拆分**,`iboot-auth` 与其余服务各独立成 change。
+>
+> 门禁过程中修正的既有缺陷:数据权限拦截器此前从未生效、备份锁跨线程释放导致只能备份一次。
+
+
 #### 2.0 前置门禁(Spike 不过则不开拆)
 
 | 门禁 | 内容 | 判据 |

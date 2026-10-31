@@ -369,6 +369,20 @@
             <artifactId>testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- 阶段 2：注册中心与配置中心（版本由 SCA BOM 托管） -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        <!-- 链路追踪：Boot 4 将追踪自动配置拆到独立 starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-opentelemetry</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -388,6 +402,13 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <excludedGroups>${surefire.excludedGroups}</excludedGroups>
+                    <!-- 测试保持自洽：不连接注册中心与配置中心。
+                         否则 Nacos 客户端线程会在测试结束后阻止 JVM 退出。
+                         可用 -Dspring.cloud.nacos.discovery.enabled=true 覆盖。 -->
+                    <systemPropertyVariables>
+                        <spring.cloud.nacos.discovery.enabled>false</spring.cloud.nacos.discovery.enabled>
+                        <spring.cloud.nacos.config.enabled>false</spring.cloud.nacos.config.enabled>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 

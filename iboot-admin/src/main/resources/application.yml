@@ -11,6 +11,21 @@ server:
 spring:
   application:
     name: iboot-admin
+  # 阶段 2：注册中心与配置中心。Nacos 3.x 不再支持 bootstrap.yml，统一走 spring.config.import；
+  # optional: 前缀保证配置中心不可用时仍能以本地配置启动。
+  config:
+    import: optional:nacos:iboot-admin.yml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+        # 注册中心不可用时不阻断启动（默认 fail-fast 会直接让应用启动失败）
+        fail-fast: false
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        file-extension: yml
+        enabled: ${IBOOT_NACOS_ENABLED:true}
   threads:
     virtual:
       enabled: true
@@ -182,6 +197,20 @@ springdoc:
     disabled: true
 
 management:
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${TEMPO_OTLP:http://localhost:4318/v1/traces}
+  # 指标继续走 Prometheus，避免与既有看板重复采集
+  otlp:
+    metrics:
+      export:
+        enabled: false
+  tracing:
+    enabled: ${IBOOT_TRACING_ENABLED:true}
+    sampling:
+      probability: ${IBOOT_TRACING_SAMPLE:0.1}
   endpoints:
     web:
       exposure:
