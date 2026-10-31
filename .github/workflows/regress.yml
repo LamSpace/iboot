@@ -1,9 +1,10 @@
 # 持续集成：分层执行回归检查
 #
-# - PR：构建 + 网关单元测试（不依赖全栈，几分钟内完成）
+# - PR：路由覆盖 + 构建 + 网关单元测试（不依赖全栈，几分钟内完成）
 # - 定时 / 手动：起完整中间件与三个服务，跑 scripts/regress/regress.sh
 #
-# 契约快照需要连接运行中的服务，无法在 PR 阶段完成，因此放在全栈任务里。
+# 路由覆盖只需读取 golden 快照与 routes.txt，是静态检查，因此前移到 PR；
+# 契约快照本身要连接运行中的服务，无法在 PR 阶段完成，仍放在全栈任务里。
 
 name: regress
 
@@ -21,6 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: 路由覆盖（静态）
+        run: bash scripts/regress/route-coverage.sh
 
       - uses: actions/setup-java@v4
         with:
