@@ -37,6 +37,7 @@
     <modules>
         <module>iboot-kernel</module>
         <module>iboot-file</module>
+        <module>iboot-auth</module>
         <module>iboot-admin</module>
         <module>iboot-ai</module>
         <module>iboot-gateway</module>

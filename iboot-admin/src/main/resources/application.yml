@@ -267,10 +267,8 @@ iboot:
   # 免鉴权路径白名单，由共享内核（iboot-kernel）读取并与过滤器链共用
   security:
     whitelist:
-      # 认证相关
-      - /api/auth/login
-      - /api/auth/logout
-      - /api/auth/register
+      # 认证相关：登录/登出/注册已迁至 iboot-auth，管理端不再提供这三个接口；
+      # GET /api/auth/scope 需要登录态，不在白名单内。
       # 公开配置接口
       - /api/config/public
       # 国际化

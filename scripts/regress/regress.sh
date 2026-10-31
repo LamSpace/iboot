@@ -5,7 +5,7 @@
 #   regress.sh              与 golden 基线比对，出现漂移即失败
 #   regress.sh --refresh    重新生成 golden 基线（仅在确认差异合理时使用）
 #
-# 环境变量：REG_BASE、REG_AI_BASE、REG_USER、REG_PASS
+# 环境变量：REG_BASE、REG_AI_BASE、REG_FILE_BASE、REG_AUTH_BASE、REG_USER、REG_PASS
 
 set -euo pipefail
 
@@ -16,7 +16,8 @@ TMP_DIR="$HERE/.tmp"
 REG_BASE="${REG_BASE:-http://localhost:8080}"
 REG_AI_BASE="${REG_AI_BASE:-http://localhost:8081}"
 REG_FILE_BASE="${REG_FILE_BASE:-http://localhost:8082}"
-export REG_BASE REG_AI_BASE REG_FILE_BASE
+REG_AUTH_BASE="${REG_AUTH_BASE:-http://localhost:8083}"
+export REG_BASE REG_AI_BASE REG_FILE_BASE REG_AUTH_BASE
 
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
@@ -37,16 +38,18 @@ printf '===== 1. 接口契约快照 =====\n'
 "$HERE/api-snapshot.sh" "$REG_BASE" admin "$TMP_DIR/admin.json"
 "$HERE/api-snapshot.sh" "$REG_AI_BASE" ai "$TMP_DIR/ai.json"
 "$HERE/api-snapshot.sh" "$REG_FILE_BASE" file "$TMP_DIR/file.json"
+"$HERE/api-snapshot.sh" "$REG_AUTH_BASE" auth "$TMP_DIR/auth.json"
 
 if [ "$REFRESH" -eq 1 ]; then
     mkdir -p "$GOLDEN"
     cp "$TMP_DIR/admin.json" "$GOLDEN/admin.json"
     cp "$TMP_DIR/ai.json" "$GOLDEN/ai.json"
     cp "$TMP_DIR/file.json" "$GOLDEN/file.json"
+    cp "$TMP_DIR/auth.json" "$GOLDEN/auth.json"
     printf '基线已刷新：%s\n' "$GOLDEN"
 else
     [ -d "$GOLDEN" ] || fail "缺少 golden 基线，请先执行 regress.sh --refresh"
-    for svc in admin ai file; do
+    for svc in admin ai file auth; do
         if [ ! -f "$GOLDEN/$svc.json" ]; then
             fail "缺少 $svc 的基线，确认差异合理后执行 regress.sh --refresh"
             continue

@@ -11,3 +11,8 @@
 #   transitional — 源服务仍保留旧实现（绞杀者过渡期），只校验目标服务已有该前缀；
 #   done         — 旧实现已删除，源服务不得再出现该前缀。
 /api/file admin file done
+# 认证接口：只迁登录/登出/注册。GET /api/auth/scope 仍在 admin（数据权限范围属系统域），
+# 因此这里逐条登记，而不是登记 /api/auth 前缀——后者永远无法达到 done。
+/api/auth/login admin auth done
+/api/auth/logout admin auth done
+/api/auth/register admin auth done

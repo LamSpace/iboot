@@ -28,6 +28,13 @@ spring:
               predicates:
                 - Path=/api/file/**
 
+            # 认证服务：只承接登录/登出/注册；/api/auth/scope 仍由管理端承载
+            - id: auth
+              uri: lb://iboot-auth
+              order: 30
+              predicates:
+                - Path=/api/auth/login,/api/auth/logout,/api/auth/register
+
             - id: admin
               uri: lb://iboot-admin
               order: 100

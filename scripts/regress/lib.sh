@@ -2,10 +2,13 @@
 # 回归脚本公共函数：登录、带鉴权请求、断言与统计。
 #
 # 由 smoke.sh / permission-matrix.sh 通过 source 引入，不单独执行。
-# 所有地址与账号可用环境变量覆盖：REG_BASE / REG_AI_BASE / REG_USER / REG_PASS。
+# 所有地址与账号可用环境变量覆盖：REG_BASE / REG_AI_BASE / REG_AUTH_BASE / REG_USER / REG_PASS。
+# 登录走 REG_AUTH_BASE（认证服务），其余请求走 REG_BASE（管理端）。
 
 REG_BASE="${REG_BASE:-http://localhost:8080}"
 REG_AI_BASE="${REG_AI_BASE:-http://localhost:8081}"
+# 登录已迁至认证服务；未显式指定时仍走 REG_BASE，便于在拆分前的基线上录制。
+REG_AUTH_BASE="${REG_AUTH_BASE:-http://localhost:8083}"
 REG_USER="${REG_USER:-admin}"
 REG_PASS="${REG_PASS:-admin123456}"
 
@@ -24,7 +27,7 @@ reg_die()  { printf '[ERROR] %s\n' "$*" >&2; exit 1; }
 # @param $2 密码，缺省取 REG_PASS
 reg_login() {
     local user="${1:-$REG_USER}" pass="${2:-$REG_PASS}" resp token
-    resp=$(curl -sS -X POST "$REG_BASE/api/auth/login" \
+    resp=$(curl -sS -X POST "$REG_AUTH_BASE/api/auth/login" \
         -H 'Content-Type: application/json' \
         -d "{\"username\":\"$user\",\"password\":\"$pass\"}" | reg_unwrap) || reg_die "登录请求失败"
     token=$(printf '%s' "$resp" | jq -r '.data.token // empty')
