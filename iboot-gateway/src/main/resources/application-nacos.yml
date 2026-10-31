@@ -1,0 +1,29 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: admin-sse
+              uri: lb://iboot-admin
+              order: 0
+              predicates:
+                - Path=/api/push/**
+              metadata:
+                response-timeout: -1
+                connect-timeout: 2000
+
+            - id: ai
+              uri: lb://iboot-ai
+              order: 10
+              predicates:
+                - Path=/api/ai/**
+
+            - id: admin
+              uri: lb://iboot-admin
+              order: 100
+              predicates:
+                - Path=/api/**
