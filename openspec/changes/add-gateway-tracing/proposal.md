@@ -2,37 +2,40 @@
 
 ## Why
 
-`add-microservice-foundation` 的验收项 8.4（`gateway → admin → ai` 一条链路）没有达成。排查结论是**网关对经路由转发的 `/api/**` 请求不产生服务端 span**，只有 `/actuator/**` 有：
+`add-microservice-foundation` 的验收项 8.4（`gateway → 下游 → 下游` 一条链路）原判定为未达成，理由是"网关对经路由转发的 `/api/**` 请求不产生服务端 span"。**该判定是错的**，本变更实施前已用实测推翻：
 
-- Tempo 中 `service.name=iboot-gateway` 的 span 只有 `http get /actuator/health` 与 `http get /actuator/info`；
-- 追踪、观测、OTLP 导出、网关观测的自动配置全部 matched，导出通路也正常（actuator span 能到达）；
-- 关闭/开启 `spring.cloud.gateway.server.webflux.metrics.enabled` 均无变化，`local` 与 `nacos` 两种 profile 行为一致。
+- 对 `GET /api/user/list` 连发 40 次，Tempo 中 40 条 trace 的根 span 都属于 `iboot-gateway`；
+- 任取一条，父子关系完整：`iboot-gateway http get`（服务端，根）→ `iboot-gateway HTTP GET`（客户端，带 route.id）→ `iboot-admin http get` → 管理端安全过滤链 span，同一 TraceID；
+- 先前"查不到"的直接原因是**查询时间窗的边界**：请求时间戳 `1793416911.58` 落在查询窗口 `end=1793416911` 之外。这正是本变更设计里已经识别过的风险——时间窗不可信。
 
-后果是：拆分后一次用户请求在追踪系统里会被切成若干条互不相干的链路（admin、ai 各自成根），**"先看一条 trace 定位问题"这个拆分最核心的排障能力实际上不存在**，而阶段 2 底座已经把"链路贯穿"写进了验收判据。
+真正缺的不是埋点，而是**不依赖时间窗的验证手段**：
 
-同一会话中尝试过两种修法，均未成功，因此需要独立立项把问题查清并验证到位：
+- 没有 `X-Trace-Id` 响应头，取一条请求的 TraceID 只能翻日志或反复查追踪后端；
+- 没有按 TraceID 查链路的脚本，"三服务是否同链路"只能人工翻界面，而人工翻界面正是上次误判的来源；
+- 追踪采样默认值 0.1，90% 的请求不会出现在追踪后端，进一步放大了"看不到就是没有"的错觉。
 
-1. `ObservationDocumentation.observation(...)` 创建标准服务端 span → 运行期抛 `NullPointerException: You have not provided a default convention`，反编译确认传参顺序正确；
-2. `Observation.createNotStarted(...)` → 请求正常返回，但 Tempo 中仍无网关 span。
+另外记录一个排查副产品：`ObservationDocumentation.observation(convention, null, supplier, registry)` 抛出的 `NullPointerException: You have not provided a default convention`，根因是把第二个参数（默认约定）传成了 `null`——该方法内部对该参数做了 `requireNonNull`。这是调用方式问题，不是库缺陷，因此也不需要自行实现观测组件。
 
 ## What Changes
 
-- **网关为所有非 actuator 请求创建服务端 span**，并保证下游服务沿用同一 TraceID。实现方式在 design 中给出结论（框架能力 / 显式过滤器 / 显式 Tracer），本提案不预设。
-- **建立可靠的验证手段**：不依赖时间窗查询（本次排查被系统时钟跳变严重干扰），改为"从日志取 TraceId → 按 ID 查链路"与"用 `SimpleObservationRegistry` 做单元断言"两条腿。
-- **补充可重复的验证脚本**，把"三服务同链路"变成一条命令的结果，而不是手工翻 Tempo。
-- **不再以 actuator 的 span 作为网关可观测性的证据**：actuator 有 span 不代表性（本次就是被它误导，一度认为 `gateway → admin` 正常，实际那条链路来自 Spring Boot Admin 的探活）。
+- **网关在响应头回显 TraceID**（`X-Trace-Id`），使脚本与人都能直接拿到标识。
+- **新增 `scripts/regress/trace-chain.sh <traceId>`**：按标识查追踪后端，输出涉及的服务并判断是否包含期望服务，不依赖时间窗。
+- **补充单元断言**：用 `SimpleObservationRegistry` 断言"经网关的请求会产生服务端观测"，把"未创建"与"未导出"分开，防止未来回归。
+- **三服务追踪采样默认值由 0.1 调整为 1.0**，保证验证与日常排障能看到完整链路；压测时用 `IBOOT_TRACING_SAMPLE` 调低。
+- **修正追踪总开关**：`IBOOT_TRACING_ENABLED` 原先映射到 `management.tracing.enabled`，该属性在 Boot 4 已失效（设为 `false` 后追踪照常导出），改映射到 `management.tracing.export.enabled`。
+- **订正文档与验收记录**：说明网关 span 的存在性、按 TraceID 查链路的方法，以及本次误判的成因。
 
 明确不做（非目标）：
 
-- **不引入服务网格或第三方 agent**：问题在应用侧观测，不在基础设施。
-- **不改下游服务**：admin 与 ai 已经能正确产生与接收 span，问题只在网关这一跳。
-- **不为追踪改造网关的路由与转发逻辑**：只加观测，不改转发语义。
+- **不自行实现入口观测组件**：框架的 `ServerHttpObservationFilter` 已为转发请求创建服务端 span，重复创建会产生同级 span，污染父子结构与耗时统计。
+- **不改造网关 span 的属性**：路径已在高基数键 `http.url` 上；低基数键 `uri` 为 `UNKNOWN`，只影响 span 名称的可读性，不影响链路贯通，本次不动。
+- **不引入服务网格或第三方 agent**，不改下游服务，不改路由与转发语义。
 
 ## Capabilities
 
 ### New Capabilities
 
-- `gateway-tracing`: 网关入口的追踪行为——每个转发请求产生服务端 span、向下游传递上下文、不与 actuator 观测重复、可整体关闭，以及可重复的验证方式。
+- `gateway-tracing`: 网关入口的追踪行为——转发请求产生服务端 span、向下游传递上下文、不与 actuator 观测重复、可整体关闭，以及不依赖时间窗的可复现验证方式。
 
 ### Modified Capabilities
 
@@ -42,14 +45,15 @@
 
 **代码**
 
-- `iboot-gateway`：新增入口观测组件（形式待定），可能需要调整 `GatewayErrorHandler` 的日志以保留完整堆栈（已在排查中修改，尚未提交）。
+- `iboot-gateway`：新增响应头过滤器与相同职责的单元测试；不改路由与转发逻辑。
+- `iboot-admin` / `iboot-ai` / `iboot-gateway`：追踪采样默认值调整。
 
 **验证**
 
-- 新增按 TraceId 查链路的脚本，纳入 `scripts/regress/`。
-- 网关测试新增"观测确实被创建"的单元断言，把"过滤器没跑"与"span 没导出"分开。
+- 新增 `scripts/regress/trace-chain.sh`。
+- 网关注入现有 `GatewayTracingTest`，覆盖"服务端观测被创建"与"响应头回显 TraceID"。
 
 **风险**
 
-- 网关是唯一入口，观测组件出错会直接打断所有请求（尝试一就把全部请求变成了 500）。因此必须有单元测试覆盖，并且在任何时刻都能用配置关掉。
-- 本机时钟不稳定，所有基于时间窗的验证结论都不作数，需在验证方式上规避。
+- 新增过滤器位于请求主链路，出错会打断所有请求。因此它只做"读当前 span 的 traceId + 写响应头"，异常全部兜底，且追踪关闭时不注册任何行为。
+- 采样调到 1.0 会增加追踪后端写入量，仅适合开发与验收环境；生产按需通过环境变量调低。
