@@ -40,6 +40,19 @@ public class JwtSecurityConfig {
      */
     private long sessionTimeout = 30L;
 
+    /**
+     * 认证服务的公钥集地址，资源服务器用它验签自包含令牌。
+     */
+    private String jwkSetUri = "http://localhost:8083/oauth2/jwks";
+
+    /**
+     * 是否继续接受旧的对称签名令牌。
+     *
+     * <p>迁移期双栈开关：开启时同时接受 HS256 与 RS256 令牌；关闭后旧令牌一律拒绝，
+     * 并返回可识别的「令牌版本过期」错误码。
+     */
+    private boolean legacyEnabled = true;
+
     @SuppressWarnings("all")
     public JwtSecurityConfig() {
     }
@@ -76,6 +89,42 @@ public class JwtSecurityConfig {
         this.sessionTimeout = sessionTimeout;
     }
 
+    /**
+     * 认证服务的公钥集地址。
+     *
+     * @return 公钥集地址
+     */
+    public String getJwkSetUri() {
+        return this.jwkSetUri;
+    }
+
+    /**
+     * 设置认证服务的公钥集地址。
+     *
+     * @param jwkSetUri 公钥集地址
+     */
+    public void setJwkSetUri(final String jwkSetUri) {
+        this.jwkSetUri = jwkSetUri;
+    }
+
+    /**
+     * 是否继续接受旧的对称签名令牌。
+     *
+     * @return 开启时返回 {@code true}
+     */
+    public boolean isLegacyEnabled() {
+        return this.legacyEnabled;
+    }
+
+    /**
+     * 设置是否继续接受旧的对称签名令牌。
+     *
+     * @param legacyEnabled 双栈开关
+     */
+    public void setLegacyEnabled(final boolean legacyEnabled) {
+        this.legacyEnabled = legacyEnabled;
+    }
+
     @java.lang.Override
     @SuppressWarnings("all")
     public boolean equals(final java.lang.Object o) {
@@ -89,6 +138,10 @@ public class JwtSecurityConfig {
         if (this.getExpiration() != other.getExpiration())
             return false;
         if (this.getSessionTimeout() != other.getSessionTimeout())
+            return false;
+        if (this.isLegacyEnabled() != other.isLegacyEnabled())
+            return false;
+        if (!java.util.Objects.equals(this.getJwkSetUri(), other.getJwkSetUri()))
             return false;
         return true;
     }
@@ -107,6 +160,8 @@ public class JwtSecurityConfig {
         result = result * PRIME + (int) ($expiration >>> 32 ^ $expiration);
         final long $sessionTimeout = this.getSessionTimeout();
         result = result * PRIME + (int) ($sessionTimeout >>> 32 ^ $sessionTimeout);
+        result = result * PRIME + (this.isLegacyEnabled() ? 79 : 97);
+        result = result * PRIME + java.util.Objects.hashCode(this.getJwkSetUri());
         return result;
     }
 
@@ -114,7 +169,7 @@ public class JwtSecurityConfig {
     @SuppressWarnings("all")
     public java.lang.String toString() {
         return "JwtSecurityConfig(expiration=" + this.getExpiration() + ", sessionTimeout=" + this.getSessionTimeout()
-                + ")";
+                + ", jwkSetUri=" + this.getJwkSetUri() + ", legacyEnabled=" + this.isLegacyEnabled() + ")";
     }
 
 }

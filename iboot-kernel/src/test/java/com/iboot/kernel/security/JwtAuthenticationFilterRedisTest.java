@@ -79,7 +79,8 @@ class JwtAuthenticationFilterRedisTest {
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new JdkSerializationRedisSerializer());
         redisTemplate.afterPropertiesSet();
-        filter = new JwtAuthenticationFilter(new JwtTokenUtil(SECRET, 1800L), redisTemplate,
+        JwkSetProvider jwkSetProvider = new JwkSetProvider("http://localhost:1/oauth2/jwks");
+        filter = new JwtAuthenticationFilter(new JwtTokenVerifier(SECRET, jwkSetProvider, true), redisTemplate,
                 new JwtSecurityConfig(), new SecurityWhitelistProperties());
         key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     }

@@ -78,6 +78,17 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
 
+        <!-- 授权服务器：OAuth2 / OIDC（自 Spring Security 7.0 起并入，版本由 Boot BOM 托管） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-authorization-server</artifactId>
+        </dependency>
+        <!-- 授权码流程的服务端会话放在共享 Redis，保证多实例下回调可落在任意实例 -->
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-data-redis</artifactId>
+        </dependency>
+
         <!-- 注册中心、配置中心与追踪 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>

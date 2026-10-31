@@ -93,4 +93,23 @@ mine=$(reg_get /api/approval/mine)
 reg_expect_ok "查询我发起的审批" "$mine"
 reg_expect_jq "审批列表中包含刚发起的申请" '[.data.data[]? | select(.reason == "回归冒烟")] | length > 0' "$mine"
 
+reg_log "== 7. 登出与会话撤销 =="
+logout=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" "$REG_AUTH_BASE/api/auth/logout" | reg_unwrap)
+reg_expect_ok "调用登出接口" "$logout"
+after_logout=$(reg_status /api/user/profile)
+reg_expect_status "登出后令牌立即失效" "$after_logout" "401"
+
+reg_log "== 8. 旧登录协议已下线 =="
+# 接口已下线：路径不在契约基线里，这里只断言它不再返回成功
+legacy_login_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+    -H 'Content-Type: application/json' -d '{}' "$REG_GATEWAY/api/auth/login")
+if [ "$legacy_login_status" != "200" ]; then
+    reg_pass "旧的用户名密码登录接口已不可用（HTTP $legacy_login_status）"
+else
+    reg_fail "旧的用户名密码登录接口仍然可用"
+fi
+
+legacy_body=$(curl -sS -H "Authorization: Bearer $(reg_legacy_token)" "$REG_BASE/api/user/profile")
+reg_expect_jq "旧格式令牌返回令牌版本过期" '.code == 40101' "$legacy_body"
+
 reg_summary

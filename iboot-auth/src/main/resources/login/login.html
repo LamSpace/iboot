@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>{{BRAND}}</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --canvas: #ffffff;
+            --surface: #f7f8fa;
+            --hairline-soft: #eaecf0;
+            --ink: #0a0a0a;
+            --ink-strong: #000000;
+            --steel: #5f5f5f;
+            --stone: #8e8e93;
+            --primary: #0a0a0a;
+            --on-primary: #ffffff;
+            --danger-bg: #fef0f0;
+            --danger-text: #c53a3a;
+            --success-text: #0f7a54;
+            --sans: "DM Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+                --canvas: #0a0a0a;
+                --surface: #141414;
+                --hairline-soft: #262626;
+                --ink: #f5f5f5;
+                --ink-strong: #ffffff;
+                --steel: #b4b4b4;
+                --stone: #8e8e93;
+                --primary: #f5f5f5;
+                --on-primary: #0a0a0a;
+                --danger-bg: #2a1414;
+                --danger-text: #f28b8b;
+                --success-text: #6fd3a8;
+            }
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: var(--sans);
+            background: var(--canvas);
+            color: var(--ink);
+        }
+
+        .login-container {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            min-height: 100vh;
+        }
+
+        .login-brand {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 64px;
+            background: var(--surface);
+            border-right: 1px solid var(--hairline-soft);
+        }
+
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--ink);
+            color: var(--canvas);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .brand-title {
+            margin: 24px 0;
+            font-size: clamp(36px, 4.5vw, 56px);
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            color: var(--ink-strong);
+            max-width: 520px;
+        }
+
+        .brand-copy {
+            margin: 0;
+            max-width: 420px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--steel);
+        }
+
+        .login-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+        }
+
+        .login-form {
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .login-form h2 {
+            display: none;
+            margin: 0 0 24px;
+            font-size: 22px;
+            font-weight: 600;
+            text-align: center;
+            color: var(--ink);
+        }
+
+        .form-error {
+            margin-bottom: 16px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .form-error:empty { display: none; }
+
+        .form-notice {
+            margin-bottom: 16px;
+            color: var(--success-text);
+            font-size: 13px;
+        }
+
+        .form-notice:empty { display: none; }
+
+        .field {
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        .field-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: var(--steel);
+        }
+
+        .field input {
+            width: 100%;
+            height: 44px;
+            padding: 0 12px;
+            border: 1px solid var(--hairline-soft);
+            border-radius: 8px;
+            background: var(--canvas);
+            color: var(--ink);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .field input:focus {
+            border-color: var(--ink);
+        }
+
+        .submit {
+            width: 100%;
+            height: 44px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: var(--on-primary);
+            font-size: 15px;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .login-links {
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .login-links a {
+            color: var(--ink);
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        .login-links a:hover { text-decoration: underline; }
+
+        .captcha-mask {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 10, 10, 0.42);
+            z-index: 10;
+        }
+
+        .captcha-mask[hidden] { display: none; }
+
+        .captcha-dialog {
+            width: 340px;
+            padding: 20px;
+            border-radius: 12px;
+            background: var(--canvas);
+            box-shadow: 0 18px 48px rgba(10, 10, 10, 0.24);
+        }
+
+        .captcha-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .captcha-tip {
+            font-size: 13px;
+            color: var(--steel);
+            margin-bottom: 14px;
+            min-height: 18px;
+        }
+
+        .captcha-tip.error { color: var(--danger-text); }
+        .captcha-tip.success { color: var(--success-text); }
+
+        .captcha-track {
+            position: relative;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--hairline-soft);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .captcha-fill {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 0;
+            background: rgba(10, 10, 10, 0.08);
+        }
+
+        .captcha-target {
+            position: absolute;
+            top: 8px;
+            width: 8px;
+            height: 24px;
+            border-radius: 2px;
+            background: var(--stone);
+        }
+
+        .captcha-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--canvas);
+            border: 1px solid var(--hairline-soft);
+            border-radius: 8px;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .captcha-slider.success { border-color: var(--success-text); color: var(--success-text); }
+        .captcha-slider.error { border-color: var(--danger-text); color: var(--danger-text); }
+
+        .captcha-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .link-button {
+            border: none;
+            background: none;
+            padding: 0;
+            color: var(--steel);
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .link-button:hover { color: var(--ink); }
+
+        @media (max-width: 900px) {
+            .login-container { grid-template-columns: 1fr; }
+            .login-brand { display: none; }
+            .login-panel { padding: 32px; }
+            .login-form h2 { display: block; }
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <section class="login-brand">
+        <span class="brand-mark">iB</span>
+        <h1 class="brand-title">{{BRAND}}</h1>
+        <p class="brand-copy">统一身份认证中心</p>
+    </section>
+    <section class="login-panel">
+        <form class="login-form" method="post" action="/login" id="loginForm">
+            <h2>{{BRAND}}</h2>
+            <div class="form-notice">{{NOTICE}}</div>
+            <div class="form-error">{{ERROR}}</div>
+            <label class="field">
+                <span class="field-label">用户名</span>
+                <input id="username" name="username" autocomplete="username" required autofocus>
+            </label>
+            <label class="field">
+                <span class="field-label">密码</span>
+                <input id="password" name="password" type="password" autocomplete="current-password"
+                       required minlength="6">
+            </label>
+            <button type="submit" class="submit" id="submitButton">登录</button>
+            <div class="login-links">{{REGISTER_LINK}}</div>
+        </form>
+    </section>
+</div>
+
+<div class="captcha-mask" id="captchaMask" hidden>
+    <div class="captcha-dialog" role="dialog" aria-modal="true" aria-label="安全验证">
+        <div class="captcha-title">安全验证</div>
+        <div class="captcha-tip" id="captchaTip">拖动滑块到缺口位置</div>
+        <div class="captcha-track" id="captchaTrack">
+            <div class="captcha-fill" id="captchaFill"></div>
+            <div class="captcha-target" id="captchaTarget"></div>
+            <div class="captcha-slider" id="captchaSlider">&#8250;&#8250;</div>
+        </div>
+        <div class="captcha-actions">
+            <button type="button" class="link-button" id="captchaReset">刷新</button>
+            <button type="button" class="link-button" id="captchaCancel">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var TRACK_WIDTH = 280;
+        var SLIDER_WIDTH = 40;
+        var TARGET_WIDTH = 8;
+        var TARGET_MIN_LEFT = 100;
+        var TARGET_RIGHT_MARGIN = 20;
+        var TOLERANCE = 5;
+
+        var form = document.getElementById('loginForm');
+        var mask = document.getElementById('captchaMask');
+        var track = document.getElementById('captchaTrack');
+        var slider = document.getElementById('captchaSlider');
+        var target = document.getElementById('captchaTarget');
+        var fill = document.getElementById('captchaFill');
+        var tip = document.getElementById('captchaTip');
+
+        var targetX = 0;
+        var dragging = false;
+        var startPointer = 0;
+        var startLeft = 0;
+        var solved = false;
+
+        function trackWidth() {
+            return track.clientWidth || TRACK_WIDTH;
+        }
+
+        function reset() {
+            solved = false;
+            slider.style.left = '0px';
+            slider.classList.remove('success', 'error');
+            fill.style.width = '0px';
+            tip.textContent = '拖动滑块，让缺口位于滑块中间';
+            tip.className = 'captcha-tip';
+            // 与拆分前的滑块验证一致：缺口不会出现在起点下方，也不会贴右边缘
+            var max = trackWidth() - SLIDER_WIDTH - TARGET_WIDTH - TARGET_RIGHT_MARGIN;
+            targetX = TARGET_MIN_LEFT + Math.floor(Math.random() * (max - TARGET_MIN_LEFT));
+            target.style.left = targetX + 'px';
+        }
+
+        function open() {
+            reset();
+            mask.hidden = false;
+        }
+
+        function close() {
+            mask.hidden = true;
+        }
+
+        function pointerX(event) {
+            return event.touches ? event.touches[0].clientX : event.clientX;
+        }
+
+        function moveTo(left) {
+            var max = trackWidth() - SLIDER_WIDTH;
+            var value = Math.max(0, Math.min(max, left));
+            slider.style.left = value + 'px';
+            fill.style.width = (value + SLIDER_WIDTH / 2) + 'px';
+            return value;
+        }
+
+        function finish() {
+            if (!dragging) {
+                return;
+            }
+            dragging = false;
+            var left = parseFloat(slider.style.left || '0');
+            // 与拆分前一致：比较滑块中心与缺口中心，而不是两者的左边缘
+            var sliderCenter = left + SLIDER_WIDTH / 2;
+            var targetCenter = targetX + TARGET_WIDTH / 2;
+            if (Math.abs(sliderCenter - targetCenter) <= TOLERANCE) {
+                solved = true;
+                slider.classList.add('success');
+                tip.textContent = '验证通过';
+                tip.className = 'captcha-tip success';
+                window.setTimeout(function () {
+                    close();
+                    form.submit();
+                }, 200);
+            } else {
+                slider.classList.add('error');
+                tip.textContent = '位置不正确，请重试';
+                tip.className = 'captcha-tip error';
+                window.setTimeout(reset, 600);
+            }
+        }
+
+        slider.addEventListener('mousedown', function (event) {
+            dragging = true;
+            startPointer = pointerX(event);
+            startLeft = parseFloat(slider.style.left || '0');
+            event.preventDefault();
+        });
+        slider.addEventListener('touchstart', function (event) {
+            dragging = true;
+            startPointer = pointerX(event);
+            startLeft = parseFloat(slider.style.left || '0');
+        }, { passive: true });
+
+        document.addEventListener('mousemove', function (event) {
+            if (dragging) {
+                moveTo(startLeft + pointerX(event) - startPointer);
+            }
+        });
+        document.addEventListener('touchmove', function (event) {
+            if (dragging) {
+                moveTo(startLeft + pointerX(event) - startPointer);
+            }
+        }, { passive: true });
+        document.addEventListener('mouseup', finish);
+        document.addEventListener('touchend', finish);
+
+        document.getElementById('captchaReset').addEventListener('click', reset);
+        document.getElementById('captchaCancel').addEventListener('click', close);
+
+        form.addEventListener('submit', function (event) {
+            if (!solved) {
+                event.preventDefault();
+                open();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (!mask.hidden && !solved) {
+                reset();
+            }
+        });
+    }());
+</script>
+</body>
+</html>

@@ -43,6 +43,14 @@ public class Constants {
     public static final Integer FAIL = 500;
 
     /**
+     * 令牌版本已停用的业务状态码。
+     *
+     * <p>双栈窗口关闭后，客户端携带旧格式令牌时返回该码，前端据此静默重新登录，
+     * 而不是提示凭据错误。
+     */
+    public static final Integer TOKEN_VERSION_RETIRED = 40101;
+
+    /**
      * 登录成功
      */
     public static final String LOGIN_SUCCESS = "Success";

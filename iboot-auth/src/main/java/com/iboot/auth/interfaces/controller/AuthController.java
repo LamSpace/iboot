@@ -17,9 +17,7 @@
 package com.iboot.auth.interfaces.controller;
 
 import com.iboot.auth.application.service.AuthApplicationService;
-import com.iboot.auth.interfaces.dto.request.LoginRequest;
 import com.iboot.auth.interfaces.dto.request.RegisterRequest;
-import com.iboot.auth.interfaces.dto.response.LoginResponse;
 import com.iboot.kernel.security.Constants;
 import com.iboot.kernel.web.BusinessException;
 import com.iboot.kernel.web.Result;
@@ -36,9 +34,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 认证控制器。
  *
- * <p>提供登录、登出和注册接口。登录时从请求中提取客户端 IP 与 User-Agent，交由
- * {@link AuthApplicationService} 完成认证、令牌签发和会话记录。三个接口都在安全白名单中，
- * 允许匿名访问。
+ * <p>提供登出与注册接口。登录已改为 OAuth2 授权码流程，由授权服务器端点承担，
+ * 不再有用户名密码登录接口。两个接口都在安全白名单中，允许匿名访问。
  *
  * <p>数据权限范围接口（{@code GET /api/auth/scope}）仍在管理端，属于系统域，不在本服务范围。
  *
@@ -60,27 +57,6 @@ public class AuthController {
      */
     public AuthController(AuthApplicationService authApplicationService) {
         this.authApplicationService = authApplicationService;
-    }
-
-    /**
-     * 用户登录。
-     *
-     * <p>校验用户名和密码，成功后返回 JWT 令牌和用户信息；失败时记录登录日志、
-     * 累加失败次数，并抛出业务异常。
-     *
-     * @param request 登录请求，包含用户名和密码
-     * @param httpRequest HTTP 请求，用于提取客户端 IP 和 User-Agent
-     * @return 登录结果，包含令牌和用户信息
-     * @throws BusinessException 用户名或密码错误、账号被锁定或用户被禁用时抛出
-     */
-    @Operation(summary = "用户登录")
-    @PostMapping(version = "1", value = "/login")
-    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-        String loginIp = getClientIp(httpRequest);
-        String userAgent = httpRequest.getHeader("User-Agent");
-        LoginResponse response = authApplicationService.login(request.getUsername(), request.getPassword(),
-                loginIp, userAgent);
-        return Result.success("登录成功", response);
     }
 
     /**

@@ -13,6 +13,11 @@
 /api/file admin file done
 # 认证接口：只迁登录/登出/注册。GET /api/auth/scope 仍在 admin（数据权限范围属系统域），
 # 因此这里逐条登记，而不是登记 /api/auth 前缀——后者永远无法达到 done。
-/api/auth/login admin auth done
+# `/api/auth/login` 不在这里登记：它随 OAuth2 协议切换整体下线（不是搬家到别的服务），
+# 认证入口已由 `/oauth2/authorize` 承担。登出与注册是功能而非登录协议，仍在认证服务中。
 /api/auth/logout admin auth done
 /api/auth/register admin auth done
+# OAuth2 / OIDC 端点与登录页是本次新增的外部接口，不属于搬家。
+# 这里以 admin 作为名义来源登记，使「凭空出现」的检查仍然生效：
+# 目标服务确实有这些路径、来源服务确实没有，路径守恒才能通过。
+/login admin auth done

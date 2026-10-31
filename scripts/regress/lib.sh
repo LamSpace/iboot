@@ -13,6 +13,8 @@ REG_USER="${REG_USER:-admin}"
 REG_PASS="${REG_PASS:-admin123456}"
 
 REG_TOKEN=""
+REG_ID_TOKEN=""
+REG_JAR=""
 REG_LAST_ID=""
 REG_PASSED=0
 REG_FAILED=0
@@ -22,17 +24,94 @@ reg_pass() { REG_PASSED=$((REG_PASSED + 1)); printf '  [PASS] %s\n' "$*"; }
 reg_fail() { REG_FAILED=$((REG_FAILED + 1)); printf '  [FAIL] %s\n' "$*"; }
 reg_die()  { printf '[ERROR] %s\n' "$*" >&2; exit 1; }
 
+# OIDC 客户端与回调地址，与认证服务登记的客户端保持一致。
+REG_OIDC_CLIENT="${REG_OIDC_CLIENT:-iboot-portal}"
+REG_OIDC_REDIRECT="${REG_OIDC_REDIRECT:-http://localhost:5173/callback}"
+
 # 登录并缓存令牌。
+#
+# 走标准授权码 + PKCE：脚本扮演浏览器，依次完成授权请求、提交凭据、取回授权码与兑换令牌。
+#
 # @param $1 用户名，缺省取 REG_USER
 # @param $2 密码，缺省取 REG_PASS
 reg_login() {
-    local user="${1:-$REG_USER}" pass="${2:-$REG_PASS}" resp token
-    resp=$(curl -sS -X POST "$REG_AUTH_BASE/api/auth/login" \
-        -H 'Content-Type: application/json' \
-        -d "{\"username\":\"$user\",\"password\":\"$pass\"}" | reg_unwrap) || reg_die "登录请求失败"
-    token=$(printf '%s' "$resp" | jq -r '.data.token // empty')
-    [ -n "$token" ] || reg_die "登录失败（$user）：$resp"
-    REG_TOKEN="$token"
+    local user="${1:-$REG_USER}" pass="${2:-$REG_PASS}"
+    local jar state verifier challenge query location code resp
+    # 保留 cookie jar：登出用例需要沿用同一个认证服务会话
+    jar="$(mktemp)"
+    REG_JAR="$jar"
+    state="$(openssl rand -hex 8)"
+    verifier="$(openssl rand -base64 48 | tr '+/' '-_' | tr -d '=\n')"
+    challenge="$(printf '%s' "$verifier" | openssl dgst -sha256 -binary | openssl base64 -A | tr '+/' '-_' | tr -d '=')"
+    query="response_type=code&client_id=$REG_OIDC_CLIENT&scope=openid%20profile%20api&state=$state"
+    query="$query&redirect_uri=$(reg_urlencode "$REG_OIDC_REDIRECT")&code_challenge=$challenge&code_challenge_method=S256"
+
+    # 1. 发起授权：未登录时会建立会话并跳转到登录页
+    curl -sS -c "$jar" -b "$jar" -o /dev/null "$REG_AUTH_BASE/oauth2/authorize?$query" \
+        || { rm -f "$jar"; reg_die "授权请求失败"; }
+    # 2. 提交登录页表单
+    curl -sS -c "$jar" -b "$jar" -o /dev/null -X POST \
+        --data-urlencode "username=$user" --data-urlencode "password=$pass" \
+        "$REG_AUTH_BASE/login" || { rm -f "$jar"; reg_die "提交登录表单失败"; }
+    # 3. 再次请求授权端点，回调地址里带授权码
+    location="$(curl -sS -c "$jar" -b "$jar" -o /dev/null -w '%{redirect_url}' \
+        "$REG_AUTH_BASE/oauth2/authorize?$query")"
+    code="$(printf '%s' "$location" | sed -n 's/.*[?&]code=\([^&]*\).*/\1/p')"
+    [ -n "$code" ] || reg_die "登录失败（$user）：未取得授权码（$location）"
+
+    # 4. 授权码换令牌
+    resp="$(curl -sS -X POST "$REG_AUTH_BASE/oauth2/token" \
+        -H 'Content-Type: application/x-www-form-urlencoded' \
+        --data-urlencode "grant_type=authorization_code" \
+        --data-urlencode "code=$code" \
+        --data-urlencode "redirect_uri=$REG_OIDC_REDIRECT" \
+        --data-urlencode "client_id=$REG_OIDC_CLIENT" \
+        --data-urlencode "code_verifier=$verifier")" || reg_die "令牌请求失败"
+    REG_TOKEN="$(printf '%s' "$resp" | jq -r '.access_token // empty')"
+    REG_ID_TOKEN="$(printf '%s' "$resp" | jq -r '.id_token // empty')"
+    REG_REFRESH_TOKEN="$(printf '%s' "$resp" | jq -r '.refresh_token // empty')"
+    [ -n "$REG_TOKEN" ] || reg_die "登录失败（$user）：$resp"
+}
+
+# 旧格式令牌使用的共享密钥，只用于「窗口关闭后应被拒绝」的负向用例。
+JWT_LEGACY_SECRET="${JWT_LEGACY_SECRET:-iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits}"
+
+# 生成一枚对称签名（HS256）的旧格式令牌。
+#
+# 双栈窗口关闭后这种令牌必须被拒绝，用它来验证资源服务不再接受旧协议。
+#
+# @return 令牌字符串
+reg_legacy_token() {
+    python3 - "$JWT_LEGACY_SECRET" <<'PY'
+import base64
+import hashlib
+import hmac
+import json
+import sys
+import time
+
+secret = sys.argv[1].encode()
+
+
+def b64(raw: bytes) -> bytes:
+    return base64.urlsafe_b64encode(raw).rstrip(b"=")
+
+
+header = b64(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode())
+payload = b64(json.dumps(
+    {"userId": 1, "sub": "admin", "exp": int(time.time()) + 600},
+    separators=(",", ":"),
+).encode())
+signing = header + b"." + payload
+signature = b64(hmac.new(secret, signing, hashlib.sha256).digest())
+print((signing + b"." + signature).decode())
+PY
+}
+
+# URL 编码。
+# @param $1 原始文本
+reg_urlencode() {
+    printf '%s' "$1" | jq -sRr @uri
 }
 
 # 管理端返回体被 CloudEvent 信封包裹（data 字段才是结果），这里统一拆封；

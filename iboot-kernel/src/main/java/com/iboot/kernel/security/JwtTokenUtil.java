@@ -38,9 +38,17 @@ import java.util.Map;
 public class JwtTokenUtil {
 
     /**
+     * 未配置 {@code jwt.secret} 时使用的默认共享密钥。
+     *
+     * <p>同时供资源服务的双栈校验器引用，避免默认值在多处漂移。
+     */
+    public static final String DEFAULT_SECRET =
+            "iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits";
+
+    /**
      * 令牌密钥
      */
-    @Value("${jwt.secret:iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits}")
+    @Value("${jwt.secret:" + DEFAULT_SECRET + "}")
     private String secret;
 
     /**

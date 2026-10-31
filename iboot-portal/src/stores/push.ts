@@ -8,6 +8,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { pushClient, type PushEvent } from "@/utils/eventsource";
 import { getUserInbox } from "@/api/system";
+import { TOKENS_UPDATED_EVENT, readTokenSet } from "@/utils/oidc";
 import { useUserStore } from "./user";
 
 export interface Notification {
@@ -32,6 +33,9 @@ export const usePushStore = defineStore("push", () => {
 
   // 是否显示新消息提示
   const showNewMessageToast = ref(false);
+
+  /** 令牌变更监听只注册一次，避免重复重建连接。 */
+  let tokenListenerRegistered = false;
   const latestNotification = ref<Notification | null>(null);
 
   // 计算属性
@@ -47,11 +51,24 @@ export const usePushStore = defineStore("push", () => {
     }
 
     const userStore = useUserStore();
-    const token = userStore.token;
+    const token = readTokenSet()?.accessToken || userStore.token;
 
     if (!token) {
       console.log("[PushStore] 未登录，跳过连接");
       return;
+    }
+
+    // 访问令牌是短期的：续期后重建长连接，避免重连时携带已过期的查询参数令牌
+    if (!tokenListenerRegistered) {
+      tokenListenerRegistered = true;
+      window.addEventListener(TOKENS_UPDATED_EVENT, () => {
+        if (!connected.value) {
+          return;
+        }
+        pushClient.disconnect();
+        connected.value = false;
+        connect();
+      });
     }
 
     connecting.value = true;
