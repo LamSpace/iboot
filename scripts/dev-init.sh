@@ -64,11 +64,25 @@ mkdir -p "$LOG_DIR"
 export IBOOT_BACKUP_ENABLED="${IBOOT_BACKUP_ENABLED:-true}"
 export IBOOT_BACKUP_ENCRYPTION_KEY="${IBOOT_BACKUP_ENCRYPTION_KEY:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}"
 
+# 取服务进程号：优先用 pid 文件；文件丢失时按 jar 名匹配。
+# logs/ 被清理时会连带丢掉 pid 文件，仅靠 pid 文件会把仍在运行的进程当成"未运行"。
+service_pid() {
+    local name="$1" pidfile="$LOG_DIR/$1.pid" pid
+    if [ -f "$pidfile" ]; then
+        pid="$(cat "$pidfile")"
+        if kill -0 "$pid" 2>/dev/null; then
+            printf '%s' "$pid"
+            return 0
+        fi
+    fi
+    pid="$(pgrep -f "java -jar $name/target/$name-$VERSION.jar" 2>/dev/null | head -1)"
+    [ -n "$pid" ] && printf '%s' "$pid"
+}
+
 stop_service() {
     local name="$1" pidfile="$LOG_DIR/$1.pid" pid
-    [ -f "$pidfile" ] || return 0
-    pid="$(cat "$pidfile")"
-    if kill -0 "$pid" 2>/dev/null; then
+    pid="$(service_pid "$name")"
+    if [ -n "$pid" ]; then
         log "  停止 $name（pid $pid）"
         kill "$pid" 2>/dev/null
         for _ in $(seq 1 30); do
@@ -119,6 +133,9 @@ start_middleware() {
 
     wait_http 'Elasticsearch' 'http://localhost:9200' 180 || fail 'Elasticsearch 未就绪'
     wait_http 'MinIO' 'http://localhost:9000/minio/health/live' 120 || fail 'MinIO 未就绪'
+    # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。
+    # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。
+    wait_http 'Nacos' 'http://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'
     log '  中间件就绪'
 }
 
@@ -156,9 +173,11 @@ start_backend() {
     for entry in "${SERVICES[@]}"; do
         name="${entry%%:*}"
         port="${entry##*:}"
-        local pidfile="$LOG_DIR/$name.pid"
-        if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; then
-            log "  $name 已在运行（pid $(cat "$pidfile")）"
+        local pidfile="$LOG_DIR/$name.pid" running
+        running="$(service_pid "$name")"
+        if [ -n "$running" ]; then
+            echo "$running" > "$pidfile"
+            log "  $name 已在运行（pid $running）"
             continue
         fi
         nohup java -jar "$name/target/$name-$VERSION.jar" > "$LOG_DIR/$name.log" 2>&1 &
@@ -202,11 +221,9 @@ show_status() {
     for entry in "${SERVICES[@]}"; do
         name="${entry%%:*}"
         port="${entry##*:}"
-        pidfile="$LOG_DIR/$name.pid"
+        pid="$(service_pid "$name")"
         state='未运行'
-        if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; then
-            state="运行中（pid $(cat "$pidfile")）"
-        fi
+        [ -n "$pid" ] && state="运行中（pid $pid）"
         health="$(curl -sf -m 2 "http://localhost:$port/actuator/health" > /dev/null 2>&1 && echo 健康 || echo 不可用)"
         printf '  %-16s %-24s %s  http://localhost:%s\n' "$name" "$state" "$health" "$port"
     done
