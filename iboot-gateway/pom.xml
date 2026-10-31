@@ -50,6 +50,12 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- 观测断言：TestObservationRegistry 基于 SimpleObservationRegistry，只记录不导出 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-observation-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

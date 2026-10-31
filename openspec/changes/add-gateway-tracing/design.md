@@ -4,95 +4,102 @@
 
 动机见 `proposal.md` 的 Why。这里只记录影响做法的实测事实。
 
-**已确认的事实**
+**已确认的事实（本机实测，2026-10-31）**
 
-- Tempo 中 `service.name=iboot-gateway` 的 span 只有 `/actuator/health` 与 `/actuator/info`，经路由转发的 `/api/**` 请求没有服务端 span。
-- 追踪、观测、OTLP 导出、网关观测四类自动配置全部 matched；导出通路正常（actuator span 能到达 Tempo）。
-- 关闭 `metrics.enabled`、改用 `local` profile、重新打包重启，行为均不变。
-- 下游 admin 与 ai 能正常产生、接收 span（`admin → ai` 存在真实链路）。
+- 网关为经路由转发的 `/api/**` 请求**创建并导出**服务端 span：40 次 `GET /api/user/list` 对应 40 条以 `iboot-gateway` 为根的 trace。
+- 链路父子关系正确：`iboot-gateway http get`（SERVER，根）→ `iboot-gateway HTTP GET`（CLIENT，带 `spring.cloud.gateway.route.id`）→ `iboot-admin http get`（SERVER）→ 管理端安全过滤链 span。
+- 网关服务端 span 的属性：`method=GET`、`http.url=/api/user/list`、`status=…`、`uri=UNKNOWN`。
+- 三个服务的追踪采样都是 `IBOOT_TRACING_SAMPLE=1.0`（运行时环境变量），而配置默认值是 `0.1`。
+- 既有总开关 `IBOOT_TRACING_ENABLED` 实际上从未生效：它映射到 `management.tracing.enabled`，而 Boot 4 读的是 `management.tracing.export.enabled`。设为 `false` 后网关仍然导出 span，只是不再有警告，从现象上完全看不出来。
 
-**两次失败尝试**
+**先前误判的成因**
 
-| 尝试 | 结果 |
+| 现象 | 结论 |
 |---|---|
-| `ObservationDocumentation.observation(convention, null, supplier, registry)` | 运行期 `NullPointerException: You have not provided a default convention`；反编译确认传入的第一个参数是 `new DefaultServerRequestObservationConvention()`，字节码顺序正确 |
-| `Observation.createNotStarted("http.server.requests", supplier, registry)` | 请求返回 200，但追踪后端仍无网关 span |
+| Tempo 中查不到网关 span | 查询时间窗边界：请求时间戳 `1793416911.58` 落在 `end=1793416911` 之外。不依赖时间窗的验证正是本变更要补的能力 |
+| 采样默认 0.1 | 90% 的根 span 不会进入追踪后端，会强化"看不到就是没有"的错觉 |
 
-**环境干扰**
+**两次失败尝试的结论**
 
-本机系统时钟在排查期间两次大幅跳变（跨天、跨 9 小时）。追踪后端按时间窗检索，任何"窗口内没有数据"的结论都不可信。这直接决定了本变更必须先把验证手段做可靠。
+| 尝试 | 结论 |
+|---|---|
+| `ObservationDocumentation.observation(convention, null, supplier, registry)` → `NullPointerException: You have not provided a default convention` | 调用方式问题：反编译确认方法对第二个参数（默认约定）做了 `Objects.requireNonNull`。传 `null` 必然失败，与参数顺序、泛型擦除无关 |
+| `Observation.createNotStarted(name, supplier, registry)` → 追踪后端无网关 span | 在采样 0.1 下，手工创建的观测大概率未被采样；且框架本已提供观测，无需手工创建。不再深究 |
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- 让网关成为链路的真实起点：入口 span 存在、上下文传得下去、下游不另起链路。
-- 把"链路是否贯通"变成一条可重复执行的命令，不依赖人工翻追踪界面。
-- 观测组件任何情况下都不能影响转发。
+- 让"一次请求是否形成完整链路"成为一个可重复执行、不依赖时间窗的命令。
+- 让 TraceID 可以从响应头直接取得，不再依赖日志检索或追踪后端的时间窗查询。
+- 用单元断言守住"网关会为转发请求创建服务端观测"这一事实，防止框架升级后静默回退。
 
 **Non-Goals:**
 
-- 不排查 Micrometer / Spring Cloud Gateway 的上游缺陷，只求本项目内可用且可解释。
-- 不做采样策略调优、不做 span 属性规范化治理。
+- 不自行实现入口观测组件（框架已提供，重复创建会产生同级 span）。
+- 不改网关 span 的属性规范：`uri=UNKNOWN` 只影响 span 名称可读性，不影响链路贯通。
 - 不改动路由、限流、CORS 等既有网关行为。
+- 不做采样算法与采样策略的调优，只调整默认值。
 
 ## Decisions
 
-### D1. 先建验证手段，再动实现
+### D1. 先把验证手段做成可复现的，再谈其它
 
 顺序固定为：
 
-1. 单元层：在测试里用 `SimpleObservationRegistry` 断言"过滤器执行后产生了观测"，把**未执行**与**未导出**分开；
-2. 集成层：一条脚本从网关日志取 TraceID，按 ID 查询追踪后端，输出三个服务是否同链路；
-3. 才进入实现调整。
+1. 单元层：`GatewayTracingTest` 用 `SimpleObservationRegistry` 断言"转发请求产生了服务端观测"，把**未执行**与**未导出**分开；
+2. 运行时：网关在响应头回显 `X-Trace-Id`，让标识可直接取得；
+3. 集成层：`trace-chain.sh <traceId>` 按标识查询追踪后端，输出服务集合并判断是否包含期望服务。
 
-**为什么**：本次排查最大的损耗不是写代码，而是**无法判断"没有 span"到底是没创建还是没导出**。先把观测点做出来，后面每一步都有确定信号。
+**为什么**：本次误判的全部损耗都来自"看不见"——先是时间窗，后是采样率。先把信号做成确定的，后续每一步结论才有依据。
 
-**备选**：先写实现再验证——已经证明会在时间窗不可靠时陷入反复试错。
+### D2. 不实现自定义观测组件
 
-### D2. 实现路线：先查工厂方法异常，再决定 API
+框架的 `ServerHttpObservationFilter` 已经为转发请求创建服务端 span，并已通过实测证明导出正常。再实现一个同职责的组件会：
 
-按顺序尝试，前一步不成立才进入下一步：
+- 让同一个请求出现两条同级服务端 span；
+- 污染父子结构与网关耗时统计。
 
-1. **查清 `observation(...)` 的 NPE**：比对 Micrometer 1.16.3 与 Spring Framework 7 的 API 变更，确认是调用约定问题还是库缺陷；能修则用标准 API（span 名称与属性最规范，下游兼容性最好）。
-2. **改用 `Observation.createNotStarted`**：能创建观测但需要自行补齐 span 名称与关键属性；本次实测未被观测到，需要先用 D1 的单元断言确认过滤器确实执行，再判断是否导出问题。
-3. **退到显式 `Tracer`**：直接创建服务端 span，并用 Reactor 上下文传播。可控性最高，但需要自己处理异步上下文，容易再次踩到 spike 里"手工客户端不传递上下文"的坑。
+因此本变更**不新增**任何观测创建逻辑，只用测试守住既有行为。
 
-**判断依据**：只要 D1 的单元断言能证明观测被创建、集成脚本能证明链路贯通，就是可接受方案；实现越贴近框架标准越好。
+### D3. `X-Trace-Id` 用 `WebFilter` 实现，从反应式上下文取观测
 
-### D3. 只对非运维路径创建 span
+- 注册为 `WebFilter`，`getOrder()` 取 `Ordered.HIGHEST_PRECEDENCE`，使跨域预检这类会直接应答的请求也带上响应头。
+- **不用 `Tracer.currentSpan()`**：WebFlux 的服务端观测由 `HttpWebHandlerAdapter` 创建后放进反应式上下文，并未以线程局部作用域暴露，实测在过滤器里取当前 span 得到 `null`。改为从 `ObservationThreadLocalAccessor.KEY` 取出观测，再从 `TracingObservationHandler.TracingContext` 取 span 标识。
+- TraceID 在过滤器执行时取出并捕获，再交给 `response.beforeCommit(...)` 写入；不在回调里读上下文，避免跨线程上下文丢失。
+- 写入过程整体包在异常兜底里，任何失败只记 debug 日志，不影响响应。
+- 回显受 `management.tracing.export.enabled` 控制：关闭追踪时不回显一个查不到的标识。
 
-`/actuator/**` 已有独立观测，跳过。判定按路径前缀，不引入更复杂的匹配规则。
+### D4. 采样默认值改为 1.0
 
-**为什么**：重复 span 会污染链路的父子结构与耗时统计，也会让"网关耗时"这类后续指标失真。
+`management.tracing.sampling.probability` 的默认值从 `0.1` 改为 `1.0`（环境变量 `IBOOT_TRACING_SAMPLE` 仍可覆盖）。
 
-### D4. 观测失败必须被隔离
+**为什么**：0.1 会让"链路是否贯通"的验证变成概率事件，也是本次误判的放大因素。开发与验收环境优先保证可观测性，压测时用环境变量调低。
 
-观测创建与结束都包在异常兜底里：观测出错只记日志，请求照常转发。
+### D5. 复用既有开关，但要改到 Boot 4 的属性名
 
-**为什么**：网关是唯一入口，尝试一已经用 500 证明了这里的失败半径。这条不是防御性编程的洁癖，是这次事故的直接教训。
+沿用环境变量 `IBOOT_TRACING_ENABLED`，不新增专用开关。但属性名必须换：
 
-### D5. 复用既有开关
+- Boot 4 中 `management.tracing.enabled` 已不起作用——实测设成 `false` 后追踪照常导出，且没有任何警告；
+- 生效的是 `management.tracing.export.enabled`（`OnEnabledTracingExportCondition` 读取的属性）。
 
-沿用 `management.tracing.enabled`（环境变量 `IBOOT_TRACING_ENABLED`），不新增专用开关。
-
-**为什么**：网关的 span 属于追踪能力的一部分，用户关闭追踪时不应该还需要记住第二个开关。
+关闭追踪后：不产生 span，也不回显 `X-Trace-Id`，转发行为不变。
 
 ## Risks / Trade-offs
 
 | 风险 | 处置 |
 |---|---|
-| 观测组件把全部请求打成 500（已发生过一次） | 实现必须带单元测试；上线前用脚本回归全部 `/api/**` 冒烟 |
-| 显式创建 span 与框架的迭代器语义冲突（`doFinally` 在异步线程执行） | 优先用框架 API；退到 Tracer 时在跨越线程处显式传上下文 |
-| 时钟不可靠导致验证结论失真 | 验证只按 TraceID 查询；时间窗只用于人工浏览 |
-| 网关 span 缺少标准属性（无 convention 时） | 若最终走 `createNotStarted`，自行补齐方法与路径属性，并记录取舍 |
+| 响应头过滤器出错打断全部请求 | 只做"读 traceId + 写头"，异常全部兜底；无 `Tracer` 时为空操作；由单元测试覆盖 |
+| `beforeCommit` 阶段响应已提交导致写头失败 | TraceID 在过滤器入口捕获，回调只做写头；`beforeCommit` 在提交前执行，失败被兜底 |
+| 采样 1.0 增加追踪后端写入量 | 仅开发/验收默认；生产用 `IBOOT_TRACING_SAMPLE` 调低 |
+| 追踪后端不可用时 `trace-chain.sh` 无法判定 | 脚本区分"查询失败"与"没有该链路"，前者以错误码退出并打印原因 |
 
 ## Migration Plan
 
-1. 先提交验证手段（脚本 + 单元断言），此时行为不变；
-2. 再提交实现，开关默认开启，出问题用 `IBOOT_TRACING_ENABLED=false` 立即降级；
-3. 回滚：实现与验证分属不同提交，直接回退实现提交即可，转发行为从未被修改。
+1. 先提交验证手段（脚本 + 单元断言 + 响应头），此时只增加一个只读响应头；
+2. 再提交采样默认值调整；
+3. 回滚：响应头过滤器可整体移除，追踪与转发行为不受影响；采样默认值改回即可。
 
 ## Open Questions
 
-- `ObservationDocumentation.observation(...)` 的 NPE 是调用约定问题还是库自身缺陷——实现第一步据此决定用哪条 API，不影响本设计的其余部分。
+（无。原先的两个疑问——`observation(...)` 的 NPE 与"转发请求是否产生 span"——均已由实测与反编译解答。）

@@ -27,9 +27,12 @@ spring:
 
 management:
   tracing:
-    enabled: ${IBOOT_TRACING_ENABLED:true}
+    export:
+      # 总开关：关闭后不产生 span，也不回显 X-Trace-Id
+      enabled: ${IBOOT_TRACING_ENABLED:true}
     sampling:
-      probability: ${IBOOT_TRACING_SAMPLE:0.1}
+      # 默认全采：保证开发与验收期链路完整，压测或生产按需用环境变量调低
+      probability: ${IBOOT_TRACING_SAMPLE:1.0}
   opentelemetry:
     tracing:
       export:
