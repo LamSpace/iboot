@@ -24,8 +24,9 @@ import java.util.List;
 /**
  * 只读的系统参数访问器。
  *
- * <p>过渡期直接读取共享库的 {@code sys_config}：文件的大小上限与允许扩展名仍由管理端的
- * 「参数配置」页维护，改成 Nacos 会让该页面失效，属于用户可见的行为变化。
+ * <p>直接读取管理端 schema 的 {@code iboot_admin.sys_config}：文件的大小上限与允许扩展名
+ * 仍由管理端的「参数配置」页维护，改成 Nacos 会让该页面失效，属于用户可见的行为变化。
+ * 本服务的数据源已是独立的 {@code iboot_file}，MySQL 没有跨库搜索路径，故显式限定库名。
  *
  * <p>退出条件：{@code iboot-system} 拆分时改为调用系统服务的配置查询接口。
  *
@@ -54,7 +55,7 @@ public class SysConfigReader {
      */
     public String getString(String configKey) {
         List<String> values = jdbcTemplate.queryForList(
-                "SELECT config_value FROM sys_config WHERE config_key = ? AND deleted = 0 LIMIT 1",
+                "SELECT config_value FROM iboot_admin.sys_config WHERE config_key = ? AND deleted = 0 LIMIT 1",
                 String.class, configKey);
         return values.isEmpty() ? null : values.get(0);
     }

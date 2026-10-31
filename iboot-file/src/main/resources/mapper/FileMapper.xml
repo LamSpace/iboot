@@ -2,6 +2,11 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iboot.file.infrastructure.persistence.mapper.FileMapper">
 
+    <!--
+      数据权限需要关联管理端的 sys_user：本服务数据源是独立的 iboot_file，
+      MySQL 没有跨库搜索路径，因此显式限定库名。退出条件见 SysConfigReader。
+    -->
+
     <resultMap id="FileResultMap" type="com.iboot.file.infrastructure.persistence.po.FilePO">
         <id property="id" column="id"/>
         <result property="fileName" column="file_name"/>
@@ -66,7 +71,7 @@
     <select id="selectPage" resultMap="FileResultMap">
         SELECT f.*
         FROM sys_file f
-        LEFT JOIN sys_user u ON u.username = f.upload_by AND u.deleted = 0
+        LEFT JOIN iboot_admin.sys_user u ON u.username = f.upload_by AND u.deleted = 0
         WHERE f.deleted = 0
         ORDER BY f.upload_time DESC LIMIT #{offset}, #{limit}
     </select>
@@ -74,13 +79,13 @@
     <select id="count" resultType="long">
         SELECT COUNT(*)
         FROM sys_file f
-        LEFT JOIN sys_user u ON u.username = f.upload_by AND u.deleted = 0
+        LEFT JOIN iboot_admin.sys_user u ON u.username = f.upload_by AND u.deleted = 0
         WHERE f.deleted = 0
     </select>
 
     <select id="selectPageByCondition" resultMap="FileResultMap">
         SELECT f.* FROM sys_file f
-        LEFT JOIN sys_user u ON u.username = f.upload_by AND u.deleted = 0
+        LEFT JOIN iboot_admin.sys_user u ON u.username = f.upload_by AND u.deleted = 0
 
         <where>
             f.deleted = 0
@@ -100,7 +105,7 @@
 
     <select id="countByCondition" resultType="long">
         SELECT COUNT(*) FROM sys_file f
-        LEFT JOIN sys_user u ON u.username = f.upload_by AND u.deleted = 0
+        LEFT JOIN iboot_admin.sys_user u ON u.username = f.upload_by AND u.deleted = 0
 
         <where>
             f.deleted = 0
@@ -119,7 +124,7 @@
     <!-- 按条件查询所有文件（导出用） -->
     <select id="selectAllByCondition" resultMap="FileResultMap">
         SELECT f.* FROM sys_file f
-        LEFT JOIN sys_user u ON u.username = f.upload_by AND u.deleted = 0
+        LEFT JOIN iboot_admin.sys_user u ON u.username = f.upload_by AND u.deleted = 0
 
         <where>
             f.deleted = 0

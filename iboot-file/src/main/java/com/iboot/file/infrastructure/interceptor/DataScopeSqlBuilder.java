@@ -28,6 +28,9 @@ import java.util.List;
  * <p>把已解析的 {@link FilePermissionScope} 转换为追加到 MyBatis 查询中的过滤片段；
  * 不访问数据库，保证五级范围生成的 SQL 可被单独测试。
  *
+ * <p>用户表仍位于管理端的共享 schema，MySQL 没有跨库搜索路径，因此这里显式写成
+ * {@code iboot_admin.sys_user}；退出条件同 {@code SysConfigReader}。
+ *
  * @author iBoot Team
  * @since 1.0.0
  */
@@ -63,7 +66,8 @@ public class DataScopeSqlBuilder {
             if (deptTable) {
                 return scope.deptId() == null ? "1=0" : userAlias + "." + deptColumn + " = " + scope.deptId();
             }
-            return userAlias + ".dept_id = (SELECT dept_id FROM sys_user WHERE id = " + currentUserId + ")";
+            return userAlias + ".dept_id = (SELECT dept_id FROM iboot_admin.sys_user WHERE id = "
+                    + currentUserId + ")";
         }
         if (DataScopeEnum.DEPT_AND_CHILD.getCode().equals(dataScope)) {
             List<Long> deptIds = scope.visibleDeptIds();

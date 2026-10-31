@@ -24,9 +24,9 @@ import java.util.List;
 /**
  * 只读的字典标签查询。
  *
- * <p>Excel 导出需要把字典值翻译成标签（例如文件分类）。过渡期直接读共享库的
- * {@code sys_dict_data}，与管理端 {@code DictApplicationService#getDictLabel} 的语义保持一致：
- * 查不到时返回空串。退出条件同 {@link SysConfigReader}。
+ * <p>Excel 导出需要把字典值翻译成标签（例如文件分类）。直接读管理端 schema 的
+ * {@code iboot_admin.sys_dict_data}，与管理端 {@code DictApplicationService#getDictLabel} 的语义保持一致：
+ * 查不到时返回空串。显式限定库名的原因见 {@link SysConfigReader}，退出条件相同。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -54,7 +54,7 @@ public class DictLabelLookup {
      */
     public String labelOf(String dictType, String dictValue) {
         List<String> labels = jdbcTemplate.queryForList(
-                "SELECT dict_label FROM sys_dict_data WHERE dict_type = ? AND dict_value = ? AND deleted = 0 LIMIT 1",
+                "SELECT dict_label FROM iboot_admin.sys_dict_data WHERE dict_type = ? AND dict_value = ? AND deleted = 0 LIMIT 1",
                 String.class, dictType, dictValue);
         return labels.isEmpty() ? "" : labels.get(0);
     }
