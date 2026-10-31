@@ -44,26 +44,26 @@
 
 ## 6. 注册中心接入
 
-- [ ] 6.1 `iboot-admin` 引入 Nacos 注册发现与配置依赖，配置一律通过 `spring.config.import`（带 `optional:` 前缀），不引入 `bootstrap.yml`；验证：启动后控制台能看到 `iboot-admin` 实例
-- [ ] 6.2 `iboot-ai` 同样接入；验证：控制台能看到 `iboot-ai` 实例，且服务名与 `spring.application.name` 一致
-- [ ] 6.3 网关在 `nacos` profile 下改为按服务名负载转发；验证：经 `8088` 访问管理端与 AI 接口均正常
-- [ ] 6.4 验证降级：停掉 Nacos 后 admin 与 ai 仍能启动，网关切回 `local` profile 后接口仍可用；验证：两次验证均成功，且日志中有注册失败的可见记录
-- [ ] 6.5 验证配置热更新：经 Nacos 修改一个可调参数，确认生效且进程启动时间未变；验证：行为按新值变化，进程未重启
-- [ ] 6.6 在 `doc/23` 增注册与配置章节：服务名清单、`spring.config.import` 写法、`local` / `nacos` 两个 profile 的切换与适用场景；验证：按文档操作可从 `local` 切到 `nacos` 再切回
+- [x] 6.1 `iboot-admin` 引入 Nacos 注册发现与配置依赖，配置一律通过 `spring.config.import`（带 `optional:` 前缀），不引入 `bootstrap.yml`；验证：启动后控制台能看到 `iboot-admin` 实例
+- [x] 6.2 `iboot-ai` 同样接入；验证：控制台能看到 `iboot-ai` 实例，且服务名与 `spring.application.name` 一致
+- [x] 6.3 网关在 `nacos` profile 下改为按服务名负载转发；验证：经 `8088` 访问管理端与 AI 接口均正常
+- [x] 6.4 验证降级：停掉 Nacos 后 admin 与 ai 仍能启动，网关切回 `local` profile 后接口仍可用；验证：两次验证均成功，且日志中有注册失败的可见记录
+- [x] 6.5 验证配置热更新：经 Nacos 修改一个可调参数，确认生效且进程启动时间未变；验证：行为按新值变化，进程未重启
+- [x] 6.6 在 `doc/23` 增注册与配置章节：服务名清单、`spring.config.import` 写法、`local` / `nacos` 两个 profile 的切换与适用场景；验证：按文档操作可从 `local` 切到 `nacos` 再切回
 
 ## 7. 链路追踪接入业务服务
 
-- [ ] 7.1 `iboot-admin` 接入 Micrometer Tracing + OTLP，配置采样比例与总开关；验证：Tempo 中能查到 admin 的链路
-- [ ] 7.2 `iboot-ai` 接入，且其调用 admin 的请求沿用同一追踪标识；验证：一次 AI 工具调用在 Tempo 中表现为 admin 段挂在 ai 段之下
-- [ ] 7.3 让日志输出当前追踪标识；验证：同一请求在 admin 与 ai 的日志中标识相同，定时任务线程的日志不含标识
-- [ ] 7.4 验证追踪后端不可用时的行为：停掉 Tempo 后业务请求仍正常返回，导出失败在日志中可见；验证：业务响应不变，日志出现导出失败记录
-- [ ] 7.5 在 `doc/23` 增追踪章节：采样配置、关闭方式、在 Grafana 中查链路的步骤；验证：按文档步骤能查出一次完整链路
+- [x] 7.1 `iboot-admin` 接入 Micrometer Tracing + OTLP，配置采样比例与总开关；验证：Tempo 中能查到 admin 的链路
+- [x] 7.2 `iboot-ai` 接入，且其调用 admin 的请求沿用同一追踪标识；验证：一次 AI 工具调用在 Tempo 中表现为 admin 段挂在 ai 段之下
+- [x] 7.3 让日志输出当前追踪标识；验证：同一请求在 admin 与 ai 的日志中标识相同，定时任务线程的日志不含标识
+- [x] 7.4 验证追踪后端不可用时的行为：停掉 Tempo 后业务请求仍正常返回，导出失败在日志中可见；验证：业务响应不变，日志出现导出失败记录
+- [x] 7.5 在 `doc/23` 增追踪章节：采样配置、关闭方式、在 Grafana 中查链路的步骤；验证：按文档步骤能查出一次完整链路
 
 ## 8. 集成验收
 
-- [ ] 8.1 全量单元与集成测试：`TESTCONTAINERS_RYUK_CONTAINER_IMAGE=testcontainers/ryuk:0.12.0 mvn -s /home/lam/repo/settings.xml verify`，admin 与 ai 既有 119 个测试文件零改动全绿，网关测试通过
-- [ ] 8.2 契约零漂移：重新导出并比对 `scripts/regress/golden/`，差异只允许出现「新增网关本身」这一项且已登记；验证：`bash scripts/regress/regress.sh` 退出码为 0
-- [ ] 8.3 故障演练：停掉 admin 后经网关访问 admin 接口返回明确降级、AI 接口不受影响；停掉 ai 后反之；验证：两种情形均符合预期，无需重启网关
+- [x] 8.1 全量单元与集成测试：`TESTCONTAINERS_RYUK_CONTAINER_IMAGE=testcontainers/ryuk:0.12.0 mvn -s /home/lam/repo/settings.xml verify`，admin 与 ai 既有 119 个测试文件零改动全绿，网关测试通过
+- [x] 8.2 契约零漂移：重新导出并比对 `scripts/regress/golden/`，差异只允许出现「新增网关本身」这一项且已登记；验证：`bash scripts/regress/regress.sh` 退出码为 0
+- [x] 8.3 故障演练：停掉 admin 后经网关访问 admin 接口返回明确降级、AI 接口不受影响；停掉 ai 后反之；验证：两种情形均符合预期，无需重启网关
 - [ ] 8.4 追踪贯穿验收：一次真实操作（登录 → 打开 AI 对话 → 触发一次工具调用）在 Tempo 中形成 `gateway → admin → ai` 的完整链路；验证：链路中三个服务的段齐全且标识一致
 - [ ] 8.5 把快检查接入持续集成：新增 `.github/workflows/regress.yml`，在 PR 上执行契约快照与路由覆盖（不依赖全栈），冒烟与权限矩阵按夜间调度在全栈上执行；验证：工作流在测试 PR 上成功运行，且人为制造一条路径漂移时该工作流失败
-- [ ] 8.6 同步文档：更新 `ROADMAP.md` 阶段 2 的实施状态、`doc/README.md` 索引加入 doc 23；验证：文档链接可达，状态描述与本变更有实际交付一致
+- [x] 8.6 同步文档：更新 `ROADMAP.md` 阶段 2 的实施状态、`doc/README.md` 索引加入 doc 23；验证：文档链接可达，状态描述与本变更有实际交付一致

@@ -1,0 +1,100 @@
+# 持续集成：分层执行回归检查
+#
+# - PR：构建 + 网关单元测试（不依赖全栈，几分钟内完成）
+# - 定时 / 手动：起完整中间件与三个服务，跑 scripts/regress/regress.sh
+#
+# 契约快照需要连接运行中的服务，无法在 PR 阶段完成，因此放在全栈任务里。
+
+name: regress
+
+on:
+  pull_request:
+  schedule:
+    # 每天 UTC 18:00（北京时间次日 02:00）
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 构建与网关测试
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: 构建全部模块（跳过测试）
+        run: mvn -B -DskipTests package
+
+      - name: 网关集成测试
+        run: mvn -B -pl iboot-gateway test
+
+  full-regress:
+    name: 全栈回归
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: 启动中间件
+        run: docker compose -f docker/docker-compose.yml up -d mysql redis minio minio-init elasticsearch
+
+      - name: 等待 MySQL 就绪
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec iboot-mysql mysqladmin ping -h localhost -uroot -proot --silent; then exit 0; fi
+            sleep 3
+          done
+          echo "MySQL 未在预期时间内就绪" >&2
+          exit 1
+
+      - name: 初始化 AI 库
+        run: |
+          docker exec iboot-mysql mysql -uroot -proot \
+            -e "CREATE DATABASE IF NOT EXISTS iboot_ai CHARACTER SET utf8mb4"
+
+      - name: 构建
+        run: mvn -B -DskipTests package
+
+      - name: 启动服务
+        env:
+          IBOOT_BACKUP_ENABLED: 'true'
+          IBOOT_BACKUP_ENCRYPTION_KEY: 'ci-only-key-do-not-use-in-prod'
+          IBOOT_TRACING_ENABLED: 'false'
+        run: |
+          nohup java -jar iboot-admin/target/iboot-admin-1.0.0.jar > admin.log 2>&1 &
+          nohup java -jar iboot-ai/target/iboot-ai-1.0.0.jar > ai.log 2>&1 &
+          nohup java -jar iboot-gateway/target/iboot-gateway-1.0.0.jar > gateway.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:8080/v3/api-docs > /dev/null \
+               && curl -sf http://localhost:8081/actuator/health > /dev/null \
+               && curl -sf http://localhost:8088/actuator/health > /dev/null; then
+              echo "三个服务均已就绪"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "服务未在预期时间内就绪" >&2
+          tail -50 admin.log ai.log gateway.log
+          exit 1
+
+      - name: 回归检查
+        env:
+          REG_BASE: http://localhost:8080
+          REG_AI_BASE: http://localhost:8081
+        run: bash scripts/regress/regress.sh
+
+      - name: 失败时输出日志
+        if: failure()
+        run: tail -100 admin.log ai.log gateway.log 2>/dev/null || true
