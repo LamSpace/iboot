@@ -27,16 +27,31 @@ profile=$(reg_get /api/user/profile)
 reg_expect_ok "读取当前用户信息" "$profile"
 reg_expect_jq "返回的用户名为 $REG_USER" ".data.username == \"$REG_USER\"" "$profile"
 
-reg_log "== 3. 文件上传与下载 =="
+reg_log "== 3. 文件上传与下载（经网关，/api/file/** 已迁至 iboot-file） =="
+REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
 echo "iBoot 回归冒烟 $(date +%s)" > "$WORK/smoke.txt"
 upload=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
     -F "file=@$WORK/smoke.txt" -F "fileCategory=regress" \
-    "$REG_BASE/api/file/upload" | reg_unwrap)
-reg_expect_ok "上传文件" "$upload"
+    "$REG_GATEWAY/api/file/upload" | reg_unwrap)
+reg_expect_ok "经网关上传文件" "$upload"
 file_id=$(printf '%s' "$upload" | jq -r '.data.id // empty')
 if [ -n "$file_id" ]; then
-    download=$(reg_get "/api/file/download-url/$file_id")
-    reg_expect_ok "获取文件下载地址" "$download"
+    file_list=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/file/list?pageNum=1&pageSize=50" | reg_unwrap)
+    reg_expect_ok "经网关查询文件列表" "$file_list"
+    reg_expect_jq "列表包含刚上传的文件" "[.data.data[]? | select(.id == $file_id)] | length == 1" "$file_list"
+    download=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/file/download-url/$file_id" | reg_unwrap)
+    reg_expect_ok "经网关获取下载地址" "$download"
+    if curl -sS -f -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/file/download/$file_id" -o "$WORK/downloaded.txt"; then
+        reg_pass "经网关下载文件内容"
+    else
+        reg_fail "经网关下载文件失败"
+    fi
+    removed=$(curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/file/$file_id" | reg_unwrap)
+    reg_expect_ok "经网关删除文件" "$removed"
 else
     reg_fail "上传未返回文件 ID"
 fi

@@ -31,7 +31,7 @@
 
 ### 1.1 架构形态
 
-单体应用,Maven 多模块(根 `pom.xml` 聚合 `iboot-admin` + 独立 AI 服务 `iboot-ai`),内部遵循 DDD 四层:
+技术栈练习项目,Maven 多模块。根 `pom.xml` 目前聚合四个模块:`iboot-kernel`(共享内核库,不独立部署)、`iboot-admin`(业务主体)、`iboot-ai`(独立 AI 服务)、`iboot-gateway`(统一入口)。`iboot-admin` 内部遵循 DDD 四层:
 
 ```
 interfaces  → controller / dto / advisor / config
@@ -276,10 +276,31 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 ### 4.2 阶段 2:微服务彻底拆分
 
-> **实施状态(2026-10-31)**:拆分底座已交付(变更 `add-microservice-foundation`,38/44 项任务)。
+> **实施状态(2026-10-31)**:拆分底座已交付(变更 `add-microservice-foundation`,44/44 项任务)。
 > 已完成:回归基线(`scripts/regress/`)、2.0 门禁(Nacos + Sentinel + 链路追踪,结论见 `doc/spike/microservice-2-0-spike-report.md`)、
 > `iboot-gateway`(路由 / 跨域 / 长连接 / 故障降级)、前端流量切换、admin 与 ai 接入 Nacos 与追踪。
-> 操作见 `doc/23-微服务底座操作指南.md`。**业务服务尚未拆分**,`iboot-auth` 与其余服务各独立成 change。
+> 操作见 `doc/23-微服务底座操作指南.md`。
+>
+> **共享内核已交付(变更 `add-shared-kernel`)**:新增 `iboot-kernel` 模块,承载统一响应与异常处理
+> (`com.iboot.kernel.web`)、资源服务器鉴权(`com.iboot.kernel.security`)、操作日志写路径
+> (`com.iboot.kernel.logging`);admin 与 ai 不再各自维护实现。查询侧与数据权限仍留在 admin。
+>
+> **业务服务拆分状态**:
+>
+> | 服务 | 状态 | 变更 |
+> |---|---|---|
+> | `iboot-gateway` | 已完成 | `add-microservice-foundation` |
+> | `iboot-kernel`(库) | 已完成 | `add-shared-kernel` |
+> | `iboot-file` | 已拆分,旧实现待删除 | `add-file-service` / 待办 `remove-file-from-admin` |
+> | `iboot-auth` | 待办 | 排在 file 之后 |
+> | `notify` / `job` / `monitor` / `workflow` / `system` | 待办 | 按 2.3 蓝图顺序 |
+>
+> `iboot-file` 的过渡状态:与管理端共用 `sys_file`、只读共享 `sys_config`/`sys_dict_data`、
+> 数据权限经 `/api/auth/scope` 获取;退出条件见 `doc/23` §11.3。
+>
+> 排序依据修订:认证中心不是运行时硬前置——资源服务器只依赖 JWT 密钥与共享会话,真正的前置是
+> 「资源服务器契约」(现已落在内核里);而 auth 与 system 的数据归属是全阶段最难的一刀,不宜作为
+> 第一个业务拆分。详见 `openspec/changes/add-shared-kernel/design.md`。
 >
 > 门禁过程中修正的既有缺陷:数据权限拦截器此前从未生效、备份锁跨线程释放导致只能备份一次。
 

@@ -16,7 +16,7 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.common.constant.Constants;
+import com.iboot.kernel.security.Constants;
 import com.iboot.admin.common.enums.DataScopeEnum;
 import com.iboot.admin.domain.system.model.UserDataScope;
 import com.iboot.admin.infrastructure.persistence.mapper.DeptMapper;
@@ -24,7 +24,7 @@ import com.iboot.admin.infrastructure.persistence.mapper.RoleMapper;
 import com.iboot.admin.infrastructure.persistence.mapper.UserMapper;
 import com.iboot.admin.infrastructure.persistence.po.RolePO;
 import com.iboot.admin.infrastructure.persistence.po.UserPO;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 

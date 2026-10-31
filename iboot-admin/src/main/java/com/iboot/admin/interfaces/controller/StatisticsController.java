@@ -17,7 +17,7 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.StatisticsApplicationService;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.web.Result;
 import com.iboot.admin.interfaces.dto.response.StatisticsResponse.ReportResponse;
 import com.iboot.admin.interfaces.dto.response.StatisticsResponse.UsageResponse;
 import io.swagger.v3.oas.annotations.Operation;

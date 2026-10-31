@@ -16,7 +16,7 @@
 
 package com.iboot.admin.infrastructure.repository;
 
-import com.iboot.admin.domain.system.model.OperateLog;
+import com.iboot.kernel.logging.OperateLog;
 import com.iboot.admin.domain.system.repository.OperateLogRepository;
 import com.iboot.admin.infrastructure.persistence.mapper.OperateLogMapper;
 import com.iboot.admin.infrastructure.persistence.po.OperateLogPO;

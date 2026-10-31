@@ -17,10 +17,10 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.notification.NotificationApplicationService;
-import com.iboot.admin.common.annotation.Log;
-import com.iboot.admin.common.enums.BusinessTypeEnum;
-import com.iboot.admin.common.result.PageResult;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.logging.Log;
+import com.iboot.kernel.logging.BusinessTypeEnum;
+import com.iboot.kernel.web.PageResult;
+import com.iboot.kernel.web.Result;
 import com.iboot.admin.domain.notification.model.NotificationDelivery;
 import com.iboot.admin.interfaces.dto.response.NotificationDeliveryResponse;
 import io.swagger.v3.oas.annotations.Operation;

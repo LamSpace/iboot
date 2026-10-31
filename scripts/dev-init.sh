@@ -30,7 +30,7 @@ MAVEN_SETTINGS="${MAVEN_SETTINGS:-/home/lam/repo/settings.xml}"
 VERSION="1.0.0"
 
 # 后端服务：名称:端口
-SERVICES=("iboot-admin:8080" "iboot-ai:8081" "iboot-gateway:8088")
+SERVICES=("iboot-admin:8080" "iboot-file:8082" "iboot-ai:8081" "iboot-gateway:8088")
 
 FORCE_BUILD=0
 WITH_FRONTEND=0

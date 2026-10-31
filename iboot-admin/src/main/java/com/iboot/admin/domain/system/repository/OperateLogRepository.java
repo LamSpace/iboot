@@ -16,7 +16,7 @@
 
 package com.iboot.admin.domain.system.repository;
 
-import com.iboot.admin.domain.system.model.OperateLog;
+import com.iboot.kernel.logging.OperateLog;
 
 import java.time.LocalDateTime;
 import java.util.List;

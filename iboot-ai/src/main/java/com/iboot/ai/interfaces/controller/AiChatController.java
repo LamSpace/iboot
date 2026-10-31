@@ -21,7 +21,7 @@ import com.iboot.ai.application.service.ChatErrorMapper;
 import com.iboot.ai.application.service.QuotaService;
 import com.iboot.ai.infrastructure.config.AiProperties;
 import com.iboot.ai.infrastructure.metrics.AiMetrics;
-import com.iboot.ai.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import com.iboot.ai.interfaces.dto.ChatRequest;
 import com.iboot.ai.interfaces.dto.ChatResponseDto;
 import com.iboot.ai.interfaces.dto.ConversationSummaryDto;

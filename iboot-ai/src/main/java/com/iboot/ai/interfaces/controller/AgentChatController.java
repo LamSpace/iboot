@@ -21,7 +21,7 @@ import com.iboot.ai.application.service.agent.AgentRunEvent;
 import com.iboot.ai.application.service.agent.AgentRunService;
 import com.iboot.ai.domain.agent.AgentContext;
 import com.iboot.ai.infrastructure.config.AiProperties;
-import com.iboot.ai.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import com.iboot.ai.interfaces.dto.AgentChatRequest;
 import com.iboot.ai.interfaces.dto.AgentConfirmRequest;
 import jakarta.validation.Valid;

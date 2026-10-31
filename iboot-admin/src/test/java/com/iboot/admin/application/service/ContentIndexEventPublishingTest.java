@@ -26,7 +26,7 @@ import com.iboot.admin.domain.system.repository.UserRepository;
 import com.iboot.admin.infrastructure.search.ContentDocType;
 import com.iboot.admin.infrastructure.search.ContentIndexAction;
 import com.iboot.admin.infrastructure.search.ContentIndexEvent;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

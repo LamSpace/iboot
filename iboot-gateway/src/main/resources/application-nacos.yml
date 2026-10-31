@@ -22,6 +22,12 @@ spring:
               predicates:
                 - Path=/api/ai/**
 
+            - id: file
+              uri: lb://iboot-file
+              order: 20
+              predicates:
+                - Path=/api/file/**
+
             - id: admin
               uri: lb://iboot-admin
               order: 100

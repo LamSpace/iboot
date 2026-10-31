@@ -17,11 +17,11 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.ContentSearchApplicationService;
-import com.iboot.admin.common.result.PageResult;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.web.PageResult;
+import com.iboot.kernel.web.Result;
 import com.iboot.admin.infrastructure.search.ContentSearchHit;
 import com.iboot.admin.infrastructure.search.ContentSearchResult;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import com.iboot.admin.interfaces.dto.response.SearchHitResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

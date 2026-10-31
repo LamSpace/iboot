@@ -22,7 +22,7 @@ import com.iboot.ai.application.service.RagCitation;
 import com.iboot.ai.application.service.RagPreparation;
 import com.iboot.ai.infrastructure.config.AiProperties;
 import com.iboot.ai.infrastructure.metrics.AiMetrics;
-import com.iboot.ai.infrastructure.security.JwtTokenUtil;
+import com.iboot.kernel.security.JwtTokenUtil;
 import com.iboot.ai.infrastructure.security.PermissionScope;
 import com.iboot.ai.infrastructure.security.PermissionScopeClient;
 import com.iboot.ai.infrastructure.security.PermissionScopeUnavailableException;

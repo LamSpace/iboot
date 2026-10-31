@@ -17,14 +17,14 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.FileApplicationService;
-import com.iboot.admin.common.annotation.Log;
-import com.iboot.admin.common.enums.BusinessTypeEnum;
-import com.iboot.admin.common.result.PageResult;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.logging.Log;
+import com.iboot.kernel.logging.BusinessTypeEnum;
+import com.iboot.kernel.web.PageResult;
+import com.iboot.kernel.web.Result;
 import com.iboot.admin.common.util.ExcelExportUtil;
 import com.iboot.admin.domain.system.model.FileInfo;
 import com.iboot.admin.domain.system.model.StorageObject;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import com.iboot.admin.interfaces.dto.export.FileExportVO;
 import com.iboot.admin.interfaces.dto.request.FileUpdateRequest;
 import com.iboot.admin.interfaces.dto.response.FileResponse;
@@ -129,7 +129,7 @@ public class FileController {
      *
      * @param id 文件 ID
      * @return 文件详情
-     * @throws com.iboot.admin.common.exception.BusinessException 文件不存在时抛出
+     * @throws com.iboot.kernel.web.BusinessException 文件不存在时抛出
      */
     @Operation(summary = "查询文件详情")
     @GetMapping(version = "1", value = "/{id}")

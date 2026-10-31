@@ -18,7 +18,7 @@ package com.iboot.admin.infrastructure.push;
 
 import com.iboot.admin.common.cloudevent.CloudEventBody;
 import com.iboot.admin.common.cloudevent.CloudEventTypes;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;

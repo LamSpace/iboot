@@ -18,8 +18,8 @@ package com.iboot.admin.application.service;
 
 import com.iboot.admin.application.service.notification.NotificationApplicationService;
 import com.iboot.admin.application.service.notification.NotificationCommand;
-import com.iboot.admin.common.exception.BusinessException;
-import com.iboot.admin.common.result.PageResult;
+import com.iboot.kernel.web.BusinessException;
+import com.iboot.kernel.web.PageResult;
 import com.iboot.admin.domain.notification.model.NotificationEventType;
 import com.iboot.admin.domain.system.model.User;
 import com.iboot.admin.domain.system.repository.UserRepository;

@@ -16,13 +16,13 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.system.model.Notice;
 import com.iboot.admin.domain.system.model.NoticeRead;
 import com.iboot.admin.domain.system.repository.NoticeReadRepository;
 import com.iboot.admin.domain.system.repository.NoticeRepository;
 import com.iboot.admin.infrastructure.search.ContentIndexEvent;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;

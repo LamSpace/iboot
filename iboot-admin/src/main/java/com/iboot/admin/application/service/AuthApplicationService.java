@@ -16,8 +16,8 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.common.constant.Constants;
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.security.Constants;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.system.model.Menu;
 import com.iboot.admin.domain.system.model.Role;
 import com.iboot.admin.domain.system.model.User;
@@ -25,9 +25,9 @@ import com.iboot.admin.domain.system.model.UserDataScope;
 import com.iboot.admin.domain.system.repository.MenuRepository;
 import com.iboot.admin.domain.system.repository.RoleRepository;
 import com.iboot.admin.domain.system.repository.UserRepository;
-import com.iboot.admin.infrastructure.config.JwtSecurityConfig;
-import com.iboot.admin.infrastructure.security.JwtTokenUtil;
-import com.iboot.admin.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.JwtSecurityConfig;
+import com.iboot.kernel.security.JwtTokenUtil;
+import com.iboot.kernel.security.SecurityUtils;
 import com.iboot.admin.interfaces.dto.response.LoginResponse;
 import com.iboot.admin.interfaces.dto.response.UserScopeResponse;
 import org.slf4j.Logger;

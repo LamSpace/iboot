@@ -18,7 +18,7 @@ package com.iboot.ai.interfaces.controller;
 
 import com.iboot.ai.application.service.graph.GraphSyncService;
 import com.iboot.ai.infrastructure.graph.Neo4jGraphRepository;
-import com.iboot.ai.infrastructure.security.JwtTokenUtil;
+import com.iboot.kernel.security.JwtTokenUtil;
 import com.iboot.ai.interfaces.advisor.AiExceptionHandler;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.junit.jupiter.api.Test;

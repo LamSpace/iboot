@@ -18,7 +18,7 @@ package com.iboot.admin.application.service.notification;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iboot.admin.application.service.MessageTemplateApplicationService;
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.notification.model.NotificationChannelType;
 import com.iboot.admin.domain.notification.model.NotificationDelivery;
 import com.iboot.admin.domain.notification.model.NotificationDeliveryStatus;

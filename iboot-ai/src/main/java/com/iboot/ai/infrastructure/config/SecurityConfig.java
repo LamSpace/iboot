@@ -16,7 +16,7 @@
 
 package com.iboot.ai.infrastructure.config;
 
-import com.iboot.ai.infrastructure.security.JwtAuthenticationFilter;
+import com.iboot.kernel.security.JwtAuthenticationFilter;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;

@@ -14,7 +14,7 @@
 
 package com.iboot.admin.application.service.backup;
 
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.web.BusinessException;
 
 import java.util.regex.Pattern;
 

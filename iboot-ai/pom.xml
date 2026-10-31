@@ -32,6 +32,12 @@
     <description>iBoot AI 工作台服务</description>
 
     <dependencies>
+        <!-- 共享内核 -->
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-kernel</artifactId>
+        </dependency>
+
         <!-- Web / Security / Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -35,6 +35,8 @@
     <description>iBoot 多模块构建父 POM</description>
 
     <modules>
+        <module>iboot-kernel</module>
+        <module>iboot-file</module>
         <module>iboot-admin</module>
         <module>iboot-ai</module>
         <module>iboot-gateway</module>
@@ -169,6 +171,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- 共享内核：响应信封、资源服务器鉴权、操作日志 -->
+            <dependency>
+                <groupId>com.iboot</groupId>
+                <artifactId>iboot-kernel</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- Database & Migration -->
             <dependency>
                 <groupId>com.alibaba</groupId>

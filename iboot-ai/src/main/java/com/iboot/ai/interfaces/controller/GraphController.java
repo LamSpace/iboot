@@ -22,7 +22,7 @@ import com.iboot.ai.domain.graph.GraphStatus;
 import com.iboot.ai.domain.graph.GraphSyncSummary;
 import com.iboot.ai.infrastructure.config.GraphProperties;
 import com.iboot.ai.infrastructure.graph.Neo4jGraphRepository;
-import com.iboot.ai.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.ObjectProvider;

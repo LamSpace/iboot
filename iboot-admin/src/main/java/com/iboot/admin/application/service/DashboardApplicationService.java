@@ -17,7 +17,7 @@
 package com.iboot.admin.application.service;
 
 import com.iboot.admin.domain.system.model.LoginLog;
-import com.iboot.admin.domain.system.model.OperateLog;
+import com.iboot.kernel.logging.OperateLog;
 import com.iboot.admin.interfaces.dto.response.DashboardSummaryResponse;
 import com.iboot.admin.interfaces.dto.response.LoginLogResponse;
 import com.iboot.admin.interfaces.dto.response.OperateLogResponse;

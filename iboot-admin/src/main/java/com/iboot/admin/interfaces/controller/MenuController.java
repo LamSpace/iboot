@@ -17,10 +17,10 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.MenuApplicationService;
-import com.iboot.admin.common.annotation.Log;
-import com.iboot.admin.common.constant.Constants;
-import com.iboot.admin.common.enums.BusinessTypeEnum;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.logging.Log;
+import com.iboot.kernel.security.Constants;
+import com.iboot.kernel.logging.BusinessTypeEnum;
+import com.iboot.kernel.web.Result;
 import com.iboot.admin.common.util.ExcelExportUtil;
 import com.iboot.admin.domain.system.model.Menu;
 import com.iboot.admin.interfaces.dto.export.MenuExportVO;
@@ -96,7 +96,7 @@ public class MenuController {
      *
      * @param id 菜单 ID
      * @return 菜单详情
-     * @throws com.iboot.admin.common.exception.BusinessException 菜单不存在时抛出
+     * @throws com.iboot.kernel.web.BusinessException 菜单不存在时抛出
      */
     @Operation(summary = "查询菜单详情")
     @GetMapping(version = "1", value = "/{id}")
@@ -110,7 +110,7 @@ public class MenuController {
      * 获取当前登录用户的菜单树。
      *
      * @return 当前用户可见的菜单树
-     * @throws com.iboot.admin.common.exception.BusinessException 无法获取当前用户信息时抛出
+     * @throws com.iboot.kernel.web.BusinessException 无法获取当前用户信息时抛出
      */
     @Operation(summary = "获取当前用户菜单树")
     @GetMapping(version = "1", value = "/user/tree")
@@ -125,7 +125,7 @@ public class MenuController {
      * 获取当前登录用户的权限列表。
      *
      * @return 权限标识集合；没有权限时返回空集合
-     * @throws com.iboot.admin.common.exception.BusinessException 无法获取当前用户信息时抛出
+     * @throws com.iboot.kernel.web.BusinessException 无法获取当前用户信息时抛出
      */
     @Operation(summary = "获取当前用户权限列表")
     @GetMapping(version = "1", value = "/user/perms")
@@ -303,7 +303,7 @@ public class MenuController {
                 }
             }
         }
-        throw new com.iboot.admin.common.exception.BusinessException("无法获取当前用户信息");
+        throw new com.iboot.kernel.web.BusinessException("无法获取当前用户信息");
     }
 
 }

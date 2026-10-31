@@ -18,7 +18,7 @@ package com.iboot.admin.common.cloudevent;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.web.Result;
 
 import java.io.Serializable;
 

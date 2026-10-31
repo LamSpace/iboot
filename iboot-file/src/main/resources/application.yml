@@ -1,0 +1,123 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /
+  tomcat:
+    threads:
+      virtual:
+        enabled: true
+    max-connections: 10000
+
+spring:
+  application:
+    name: iboot-file
+  # 注册中心与配置中心：走 spring.config.import，optional: 保证配置中心不可用时仍能启动
+  config:
+    import: optional:nacos:iboot-file.yml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+        fail-fast: false
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        file-extension: yml
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+  threads:
+    virtual:
+      enabled: true
+  jmx:
+    enabled: false
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      # 过渡期与管理端共用同一 schema，独立 schema 留到删除旧实现时
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_admin?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:root}
+      initial-size: 2
+      min-idle: 2
+      max-active: 10
+      max-wait: 60000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: true
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      filters: stat,wall,slf4j
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 10s
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+# 鉴权：与既有服务共用密钥与会话，token 由管理端签发
+jwt:
+  secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
+  expiration: 604800
+  session-timeout: 30
+
+iboot:
+  security:
+    whitelist:
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /v3/api-docs/**
+      - /v3/api-docs
+      - /v3/api-docs.yaml
+      - /v3/api-docs/swagger-config
+      - /swagger-resources/**
+      - /webjars/**
+      - /doc.html
+      - /actuator/**
+      - /error
+
+mybatis:
+  type-aliases-package: com.iboot.file.infrastructure.persistence.po
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+    version: OPENAPI_3_1
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    url: /v3/api-docs
+
+management:
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${TEMPO_OTLP:http://localhost:4318/v1/traces}
+  otlp:
+    metrics:
+      export:
+        enabled: false
+  tracing:
+    export:
+      enabled: ${IBOOT_TRACING_ENABLED:true}
+    sampling:
+      probability: ${IBOOT_TRACING_SAMPLE:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

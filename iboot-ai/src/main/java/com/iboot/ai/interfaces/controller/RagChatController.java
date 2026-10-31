@@ -25,7 +25,7 @@ import com.iboot.ai.infrastructure.config.AiProperties;
 import com.iboot.ai.infrastructure.metrics.AiMetrics;
 import com.iboot.ai.infrastructure.security.PermissionScope;
 import com.iboot.ai.infrastructure.security.PermissionScopeClient;
-import com.iboot.ai.infrastructure.security.SecurityUtils;
+import com.iboot.kernel.security.SecurityUtils;
 import com.iboot.ai.interfaces.dto.RagChatRequest;
 import com.iboot.ai.interfaces.dto.UsageDto;
 import jakarta.validation.Valid;

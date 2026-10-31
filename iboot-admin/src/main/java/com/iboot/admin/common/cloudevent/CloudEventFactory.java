@@ -17,7 +17,7 @@
 package com.iboot.admin.common.cloudevent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.web.Result;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.cloudevents.core.data.BytesCloudEventData;

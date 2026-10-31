@@ -16,7 +16,7 @@
 
 package com.iboot.admin.infrastructure.job;
 
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.job.model.Job;
 import org.quartz.*;
 import org.slf4j.Logger;

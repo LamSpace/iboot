@@ -17,7 +17,7 @@
 package com.iboot.admin.interfaces.controller;
 
 import com.iboot.admin.application.service.DashboardApplicationService;
-import com.iboot.admin.common.result.Result;
+import com.iboot.kernel.web.Result;
 import com.iboot.admin.interfaces.dto.response.DashboardSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

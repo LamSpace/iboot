@@ -16,11 +16,8 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.domain.system.model.OperateLog;
+import com.iboot.kernel.logging.OperateLog;
 import com.iboot.admin.domain.system.repository.OperateLogRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,7 +27,8 @@ import java.util.Optional;
 /**
  * 操作日志应用服务
  * <p>
- * 提供操作日志的记录、查询、统计、清理等功能 日志记录支持异步处理，不影响主业务流程
+ * 提供操作日志的查询、统计、清理等功能。记录（写入）已移交共享内核的
+ * {@code com.iboot.kernel.logging.LogAspect}，本服务只负责管理端侧的读取。
  * </p>
  *
  * @author iBoot Team
@@ -39,27 +37,11 @@ import java.util.Optional;
 @Service
 public class OperateLogApplicationService {
 
-    private static final Logger log = LoggerFactory.getLogger(OperateLogApplicationService.class);
-
     private final OperateLogRepository operateLogRepository;
 
     @SuppressWarnings("all")
     public OperateLogApplicationService(final OperateLogRepository operateLogRepository) {
         this.operateLogRepository = operateLogRepository;
-    }
-
-    /**
-     * 记录操作日志（异步执行）
-     * <p>
-     * 将操作日志保存到数据库，包括操作标题、业务类型、操作人员、 请求方法、操作 URL、IP 地址、请求参数、返回结果、状态等信息
-     * </p>
-     *
-     * @param operateLog 操作日志实体
-     */
-    @Async
-    public void recordOperateLog(OperateLog operateLog) {
-        operateLogRepository.save(operateLog);
-        log.debug("记录操作日志：{} - {}", operateLog.getTitle(), operateLog.getOperatorName());
     }
 
     /**

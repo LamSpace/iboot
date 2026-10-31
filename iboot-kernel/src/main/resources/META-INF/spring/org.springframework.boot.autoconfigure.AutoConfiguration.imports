@@ -1,0 +1,4 @@
+com.iboot.kernel.web.KernelWebAutoConfiguration
+com.iboot.kernel.security.KernelSecurityAutoConfiguration
+com.iboot.kernel.security.KernelRedisAutoConfiguration
+com.iboot.kernel.logging.KernelLoggingAutoConfiguration

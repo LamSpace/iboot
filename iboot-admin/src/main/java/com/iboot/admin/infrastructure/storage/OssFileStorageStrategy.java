@@ -21,7 +21,7 @@ import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
-import com.iboot.admin.common.exception.BusinessException;
+import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.system.model.StorageObject;
 import com.iboot.admin.domain.system.service.FileStorageStrategy;
 import jakarta.annotation.PostConstruct;
