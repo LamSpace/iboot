@@ -28,13 +28,6 @@ public class BusinessMetricsService {
     @Autowired
     private MeterRegistry meterRegistry;
 
-    // 用户相关指标
-    private Counter userLoginSuccessCounter;
-
-    private Counter userLoginFailedCounter;
-
-    private AtomicInteger onlineUserCount;
-
     // 业务流程指标
     private Timer businessProcessTimer;
 
@@ -73,20 +66,8 @@ public class BusinessMetricsService {
     @PostConstruct
     public void init() {
         log.info("初始化业务监控指标...");
-        // 用户登录指标 - 使用 Grafana 仪表板期望的指标名称
-        userLoginSuccessCounter = Counter.builder("user_login_success")
-                .description("用户登录成功次数")
-                .tag("application", "iboot-admin")
-                .register(meterRegistry);
-        userLoginFailedCounter = Counter.builder("user_login_failed")
-                .description("用户登录失败次数")
-                .tag("application", "iboot-admin")
-                .register(meterRegistry);
-        onlineUserCount = new AtomicInteger(0);
-        Gauge.builder("user_online_count", onlineUserCount, AtomicInteger::get)
-                .description("在线用户数量")
-                .tag("application", "iboot-admin")
-                .register(meterRegistry);
+        // 登录相关指标（user_login_success / user_login_failed / user_logout / user_online_count）
+        // 已随认证服务迁出，由 iboot-auth 以同一指标名上报，Grafana 查询语句不变。
         // 业务流程指标
         businessProcessTimer = Timer.builder("business_process_duration")
                 .description("业务流程处理耗时")
@@ -138,46 +119,6 @@ public class BusinessMetricsService {
                 .tag("application", "iboot-admin")
                 .register(meterRegistry);
         log.info("业务监控指标初始化完成");
-    }
-
-    /**
-     * 记录用户登录成功
-     * <p>
-     * 同时递增登录成功计数器和在线用户数量。
-     * </p>
-     */
-    public void recordUserLoginSuccess() {
-        userLoginSuccessCounter.increment();
-        onlineUserCount.incrementAndGet();
-    }
-
-    /**
-     * 记录用户登录失败
-     * <p>
-     * 仅递增登录失败计数器，不影响在线用户数量。
-     * </p>
-     */
-    public void recordUserLoginFailed() {
-        userLoginFailedCounter.increment();
-    }
-
-    /**
-     * 记录用户登出
-     * <p>
-     * 递减在线用户数量。
-     * </p>
-     */
-    public void recordUserLogout() {
-        onlineUserCount.decrementAndGet();
-    }
-
-    /**
-     * 获取在线用户数量
-     *
-     * @return 在线用户数量
-     */
-    public int getOnlineUserCount() {
-        return onlineUserCount.get();
     }
 
     /**
@@ -326,7 +267,7 @@ public class BusinessMetricsService {
      * @return 指标汇总字符串
      */
     public String getMetricsSummary() {
-        return String.format("在线用户：%d, 缓存命中率：%.2f%%, 推送连接：%d", getOnlineUserCount(), calculateCacheHitRate(),
+        return String.format("缓存命中率：%.2f%%, 推送连接：%d", calculateCacheHitRate(),
                 getPushConnectionCount());
     }
 

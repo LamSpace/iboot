@@ -414,6 +414,10 @@ Content-Type: application/json
 }
 ```
 
+> 登录、登出与注册由 `iboot-auth`（8083）承载，数据权限范围接口 `GET /api/auth/scope` 仍由
+> `iboot-admin` 提供。客户端统一经网关 8088 访问，路径与拆分前完全相同。
+> 请求体中的 `captcha`、`rememberMe` 当前不被服务端读取，保留字段是为了兼容既有调用方。
+
 **登录响应示例：**
 ```json
 {

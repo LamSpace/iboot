@@ -41,10 +41,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SecurityWhitelistBindingTest {
 
     /**
-     * 迁移前 {@code SecurityWhitelistConfig.WHITE_LIST_PATHS} 的完整内容。
+     * 期望的白名单完整内容。
+     *
+     * <p>登录、登出与注册已迁至 {@code iboot-auth}，管理端不再提供这三个接口，
+     * 对应条目随之移除；{@code GET /api/auth/scope} 需要登录态，从未进入白名单。
      */
-    private static final List<String> LEGACY_WHITELIST = List.of(
-            "/api/auth/login", "/api/auth/logout", "/api/auth/register",
+    private static final List<String> EXPECTED_WHITELIST = List.of(
             "/api/config/public",
             "/api/i18n/**",
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs", "/v3/api-docs.yaml",
@@ -55,14 +57,14 @@ class SecurityWhitelistBindingTest {
             "/sba/**", "/instances/**", "/applications/**");
 
     /**
-     * application.yml 中的白名单必须与迁移前的数组完全一致（顺序无关）。
+     * application.yml 中的白名单必须与期望列表完全一致（顺序无关）。
      *
      * @throws IOException 读取配置失败时抛出
      */
     @Test
-    void whitelistMatchesLegacyArray() throws IOException {
+    void whitelistMatchesExpectedArray() throws IOException {
         assertThat(loadWhitelist("application.yml"))
-                .containsExactlyInAnyOrderElementsOf(LEGACY_WHITELIST);
+                .containsExactlyInAnyOrderElementsOf(EXPECTED_WHITELIST);
     }
 
     private List<String> loadWhitelist(String resource) throws IOException {

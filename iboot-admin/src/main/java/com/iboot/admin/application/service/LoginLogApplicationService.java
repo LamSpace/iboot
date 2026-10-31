@@ -18,9 +18,6 @@ package com.iboot.admin.application.service;
 
 import com.iboot.admin.domain.system.model.LoginLog;
 import com.iboot.admin.domain.system.repository.LoginLogRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,7 +26,8 @@ import java.util.List;
 /**
  * 登录日志应用服务
  * <p>
- * 提供登录日志的记录、查询、统计、清理等功能 日志记录支持异步处理，不影响主业务流程
+ * 提供登录日志的查询、统计与清理功能。日志写入已随认证服务迁至 {@code iboot-auth}，
+ * 两条路径共用同一张 {@code sys_login_log} 表，因此本服务继续为管理端的日志页提供读侧能力。
  * </p>
  *
  * @author iBoot Team
@@ -38,44 +36,11 @@ import java.util.List;
 @Service
 public class LoginLogApplicationService {
 
-    private static final Logger log = LoggerFactory.getLogger(LoginLogApplicationService.class);
-
     private final LoginLogRepository loginLogRepository;
 
     @SuppressWarnings("all")
     public LoginLogApplicationService(final LoginLogRepository loginLogRepository) {
         this.loginLogRepository = loginLogRepository;
-    }
-
-    /**
-     * 记录登录日志（异步执行）
-     * <p>
-     * 创建登录日志记录并保存到数据库，包括用户名、IP 地址、登录地点、 浏览器信息、操作系统、登录状态等信息
-     * </p>
-     *
-     * @param username      用户名
-     * @param ipAddress     登录 IP 地址
-     * @param loginLocation 登录地点
-     * @param browser       浏览器信息
-     * @param os            操作系统信息
-     * @param status        登录状态（1 成功，0 失败）
-     * @param message       登录消息
-     */
-    @Async
-    public void recordLoginLog(String username, String ipAddress, String loginLocation, String browser, String os,
-                               Integer status, String message) {
-        LoginLog loginLog = LoginLog.builder()
-                .username(username)
-                .ipAddress(ipAddress)
-                .loginLocation(loginLocation)
-                .browser(browser)
-                .os(os)
-                .status(status)
-                .message(message)
-                .loginTime(LocalDateTime.now())
-                .build();
-        loginLogRepository.save(loginLog);
-        log.debug("记录登录日志：{} - {}", username, status == 1 ? "成功" : "失败");
     }
 
     /**

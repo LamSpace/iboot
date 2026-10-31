@@ -292,13 +292,35 @@ Boot 4.0.3 这一前提改变了可选生态:
 > | `iboot-gateway` | 已完成 | `add-microservice-foundation` |
 > | `iboot-kernel`(库) | 已完成 | `add-shared-kernel` |
 > | `iboot-file` | 已完成 | `add-file-service` / `remove-file-from-admin` |
-> | `iboot-auth` | 待办 | 排在 file 之后 |
+> | `iboot-auth` | 已抽出（协议不变） | `extract-auth-service` |
 > | `notify` / `job` / `monitor` / `workflow` / `system` | 待办 | 按 2.3 蓝图顺序 |
 >
 > `iboot-file` 的当前状态:`sys_file` 已迁至独立 schema `iboot_file`(本服务 Flyway 管理),
 > 仍以 `iboot_admin.` 限定名只读共享库的 `sys_config`/`sys_dict_data`/`sys_user`,
 > 数据权限经 `/api/auth/scope` 获取;管理端旧实现已删除,管理端 `sys_file` 表再保留一个发布周期。
 > 退出条件见 `doc/23` §11.3。
+>
+> `iboot-auth` 的当前状态:`/api/auth/login`、`/api/auth/logout`、`/api/auth/register` 已由
+> 独立服务承载(8083),令牌格式、会话键、响应结构与拆分前逐字节一致,前端零改动;
+> `GET /api/auth/scope` **不在**认证服务,它返回的是数据权限范围(部门/角色/用户),属系统域,
+> 随 `iboot-system` 迁移。过渡期认证服务直连 `iboot_admin` 读写用户、角色、菜单、参数与登录日志,
+> 不建自有 schema;退出条件见 `doc/23` §11.5。
+>
+> ### ⚠️ 未实现:OAuth2 / OIDC 认证中心(2026-10-31 登记)
+>
+> 本轮只做了**物理拆分**,`iboot-auth` 仍沿用「用户名密码换 JWT + 共享 Redis 会话」的协议。
+> **§2.2 描述的 Spring Authorization Server、授权码流程、SSO 都还没有实现**——不要因为
+> `iboot-auth` 已经存在就认为 §2.2 已完成。下一步变更 `add-authorization-server` 需要交付:
+>
+> 1. 引入 `spring-boot-starter-security-oauth2-authorization-server`(Boot 4.0.3 的 BOM 已托管;
+>    Spring Authorization Server 自 7.0 起并入 Spring Security,不再是独立版本线);
+> 2. 授权码 + PKCE、客户端注册、JWK 密钥集与令牌内省/撤销端点;
+> 3. 资源服务器从「读取 Redis 会话」切换为「验 JWK + 读令牌声明」,这会改变
+>    `iboot-kernel` 的鉴权模型,影响 admin / file / ai / gateway 全部服务;
+> 4. 前端改造:只动登录页与路由守卫(§2.2 已界定范围),44 个业务视图不动;
+> 5. 回归装置升级:现有 `reg_login`、`permission-matrix`、AI 智能体「以用户 JWT 代理 admin」
+>    的调用链都要适配新令牌;
+> 6. 迁移期的双栈兼容:旧令牌与新令牌并存一段时间,否则所有在线用户会被强制下线。
 >
 > 排序依据修订:认证中心不是运行时硬前置——资源服务器只依赖 JWT 密钥与共享会话,真正的前置是
 > 「资源服务器契约」(现已落在内核里);而 auth 与 system 的数据归属是全阶段最难的一刀,不宜作为
@@ -333,6 +355,10 @@ Boot 4.0.3 这一前提改变了可选生态:
 **Dubbo 的处理**:服务间先走声明式 HTTP + Nacos 服务发现(虚拟线程下 `WebClient` 足够,当前瓶颈不是 RPC 吞吐)。等 Dubbo 发布 Boot 4 兼容版本后,再作为增量替换内网热点调用。这是"延后"而非"否决"。
 
 #### 2.2 认证中心与 SSO(原 TODO#4)
+
+> **状态(2026-10-31):服务已抽出,协议未切换。** `extract-auth-service` 只把
+> `/api/auth/login|logout|register` 搬到 `iboot-auth`(8083),仍是「用户名密码换 JWT + 共享 Redis 会话」;
+> 本节描述的 OAuth2 / OIDC 部分**尚未实现**,待办清单见 §4.2 的「未实现」条目。
 
 `iboot-auth` 用 **Spring Authorization Server**(OAuth2 / OIDC)承接现有 `AuthController` + JWT 签发 + Redis 会话;其余服务全部退化为**纯资源服务器**(只校验 token,不再持有登录逻辑)。
 

@@ -4,4 +4,7 @@
 # 并保证网关路由表与本文件保持一致。route-coverage.sh 以此为唯一事实来源。
 /api/ai iboot-ai
 /api/file iboot-file
+/api/auth/login iboot-auth
+/api/auth/logout iboot-auth
+/api/auth/register iboot-auth
 /api    iboot-admin

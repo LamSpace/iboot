@@ -31,7 +31,8 @@ MAVEN_SETTINGS="${MAVEN_SETTINGS:-/home/lam/repo/settings.xml}"
 VERSION="1.0.0"
 
 # 后端服务：名称:端口
-SERVICES=("iboot-admin:8080" "iboot-file:8082" "iboot-ai:8081" "iboot-gateway:8088")
+# 管理端必须排在最前：它负责 Flyway 建表，其余服务启动时要读共享库（sys_config、sys_user 等）。
+SERVICES=("iboot-admin:8080" "iboot-auth:8083" "iboot-file:8082" "iboot-ai:8081" "iboot-gateway:8088")
 
 FORCE_BUILD=0
 WITH_FRONTEND=0
@@ -311,7 +312,7 @@ case "$ACTION" in
         log ''
         show_status
         log ''
-        log '开发环境已就绪：网关 http://localhost:8088，管理端 http://localhost:8080，AI http://localhost:8081'
+        log '开发环境已就绪：网关 http://localhost:8088，管理端 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083'
         log '登录账号 admin / admin123456'
         ;;
 esac
