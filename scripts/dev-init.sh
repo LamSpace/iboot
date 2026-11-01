@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 一键拉起本地开发环境：中间件 → 建库 → 构建（按需）→ 启动后端（管理端先就绪）→ 等待健康。
+# 一键拉起本地开发环境：中间件 → 建库 → 构建（按需）→ 启动后端（系统服务先就绪）→ 等待健康。
 #
 # 用法：
 #   dev-init.sh              拉起中间件与后端三个服务
@@ -31,8 +31,8 @@ MAVEN_SETTINGS="${MAVEN_SETTINGS:-/home/lam/repo/settings.xml}"
 VERSION="1.0.0"
 
 # 后端服务：名称:端口
-# 管理端必须排在最前：它负责 Flyway 建表，其余服务启动时要读共享库（sys_config、sys_user 等）。
-SERVICES=("iboot-monitor:8087" "iboot-admin:8080" "iboot-auth:8083" "iboot-file:8082" "iboot-notify:8084" "iboot-job:8085" "iboot-workflow:8086" "iboot-ai:8081" "iboot-gateway:8088")
+# 系统服务必须排在最前（监控服务除外）：它负责 Flyway 建表，其余服务启动时要读共享库（sys_config、sys_user 等）。
+SERVICES=("iboot-monitor:8087" "iboot-system:8080" "iboot-auth:8083" "iboot-file:8082" "iboot-notify:8084" "iboot-job:8085" "iboot-workflow:8086" "iboot-ai:8081" "iboot-gateway:8088")
 
 FORCE_BUILD=0
 WITH_FRONTEND=0
@@ -239,9 +239,9 @@ start_backend() {
             echo $! > "$pidfile"
             log "  $name 启动中（pid $!，端口 $port）"
         fi
-        # 管理端负责 Flyway 建表，其余服务启动时要读共享库（sys_config 等）。
-        # 全新数据卷下并行启动会抢在建表之前失败，因此等管理端健康后再启动下一个。
-        if [ "$name" = "iboot-admin" ]; then
+        # 系统服务负责 Flyway 建表，其余服务启动时要读共享库（sys_config 等）。
+        # 全新数据卷下并行启动会抢在建表之前失败，因此等系统服务健康后再启动下一个。
+        if [ "$name" = "iboot-system" ]; then
             wait_http "$name" "http://localhost:$port/actuator/health" 240 \
                 || fail "$name 未就绪：其余服务依赖它建出的共享表，无法继续启动"
         fi
@@ -332,7 +332,7 @@ case "$ACTION" in
         log ''
         show_status
         log ''
-        log '开发环境已就绪：网关 http://localhost:8088，管理端 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083'
+        log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083'
         log '登录账号 admin / admin123456'
         ;;
 esac

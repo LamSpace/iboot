@@ -2,11 +2,11 @@ version: '3.8'
 
 services:
   # # ==================== 应用服务 ====================
-  # iboot-admin:
+  # iboot-system:
   #   build:
-  #     context: ../iboot-admin
+  #     context: ../iboot-system
   #     dockerfile: Dockerfile
-  #   container_name: iboot-admin
+  #   container_name: iboot-system
   #   ports:
   #     - "8080:8080"
   #   environment:
@@ -70,7 +70,7 @@ services:
   #   networks:
   #     - iboot-network
   #   depends_on:
-  #     - iboot-admin
+  #     - iboot-system
 
   mysql:
     image: mysql:8.0.45
@@ -177,7 +177,7 @@ services:
     networks:
       - iboot-network
     # depends_on:
-    #   iboot-admin:
+    #   iboot-system:
     #     condition: service_healthy
 
   grafana:
@@ -461,7 +461,7 @@ services:
   #
   # 端口说明（Nacos 3.x 起控制台与主端口分离，且控制台路径不再带 /nacos 前缀）：
   #   8848 HTTP API / 9848 客户端 gRPC / 9849 集群 gRPC / 容器内 8080 为控制台
-  # 控制台映射到宿主机 8849，避免与 iboot-admin 的 8080 冲突。
+  # 控制台映射到宿主机 8849，避免与 iboot-system 的 8080 冲突。
   nacos:
     image: nacos/nacos-server:v3.1.1
     container_name: iboot-nacos

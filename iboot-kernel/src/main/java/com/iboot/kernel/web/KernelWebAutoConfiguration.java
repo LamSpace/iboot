@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Bean;
 /**
  * 共享内核的 Web 层自动配置。
  *
- * <p>宿主服务（包名通常是 {@code com.iboot.admin} 或 {@code com.iboot.file}）的组件扫描
+ * <p>宿主服务（包名通常是 {@code com.iboot.system} 或 {@code com.iboot.file}）的组件扫描
  * 覆盖不到 {@code com.iboot.kernel}，因此内核组件必须经此自动配置注册；漏注册的后果是
  * 过滤器与异常处理器静默失效，而不是启动失败。
  *

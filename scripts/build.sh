@@ -99,7 +99,7 @@ build_frontend() {
 build_backend() {
     print_message "info" "开始构建后端应用..."
     
-    cd ./iboot-admin
+    cd ./iboot-system
     
     # 检查 pom.xml 是否存在
     if [[ ! -f "pom.xml" ]]; then

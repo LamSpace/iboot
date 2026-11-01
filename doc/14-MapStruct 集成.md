@@ -171,7 +171,7 @@ target/generated-sources/annotations/
 ### 项目结构
 
 ```
-iboot-admin/src/main/java/com/iboot/admin/application/mapper/
+iboot-system/src/main/java/com/iboot/admin/application/mapper/
 ├── system/
 │   ├── UserMapper.java      # 用户映射
 │   ├── DeptMapper.java      # 部门映射（支持树形）
@@ -600,7 +600,7 @@ UserResponse toResponse(User user);
 
 **答案**：
 ```
-iboot-admin/target/generated-sources/annotations/
+iboot-system/target/generated-sources/annotations/
 └── com/iboot/admin/application/mapper/
     └── system/
         └── UserMapperImpl.java

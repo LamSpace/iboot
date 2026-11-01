@@ -157,7 +157,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 - 运行日志管理
 
 ### 📈 监控运维
-- 同上，日志、在线会话与服务/中间件资源检查由 `iboot-monitor` 提供；Prometheus/Grafana/Kibana 等外部控制台仍为管理端页面内的链接
+- 同上，日志、在线会话与服务/中间件资源检查由 `iboot-monitor` 提供；Prometheus/Grafana/Kibana 等外部控制台仍为系统服务页面内的链接
 - 在线用户监控
 - 服务监控检查
 - Redis缓存监控
@@ -190,11 +190,11 @@ iboot/
 ├── docker/                # Docker 配置目录
 │   └── docker-compose.yml       # Docker Compose 配置
 ├── docker/init.sql        # 数据库初始化脚本
-├── iboot-admin/          # 后端项目
+├── iboot-system/         # 系统域服务（8080）：用户、角色、菜单、组织、字典、参数与数据权限
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/
-│   │   │   │   └── com/iboot/admin/
+│   │   │   │   └── com/iboot/system/
 │   │   │   │       ├── application/    # 应用层
 │   │   │   │       ├── domain/         # 领域层
 │   │   │   │       ├── infrastructure/ # 基础设施层
@@ -265,7 +265,7 @@ iboot/
 
 1. 进入后端目录
 ```bash
-cd iboot-admin
+cd iboot-system
 ```
 
 2. 配置数据库连接（application.yml）
@@ -399,24 +399,24 @@ iboot/
 ├── docker/                # Docker 配置目录
 │   └── docker-compose.yml       # Docker Compose 配置
 ├── docker/init.sql        # 数据库初始化脚本
-├── iboot-admin/          # 后端项目
+├── iboot-system/         # 系统域服务（8080）
 ├── iboot-portal/         # 前端项目
 ├── LICENSE               # 许可证文件
 ├── .gitignore           # Git 忽略文件配置
 └── README.md            # 项目说明文档
 ```
 
-#### 后端部署 (iboot-admin)
+#### 后端部署 (iboot-system)
 
 构建后端镜像：
 ```bash
-cd iboot-admin
-docker build -t iboot-admin .
+cd iboot-system
+docker build -t iboot-system .
 ```
 
 运行后端容器：
 ```bash
-docker run -d -p 8080:8080 --name iboot-admin iboot-admin
+docker run -d -p 8080:8080 --name iboot-system iboot-system
 ```
 
 #### 使用 Docker Compose 一体化部署

@@ -145,7 +145,7 @@ Jackson 序列化为 JSON
 ### 项目结构
 
 ```
-iboot-admin/src/main/java/com/iboot/admin/
+iboot-system/src/main/java/com/iboot/admin/
 ├── common/
 │   ├── cloudevent/
 │   │   ├── CloudEventTypes.java          # 事件类型常量定义

@@ -31,4 +31,4 @@
 /api/job iboot-job
 # 审批工作流：请假审批全部接口
 /api/approval iboot-workflow
-/api    iboot-admin
+/api    iboot-system

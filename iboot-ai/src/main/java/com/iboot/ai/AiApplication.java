@@ -23,7 +23,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /**
  * iBoot AI 服务入口。
  *
- * <p>独立于 {@code iboot-admin} 运行，承载对话、会话记忆与用量观测。
+ * <p>独立于 {@code iboot-system} 运行，承载对话、会话记忆与用量观测。
  *
  * @author iBoot Team
  * @since 1.0.0

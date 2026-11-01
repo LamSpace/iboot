@@ -19,10 +19,10 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'iboot-admin'
+  - job_name: 'iboot-system'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      # 注意：iboot-admin 应用在 Docker 外部运行，使用 host.docker.internal 访问宿主机
+      # 注意：iboot-system 应用在 Docker 外部运行，使用 host.docker.internal 访问宿主机
       - targets: ['host.docker.internal:8080']
     relabel_configs:
       - source_labels: [__address__]

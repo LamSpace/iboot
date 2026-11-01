@@ -51,7 +51,7 @@ Flowable 8.0.0 可以在 Spring Boot 4.0.3 + JDK 25 + 现有技术栈上运行�
 | 项 | 发现 | 处理 |
 |---|---|---|
 | 依赖数量 | 引入 46 个 `org.flowable` 构件 | 可接受；只使用 `starter-process`，未引入 App/CMMN/DMN |
-| 连接池 | `spring-boot-starter-jdbc` 会带回 HikariCP | 已在 `iboot-admin/pom.xml` 排除，Druid 保持唯一 |
+| 连接池 | `spring-boot-starter-jdbc` 会带回 HikariCP | 已在 `iboot-system/pom.xml` 排除，Druid 保持唯一 |
 | Jackson 2/3 | Jackson 2 仅来自既有 `io.minio:minio:8.5.7` 与 springdoc；Flowable 未引入 Jackson 2 | 无需处理；变量映射实测为 `Jackson3VariableJsonMapper` |
 | `taskExecutor` 重名 | 项目 `AsyncConfig` 返回 `Executor`，Flowable 的 `@ConditionalOnMissingBean` 按 `AsyncTaskExecutor` 判断，导致同名注册冲突，应用启动失败 | 已将返回类型改为 `AsyncTaskExecutor`（`TaskExecutorAdapter` 包装虚拟线程执行器），行为不变 |
 | MyBatis 拦截器 | Flowable 自建 `SqlSessionFactory`，未挂载 `DataScopeInterceptor`；且该拦截器只改写带 `@DataScope` 的查询 | 无需处理；已在测试中断言 Flowable 工厂不含该拦截器 |
@@ -111,15 +111,15 @@ Flowable 8.0.0 可以在 Spring Boot 4.0.3 + JDK 25 + 现有技术栈上运行�
 
 ```bash
 # 依赖解析与冲突检查
-mvn -s /home/lam/repo/settings.xml -pl iboot-admin dependency:tree
+mvn -s /home/lam/repo/settings.xml -pl iboot-system dependency:tree
 
 # Level A：最小上下文 + 流程双路径 + 事务回滚
 TESTCONTAINERS_RYUK_CONTAINER_IMAGE=testcontainers/ryuk:0.12.0 \
-  mvn -s /home/lam/repo/settings.xml -pl iboot-admin test -Dtest='Flowable*Test'
+  mvn -s /home/lam/repo/settings.xml -pl iboot-system test -Dtest='Flowable*Test'
 
 # Level B：完整应用启动
 docker compose -f docker/docker-compose.yml up -d mysql redis minio
-java -jar iboot-admin/target/iboot-admin-1.0.0.jar \
+java -jar iboot-system/target/iboot-system-1.0.0.jar \
   --flowable.async-executor-activate=false --flowable.idm.enabled=false
 
 # 全量回归
@@ -129,7 +129,7 @@ TESTCONTAINERS_RYUK_CONTAINER_IMAGE=testcontainers/ryuk:0.12.0 \
 
 ## 11. 证据位置
 
-- 测试：`iboot-admin/src/test/java/com/iboot/admin/infrastructure/workflow/FlowableWorkflowSpikeTest.java`
-- 流程定义：`iboot-admin/src/main/resources/processes/leave.bpmn20.xml`
-- 依赖声明：`pom.xml`、`iboot-admin/pom.xml`
+- 测试：`iboot-system/src/test/java/com/iboot/admin/infrastructure/workflow/FlowableWorkflowSpikeTest.java`
+- 流程定义：`iboot-system/src/main/resources/processes/leave.bpmn20.xml`
+- 依赖声明：`pom.xml`、`iboot-system/pom.xml`
 - 启动日志：`/tmp/iboot-flowable.log`（冷启动）、`/tmp/iboot-flowable2.log`（热启动）

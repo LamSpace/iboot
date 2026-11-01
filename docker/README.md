@@ -28,7 +28,7 @@ cd docker
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | iboot-portal | 80 | 前端应用 |
-| iboot-admin | 8080 | 后端 API |
+| iboot-system | 8080 | 后端 API |
 | mysql | 3306 | MySQL 数据库 |
 | redis | 6379 | Redis 缓存 |
 | minio | 9000/9001 | MinIO 对象存储 |
@@ -69,7 +69,7 @@ docker-compose ps
 docker-compose logs -f
 
 # 查看特定服务日志
-docker-compose logs -f iboot-admin
+docker-compose logs -f iboot-system
 docker-compose logs -f iboot-portal
 
 # 停止服务
@@ -79,8 +79,8 @@ docker-compose down
 docker-compose restart
 
 # 重新构建服务
-docker-compose build --no-cache iboot-admin
-docker-compose up -d --force-recreate iboot-admin
+docker-compose build --no-cache iboot-system
+docker-compose up -d --force-recreate iboot-system
 ```
 
 ## 配置说明
@@ -111,7 +111,7 @@ docker-compose up -d --force-recreate iboot-admin
 
 ```bash
 # 查看后端日志
-docker-compose logs iboot-admin
+docker-compose logs iboot-system
 
 # 检查数据库连接
 docker-compose exec mysql mysql -uroot -proot -e "SHOW DATABASES;"
@@ -127,7 +127,7 @@ docker-compose exec redis redis-cli ping
 docker-compose exec iboot-portal cat /etc/nginx/nginx.conf
 
 # 测试后端连通性
-docker-compose exec iboot-portal wget -q -O - http://iboot-admin:8080/actuator/health
+docker-compose exec iboot-portal wget -q -O - http://iboot-system:8080/actuator/health
 ```
 
 ### SSE 连接断开
@@ -148,7 +148,7 @@ proxy_read_timeout 3600s;
 │                 iboot-network                       │
 │                                                     │
 │  ┌──────────────┐    ┌──────────────┐              │
-│  │ iboot-portal │───▶│ iboot-admin  │              │
+│  │ iboot-portal │───▶│ iboot-system  │              │
 │  │     :80      │    │     :8080    │              │
 │  └──────────────┘    └───────┬──────┘              │
 │                              │                      │

@@ -60,13 +60,13 @@ public class PermissionScopeClient {
      * 创建客户端。
      *
      * @param builder REST 客户端构建器
-     * @param scopeUrl 管理端 scope 接口地址
+     * @param scopeUrl 系统服务的 scope 接口地址
      * @param cacheSeconds 缓存秒数
      */
     public PermissionScopeClient(RestClient.Builder builder,
-                                 @Qualifier("loadBalancedRestClientBuilder") @Value("${iboot.job.permission.scope-url:http://iboot-admin/api/auth/scope}")
+                                 @Qualifier("loadBalancedRestClientBuilder") @Value("${iboot.monitor.permission.scope-url:http://iboot-system/api/auth/scope}")
                                  String scopeUrl,
-                                 @Value("${iboot.job.permission.cache-seconds:60}") long cacheSeconds) {
+                                 @Value("${iboot.monitor.permission.cache-seconds:60}") long cacheSeconds) {
         this.restClient = builder.build();
         this.scopeUrl = scopeUrl;
         this.cache = Caffeine.newBuilder()

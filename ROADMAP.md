@@ -31,7 +31,7 @@
 
 ### 1.1 架构形态
 
-技术栈练习项目,Maven 多模块。根 `pom.xml` 目前聚合四个模块:`iboot-kernel`(共享内核库,不独立部署)、`iboot-admin`(业务主体)、`iboot-ai`(独立 AI 服务)、`iboot-gateway`(统一入口)。`iboot-admin` 内部遵循 DDD 四层:
+技术栈练习项目,Maven 多模块。阶段 2 拆分完成后,根 `pom.xml` 聚合十个模块:`iboot-kernel`(共享内核库,不独立部署)、`iboot-gateway`(统一入口)、`iboot-system`(系统域,8080)、`iboot-ai`(8081)、`iboot-file`(8082)、`iboot-auth`(8083)、`iboot-notify`(8084)、`iboot-job`(8085)、`iboot-workflow`(8086)、`iboot-monitor`(8087)。原 `iboot-admin` 已改名为 `iboot-system`,其内部仍遵循 DDD 四层:
 
 ```
 interfaces  → controller / dto / advisor / config
@@ -297,7 +297,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 > | `iboot-job` | 已完成（独立 schema，旧实现已删除） | `add-job-service` / `remove-job-from-admin` |
 > | `iboot-workflow` | 已完成（独立 schema，旧实现已删除） | `add-workflow-service` / `remove-workflow-from-admin` |
 > | `iboot-monitor` | 已完成（独立 schema，旧实现已删除） | `add-monitor-service` / `remove-monitor-from-admin` |
-> | `system` | 待办 | 按 2.3 蓝图顺序 |
+> | `iboot-system` | 已完成（模块改名，schema 未迁） | `rename-admin-to-system` |
 >
 > `iboot-file` 的当前状态:`sys_file` 已迁至独立 schema `iboot_file`(本服务 Flyway 管理),
 > 仍以 `iboot_admin.` 限定名只读共享库的 `sys_config`/`sys_dict_data`/`sys_user`,
@@ -395,6 +395,34 @@ Boot 4.0.3 这一前提改变了可选生态:
 >
 > 操作见 `doc/23` §11.10。
 
+> ### 系统域改名（2026-11-01）
+>
+> 变更 `rename-admin-to-system` 已交付：`iboot-admin` 整体改名为 `iboot-system`（8080），包根
+> `com.iboot.system`，注册名与网关兜底路由 id 同步改为 `system`。57 条路径、方法、响应结构与权限语义
+> 逐条不变，前端零改动。
+>
+> **这一次不是「再拆一个服务」**：前五次拆分后，`iboot-admin` 里剩下的内容全部属于系统域，
+> 没有可以继续叫 admin 的另一半。因此用「模块整体改名」替代「先 add 再 remove」——
+> 中间态是两个模块跑同一批路径，既不是回退点，也没有可切的流量。
+>
+> **两个刻意没有一起做的事**：
+>
+> | 项 | 现状 | 理由 |
+> |---|---|---|
+> | schema 改名 `iboot_admin` → `iboot_system` | 保留历史名称 | 六个服务直连该库，改名需要停机窗口整库迁移，且 `flyway_schema_history` 必须随数据搬——漏搬会让新服务在空库上重跑 `V1`，而它第一条就是 `DROP TABLE IF EXISTS sys_user`。另起变更 |
+> | 跨 schema 只读收敛为内部 API | 改判为长期接受 | 四个服务的 `DataScopeSqlBuilder` 把 `sys_user` 拼进 SQL，改成远程调用等于重写数据权限的合成方式；且会让可用性倒退（系统服务挂掉时监控日志页仍可用的能力会消失）。改为把消费面写成显式契约（`doc/23` §11.12） |
+>
+> 验收过程中修正的既有缺陷：`iboot-monitor` 的 `PermissionScopeClient` 绑定了 `iboot.job.permission.*`，
+> 与其自身 `iboot.monitor.permission.*` 配置键不匹配，导致该服务的 scope 地址与缓存时间从未被配置覆盖。
+>
+> 架构带来的一个负面后果需要记住：**系统服务是唯一「停掉会连带」的拆分**。它宕机时五个服务的
+> 数据权限查询在 60 秒缓存过期后失败关闭，通知与审批的用户读取不可用；但认证登录仍然可用
+> （认证服务直连数据库，不经系统服务），已登录用户访问不带数据范围的接口也不受影响
+> （JWT 自包含 + 共享 Redis 会话）。因此阶段 2 的故障隔离判据对它改为「失败有界」，
+> 而不是「其它域仍可用」。
+>
+> 操作见 `doc/23` §11.11。
+
 
 #### 2.0 前置门禁(Spike 不过则不开拆)
 
@@ -446,6 +474,8 @@ Boot 4.0.3 这一前提改变了可选生态:
 | `iboot-ai` | 阶段 1 产出 | 只做注册 + 路由,零改造 |
 
 **拆分顺序**:依赖少的先拆 → `file` → `notify` → `job` → `workflow` → `monitor` → `system`。
+`system` 的收尾方式与其他五个不同:它是被所有服务依赖的根,剩余内容全部属于系统域,
+因此以「模块整体改名」而不是「先 add 再 remove」完成,详见 §4.2 的监控与日志服务之后的条目。
 
 `workflow` 已前移到 `monitor` 之前：它独占 33 张表、没有外部写入，只依赖 `sys_user` 一次只读与 notify
 的内部端点；`monitor` 是读侧扇入（登录日志、操作日志、在线会话、系统域聚合），先拆会把多条跨服务
