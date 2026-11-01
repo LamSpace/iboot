@@ -42,7 +42,7 @@
         <module>iboot-workflow</module>
         <module>iboot-monitor</module>
         <module>iboot-auth</module>
-        <module>iboot-admin</module>
+        <module>iboot-system</module>
         <module>iboot-ai</module>
         <module>iboot-gateway</module>
     </modules>

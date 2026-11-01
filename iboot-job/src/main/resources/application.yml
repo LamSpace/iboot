@@ -102,7 +102,7 @@ iboot:
   # 任务列表的数据权限范围：由管理端只读提供，失败关闭
   job:
     permission:
-      scope-url: ${IBOOT_JOB_SCOPE_URL:http://iboot-admin/api/auth/scope}
+      scope-url: ${IBOOT_JOB_SCOPE_URL:http://iboot-system/api/auth/scope}
       cache-seconds: ${IBOOT_JOB_SCOPE_CACHE_SECONDS:60}
   # 数据备份与恢复
   backup:

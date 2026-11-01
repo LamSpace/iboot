@@ -1024,7 +1024,7 @@ if (success) {
 ```yaml
 # prometheus.yml
 scrape_configs:
-  - job_name: 'iboot-admin'
+  - job_name: 'iboot-system'
     static_configs:
       - targets: ['host.docker.internal:8080']
     metrics_path: '/actuator/prometheus'
@@ -1282,4 +1282,4 @@ es.addEventListener('message.new', (e) => console.log('新消息:', JSON.parse(e
 
 | 文件路径 | 配置项 |
 |---------|--------|
-| `iboot-admin/src/main/resources/application.yml` | `iboot.push.*` 配置 |
+| `iboot-system/src/main/resources/application.yml` | `iboot.push.*` 配置 |

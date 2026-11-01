@@ -2,7 +2,7 @@
 # 导出服务的 OpenAPI 快照并归一化为基线文件。
 #
 # 用法：api-snapshot.sh <base-url> <service> [输出文件]
-# 示例：api-snapshot.sh http://localhost:8080 admin
+# 示例：api-snapshot.sh http://localhost:8080 system
 #
 # 未指定输出文件时写入 golden/<service>.json。
 

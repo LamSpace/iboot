@@ -41,7 +41,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * 无状态过滤链。宿主只加依赖即可获得与既有服务一致的鉴权语义。
  *
  * <p>所有 Bean 都带 {@link ConditionalOnMissingBean}，定义了自有过滤链的服务（如
- * {@code iboot-admin} 与 {@code iboot-ai}）保持原有行为，不被覆盖。
+ * {@code iboot-system} 与 {@code iboot-ai}）保持原有行为，不被覆盖。
  *
  * <p>过滤链与过滤器只在 Servlet Web 应用中生效：非 Web 的测试切片（例如只加载工作流
  * 相关 Bean 的上下文）不应因为启用安全链而启动失败。会话所用的

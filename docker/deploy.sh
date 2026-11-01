@@ -58,21 +58,21 @@ create_directories() {
     mkdir -p ../observability/alertmanager
     mkdir -p ../observability/elk/elasticsearch
     mkdir -p ../observability/elk/logstash
-    mkdir -p ../iboot-admin/logs
+    mkdir -p ../iboot-system/logs
 }
 
 # 构建后端
-build_admin() {
+build_system() {
     log_info "检查后端 JAR 文件..."
-    if [ ! -f "../iboot-admin/target/iboot-admin-1.0.0.jar" ]; then
+    if [ ! -f "../iboot-system/target/iboot-system-1.0.0.jar" ]; then
         log_warn "JAR 文件不存在，开始构建后端项目..."
-        cd ../iboot-admin
+        cd ../iboot-system
 
         if command -v mvn &> /dev/null; then
             mvn clean package -DskipTests
         else
             log_error "Maven 未安装，无法构建后端"
-            log_info "请手动运行：cd iboot-admin && mvn clean package -DskipTests"
+            log_info "请手动运行：cd iboot-system && mvn clean package -DskipTests"
             exit 1
         fi
         cd ../docker
@@ -129,14 +129,14 @@ main() {
     create_directories
 
     case "${1:-all}" in
-        build-admin)
-            build_admin
+        build-system)
+            build_system
             ;;
         build-portal)
             build_portal
             ;;
         build)
-            build_admin
+            build_system
             build_portal
             ;;
         start)
@@ -158,7 +158,7 @@ main() {
             docker-compose logs -f "${2:-}"
             ;;
         all)
-            build_admin
+            build_system
             build_portal
             start_services
             wait_for_services
@@ -187,11 +187,11 @@ main() {
             echo ""
             ;;
         *)
-            echo "用法：$0 {all|build-admin|build-portal|build|start|stop|restart|status|logs}"
+            echo "用法：$0 {all|build-system|build-portal|build|start|stop|restart|status|logs}"
             echo ""
             echo "命令说明:"
             echo "  all         - 构建并启动所有服务（默认）"
-            echo "  build-admin - 仅构建后端"
+            echo "  build-system - 仅构建后端"
             echo "  build-portal- 仅构建前端"
             echo "  build       - 构建前后端"
             echo "  start       - 启动服务"

@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class GatewayRoutingTest {
 
-    private static HttpServer adminStub;
+    private static HttpServer systemStub;
 
     private static HttpServer aiStub;
 
@@ -66,15 +66,15 @@ class GatewayRoutingTest {
 
     @BeforeAll
     static void startStubs() throws IOException {
-        adminStub = startStub("admin");
+        systemStub = startStub("system");
         aiStub = startStub("ai");
         notifyStub = startStub("notify");
     }
 
     @AfterAll
     static void stopStubs() {
-        if (adminStub != null) {
-            adminStub.stop(0);
+        if (systemStub != null) {
+            systemStub.stop(0);
         }
         if (aiStub != null) {
             aiStub.stop(0);
@@ -86,21 +86,21 @@ class GatewayRoutingTest {
 
     @DynamicPropertySource
     static void routes(DynamicPropertyRegistry registry) {
-        registry.add("IBOOT_ADMIN_URI", () -> "http://127.0.0.1:" + adminStub.getAddress().getPort());
+        registry.add("IBOOT_SYSTEM_URI", () -> "http://127.0.0.1:" + systemStub.getAddress().getPort());
         registry.add("IBOOT_AI_URI", () -> "http://127.0.0.1:" + aiStub.getAddress().getPort());
         registry.add("IBOOT_NOTIFY_URI", () -> "http://127.0.0.1:" + notifyStub.getAddress().getPort());
     }
 
     /**
-     * 兜底前缀把普通接口转发到管理端。
+     * 兜底前缀把普通接口转发到系统服务。
      */
     @Test
-    void routesToAdminByDefault() {
+    void routesToSystemByDefault() {
         webTestClient().get().uri("/api/user/list")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
-                .value(body -> assertThat(body).isEqualTo("admin|/api/user/list"));
+                .value(body -> assertThat(body).isEqualTo("system|/api/user/list"));
     }
 
     /**

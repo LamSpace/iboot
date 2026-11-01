@@ -26,7 +26,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 /**
  * Redis 序列化配置。
  *
- * <p>必须与 {@code iboot-admin} 的序列化方式保持一致，否则无法读取共享的登录会话。
+ * <p>必须与 {@code iboot-system} 的序列化方式保持一致，否则无法读取共享的登录会话。
  * key 使用字符串，value 使用带类型信息的 Jackson JSON。
  *
  * @author iBoot Team

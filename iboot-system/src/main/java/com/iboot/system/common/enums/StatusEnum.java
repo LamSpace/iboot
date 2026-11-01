@@ -1,0 +1,96 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package com.iboot.system.common.enums;
+
+/**
+ * 通用状态枚举。
+ *
+ * <p>用于启用/停用类状态字段：{@code 1} 表示启用，{@code 0} 表示停用。
+ * 各业务模块复用该编码约定，展示文案可由模块自行定义。
+ *
+ * @author iBoot Team
+ * @since 1.0.0
+ */
+public enum StatusEnum {
+
+    /**
+     * 启用状态，编码为 {@code 1}。
+     */
+    ENABLE(1, "正常"),
+    /**
+     * 停用状态，编码为 {@code 0}。
+     */
+    DISABLE(0, "停用");
+
+    /**
+     * 状态码
+     */
+    private final Integer code;
+
+    /**
+     * 状态描述
+     */
+    private final String description;
+
+    /**
+     * Creates a new {@code StatusEnum} instance.
+     *
+     * @param code        状态码
+     * @param description 状态描述
+     */
+    @SuppressWarnings("all")
+    private StatusEnum(final Integer code, final String description) {
+        this.code = code;
+        this.description = description;
+    }
+
+    /**
+     * 根据状态码获取枚举
+     *
+     * @param code 状态码
+     *
+     * @return 状态枚举
+     */
+    public static StatusEnum getByCode(Integer code) {
+        if (code == null) {
+            return null;
+        }
+        for (StatusEnum statusEnum : StatusEnum.values()) {
+            if (statusEnum.getCode().equals(code)) {
+                return statusEnum;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 状态码
+     */
+    @SuppressWarnings("all")
+    public Integer getCode() {
+        return this.code;
+    }
+
+    /**
+     * 状态描述
+     */
+    @SuppressWarnings("all")
+    public String getDescription() {
+        return this.description;
+    }
+
+}

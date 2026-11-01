@@ -39,7 +39,7 @@ rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
 printf '===== 1. 接口契约快照 =====\n'
-"$HERE/api-snapshot.sh" "$REG_BASE" admin "$TMP_DIR/admin.json"
+"$HERE/api-snapshot.sh" "$REG_BASE" system "$TMP_DIR/system.json"
 "$HERE/api-snapshot.sh" "$REG_AI_BASE" ai "$TMP_DIR/ai.json"
 "$HERE/api-snapshot.sh" "$REG_FILE_BASE" file "$TMP_DIR/file.json"
 "$HERE/api-snapshot.sh" "$REG_AUTH_BASE" auth "$TMP_DIR/auth.json"
@@ -50,7 +50,7 @@ printf '===== 1. 接口契约快照 =====\n'
 
 if [ "$REFRESH" -eq 1 ]; then
     mkdir -p "$GOLDEN"
-    cp "$TMP_DIR/admin.json" "$GOLDEN/admin.json"
+    cp "$TMP_DIR/system.json" "$GOLDEN/system.json"
     cp "$TMP_DIR/ai.json" "$GOLDEN/ai.json"
     cp "$TMP_DIR/file.json" "$GOLDEN/file.json"
     cp "$TMP_DIR/auth.json" "$GOLDEN/auth.json"
@@ -61,7 +61,7 @@ if [ "$REFRESH" -eq 1 ]; then
     printf '基线已刷新：%s\n' "$GOLDEN"
 else
     [ -d "$GOLDEN" ] || fail "缺少 golden 基线，请先执行 regress.sh --refresh"
-    for svc in admin ai file auth notify job workflow monitor; do
+    for svc in system ai file auth notify job workflow monitor; do
         if [ ! -f "$GOLDEN/$svc.json" ]; then
             fail "缺少 $svc 的基线，确认差异合理后执行 regress.sh --refresh"
             continue

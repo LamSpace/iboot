@@ -59,7 +59,7 @@ class GatewayFailureTest {
 
     @DynamicPropertySource
     static void routes(DynamicPropertyRegistry registry) {
-        registry.add("IBOOT_ADMIN_URI", () -> "http://127.0.0.1:" + DEAD_PORT);
+        registry.add("IBOOT_SYSTEM_URI", () -> "http://127.0.0.1:" + DEAD_PORT);
         registry.add("IBOOT_AI_URI", () -> "http://127.0.0.1:" + aiStub.getAddress().getPort());
     }
 

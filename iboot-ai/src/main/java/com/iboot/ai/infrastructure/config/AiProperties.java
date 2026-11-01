@@ -188,7 +188,7 @@ public class AiProperties {
          * 下游管理端基地址。默认取注册中心里的服务名，由负载均衡解析出实例；
          * 本地排障时可改为固定的主机端口。
          */
-        private String adminBaseUrl = "http://iboot-admin";
+        private String adminBaseUrl = "http://iboot-system";
 
         /**
          * 下游调度服务基地址，备份相关工具经此地址代理调用。

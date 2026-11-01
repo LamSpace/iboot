@@ -56,7 +56,7 @@ spring:
               predicates:
                 - Path=/api/monitor/backup/**,/api/job/**
 
-            # 认证服务：旧登录接口 + OAuth2/OIDC 标准端点与登录页；/api/auth/scope 仍由管理端承载
+            # 认证服务：旧登录接口 + OAuth2/OIDC 标准端点与登录页；/api/auth/scope 由系统服务承载
             - id: auth
               uri: lb://iboot-auth
               order: 30
@@ -66,8 +66,8 @@ spring:
                 # 认证服务按请求 Host 拼登录页地址；保留原始 Host 才不会把内部端口暴露给浏览器
                 - PreserveHostHeader
 
-            - id: admin
-              uri: lb://iboot-admin
+            - id: system
+              uri: lb://iboot-system
               order: 100
               predicates:
                 - Path=/api/**

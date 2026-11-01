@@ -92,10 +92,10 @@ iboot:
       - /doc.html
       - /actuator/**
       - /error
-  # 数据权限范围：按注册中心服务名调用管理端只读接口，失败关闭
+  # 数据权限范围：按注册中心服务名调用系统服务只读接口，失败关闭
   monitor:
     permission:
-      scope-url: ${IBOOT_PERMISSION_SCOPE_URL:http://iboot-admin/api/auth/scope}
+      scope-url: ${IBOOT_PERMISSION_SCOPE_URL:http://iboot-system/api/auth/scope}
       cache-seconds: 60
 
 mybatis:

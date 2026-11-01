@@ -114,7 +114,7 @@ iboot/
 │   ├── 20-多渠道通知操作指南.md # 多渠道通知操作指南
 │   ├── 21-数据备份与恢复操作指南.md # 数据备份与恢复操作指南
 │   └── 22-AI 工作台操作指南.md # AI 对话、知识库 RAG 与排障
-├── iboot-admin/             # 后端项目
+├── iboot-system/             # 后端项目
 ├── iboot-ai/                # AI 服务（8081，对话 + 知识库 RAG）
 ├── iboot-portal/            # 前端项目
 ├── docker/                  # Docker 配置
@@ -192,7 +192,7 @@ git clone <repository-url>
 cd iboot
 
 # 2. 启动后端
-cd iboot-admin
+cd iboot-system
 mvn spring-boot:run
 
 # 3. 启动前端（新终端）

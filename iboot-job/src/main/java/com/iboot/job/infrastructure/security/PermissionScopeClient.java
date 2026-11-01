@@ -64,7 +64,7 @@ public class PermissionScopeClient {
      * @param cacheSeconds 缓存秒数
      */
     public PermissionScopeClient(RestClient.Builder builder,
-                                 @Qualifier("loadBalancedRestClientBuilder") @Value("${iboot.job.permission.scope-url:http://iboot-admin/api/auth/scope}")
+                                 @Qualifier("loadBalancedRestClientBuilder") @Value("${iboot.job.permission.scope-url:http://iboot-system/api/auth/scope}")
                                  String scopeUrl,
                                  @Value("${iboot.job.permission.cache-seconds:60}") long cacheSeconds) {
         this.restClient = builder.build();

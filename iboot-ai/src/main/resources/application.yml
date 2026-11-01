@@ -87,7 +87,7 @@ spring:
           dimensions: 1024
 
 jwt:
-  # 与 iboot-admin 共享同一密钥；生产环境必须通过环境变量注入
+  # 与 iboot-system 共享同一密钥；生产环境必须通过环境变量注入
   secret: ${JWT_SECRET:iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits}
   session-timeout: 30
   # 双栈窗口已关闭：只接受认证服务签发的自包含令牌，旧对称签名令牌返回业务码 40101
@@ -157,7 +157,7 @@ iboot:
       # 默认关闭；开启后 /api/ai/agent/** 才可用
       enabled: ${IBOOT_AI_AGENT_ENABLED:false}
       # 按注册中心的服务名寻址；本地排障时可覆盖为固定地址
-      admin-base-url: ${IBOOT_AI_AGENT_ADMIN_BASE_URL:http://iboot-admin}
+      admin-base-url: ${IBOOT_AI_AGENT_ADMIN_BASE_URL:http://iboot-system}
       job-base-url: ${IBOOT_AI_AGENT_JOB_BASE_URL:http://iboot-job}
       max-steps: ${IBOOT_AI_AGENT_MAX_STEPS:6}
       step-timeout-seconds: ${IBOOT_AI_AGENT_STEP_TIMEOUT_SECONDS:30}

@@ -1,0 +1,267 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  tomcat:
+    threads:
+      virtual:
+        enabled: true
+    max-connections: 10000
+
+spring:
+  application:
+    name: iboot-system
+  # 阶段 2：注册中心与配置中心。Nacos 3.x 不再支持 bootstrap.yml，统一走 spring.config.import；
+  # optional: 前缀保证配置中心不可用时仍能以本地配置启动。
+  config:
+    import: optional:nacos:iboot-system.yml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+        # 注册中心不可用时不阻断启动（默认 fail-fast 会直接让应用启动失败）
+        fail-fast: false
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        file-extension: yml
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+  threads:
+    virtual:
+      enabled: true
+  banner:
+    location: classpath:banner.txt
+  jmx:
+    enabled: false
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_admin?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:root}
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: true
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      filters: stat,wall,slf4j
+      filter:
+        slf4j:
+          enabled: true
+          statement-create-after-log-enabled: true
+          statement-close-after-log-enabled: true
+          result-set-open-after-log-enabled: true
+          result-set-close-after-log-enabled: true
+      connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: '*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*'
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: false
+        allow:
+        deny:
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 10s
+      lettuce:
+        pool:
+          min-idle: 0
+          max-idle: 8
+          max-active: 8
+          max-wait: -1ms
+  Jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 100MB
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  flyway:
+    enabled: true
+    locations:
+      - classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: false
+    clean-disabled: true
+  security:
+    user:
+      name: actuator
+      password: actuator123
+      roles: ACTUATOR
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: ${MAIL_SSL_ENABLED:true}
+      mail.smtp.starttls.enable: ${MAIL_STARTTLS_ENABLED:false}
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
+mybatis:
+  type-aliases-package: com.iboot.system.infrastructure.persistence.po
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    lazy-loading-enabled: true
+    aggressive-lazy-loading: false
+
+logging:
+  level:
+    root: INFO
+    com.iboot.system: DEBUG
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+    version: OPENAPI_3_1
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    url: /v3/api-docs
+    tags-sorter: alpha
+    operations-sorter: alpha
+  # 禁用缓存以便调试
+  cache:
+    disabled: true
+
+management:
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${TEMPO_OTLP:http://localhost:4318/v1/traces}
+  # 指标继续走 Prometheus，避免与既有看板重复采集
+  otlp:
+    metrics:
+      export:
+        enabled: false
+  tracing:
+    export:
+      # 总开关：关闭后不再产生 span
+      enabled: ${IBOOT_TRACING_ENABLED:true}
+    sampling:
+      # 默认全采：保证开发与验收期链路完整，压测或生产按需用环境变量调低
+      probability: ${IBOOT_TRACING_SAMPLE:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,beans,env,configprops,mappings,logfile,threaddump,caches,scheduledtasks,conditions,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    logfile:
+      external-file: logs/iboot-system.log
+  info:
+    git:
+      mode: full
+    build:
+      enabled: true
+    env:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        jdbc.connections.usage: true
+        cache.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+    enable:
+      jvm: true
+      system: true
+      logback: true
+      tomcat: true
+      spring-data: true
+    tags:
+      application: iboot-system
+      namespace: default
+  # 移除 server.port 配置，使用应用主端口即可
+  # 如需将 actuator 暴露在独立端口，取消下面的注释并设置端口号
+  # server:
+  #   port: 8081
+  #   address: 0.0.0.0
+
+jwt:
+  secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
+  expiration: 604800
+  session-timeout: 30
+  # 双栈窗口已关闭：只接受认证服务签发的自包含令牌，旧对称签名令牌返回业务码 40101
+  legacy-enabled: false
+
+# SSE 推送配置
+iboot:
+  # 操作审计：审计表已归 iboot-monitor 所有，管理端与其它服务一样跨 schema 写入，
+  # 避免切换后管理端的审计记录落在旧表而日志页看不到。
+  logging:
+    operate-log-table: iboot_monitor.sys_operate_log
+  # 免鉴权路径白名单，由共享内核（iboot-kernel）读取并与过滤器链共用
+  security:
+    whitelist:
+      # 认证相关：登录/登出/注册已迁至 iboot-auth，管理端不再提供这三个接口；
+      # GET /api/auth/scope 需要登录态，不在白名单内。
+      # 公开配置接口
+      - /api/config/public
+      # 国际化
+      - /api/i18n/**
+      # 接口文档
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /v3/api-docs/**
+      - /v3/api-docs
+      - /v3/api-docs.yaml
+      - /v3/api-docs/swagger-config
+      - /swagger-resources/**
+      - /webjars/**
+      - /doc.html
+      # 静态资源
+      - /favicon.ico
+      - /error
+      - /static/**
+      - /**/*.ico
+      - /**/*.png
+      - /**/*.jpg
+      - /**/*.jpeg
+      - /**/*.gif
+      - /**/*.css
+      - /**/*.js
+      # 监控
+      - /actuator/**
+      - /druid/**
+      # Spring Boot Admin
+      - /sba/**
+      - /instances/**
+      - /applications/**
+
+  notification:
+    # 通知登记：由 iboot-notify 承接，内部端点不经网关
+    base-url: ${IBOOT_NOTIFY_BASE_URL:http://localhost:8084}
+    internal-token: ${IBOOT_NOTIFY_INTERNAL_TOKEN:}

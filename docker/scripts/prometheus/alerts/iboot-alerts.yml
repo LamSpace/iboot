@@ -22,7 +22,7 @@ groups:
 
       # 应用健康告警
       - alert: ApplicationDown
-        expr: up{job="iboot-admin"} == 0
+        expr: up{job="iboot-system"} == 0
         for: 1m
         labels:
           severity: critical

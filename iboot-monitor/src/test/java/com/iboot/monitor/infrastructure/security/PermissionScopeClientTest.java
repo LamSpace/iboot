@@ -19,12 +19,16 @@ package com.iboot.monitor.infrastructure.security;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -43,7 +47,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 /**
  * {@link PermissionScopeClient} 的行为测试。
  *
- * <p>覆盖三条对外承诺：带调用者令牌请求管理端、结果按用户缓存、下游不可用时失败关闭。
+ * <p>覆盖三条对外承诺：带调用者令牌请求系统服务、结果按用户缓存、下游不可用时失败关闭。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -110,6 +114,28 @@ class PermissionScopeClientTest {
         client.fetchCurrentUserScope();
 
         server.verify();
+    }
+
+    /**
+     * 配置键必须落在 monitor 命名空间。
+     *
+     * <p>拆分时从 job 复制了实现，键名一直沿用 {@code iboot.job.permission.*}，
+     * 使本服务的配置与环境变量从未生效。本用例锁定键名，防止再次错位。
+     */
+    @Test
+    void bindsScopeUrlFromMonitorNamespace() {
+        RestClient.Builder builder = RestClient.builder();
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(PropertyPlaceholderAutoConfiguration.class))
+                .withBean("loadBalancedRestClientBuilder", RestClient.Builder.class, () -> builder)
+                .withBean(PermissionScopeClient.class)
+                .withPropertyValues("iboot.monitor.permission.scope-url=http://sentinel.test/api/auth/scope")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    PermissionScopeClient bound = context.getBean(PermissionScopeClient.class);
+                    assertThat(ReflectionTestUtils.getField(bound, "scopeUrl"))
+                            .isEqualTo("http://sentinel.test/api/auth/scope");
+                });
     }
 
     /**
