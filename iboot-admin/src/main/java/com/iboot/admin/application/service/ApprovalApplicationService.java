@@ -16,8 +16,8 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.application.service.notification.NotificationApplicationService;
 import com.iboot.admin.application.service.notification.NotificationCommand;
+import com.iboot.admin.application.service.notification.NotificationPort;
 import com.iboot.kernel.web.BusinessException;
 import com.iboot.kernel.web.PageResult;
 import com.iboot.admin.domain.notification.model.NotificationEventType;
@@ -29,6 +29,8 @@ import com.iboot.admin.domain.workflow.model.WorkflowHistoryItem;
 import com.iboot.admin.domain.workflow.model.WorkflowTask;
 import com.iboot.admin.domain.workflow.repository.LeaveApplicationRepository;
 import com.iboot.admin.domain.workflow.service.WorkflowService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,13 +57,15 @@ import java.util.stream.Collectors;
 @Service
 public class ApprovalApplicationService {
 
+    private static final Logger log = LoggerFactory.getLogger(ApprovalApplicationService.class);
+
     private final LeaveApplicationRepository leaveApplicationRepository;
 
     private final WorkflowService workflowService;
 
     private final UserRepository userRepository;
 
-    private final NotificationApplicationService notificationApplicationService;
+    private final NotificationPort notificationPort;
 
     private static final DateTimeFormatter NOTIFICATION_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -72,24 +76,25 @@ public class ApprovalApplicationService {
      * @param leaveApplicationRepository     请假申请仓储
      * @param workflowService               工作流服务
      * @param userRepository                 用户仓储
-     * @param notificationApplicationService 通知编排服务
+     * @param notificationPort               通知登记端口
      */
     @SuppressWarnings("all")
     public ApprovalApplicationService(final LeaveApplicationRepository leaveApplicationRepository,
                                       final WorkflowService workflowService,
                                       final UserRepository userRepository,
-                                      final NotificationApplicationService notificationApplicationService) {
+                                      final NotificationPort notificationPort) {
         this.leaveApplicationRepository = leaveApplicationRepository;
         this.workflowService = workflowService;
         this.userRepository = userRepository;
-        this.notificationApplicationService = notificationApplicationService;
+        this.notificationPort = notificationPort;
     }
 
     /**
      * 发起请假申请。
      *
      * <p>校验审批人存在、启用且不是申请人后，先启动流程再保存业务记录；
-     * 任一步骤失败时整个事务回滚。
+     * 审批本身的任一步骤失败时整个事务回滚。通知登记在提交后由端口异步执行，
+     * 其失败只记录日志，不影响审批结果。
      *
      * @param applicantId   申请人用户 ID
      * @param applicantName 申请人用户名
@@ -125,14 +130,19 @@ public class ApprovalApplicationService {
         application.setCreateTime(LocalDateTime.now());
         application.setDeleted(0);
 
-        notificationApplicationService.enqueue(new NotificationCommand(
-                "approval-todo-" + processInstanceId,
-                NotificationEventType.APPROVAL_TODO,
-                "APPROVAL_TODO",
-                approverId,
-                Map.of("taskName", leaveType == null ? "" : leaveType,
-                        "initiator", applicantName == null ? "" : applicantName,
-                        "applyTime", formatApplyTime(startTime, endTime))));
+        try {
+            notificationPort.enqueue(new NotificationCommand(
+                    "approval-todo-" + processInstanceId,
+                    NotificationEventType.APPROVAL_TODO,
+                    "APPROVAL_TODO",
+                    approverId,
+                    Map.of("taskName", leaveType == null ? "" : leaveType,
+                            "initiator", applicantName == null ? "" : applicantName,
+                            "applyTime", formatApplyTime(startTime, endTime))));
+        } catch (RuntimeException e) {
+            // 通知失败不得阻断审批提交：端口实现承诺不抛出，这里仍兜底，保证主流程可用性
+            log.warn("通知登记失败，审批提交继续，processInstanceId: {}", processInstanceId, e);
+        }
         return leaveApplicationRepository.save(application);
     }
 

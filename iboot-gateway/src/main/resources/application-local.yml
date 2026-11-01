@@ -7,8 +7,8 @@ spring:
           # 每拆出一个服务，就在 admin 兜底之前插入更具体的前缀。
           routes:
             # 服务端推送：长连接不能被响应超时截断，查询参数中的凭证需原样透传
-            - id: admin-sse
-              uri: ${IBOOT_ADMIN_URI:http://localhost:8080}
+            - id: notify-sse
+              uri: ${IBOOT_NOTIFY_URI:http://localhost:8084}
               order: 0
               predicates:
                 - Path=/api/push/**
@@ -27,6 +27,13 @@ spring:
               order: 20
               predicates:
                 - Path=/api/file/**
+
+            # 消息与通知：消息中心、公告、投递记录与内容检索
+            - id: notify
+              uri: ${IBOOT_NOTIFY_URI:http://localhost:8084}
+              order: 25
+              predicates:
+                - Path=/api/message/**,/api/notice/**,/api/notification/**,/api/search
 
             # 认证服务：旧的登录/登出/注册 + OAuth2/OIDC 标准端点与登录页。
             # GET /api/auth/scope 返回数据权限范围，属于系统域，仍由管理端承载，

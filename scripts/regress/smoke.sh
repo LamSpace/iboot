@@ -56,28 +56,74 @@ else
     reg_fail "上传未返回文件 ID"
 fi
 
-reg_log "== 4. 实时推送 =="
-message=$(reg_post /api/message '{"title":"回归冒烟消息","content":"回归冒烟内容","messageType":"1","priority":"1","receiverType":"0"}')
-reg_expect_ok "创建站内消息" "$message"
+reg_log "== 4. 实时推送（经网关，消息与 SSE 已迁至 iboot-notify） =="
+message=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+    -d '{"title":"回归冒烟消息","content":"回归冒烟内容","messageType":"1","priority":"1","receiverType":"0"}' \
+    "$REG_GATEWAY/api/message" | reg_unwrap)
+reg_expect_ok "经网关创建站内消息" "$message"
 message_id=$(printf '%s' "$message" | jq -r '.data.id // empty')
 
 curl -sN --max-time 15 -H "Authorization: Bearer $REG_TOKEN" \
-    "$REG_BASE/api/push/connect?t=$REG_TOKEN" > "$WORK/sse.txt" 2>/dev/null &
+    "$REG_GATEWAY/api/push/connect?t=$REG_TOKEN" > "$WORK/sse.txt" 2>/dev/null &
 SSE_PID=$!
 sleep 2
 
 if [ -n "$message_id" ] && [ "$message_id" != "null" ]; then
-    sent=$(reg_post /api/message/send "{\"messageId\":$message_id,\"userIds\":[1]}")
-    reg_expect_ok "把消息发送给当前用户" "$sent"
+    sent=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+        -d "{\"messageId\":$message_id,\"userIds\":[1]}" "$REG_GATEWAY/api/message/send" | reg_unwrap)
+    reg_expect_ok "经网关把消息发送给当前用户" "$sent"
 else
     reg_fail "消息创建未返回 ID，跳过发送"
 fi
 
 sleep 4
 if grep -q '^data:' "$WORK/sse.txt"; then
-    reg_pass "SSE 连接收到推送事件"
+    reg_pass "经网关的 SSE 连接收到推送事件"
 else
-    reg_fail "SSE 连接未收到事件（$(head -c 200 "$WORK/sse.txt" | tr '\n' ' ')）"
+    reg_fail "经网关的 SSE 连接未收到事件（$(head -c 200 "$WORK/sse.txt" | tr '\n' ' ')）"
+fi
+if grep -q '回归冒烟消息' "$WORK/sse.txt"; then
+    reg_pass "SSE 事件内容包含刚发送的消息标题"
+else
+    reg_fail "SSE 事件内容缺少消息标题"
+fi
+
+reg_log "== 4b. 通知投递（经网关，/api/notification/** 已迁至 iboot-notify） =="
+deliveries=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/notification/delivery?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "经网关查询通知投递记录" "$deliveries"
+retry_id=$(printf '%s' "$deliveries" \
+    | jq -r '[.data.data[]? | select(.status == "DEAD" or .status == "FAILED")][0].id // empty' 2>/dev/null)
+if [ -z "$retry_id" ]; then
+    # 开发环境的渠道都可用，天然不会产生失败投递；造一条 DEAD 记录覆盖人工重试路径。
+    # 重投仍走真实钉钉渠道：目标状态是 SUCCESS，而不是停留在 PENDING。
+    retry_id=$(docker exec iboot-mysql mysql -uroot -proot -N -e "
+        INSERT INTO iboot_admin.sys_notification_delivery
+            (event_id, event_type, channel, recipient_key, recipient_id, template_code, title, content,
+             status, attempts, max_attempts, create_time)
+        VALUES ('regress-retry-$(date +%s)', 'APPROVAL_TODO', 'IN_APP', 'USER:1', 1,
+                'APPROVAL_TODO', '回归重试', '回归重试内容', 'DEAD', 5, 5, NOW());
+        SELECT LAST_INSERT_ID();" 2>/dev/null | tail -1)
+fi
+if [ -n "$retry_id" ]; then
+    retried=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/notification/delivery/$retry_id/retry" | reg_unwrap)
+    reg_expect_ok "经网关人工重试失败投递" "$retried"
+    retry_status=""
+    for _ in $(seq 1 15); do
+        retry_status=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+            "$REG_GATEWAY/api/notification/delivery?pageNum=1&pageSize=50" | reg_unwrap \
+            | jq -r --argjson id "$retry_id" '[.data.data[]? | select(.id == $id)][0].status // empty')
+        [ "$retry_status" = "PENDING" ] || [ "$retry_status" = "SENDING" ] || break
+        sleep 1
+    done
+    case "$retry_status" in
+        PENDING|SENDING) reg_pass "重试后记录从 DEAD 复位为 $retry_status" ;;
+        SUCCESS)         reg_pass "重试后记录从 DEAD 重投成功" ;;
+        *)               reg_fail "重试后记录状态为 $retry_status，未完成重置与重新投递" ;;
+    esac
+else
+    reg_fail "无法准备可重试的投递记录"
 fi
 
 reg_log "== 5. 数据备份 =="

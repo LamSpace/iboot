@@ -337,6 +337,9 @@ iboot:
       prefix: ${IBOOT_BACKUP_RESTORE_PREFIX:iboot_restore_}
     stale-running-minutes: ${IBOOT_BACKUP_STALE_MINUTES:30}
   notification:
+    # 通知登记：由 iboot-notify 承接，内部端点不经网关
+    base-url: ${IBOOT_NOTIFY_BASE_URL:http://localhost:8084}
+    internal-token: ${IBOOT_NOTIFY_INTERNAL_TOKEN:}
     in-app-enabled: ${IBOOT_NOTIFICATION_IN_APP_ENABLED:true}
     email:
       enabled: ${IBOOT_NOTIFICATION_EMAIL_ENABLED:true}

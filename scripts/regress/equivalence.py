@@ -3,7 +3,9 @@
 迁移前从原服务录制（--record），迁移后经网关重放（--verify），两侧结果必须一致。
 只覆盖只读请求；上传/删除的响应含自增 ID 与时间戳，由冒烟覆盖。
 
-用法：python3 -I equivalence.py <base-url> <token> <output-file>
+用法：python3 -I equivalence.py <base-url> <token> <output-file> [service]
+
+service 取 file（默认）或 notify，决定采集哪一组只读请求。
 """
 
 import hashlib
@@ -82,12 +84,8 @@ def sheet_hash(body):
         return hashlib.sha256(body).hexdigest()
 
 
-def main() -> int:
-    if len(sys.argv) != 4:
-        print("用法: equivalence.py <base-url> <token> <output-file>", file=sys.stderr)
-        return 2
-    base, token, output = sys.argv[1].rstrip("/"), sys.argv[2], sys.argv[3]
-
+def collect_file(base, token):
+    """文件服务：列表、详情、下载地址与导出。"""
     list_result = evaluate(base, token, "/api/file/list?pageNum=1&pageSize=10")
     results = {"list": list_result}
 
@@ -105,6 +103,42 @@ def main() -> int:
         results["downloadUrl"] = {"skipped": "无文件可查"}
 
     results["export"] = evaluate(base, token, "/api/file/export")
+    return results
+
+
+def collect_notify(base, token):
+    """消息与通知服务：消息列表、收件箱、公告列表、已发布公告与检索。
+
+    检索使用空关键字，返回稳定的空结果；带关键字的结果会随冒烟写入变化，
+    不适合作为迁移前后的等价基线。
+    """
+    return {
+        "messageList": evaluate(base, token, "/api/message/list?pageNum=1&pageSize=10"),
+        "messageInbox": evaluate(base, token, "/api/message/inbox?pageNum=1&pageSize=10"),
+        "noticeList": evaluate(base, token, "/api/notice/list?pageNum=1&pageSize=10"),
+        "noticePublished": evaluate(base, token, "/api/notice/published"),
+        "search": evaluate(base, token, "/api/search?pageNum=1&pageSize=10&keyword="),
+    }
+
+
+PROFILES = {
+    "file": collect_file,
+    "notify": collect_notify,
+}
+
+
+def main() -> int:
+    if len(sys.argv) not in (4, 5):
+        print("用法: equivalence.py <base-url> <token> <output-file> [file|notify]", file=sys.stderr)
+        return 2
+    base, token, output = sys.argv[1].rstrip("/"), sys.argv[2], sys.argv[3]
+    service = sys.argv[4] if len(sys.argv) == 5 else "file"
+    collector = PROFILES.get(service)
+    if collector is None:
+        print(f"未知服务: {service}", file=sys.stderr)
+        return 2
+
+    results = collector(base, token)
 
     with open(output, "w", encoding="utf-8") as handle:
         json.dump(results, handle, ensure_ascii=False, indent=2, sort_keys=True)

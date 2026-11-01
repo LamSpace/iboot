@@ -1,0 +1,337 @@
+{
+  "messageInbox": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [
+            {
+              "businessType": null,
+              "content": "回归冒烟内容",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:07:40",
+              "id": 4,
+              "isRead": 0,
+              "messageType": "1",
+              "priority": "1",
+              "readTime": null,
+              "senderId": 1,
+              "senderType": "1",
+              "title": "回归冒烟消息"
+            },
+            {
+              "businessType": null,
+              "content": "回归冒烟内容",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:06:32",
+              "id": 2,
+              "isRead": 0,
+              "messageType": "1",
+              "priority": "1",
+              "readTime": null,
+              "senderId": 1,
+              "senderType": "1",
+              "title": "回归冒烟消息"
+            },
+            {
+              "businessType": null,
+              "content": "回归冒烟内容",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:03:35",
+              "id": 1,
+              "isRead": 0,
+              "messageType": "1",
+              "priority": "1",
+              "readTime": null,
+              "senderId": 1,
+              "senderType": "1",
+              "title": "回归冒烟消息"
+            }
+          ],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 3
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/message/inbox",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "messageList": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [
+            {
+              "content": "您有一条新的审批待办：重复登记，发起人：regress，申请时间：2026-11-01。",
+              "createBy": "system",
+              "createTime": "2026-11-01T11:13:06",
+              "id": 10,
+              "messageType": "2",
+              "priority": "1",
+              "receiverType": "1",
+              "remark": null,
+              "senderId": null,
+              "senderType": "0",
+              "status": "1",
+              "title": "审批待办通知"
+            },
+            {
+              "content": "回滚期写入",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:12:05",
+              "id": 9,
+              "messageType": "1",
+              "priority": "1",
+              "receiverType": "1",
+              "remark": null,
+              "senderId": 1,
+              "senderType": "1",
+              "status": "0",
+              "title": "回滚演练消息-1793502724"
+            },
+            {
+              "content": "内容",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:09:18",
+              "id": 8,
+              "messageType": "1",
+              "priority": "1",
+              "receiverType": "1",
+              "remark": null,
+              "senderId": 1,
+              "senderType": "1",
+              "status": "2",
+              "title": "回归消息-模板核对"
+            },
+            {
+              "content": "内容",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:09:09",
+              "id": 7,
+              "messageType": "1",
+              "priority": "1",
+              "receiverType": "1",
+              "remark": null,
+              "senderId": 1,
+              "senderType": "1",
+              "status": "2",
+              "title": "回归消息-模板核对"
+            },
+            {
+              "content": "内容",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:08:09",
+              "id": 6,
+              "messageType": "1",
+              "priority": "1",
+              "receiverType": "1",
+              "remark": null,
+              "senderId": 1,
+              "senderType": "1",
+              "status": "2",
+              "title": "回归消息-模板核对"
+            },
+            {
+              "content": "您有一条新的审批待办：annual，发起人：admin，申请时间：2026-11-02 09:00 ~ 2026-11-02 18:00。",
+              "createBy": "system",
+              "createTime": "2026-11-01T11:07:47",
+              "id": 5,
+              "messageType": "2",
+              "priority": "1",
+              "receiverType": "1",
+              "remark": null,
+              "senderId": null,
+              "senderType": "0",
+              "status": "1",
+              "title": "审批待办通知"
+            },
+            {
+              "content": "回归冒烟内容",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:07:40",
+              "id": 4,
+              "messageType": "1",
+              "priority": "1",
+              "receiverType": "0",
+              "remark": null,
+              "senderId": 1,
+              "senderType": "1",
+              "status": "1",
+              "title": "回归冒烟消息"
+            },
+            {
+              "content": "您有一条新的审批待办：annual，发起人：admin，申请时间：2026-11-02 09:00 ~ 2026-11-02 18:00。",
+              "createBy": "system",
+              "createTime": "2026-11-01T11:06:39",
+              "id": 3,
+              "messageType": "2",
+              "priority": "1",
+              "receiverType": "1",
+              "remark": null,
+              "senderId": null,
+              "senderType": "0",
+              "status": "1",
+              "title": "审批待办通知"
+            },
+            {
+              "content": "回归冒烟内容",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:06:32",
+              "id": 2,
+              "messageType": "1",
+              "priority": "1",
+              "receiverType": "0",
+              "remark": null,
+              "senderId": 1,
+              "senderType": "1",
+              "status": "1",
+              "title": "回归冒烟消息"
+            },
+            {
+              "content": "回归冒烟内容",
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:03:35",
+              "id": 1,
+              "messageType": "1",
+              "priority": "1",
+              "receiverType": "0",
+              "remark": null,
+              "senderId": 1,
+              "senderType": "1",
+              "status": "1",
+              "title": "回归冒烟消息"
+            }
+          ],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 10
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/message/list",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "noticeList": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [
+            {
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:09:18",
+              "id": 3,
+              "isTop": 0,
+              "noticeContent": "回归公告内容",
+              "noticeTitle": "回归公告",
+              "noticeType": "1",
+              "remark": null,
+              "status": "2"
+            },
+            {
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:09:09",
+              "id": 2,
+              "isTop": 0,
+              "noticeContent": "回归公告内容",
+              "noticeTitle": "回归公告",
+              "noticeType": "1",
+              "remark": null,
+              "status": "2"
+            },
+            {
+              "createBy": "admin",
+              "createTime": "2026-11-01T11:08:08",
+              "id": 1,
+              "isTop": 0,
+              "noticeContent": "回归公告内容",
+              "noticeTitle": "回归公告",
+              "noticeType": "1",
+              "remark": null,
+              "status": "2"
+            }
+          ],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 3
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/notice/list",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "noticePublished": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": [],
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/notice/published",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "search": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 0
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/search",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  }
+}

@@ -16,7 +16,7 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.application.service.notification.NotificationApplicationService;
+import com.iboot.admin.application.service.notification.NotificationPort;
 import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.system.model.User;
 import com.iboot.admin.domain.system.repository.UserRepository;
@@ -211,13 +211,13 @@ class ApprovalApplicationServiceIntegrationTest {
         }
 
         /**
-         * 提供通知编排服务的 Mock，避免集成测试触发真实外部渠道。
+         * 提供通知登记端口的 Mock，避免集成测试触发跨服务调用与真实外部渠道。
          *
-         * @return 通知编排服务
+         * @return 通知登记端口
          */
         @Bean
-        NotificationApplicationService notificationApplicationService() {
-            return mock(NotificationApplicationService.class);
+        NotificationPort notificationPort() {
+            return mock(NotificationPort.class);
         }
 
         /**

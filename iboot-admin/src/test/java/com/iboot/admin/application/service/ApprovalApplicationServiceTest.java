@@ -16,7 +16,7 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.application.service.notification.NotificationApplicationService;
+import com.iboot.admin.application.service.notification.NotificationPort;
 import com.iboot.admin.application.service.notification.NotificationCommand;
 import com.iboot.kernel.web.BusinessException;
 import com.iboot.admin.domain.notification.model.NotificationEventType;
@@ -64,7 +64,7 @@ class ApprovalApplicationServiceTest {
 
     private UserRepository userRepository;
 
-    private NotificationApplicationService notificationApplicationService;
+    private NotificationPort notificationPort;
 
     private ApprovalApplicationService service;
 
@@ -73,9 +73,9 @@ class ApprovalApplicationServiceTest {
         repository = mock(LeaveApplicationRepository.class);
         workflowService = mock(WorkflowService.class);
         userRepository = mock(UserRepository.class);
-        notificationApplicationService = mock(NotificationApplicationService.class);
+        notificationPort = mock(NotificationPort.class);
         service = new ApprovalApplicationService(repository, workflowService, userRepository,
-                notificationApplicationService);
+                notificationPort);
     }
 
     /**
@@ -117,7 +117,7 @@ class ApprovalApplicationServiceTest {
                 LocalDateTime.of(2026, 11, 2, 9, 0), LocalDateTime.of(2026, 11, 3, 18, 0), "回家");
 
         ArgumentCaptor<NotificationCommand> captor = ArgumentCaptor.forClass(NotificationCommand.class);
-        verify(notificationApplicationService).enqueue(captor.capture());
+        verify(notificationPort).enqueue(captor.capture());
         NotificationCommand command = captor.getValue();
         assertThat(command.getEventId()).isEqualTo("approval-todo-pid-1");
         assertThat(command.getEventType()).isEqualTo(NotificationEventType.APPROVAL_TODO);
@@ -129,19 +129,22 @@ class ApprovalApplicationServiceTest {
     }
 
     /**
-     * 验证通知登记失败时不保存申请。
+     * 验证通知登记抛出异常时审批仍然提交成功。
+     *
+     * <p>规格要求业务主流程不因通知失败而失败；端口实现承诺不抛出，服务层仍需兜底。
      */
     @Test
-    void submitDoesNotSaveWhenNotificationEnqueueFails() {
+    void submitStillSavesWhenNotificationPortFails() {
         when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L, 1)));
         when(workflowService.startProcess(1L, 2L)).thenReturn("pid-1");
-        doThrow(new BusinessException("消息模板已停用")).when(notificationApplicationService).enqueue(any());
+        when(repository.save(any(LeaveApplication.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new BusinessException("消息模板已停用")).when(notificationPort).enqueue(any());
 
-        assertThatThrownBy(() -> service.submit(1L, "alice", 2L, "ANNUAL",
-                LocalDateTime.of(2026, 11, 2, 9, 0), LocalDateTime.of(2026, 11, 3, 18, 0), "回家"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("模板");
-        verify(repository, never()).save(any(LeaveApplication.class));
+        LeaveApplication application = service.submit(1L, "alice", 2L, "ANNUAL",
+                LocalDateTime.of(2026, 11, 2, 9, 0), LocalDateTime.of(2026, 11, 3, 18, 0), "回家");
+
+        assertThat(application).isNotNull();
+        verify(repository).save(any(LeaveApplication.class));
     }
 
     /**

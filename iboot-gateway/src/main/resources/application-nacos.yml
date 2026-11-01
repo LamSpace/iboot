@@ -7,8 +7,8 @@ spring:
       server:
         webflux:
           routes:
-            - id: admin-sse
-              uri: lb://iboot-admin
+            - id: notify-sse
+              uri: lb://iboot-notify
               order: 0
               predicates:
                 - Path=/api/push/**
@@ -27,6 +27,13 @@ spring:
               order: 20
               predicates:
                 - Path=/api/file/**
+
+            # 消息与通知：消息中心、公告、投递记录与内容检索
+            - id: notify
+              uri: lb://iboot-notify
+              order: 25
+              predicates:
+                - Path=/api/message/**,/api/notice/**,/api/notification/**,/api/search
 
             # 认证服务：旧登录接口 + OAuth2/OIDC 标准端点与登录页；/api/auth/scope 仍由管理端承载
             - id: auth
