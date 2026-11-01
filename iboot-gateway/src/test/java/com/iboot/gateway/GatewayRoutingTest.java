@@ -22,8 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * 网关路由与跨域的集成测试。
  *
- * <p>用两个本地桩服务分别扮演管理端与 AI 服务，验证：具体前缀优先、兜底前缀承接其余路径、
- * 跨域预检由网关直接应答而不转发到后端。
+ * <p>用本地桩服务分别扮演管理端、AI 服务与消息通知服务，验证：具体前缀优先、兜底前缀承接其余路径、
+ * 长连接与业务前缀各归其主、跨域预检由网关直接应答而不转发到后端。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -34,6 +34,8 @@ class GatewayRoutingTest {
     private static HttpServer adminStub;
 
     private static HttpServer aiStub;
+
+    private static HttpServer notifyStub;
 
     @Value("${local.server.port}")
     private int port;
@@ -66,6 +68,7 @@ class GatewayRoutingTest {
     static void startStubs() throws IOException {
         adminStub = startStub("admin");
         aiStub = startStub("ai");
+        notifyStub = startStub("notify");
     }
 
     @AfterAll
@@ -76,12 +79,16 @@ class GatewayRoutingTest {
         if (aiStub != null) {
             aiStub.stop(0);
         }
+        if (notifyStub != null) {
+            notifyStub.stop(0);
+        }
     }
 
     @DynamicPropertySource
     static void routes(DynamicPropertyRegistry registry) {
         registry.add("IBOOT_ADMIN_URI", () -> "http://127.0.0.1:" + adminStub.getAddress().getPort());
         registry.add("IBOOT_AI_URI", () -> "http://127.0.0.1:" + aiStub.getAddress().getPort());
+        registry.add("IBOOT_NOTIFY_URI", () -> "http://127.0.0.1:" + notifyStub.getAddress().getPort());
     }
 
     /**
@@ -109,15 +116,30 @@ class GatewayRoutingTest {
     }
 
     /**
-     * 推送通道同样转发到管理端，且查询参数原样保留。
+     * 推送通道转发到消息通知服务，且查询参数原样保留。
      */
     @Test
-    void routesPushChannelToAdmin() {
+    void routesPushChannelToNotify() {
         webTestClient().get().uri("/api/push/connect?t=token")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
-                .value(body -> assertThat(body).isEqualTo("admin|/api/push/connect"));
+                .value(body -> assertThat(body).isEqualTo("notify|/api/push/connect"));
+    }
+
+    /**
+     * 消息与通知的业务前缀同样转发到该服务，而不是被管理端兜底接走。
+     */
+    @Test
+    void routesNotifyPrefixesToNotifyService() {
+        for (String uri : new String[]{"/api/message/list", "/api/notice/list",
+                "/api/notification/delivery", "/api/search"}) {
+            webTestClient().get().uri(uri)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody(String.class)
+                    .value(body -> assertThat(body).isEqualTo("notify|" + uri));
+        }
     }
 
     /**
