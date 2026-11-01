@@ -23,6 +23,8 @@ ROLE_ID=""
 USER_ID=""
 FILE_ROLE_ID=""
 FILE_USER_ID=""
+NOTIFY_ROLE_ID=""
+NOTIFY_USER_ID=""
 REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
 
 cleanup() {
@@ -32,6 +34,8 @@ cleanup() {
     if [ -n "$ROLE_ID" ]; then reg_del "/api/role/$ROLE_ID" >/dev/null 2>&1 || true; fi
     if [ -n "$FILE_USER_ID" ]; then reg_del "/api/user/$FILE_USER_ID" >/dev/null 2>&1 || true; fi
     if [ -n "$FILE_ROLE_ID" ]; then reg_del "/api/role/$FILE_ROLE_ID" >/dev/null 2>&1 || true; fi
+    if [ -n "$NOTIFY_USER_ID" ]; then reg_del "/api/user/$NOTIFY_USER_ID" >/dev/null 2>&1 || true; fi
+    if [ -n "$NOTIFY_ROLE_ID" ]; then reg_del "/api/role/$NOTIFY_ROLE_ID" >/dev/null 2>&1 || true; fi
 }
 trap cleanup EXIT
 
@@ -126,6 +130,43 @@ if [ "$admin_file_total" -gt "$scope_file_total" ]; then
 else
     reg_fail "[数据范围][对比] 超管($admin_file_total) 未多于受限用户($scope_file_total)，文件数据范围可能未生效"
 fi
+
+reg_log "== 消息与通知域：功能权限（经网关） =="
+# 当前登录的是只持有 file:list 的受限用户，正好作为「无消息/公告权限」的拒绝用例
+msg_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/message/list?pageNum=1&pageSize=10")
+reg_expect_status "[功能权限][拒绝] 无 message:list 的用户访问消息列表" "$msg_denied" "401 403"
+notice_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/notice/list?pageNum=1&pageSize=10")
+reg_expect_status "[功能权限][拒绝] 无 notice:list 的用户访问公告列表" "$notice_denied" "401 403"
+
+NOTIFY_ROLE_CODE="ROLE_NOTIFY_TEST"
+NOTIFY_MESSAGE_MENU_ID=401   # 菜单：消息中心（权限码 message:list）
+NOTIFY_NOTICE_MENU_ID=400    # 菜单：系统公告（权限码 notice:list）
+NOTIFY_USER_NAME="regress_notify"
+reg_login
+roles=$(reg_get /api/role/all)
+NOTIFY_ROLE_ID=$(printf '%s' "$roles" | jq -r --arg c "$NOTIFY_ROLE_CODE" '.data[]? | select(.roleCode == $c) | .id' | head -1)
+if [ -z "$NOTIFY_ROLE_ID" ]; then
+    created=$(reg_post /api/role "{\"roleCode\":\"$NOTIFY_ROLE_CODE\",\"roleName\":\"回归消息角色\",\"orderNum\":97,\"dataScope\":5,\"status\":1,\"menuIds\":[$NOTIFY_NOTICE_MENU_ID,$NOTIFY_MESSAGE_MENU_ID]}")
+    NOTIFY_ROLE_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$NOTIFY_ROLE_ID" ] || reg_die "创建消息角色失败：$created"
+fi
+users=$(reg_get "/api/user/list?pageNum=1&pageSize=100&username=$NOTIFY_USER_NAME")
+NOTIFY_USER_ID=$(printf '%s' "$users" | jq -r --arg u "$NOTIFY_USER_NAME" '.data.data[]? | select(.username == $u) | .id' | head -1)
+if [ -z "$NOTIFY_USER_ID" ]; then
+    created=$(reg_post /api/user "{\"username\":\"$NOTIFY_USER_NAME\",\"password\":\"$USER_PASS\",\"nickname\":\"回归消息用户\",\"deptId\":1,\"roleIds\":[$NOTIFY_ROLE_ID],\"status\":1}")
+    NOTIFY_USER_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$NOTIFY_USER_ID" ] || reg_die "创建消息用户失败：$created"
+fi
+
+reg_login "$NOTIFY_USER_NAME" "$USER_PASS"
+msg_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/message/list?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "[功能权限][允许] 持有 message:list 的受限用户可访问消息列表" "$msg_allowed"
+notice_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/notice/list?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "[功能权限][允许] 持有 notice:list 的受限用户可访问公告列表" "$notice_allowed"
 
 status=$(curl -sS -o /dev/null -w '%{http_code}' "$REG_BASE/api/user/list?pageNum=1&pageSize=10")
 reg_expect_status "[功能权限][拒绝] 未携带令牌访问用户列表" "$status" "401 403"
