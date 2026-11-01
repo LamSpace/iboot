@@ -151,7 +151,8 @@ iboot:
       sse-timeout-ms: 300000
       heartbeat-ms: 20000
     permission:
-      scope-url: ${IBOOT_AI_SCOPE_URL:http://localhost:8080/api/auth/scope}
+      # 按注册中心服务名寻址；覆盖值也必须是服务名形式，不能是固定地址
+      scope-url: ${IBOOT_AI_SCOPE_URL:http://iboot-system/api/auth/scope}
       cache-seconds: ${IBOOT_AI_SCOPE_CACHE_SECONDS:60}
     agent:
       # 默认关闭；开启后 /api/ai/agent/** 才可用
