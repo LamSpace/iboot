@@ -129,24 +129,11 @@ spring:
       mail.smtp.connectiontimeout: 10000
       mail.smtp.timeout: 10000
       mail.smtp.writetimeout: 10000
-  quartz:
-    job-store-type: jdbc
-    jdbc:
-      initialize-schema: never
-    scheduler-name: iBootScheduler
-    overwrite-existing-jobs: true
-    wait-for-jobs-to-complete-on-shutdown: true
-    properties:
-      org.quartz.jobStore.tablePrefix: QRTZ_
-      org.quartz.jobStore.isClustered: false
-      org.quartz.jobStore.misfireThreshold: 60000
-      org.quartz.threadPool.threadCount: 10
-
 # 工作流引擎配置
 flowable:
   # 表结构由 Flyway 管理，禁止引擎自动建表
   database-schema-update: false
-  # 暂不启用异步作业执行器，定时职责由 Quartz 承担
+  # 暂不启用异步作业执行器；定时职责由 iboot-job 承担
   async-executor-activate: false
   # 启动时自动部署 classpath:/processes 下的流程定义
   check-process-definitions: true
@@ -304,38 +291,6 @@ iboot:
       - /instances/**
       - /applications/**
 
-  # 数据备份与恢复
-  backup:
-    enabled: ${IBOOT_BACKUP_ENABLED:false}
-    encryption-key: ${IBOOT_BACKUP_ENCRYPTION_KEY:}
-    database:
-      host: ${MYSQL_HOST:localhost}
-      port: ${MYSQL_PORT:3306}
-      name: ${IBOOT_BACKUP_DATABASE:iboot_admin}
-      username: ${MYSQL_USERNAME:root}
-      password: ${MYSQL_PASSWORD:root}
-    command:
-      # 本地默认通过 docker exec 复用 MySQL 容器内的 mysqldump，避免宿主机安装客户端
-      dump-prefix:
-        - docker
-        - exec
-        - -i
-        - -e
-        - MYSQL_PWD
-        - ${IBOOT_BACKUP_DOCKER_CONTAINER:iboot-mysql}
-        - mysqldump
-      restore-prefix:
-        - docker
-        - exec
-        - -i
-        - -e
-        - MYSQL_PWD
-        - ${IBOOT_BACKUP_DOCKER_CONTAINER:iboot-mysql}
-        - mysql
-    restore:
-      schema: ${IBOOT_BACKUP_RESTORE_SCHEMA:iboot_restore_drill}
-      prefix: ${IBOOT_BACKUP_RESTORE_PREFIX:iboot_restore_}
-    stale-running-minutes: ${IBOOT_BACKUP_STALE_MINUTES:30}
   notification:
     # 通知登记：由 iboot-notify 承接，内部端点不经网关
     base-url: ${IBOOT_NOTIFY_BASE_URL:http://localhost:8084}

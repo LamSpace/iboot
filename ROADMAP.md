@@ -294,7 +294,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 > | `iboot-file` | 已完成 | `add-file-service` / `remove-file-from-admin` |
 > | `iboot-auth` | 已抽出（协议不变） | `extract-auth-service` |
 > | `iboot-notify` | 已完成（独立 schema，旧实现已删除） | `add-notify-service` / `remove-notify-from-admin` |
-> | `iboot-job` | 已抽出（独立 schema，旧实现待删除） | `add-job-service` |
+> | `iboot-job` | 已完成（独立 schema，旧实现已删除） | `add-job-service` / `remove-job-from-admin` |
 > | `monitor` / `workflow` / `system` | 待办 | 按 2.3 蓝图顺序 |
 >
 > `iboot-file` 的当前状态:`sys_file` 已迁至独立 schema `iboot_file`(本服务 Flyway 管理),
@@ -332,7 +332,9 @@ Boot 4.0.3 这一前提改变了可选生态:
 > Quartz 以集群模式运行(`isClustered: true`),启动时只做增量对账,不再清空调度器。
 > 任务列表的数据权限经服务名调用管理端 `GET /api/auth/scope`,失败关闭。
 > 备份启用时在启动阶段自检存储可写与导出命令可达,而不是等到第一次执行才失败。
-> 管理端旧实现保留,`remove-job-from-admin` 负责数据搬迁与删除。
+> 变更 `remove-job-from-admin` 随后完成收尾:四张业务表迁入 `iboot_job`(`QRTZ_*` 为派生状态,由启动时
+> 按 `sys_job` 重建,不搬迁),管理端旧实现(62 个 Java 文件、16 个测试类)及其 Quartz 依赖与备份配置已删除,
+> `migrations.txt` 两条登记改为 `done`。回滚方式变为 `git revert` + 数据源指回 `iboot_admin`。
 >
 > **服务间调用约定(本变更首次落地)**:`iboot-ai` 的备份工具改为 `JobApiClient`,与管理端客户端一样
 > 按 Nacos 服务名寻址,不回穿网关。`iboot-file` / `iboot-notify` 调 admin 的 scope 仍是静态地址,
