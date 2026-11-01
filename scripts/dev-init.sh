@@ -168,6 +168,11 @@ start_middleware() {
         -e 'CREATE DATABASE IF NOT EXISTS iboot_file CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
         || fail '创建 iboot_file 库失败'
 
+    # 消息与通知服务的独立 schema，同上。
+    docker exec iboot-mysql mysql -uroot -proot \
+        -e 'CREATE DATABASE IF NOT EXISTS iboot_notify CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
+        || fail '创建 iboot_notify 库失败'
+
     wait_http 'Elasticsearch' 'http://localhost:9200' 180 || fail 'Elasticsearch 未就绪'
     wait_http 'MinIO' 'http://localhost:9000/minio/health/live' 120 || fail 'MinIO 未就绪'
     # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。

@@ -92,19 +92,16 @@ reg_log "== 4b. 通知投递（经网关，/api/notification/** 已迁至 iboot-
 deliveries=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/notification/delivery?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "经网关查询通知投递记录" "$deliveries"
-retry_id=$(printf '%s' "$deliveries" \
-    | jq -r '[.data.data[]? | select(.status == "DEAD" or .status == "FAILED")][0].id // empty' 2>/dev/null)
-if [ -z "$retry_id" ]; then
-    # 开发环境的渠道都可用，天然不会产生失败投递；造一条 DEAD 记录覆盖人工重试路径。
-    # 重投仍走真实钉钉渠道：目标状态是 SUCCESS，而不是停留在 PENDING。
-    retry_id=$(docker exec iboot-mysql mysql -uroot -proot -N -e "
-        INSERT INTO iboot_admin.sys_notification_delivery
-            (event_id, event_type, channel, recipient_key, recipient_id, template_code, title, content,
-             status, attempts, max_attempts, create_time)
-        VALUES ('regress-retry-$(date +%s)', 'APPROVAL_TODO', 'IN_APP', 'USER:1', 1,
-                'APPROVAL_TODO', '回归重试', '回归重试内容', 'DEAD', 5, 5, NOW());
-        SELECT LAST_INSERT_ID();" 2>/dev/null | tail -1)
-fi
+# 开发环境的渠道都可用，天然不会产生失败投递；造一条 DEAD 记录覆盖人工重试路径。
+# 不复用库里已有的 FAILED 记录：通知服务的定时重试会在一分钟内把它重置，造成 409 竞态。
+# 重投走真实站内渠道，目标状态是 SUCCESS，而不是停留在 PENDING。
+retry_id=$(docker exec iboot-mysql mysql -uroot -proot -N -e "
+    INSERT INTO iboot_notify.sys_notification_delivery
+        (event_id, event_type, channel, recipient_key, recipient_id, template_code, title, content,
+         status, attempts, max_attempts, create_time)
+    VALUES ('regress-retry-$(date +%s)', 'APPROVAL_TODO', 'IN_APP', 'USER:1', 1,
+            'APPROVAL_TODO', '回归重试', '回归重试内容', 'DEAD', 5, 5, NOW());
+    SELECT LAST_INSERT_ID();" 2>/dev/null | tail -1)
 if [ -n "$retry_id" ]; then
     retried=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/notification/delivery/$retry_id/retry" | reg_unwrap)
