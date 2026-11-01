@@ -28,7 +28,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * 复用 {@code iboot-kernel}。
  *
  * <p>审计表 {@code sys_operate_log} 与 {@code sys_login_log} 归本服务的
- * {@code iboot_monitor} schema 所有，其他服务以跨 schema 写入的方式提交审计记录。
+ * 共享库中的审计表，其他服务以同库写入的方式提交审计记录。
  *
  * @author iBoot Team
  * @since 1.0.0

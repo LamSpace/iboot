@@ -39,7 +39,7 @@ import java.util.Optional;
 /**
  * 智能体运行与定义仓储。
  *
- * <p>使用 Spring JDBC 访问 {@code iboot_ai} 下的 {@code ai_agent} 与 {@code ai_agent_run}。
+ * <p>使用 Spring JDBC 访问共享库中的 {@code ai_agent} 与 {@code ai_agent_run}。
  * 运行状态迁移通过带条件的 UPDATE 完成，避免并发确认时重复执行写操作。
  *
  * @author iBoot Team

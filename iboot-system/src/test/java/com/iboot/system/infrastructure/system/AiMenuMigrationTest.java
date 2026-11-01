@@ -16,7 +16,7 @@
 
 package com.iboot.system.infrastructure.system;
 
-import org.flywaydb.core.Flyway;
+import com.iboot.dbinit.SchemaMigrator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * AI 工作台菜单迁移测试。
  *
- * <p>验证 V24 在空库上创建目录、菜单与管理员授权，并验证 SQL 重复执行保持幂等。
+ * <p>验证 baseline 建出 AI 工作台菜单与管理员授权，并验证重复初始化不产生重复行。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -58,9 +58,11 @@ class AiMenuMigrationTest {
 
     private JdbcTemplate jdbcTemplate;
 
+    private DriverManagerDataSource dataSource;
+
     @BeforeEach
     void migrate() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
         dataSource.setUrl("jdbc:mysql://" + MYSQL.getHost() + ":" + MYSQL.getMappedPort(MYSQL_PORT)
                 + "/iboot_ai_menu?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC");
@@ -74,11 +76,7 @@ class AiMenuMigrationTest {
         RuntimeException last = null;
         for (int attempt = 1; attempt <= 30; attempt++) {
             try {
-                Flyway.configure()
-                        .dataSource(dataSource)
-                        .locations("classpath:db/migration")
-                        .load()
-                        .migrate();
+                SchemaMigrator.migrate(dataSource);
                 return;
             } catch (RuntimeException e) {
                 last = e;
@@ -115,19 +113,7 @@ class AiMenuMigrationTest {
                 Integer.class);
     }
 
-    private void executeMigrationAgain() throws Exception {
-        String sql;
-        try (InputStream input = new ClassPathResource("db/migration/V24__add_ai_workbench_menu.sql")
-                .getInputStream()) {
-            sql = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-        }
-        String withoutComments = Arrays.stream(sql.split("\n"))
-                .filter(line -> !line.trim().startsWith("--"))
-                .collect(Collectors.joining("\n"));
-        for (String statement : withoutComments.split(";")) {
-            if (!statement.isBlank()) {
-                jdbcTemplate.execute(statement);
-            }
-        }
+    private void executeMigrationAgain() {
+        SchemaMigrator.migrate(dataSource);
     }
 }

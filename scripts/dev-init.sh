@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# 一键拉起本地开发环境：中间件 → 建库 → 构建（按需）→ 启动后端（系统服务先就绪）→ 等待健康。
+# 一键拉起本地开发环境：中间件 → 构建（按需）→ db-init 建库建表 → 启动后端 → 等待健康。
 #
 # 用法：
-#   dev-init.sh              拉起中间件与后端三个服务
+#   dev-init.sh              拉起中间件、初始化数据库并启动九个后端服务
 #   dev-init.sh --build      强制重新构建后端
 #   dev-init.sh --frontend   同时安装前端依赖并启动开发服务器
 #   dev-init.sh --status     查看中间件、后端与前端的状态
@@ -16,8 +16,7 @@
 # 说明：
 # - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo），
 #   不启动 Prometheus、Kibana、Thanos 等观测组件；
-# - 全新数据卷下 MySQL 会执行 docker/init.sql 建出 iboot_admin，
-#   iboot_ai、iboot_file、iboot_notify、iboot_job、iboot_workflow 与 iboot_monitor 由本脚本创建；
+# - 数据库 iboot 与全部表结构由 iboot-db-init 创建，服务不再自带迁移；
 # - 后端日志写入 logs/，进程号写入 logs/<name>.pid。
 
 set -uo pipefail
@@ -159,34 +158,7 @@ start_middleware() {
     docker exec iboot-mysql mysqladmin ping -h localhost -uroot -proot --silent > /dev/null 2>&1 \
         || fail 'MySQL 未在预期时间内就绪'
 
-    docker exec iboot-mysql mysql -uroot -proot \
-        -e 'CREATE DATABASE IF NOT EXISTS iboot_ai CHARACTER SET utf8mb4' 2>/dev/null \
-        || fail '创建 iboot_ai 库失败'
-
-    # 文件服务的独立 schema：必须早于服务启动，Flyway 只负责建表不建库。
-    docker exec iboot-mysql mysql -uroot -proot \
-        -e 'CREATE DATABASE IF NOT EXISTS iboot_file CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
-        || fail '创建 iboot_file 库失败'
-
-    # 消息与通知服务的独立 schema，同上。
-    docker exec iboot-mysql mysql -uroot -proot \
-        -e 'CREATE DATABASE IF NOT EXISTS iboot_notify CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
-        || fail '创建 iboot_notify 库失败'
-
-    # 调度服务的独立 schema（含 Quartz 表），同上。
-    docker exec iboot-mysql mysql -uroot -proot \
-        -e 'CREATE DATABASE IF NOT EXISTS iboot_job CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
-        || fail '创建 iboot_job 库失败'
-
-    # 审批工作流服务的独立 schema（含 Flowable 引擎表），同上。
-    docker exec iboot-mysql mysql -uroot -proot \
-        -e 'CREATE DATABASE IF NOT EXISTS iboot_workflow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
-        || fail '创建 iboot_workflow 库失败'
-
-    # 监控与日志服务的独立 schema（审计表归本服务所有），同上。
-    docker exec iboot-mysql mysql -uroot -proot \
-        -e 'CREATE DATABASE IF NOT EXISTS iboot_monitor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
-        || fail '创建 iboot_monitor 库失败'
+    # 建库与建表统一由 iboot-db-init 完成，服务不再自带迁移。
 
     wait_http 'Elasticsearch' 'http://localhost:9200' 180 || fail 'Elasticsearch 未就绪'
     wait_http 'MinIO' 'http://localhost:9000/minio/health/live' 120 || fail 'MinIO 未就绪'
@@ -208,6 +180,10 @@ build_backend() {
                 break
             fi
         done
+        if [ "$FORCE_BUILD" -eq 0 ] && [ ! -f "iboot-db-init/target/iboot-db-init-$VERSION-exec.jar" ]; then
+            log "  缺少 db-init 可执行 jar，需要构建"
+            FORCE_BUILD=1
+        fi
     fi
     if [ "$FORCE_BUILD" -eq 1 ]; then
         log '=== 2. 构建后端 ==='
@@ -219,9 +195,16 @@ build_backend() {
     fi
 }
 
+run_db_init() {
+    log '=== 3. 初始化数据库 ==='
+    java -jar "iboot-db-init/target/iboot-db-init-$VERSION-exec.jar" \
+        || fail '数据库初始化失败（iboot-db-init）'
+    log '  数据库就绪'
+}
+
 start_backend() {
     local entry name port
-    log '=== 3. 启动后端 ==='
+    log '=== 4. 启动后端 ==='
     # 邮件是可选的外部依赖：.env 里配了邮箱时它会参与健康检查，离线或认证失败就会把
     # /actuator/health 拉成 503。本地开发把它排除，健康状态只反映数据库、注册中心等
     # 运行本服务真正需要的东西。
@@ -239,18 +222,17 @@ start_backend() {
             echo $! > "$pidfile"
             log "  $name 启动中（pid $!，端口 $port）"
         fi
-        # 系统服务负责 Flyway 建表，其余服务启动时要读共享库（sys_config 等）。
-        # 全新数据卷下并行启动会抢在建表之前失败，因此等系统服务健康后再启动下一个。
+        # 表结构已由 db-init 建好；仍让系统服务先就绪，便于其余服务读取共享库中的配置。
         if [ "$name" = "iboot-system" ]; then
             wait_http "$name" "http://localhost:$port/actuator/health" 240 \
-                || fail "$name 未就绪：其余服务依赖它建出的共享表，无法继续启动"
+                || fail "$name 未就绪：其余服务启动时要读取系统域的数据，无法继续"
         fi
     done
 }
 
 wait_backend() {
     local entry name port
-    log '=== 4. 等待健康 ==='
+    log '=== 5. 等待健康 ==='
     for entry in "${SERVICES[@]}"; do
         name="${entry%%:*}"
         port="${entry##*:}"
@@ -263,7 +245,7 @@ wait_backend() {
 }
 
 start_frontend() {
-    log '=== 5. 前端 ==='
+    log '=== 6. 前端 ==='
     if [ ! -d iboot-portal/node_modules ]; then
         ( cd iboot-portal && cnpm install ) || fail '前端依赖安装失败'
     fi
@@ -326,6 +308,7 @@ case "$ACTION" in
         fi
         start_middleware
         build_backend
+        run_db_init
         start_backend
         wait_backend || fail '服务未在预期时间内就绪'
         [ "$WITH_FRONTEND" -eq 1 ] && start_frontend

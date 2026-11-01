@@ -25,7 +25,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <p>承载 {@code /api/approval/**} 的请假发起、待办、已办、详情与通过/驳回接口，
  * 通过网关对外提供；鉴权、响应信封与操作日志复用 {@code iboot-kernel}。
  *
- * <p>Flowable 引擎与审批业务表共用 {@code iboot_workflow} 数据源，流程状态与业务记录
+ * <p>Flowable 引擎与审批业务表共用共享库数据源，流程状态与业务记录
  * 在同一本地事务内更新；用户校验跨库只读管理端的 {@code sys_user}。
  *
  * @author iBoot Team

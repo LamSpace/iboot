@@ -32,6 +32,11 @@
     <description>iBoot 系统域服务：用户、角色、菜单、组织、字典、参数与数据权限</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-db-init</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- ==================== 共享内核 ==================== -->
         <dependency>
             <groupId>com.iboot</groupId>

@@ -25,7 +25,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <p>承载 {@code /api/auth/login|logout|register}，负责校验用户名密码、签发令牌并把会话写入
  * 共享 Redis；不解析令牌，也不承担数据权限范围查询（{@code /api/auth/scope} 仍在管理端）。
  *
- * <p>过渡期直连 {@code iboot_admin} 库读写用户、角色、菜单、参数与登录日志，
+ * <p>过渡期直连共享库 {@code iboot}读写用户、角色、菜单、参数与登录日志，
  * 会话键与签名密钥与其余服务保持一致，因此网关改回路由即可回滚。
  *
  * @author iBoot Team

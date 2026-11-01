@@ -37,7 +37,7 @@ spring:
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_admin?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
       username: ${MYSQL_USERNAME:root}
       password: ${MYSQL_PASSWORD:root}
       initial-size: 5
@@ -97,13 +97,7 @@ spring:
       enabled: true
       force: true
   flyway:
-    enabled: true
-    locations:
-      - classpath:db/migration
-    baseline-on-migrate: true
-    baseline-version: 0
-    validate-on-migrate: false
-    clean-disabled: true
+    enabled: false
   security:
     user:
       name: actuator
@@ -222,7 +216,7 @@ iboot:
   # 操作审计：审计表已归 iboot-monitor 所有，管理端与其它服务一样跨 schema 写入，
   # 避免切换后管理端的审计记录落在旧表而日志页看不到。
   logging:
-    operate-log-table: iboot_monitor.sys_operate_log
+    operate-log-table: sys_operate_log
   # 免鉴权路径白名单，由共享内核（iboot-kernel）读取并与过滤器链共用
   security:
     whitelist:

@@ -31,7 +31,7 @@ import java.util.Set;
 /**
  * 认证所需的共享库访问器。
  *
- * <p>过渡期认证服务的数据源直接指向 {@code iboot_admin}，因此这里使用未限定的表名。访问范围
+ * <p>过渡期认证服务的数据源直接指向共享库 {@code iboot}，因此这里使用未限定的表名。访问范围
  * 严格限定为：读取用户、角色、菜单权限与系统参数；写入最后登录信息、注册用户与登录日志。
  *
  * <p>退出条件：{@code iboot-system} 拆分后，本类改为调用系统服务的内部接口，
@@ -208,7 +208,7 @@ public class AuthDirectory {
     public void insertLoginLog(String username, String ipAddress, String loginLocation, String browser,
                                String os, Integer status, String message, LocalDateTime loginTime) {
         jdbcTemplate.update(
-                "INSERT INTO iboot_monitor.sys_login_log (username, ip_address, login_location, browser, os, status, message, "
+                "INSERT INTO sys_login_log (username, ip_address, login_location, browser, os, status, message, "
                         + "login_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 username, ipAddress, loginLocation, browser, os, status, message, loginTime);
     }

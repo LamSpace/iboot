@@ -27,7 +27,7 @@ import java.util.Optional;
 /**
  * 审批服务的系统用户只读适配器。
  *
- * <p>跨库读取 {@code iboot_admin.sys_user} 的四个字段，替代管理端原有的 {@code UserRepository}。
+ * <p>跨库读取 {@code sys_user} 的四个字段，替代管理端原有的 {@code UserRepository}。
  * 数据访问失败时抛出 {@link BusinessException}（失败关闭），不允许在用户目录不可用时放行发起请求。
  *
  * <p>这是拆分过渡期的临时约定，退出条件：{@code iboot-system} 拆分后改调系统服务。
@@ -39,7 +39,7 @@ import java.util.Optional;
 public class WorkflowUserReader {
 
     private static final String SELECT_USER =
-            "SELECT id, status, username, nickname FROM iboot_admin.sys_user WHERE id = ? AND deleted = 0";
+            "SELECT id, status, username, nickname FROM sys_user WHERE id = ? AND deleted = 0";
 
     private final JdbcTemplate jdbcTemplate;
 

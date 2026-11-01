@@ -35,7 +35,7 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
       # 过渡期直连管理端 schema：认证所需的用户、角色、菜单、参数与登录日志都归系统域，
       # 本服务不建自有 schema；退出条件见设计文档 D2。
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_admin?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
       username: ${MYSQL_USERNAME:root}
       password: ${MYSQL_PASSWORD:root}
       initial-size: 2

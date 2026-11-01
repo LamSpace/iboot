@@ -12,7 +12,7 @@
               "ciphertextSize": 173159,
               "createTime": "2026-11-01T14:40:19",
               "createdBy": "admin",
-              "databaseName": "iboot_admin",
+              "databaseName": "iboot",
               "dumpTool": "mysqldump",
               "durationMs": 915,
               "encryption": "AES-256-GCM",
@@ -22,7 +22,7 @@
               "plaintextSize": 173121,
               "startedAt": "2026-11-01T14:40:19",
               "status": "SUCCESS",
-              "storagePath": "backup/iboot_admin/2026/11/01/B20261101144019-72a55d32.sql.enc",
+              "storagePath": "backup/iboot/2026/11/01/B20261101144019-72a55d32.sql.enc",
               "storageType": "local",
               "tableCount": 70,
               "tableStats": {

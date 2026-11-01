@@ -32,6 +32,11 @@
     <description>iBoot 调度服务：定时任务管理与数据备份恢复</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-db-init</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 共享内核：响应信封、资源服务器鉴权、操作日志 -->
         <dependency>
             <groupId>com.iboot</groupId>

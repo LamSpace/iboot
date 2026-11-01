@@ -26,7 +26,7 @@ import com.iboot.job.infrastructure.backup.BackupCommandFactory;
 import com.iboot.job.infrastructure.backup.MysqldumpBackupExecutor;
 import com.iboot.job.infrastructure.backup.ProcessCommandRunner;
 import com.iboot.job.infrastructure.storage.InMemoryFileStorageStrategy;
-import org.flywaydb.core.Flyway;
+import com.iboot.dbinit.SchemaMigrator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,11 +101,7 @@ class BackupIntegrationTest {
 
     @BeforeAll
     static void migrate() throws Exception {
-        Flyway.configure()
-                .dataSource(url(DATABASE), "root", "root")
-                .locations("classpath:db/migration")
-                .load()
-                .migrate();
+        SchemaMigrator.migrate(new org.springframework.jdbc.datasource.DriverManagerDataSource(url(DATABASE), "root", "root"));
     }
 
     @BeforeEach

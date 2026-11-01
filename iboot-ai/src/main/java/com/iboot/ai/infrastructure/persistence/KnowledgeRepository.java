@@ -42,7 +42,7 @@ import java.util.Optional;
 /**
  * 知识库元数据仓储。
  *
- * <p>使用 Spring JDBC 访问 {@code iboot_ai} schema，覆盖知识库、文档、分块与共享部门。
+ * <p>使用 Spring JDBC 访问共享库，覆盖知识库、文档、分块与共享部门。
  * 仅在 {@code iboot.ai.rag.enabled=true} 时装配，避免纯对话模式依赖 MySQL。
  *
  * @author iBoot Team

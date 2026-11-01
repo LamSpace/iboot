@@ -19,7 +19,7 @@ package com.iboot.workflow.infrastructure.workflow;
 import com.iboot.workflow.domain.workflow.model.WorkflowHistoryItem;
 import com.iboot.workflow.domain.workflow.model.WorkflowTask;
 import com.iboot.workflow.domain.workflow.service.WorkflowService;
-import org.flywaydb.core.Flyway;
+import com.iboot.dbinit.SchemaMigrator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -148,11 +148,7 @@ class FlowableWorkflowAdapterTest {
                     + "/iboot_workflow?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC");
             dataSource.setUsername("root");
             dataSource.setPassword("root");
-            Flyway.configure()
-                    .dataSource(dataSource)
-                    .locations("classpath:db/migration")
-                    .load()
-                    .migrate();
+            SchemaMigrator.migrate(dataSource);
             return dataSource;
         }
     }

@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * 提供 Dashboard 首页数据汇总功能，包括各模块统计数量和最新日志记录。
  * </p>
  *
- * <p>日志数据由监控服务拥有，这里跨 schema 只读 {@code iboot_monitor} 的两张表：
+ * <p>日志数据由监控服务拥有，这里只读共享库中监控服务拥有的两张表：
  * 仪表盘只取总数与最近 5 条，为它引入一次跨服务调用不划算。
  * 退出条件：{@code iboot-system} 拆分时改为调用监控服务的查询接口。</p>
  *

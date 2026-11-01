@@ -47,7 +47,7 @@ spring:
       repositories:
         enabled: false
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${IBOOT_AI_MYSQL_DATABASE:iboot_ai}?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${IBOOT_AI_MYSQL_DATABASE:iboot}?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -55,12 +55,7 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 2
   flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-    baseline-version: 0
-    validate-on-migrate: false
-    clean-disabled: true
+    enabled: false
   elasticsearch:
     uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
     connection-timeout: 5s
@@ -127,7 +122,7 @@ management:
 iboot:
   # 操作审计：审计表归 iboot-monitor 所有，本服务跨 schema 写入，退出条件见 doc/23 §11.10
   logging:
-    operate-log-table: iboot_monitor.sys_operate_log
+    operate-log-table: sys_operate_log
   # 免鉴权路径白名单：AI 服务只暴露健康检查与指标端点
   security:
     whitelist:

@@ -20,7 +20,7 @@ import com.iboot.workflow.domain.workflow.model.LeaveApplication;
 import com.iboot.workflow.domain.workflow.model.LeaveStatus;
 import com.iboot.workflow.domain.workflow.repository.LeaveApplicationRepository;
 import com.iboot.workflow.infrastructure.config.MyBatisConfig;
-import org.flywaydb.core.Flyway;
+import com.iboot.dbinit.SchemaMigrator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -152,11 +152,7 @@ class LeaveApplicationRepositoryTest {
                     + "/iboot_repository?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC");
             dataSource.setUsername("root");
             dataSource.setPassword("root");
-            Flyway.configure()
-                    .dataSource(dataSource)
-                    .locations("classpath:db/migration")
-                    .load()
-                    .migrate();
+            SchemaMigrator.migrate(dataSource);
             return dataSource;
         }
     }

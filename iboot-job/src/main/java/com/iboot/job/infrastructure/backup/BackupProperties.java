@@ -198,7 +198,7 @@ public class BackupProperties {
         /**
          * 数据库名。
          */
-        private String name = "iboot_admin";
+        private String name = "iboot";
 
         /**
          * 用户名。

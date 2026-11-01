@@ -34,7 +34,7 @@ spring:
     druid:
       driver-class-name: com.mysql.cj.jdbc.Driver
       # 独立 schema：审计表归本服务所有，其他服务跨 schema 写入
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_monitor?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
       username: ${MYSQL_USERNAME:root}
       password: ${MYSQL_PASSWORD:root}
       initial-size: 2
@@ -50,8 +50,7 @@ spring:
       filters: stat,wall,slf4j
   # 迁移脚本只作用于本服务 schema；跨 schema 的数据搬迁见 scripts/migrate/
   flyway:
-    enabled: true
-    locations: classpath:db/migration
+    enabled: false
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -78,7 +77,7 @@ jwt:
 iboot:
   logging:
     # 审计表归本服务所有，写入本 schema
-    operate-log-table: iboot_monitor.sys_operate_log
+    operate-log-table: sys_operate_log
   security:
     whitelist:
       - /swagger-ui/**

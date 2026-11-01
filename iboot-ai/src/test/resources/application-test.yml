@@ -17,6 +17,8 @@ spring:
 jwt:
   secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
   session-timeout: 30
+  # 集成测试用对称密钥签发令牌，不经过授权服务器；仅测试环境开启旧格式兼容
+  legacy-enabled: true
 
 iboot:
   ai:

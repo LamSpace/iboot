@@ -16,7 +16,7 @@
 
 package com.iboot.ai.infrastructure.persistence;
 
-import org.flywaydb.core.Flyway;
+import com.iboot.dbinit.SchemaMigrator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DuplicateKeyException;
@@ -74,11 +74,7 @@ class AgentSchemaMigrationTest {
         RuntimeException last = null;
         for (int attempt = 1; attempt <= 30; attempt++) {
             try {
-                Flyway.configure()
-                        .dataSource(dataSource)
-                        .locations("classpath:db/migration")
-                        .load()
-                        .migrate();
+                SchemaMigrator.migrate(dataSource);
                 return;
             } catch (RuntimeException e) {
                 last = e;
@@ -124,10 +120,10 @@ class AgentSchemaMigrationTest {
      */
     @Test
     void repeatedMigrationIsIdempotent() {
-        Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load().migrate();
+        SchemaMigrator.migrate(dataSource);
 
         assertThat(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1", Integer.class)).isEqualTo(2);
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1", Integer.class)).isEqualTo(1);
     }
 
     private boolean tableExists(String table) {

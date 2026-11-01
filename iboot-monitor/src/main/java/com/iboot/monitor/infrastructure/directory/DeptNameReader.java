@@ -27,7 +27,7 @@ import java.util.Map;
  * 只读的部门名称查询。
  *
  * <p>在线会话列表需要用部门 ID 翻译出部门名称，而部门数据属于系统域。跨 schema 只读
- * {@code iboot_admin.sys_dept}，行为与拆分前一致；不引入完整的部门领域模型。
+ * {@code sys_dept}，行为与拆分前一致；不引入完整的部门领域模型。
  *
  * <p>退出条件：{@code iboot-system} 拆分时改为调用系统服务的部门查询接口。
  *
@@ -56,7 +56,7 @@ public class DeptNameReader {
     public Map<Long, String> allDeptNames() {
         Map<Long, String> names = new HashMap<>();
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-                "SELECT id, dept_name FROM iboot_admin.sys_dept WHERE deleted = 0");
+                "SELECT id, dept_name FROM sys_dept WHERE deleted = 0");
         for (Map<String, Object> row : rows) {
             Object id = row.get("id");
             Object deptName = row.get("dept_name");
