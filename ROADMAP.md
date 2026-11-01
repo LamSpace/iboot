@@ -6,7 +6,7 @@
 >
 > 本文只定义"做什么、用什么、受什么约束、带来什么价值、怎么算完成",不含实施排期。每个条目都带验收判据,判据不成立的条目不进路线图。
 >
-> 最近更新:2026-10-29
+> 最近更新:2026-11-01
 
 ---
 
@@ -276,14 +276,17 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 ### 4.2 阶段 2:微服务彻底拆分
 
-> **实施状态(2026-10-31)**:拆分底座已交付(变更 `add-microservice-foundation`,44/44 项任务)。
-> 已完成:回归基线(`scripts/regress/`)、2.0 门禁(Nacos + Sentinel + 链路追踪,结论见 `doc/spike/microservice-2-0-spike-report.md`)、
-> `iboot-gateway`(路由 / 跨域 / 长连接 / 故障降级)、前端流量切换、admin 与 ai 接入 Nacos 与追踪。
+> **实施状态(2026-11-01):阶段 2 的业务服务拆分已结束。** 九个服务全部独立可部署，
+> 前端零改动经网关完成全部业务流程。验收见 §2.6 的状态表——唯一未达标的是 Seata 分布式事务。
+>
+> 拆分底座已交付(变更 `add-microservice-foundation`,44/44 项任务)：回归基线(`scripts/regress/`)、
+> 2.0 门禁(Nacos + Sentinel + 链路追踪,结论见 `doc/spike/microservice-2-0-spike-report.md`)、
+> `iboot-gateway`(路由 / 跨域 / 长连接 / 故障降级)、前端流量切换、系统服务与 ai 接入 Nacos 与追踪。
 > 操作见 `doc/23-微服务底座操作指南.md`。
 >
 > **共享内核已交付(变更 `add-shared-kernel`)**:新增 `iboot-kernel` 模块,承载统一响应与异常处理
 > (`com.iboot.kernel.web`)、资源服务器鉴权(`com.iboot.kernel.security`)、操作日志写路径
-> (`com.iboot.kernel.logging`);admin 与 ai 不再各自维护实现。查询侧与数据权限仍留在 admin。
+> (`com.iboot.kernel.logging`);系统服务与 ai 不再各自维护实现。查询侧与数据权限仍留在系统服务。
 >
 > **业务服务拆分状态**:
 >
@@ -292,7 +295,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 > | `iboot-gateway` | 已完成 | `add-microservice-foundation` |
 > | `iboot-kernel`(库) | 已完成 | `add-shared-kernel` |
 > | `iboot-file` | 已完成 | `add-file-service` / `remove-file-from-admin` |
-> | `iboot-auth` | 已抽出（协议不变） | `extract-auth-service` |
+> | `iboot-auth` | 已完成（OAuth2 / OIDC 授权服务器，双栈窗口已关闭） | `extract-auth-service` / `add-authorization-server` |
 > | `iboot-notify` | 已完成（独立 schema，旧实现已删除） | `add-notify-service` / `remove-notify-from-admin` |
 > | `iboot-job` | 已完成（独立 schema，旧实现已删除） | `add-job-service` / `remove-job-from-admin` |
 > | `iboot-workflow` | 已完成（独立 schema，旧实现已删除） | `add-workflow-service` / `remove-workflow-from-admin` |
@@ -301,17 +304,19 @@ Boot 4.0.3 这一前提改变了可选生态:
 >
 > `iboot-file` 的当前状态:`sys_file` 已迁至独立 schema `iboot_file`(本服务 Flyway 管理),
 > 仍以 `iboot_admin.` 限定名只读共享库的 `sys_config`/`sys_dict_data`/`sys_user`,
-> 数据权限经 `/api/auth/scope` 获取;管理端旧实现已删除,管理端 `sys_file` 表再保留一个发布周期。
-> 退出条件见 `doc/23` §11.3。
+> 数据权限经 `/api/auth/scope` 获取;旧实现已删除,`iboot_admin` 中的 `sys_file` 表待清理。
+> 跨 schema 只读已改判为长期接受,契约见 `doc/23` §11.3 与 §11.12。
 >
-> `iboot-auth` 的当前状态:**OAuth2 / OIDC 授权服务器**。浏览器走授权码 + PKCE,认证服务自己渲染
-> 登录页;资源服务用 `/oauth2/jwks` 公钥验签并直接读取令牌声明,共享 Redis 的 `login_tokens:<jti>`
-> 只承担撤销与在线名单。旧接口 `/api/auth/login|logout|register` 在双栈窗口内保留(由 `jwt.legacy-enabled`
-> 控制),窗口关闭后移除。`GET /api/auth/scope` **不在**认证服务,它返回数据权限范围,属系统域,
-> 随 `iboot-system` 迁移。认证服务直连 `iboot_admin` 读写用户、角色、菜单、参数与登录日志,
-> 不建自有 schema;退出条件见 `doc/23` §11.5。
+> `iboot-auth` 的当前状态:**OAuth2 / OIDC 授权服务器,协议切换已完成**。浏览器走授权码 + PKCE,
+> 认证服务自己渲染登录页;资源服务用 `/oauth2/jwks` 公钥验签并直接读取令牌声明,共享 Redis 的
+> `login_tokens:<jti>` 只承担撤销与在线名单。`/api/auth/login` 已移除,`jwt.legacy-enabled=false`
+> 在八个服务生效,旧格式令牌返回业务码 `40101`;`/api/auth/logout`(会话撤销)与 `/api/auth/register`
+> (自助注册)作为功能保留。`GET /api/auth/scope` **不在**认证服务,它返回数据权限范围,属系统域——
+> 已随 `iboot-system` 落地,网关按路径把它交给系统服务,调用方路径不变。
+> 认证服务直连 `iboot_admin` 读写用户、角色、菜单、参数与登录日志,不建自有 schema;
+> 该直连已改判为长期接受(唯一登记的写入例外),见 `doc/23` §11.5 与 §11.12。
 >
-> ### ✅ OAuth2 / OIDC 认证中心(2026-10-31 落地,双栈窗口未关闭)
+> ### ✅ OAuth2 / OIDC 认证中心(2026-10-31 落地,双栈窗口已关闭)
 >
 > 变更 `add-authorization-server` 已交付:Spring Authorization Server(Spring Security 7 内置)、
 > 授权码 + PKCE、JWK 公钥集与 OIDC 发现文档、认证服务托管的登录页、资源服务器改为验签 + 读声明、
@@ -321,7 +326,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 > 因此没有静默续期。会话语义仍由共享会话的滑动续期决定——资源服务不因令牌自身过期而拒绝请求,
 > 访问令牌有效期与会话超时(30 分钟)对齐。
 >
-> 双栈窗口已关闭:`jwt.legacy-enabled=false` 在四个服务生效,旧格式令牌返回业务码 `40101`;
+> 双栈窗口已关闭:`jwt.legacy-enabled=false` 在八个服务生效,旧格式令牌返回业务码 `40101`;
 > `/api/auth/login` 已移除,`/api/auth/logout`(会话撤销)与 `/api/auth/register`(自助注册)作为功能保留。
 > 项目尚未对外发布,不存在需要保护的在线旧令牌,因此没有按「观察一个发布周期」执行收敛。
 >
@@ -332,7 +337,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 > 变更 `add-job-service` 已交付:`iboot-job`(8085)承载定时任务管理与数据备份恢复
 > (`/api/job/**`、`/api/monitor/backup/**`)。独立 schema `iboot_job` 由本服务 Flyway 管理,
 > Quartz 以集群模式运行(`isClustered: true`),启动时只做增量对账,不再清空调度器。
-> 任务列表的数据权限经服务名调用管理端 `GET /api/auth/scope`,失败关闭。
+> 任务列表的数据权限经服务名调用系统服务的 `GET /api/auth/scope`,失败关闭。
 > 备份启用时在启动阶段自检存储可写与导出命令可达,而不是等到第一次执行才失败。
 > 变更 `remove-job-from-admin` 随后完成收尾:四张业务表迁入 `iboot_job`(`QRTZ_*` 为派生状态,由启动时
 > 按 `sys_job` 重建,不搬迁),管理端旧实现(62 个 Java 文件、16 个测试类)及其 Quartz 依赖与备份配置已删除,
@@ -359,7 +364,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 >
 > 变更 `add-workflow-service` 已交付:`iboot-workflow`(8086)承载 `/api/approval/**` 的 7 个接口,
 > Flowable 引擎与请假业务表同库同事务。独立 schema `iboot_workflow` 的 33 张表由本服务 Flyway 管理,
-> 菜单与权限种子仍留在管理端 V17。数据在停机窗口内从 `iboot_admin` 全量搬迁(含在途实例与部署记录),
+> 菜单与权限种子仍留在系统服务的 V17(随模块改名保留,数据未迁移)。数据在停机窗口内从 `iboot_admin` 全量搬迁(含在途实例与部署记录),
 > 启动后引擎不重复部署 BPMN。审批人校验跨库只读 `iboot_admin.sys_user`,通知登记按 Nacos 服务名
 > 调 notify 的内部端点,失败不阻断审批。
 >
@@ -389,9 +394,10 @@ Boot 4.0.3 这一前提改变了可选生态:
 > 变更 `remove-monitor-from-admin` 随后完成收尾:5 个控制器、7 个应用服务、7 个 DTO 与导出 VO、
 > 2 个仓储接口与实现、`ElasticsearchConfig` 已删除,管理端同时移除 Elasticsearch 与 OSHI 依赖;
 > 契约基线从 76 条降到 57 条,`migrations.txt` 的五条登记收敛为 `done`。
-> 仪表板与统计仍需要日志数据,改为跨 schema 只读 `iboot_monitor` 的两张表,
-> 登记为临时债务(退出条件:`iboot-system` 拆分时改为调用监控服务);
-> 这使两者在监控服务故障时仍可用,停 monitor 时实测仍返回 200。
+> 仪表板与统计仍需要日志数据,改为跨 schema 只读 `iboot_monitor` 的两张表。
+> 原计划是「等 `iboot-system` 拆分时改为调用监控服务」,该退出条件在 `rename-admin-to-system`
+> 中被**改判为长期接受**:改成远程调用会让仪表盘在监控服务故障时一起失败,而现在停 monitor
+> 两者仍返回 200。契约与理由见 `doc/23` §11.12。
 >
 > 操作见 `doc/23` §11.10。
 
@@ -426,17 +432,17 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 #### 2.0 前置门禁(Spike 不过则不开拆)
 
-| 门禁 | 内容 | 判据 |
-|---|---|---|
-| 2.0-A | Spring Cloud Alibaba `2025.1.0.0`(支持 Boot 4.0.x + Spring Cloud 2025.1.x)三件套冒烟 | 两服务互相发现;配置热更新生效;Sentinel 限流规则生效 |
-| 2.0-B | 链路追踪选型验证(OpenTelemetry 而非 SkyWalking agent) | 两个服务间调用能看到一条完整 TraceID |
+| 门禁 | 内容 | 判据 | 状态 |
+|---|---|---|---|
+| 2.0-A | Spring Cloud Alibaba `2025.1.0.0`(支持 Boot 4.0.x + Spring Cloud 2025.1.x)三件套冒烟 | 两服务互相发现;配置热更新生效;Sentinel 限流规则生效 | ✅ 已通过(`doc/spike/microservice-2-0-spike-report.md`) |
+| 2.0-B | 链路追踪选型验证(OpenTelemetry 而非 SkyWalking agent) | 两个服务间调用能看到一条完整 TraceID | ✅ 已通过,采用 OpenTelemetry + Tempo |
 
 #### 2.1 底座交付
 
-- **Nacos**:注册中心 + 配置中心。⚠️ 必须用 `spring.config.import`,不沿用 `bootstrap.yml`(见 R9)。
-- **Spring Cloud Gateway**:路由表吸收接口归属变化,承载鉴权前置、统一 CORS、限流入口。
-- **OpenTelemetry 链路追踪**:`docker-compose.yml` 中当前**没有任何 tracing backend**,而拆分后的可排障性完全依赖贯穿的 TraceID——因此追踪后端(Tempo 或 ARMS)与网关、Nacos 同批交付,不可后置。
-- **契约测试**:拆分后各服务接口独立演进,用契约测试守住 `/api/**` 不漂移(替代原 TODO#10 的 Rest Docs)。
+- ✅ **Nacos**:注册中心 + 配置中心。⚠️ 必须用 `spring.config.import`,不沿用 `bootstrap.yml`(见 R9)。
+- ✅ **Spring Cloud Gateway**:路由表吸收接口归属变化,承载鉴权前置、统一 CORS、限流入口。
+- ✅ **OpenTelemetry 链路追踪**:交付前的 `docker-compose.yml` 没有任何 tracing backend,而拆分后的可排障性完全依赖贯穿的 TraceID,因此追踪后端(Tempo)与网关、Nacos 同批交付、未后置。
+- ✅ **契约测试**:拆分后各服务接口独立演进,用契约测试守住 `/api/**` 不漂移(替代原 TODO#10 的 Rest Docs)。落在 `scripts/regress/`。
 
 #### 生态版本事实(核查结论)
 
@@ -451,9 +457,12 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 #### 2.2 认证中心与 SSO(原 TODO#4)
 
-> **状态(2026-10-31):服务已抽出,协议未切换。** `extract-auth-service` 只把
-> `/api/auth/login|logout|register` 搬到 `iboot-auth`(8083),仍是「用户名密码换 JWT + 共享 Redis 会话」;
-> 本节描述的 OAuth2 / OIDC 部分**尚未实现**,待办清单见 §4.2 的「未实现」条目。
+> **状态(2026-10-31):已完成。** `extract-auth-service` 先把
+> `/api/auth/login|logout|register` 搬到 `iboot-auth`(8083),`add-authorization-server` 随后完成
+> OAuth2 / OIDC 协议切换:授权码 + PKCE、JWK 公钥集与发现文档、认证服务托管登录页,
+> 其余服务退化为纯资源服务器。双栈窗口已关闭,旧登录接口下线。
+> 一处偏差:Spring Authorization Server 对「公共客户端 + 授权码」不签发刷新令牌,因此没有静默续期,
+> 会话语义由共享会话的滑动续期承担(详见上方认证中心一节)。
 
 `iboot-auth` 用 **Spring Authorization Server**(OAuth2 / OIDC)承接现有 `AuthController` + JWT 签发 + Redis 会话;其余服务全部退化为**纯资源服务器**(只校验 token,不再持有登录逻辑)。
 
@@ -464,7 +473,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 | 服务 | 来源 | 拆分理由 |
 |---|---|---|
 | `iboot-gateway` | 新建 | Spring Cloud Gateway:路由、鉴权前置、统一 CORS、限流入口 |
-| `iboot-auth` | 从 admin 抽出 `AuthController` + JWT + Redis 会话 | 认证中心 / SSO,其余服务的依赖前置 |
+| `iboot-auth` | 从 `iboot-admin` 抽出认证接口,随后升级为 OAuth2 / OIDC 授权服务器 | 认证中心 / SSO,其余服务的依赖前置 |
 | `iboot-file` | 文件管理 + 0.7 `FileStorageStrategy` | 边界清晰、依赖少 |
 | `iboot-notify` | 消息中心 + SSE 推送 + 0.6 多渠道通知 | **有状态连接**,独立最能体现价值 |
 | `iboot-job` | 定时任务 + 0.2 数据备份(Quartz 驱动) | 调度语义独立 |
@@ -485,27 +494,34 @@ Boot 4.0.3 这一前提改变了可选生态:
 
 #### 2.4 一致性分工(不是全替换)
 
-| 场景 | 方案 | 理由 |
-|---|---|---|
-| 跨服务强一致写(如删部门级联用户与角色) | **Seata AT** | 真实需要回滚的边界才上分布式事务 |
-| 二级缓存失效、SSE 跨实例广播 | **保留 Redis Pub/Sub** | 低延迟、fire-and-forget 语义匹配,换 MQ 是负优化 |
-| 业务事件、通知削峰、跨服务最终一致 | **RocketMQ**,事件格式直接复用既有 `common/cloudevent` 包 | 存量格式已是 CloudEvents 兼容 |
-| 限流熔断降级 | **Sentinel**,规则持久化到 Nacos | — |
-| 数据 | 每服务独立 schema(同实例逻辑分库),Flyway 按服务分目录 | 为阶段 4 ShardingSphere 铺路 |
-| 调度 | Quartz `isClustered` 由 false → true,或 ElasticJob | 拆分后不集群化会重复执行 |
+| 场景 | 方案 | 理由 | 现状(2026-11-01) |
+|---|---|---|---|
+| 跨服务强一致写(如删部门级联用户与角色) | **Seata AT** | 真实需要回滚的边界才上分布式事务 | ❌ **未引入**：当前没有这类边界，跨服务写入都是旁路（审计、通知），失败不影响主流程 |
+| 二级缓存失效、SSE 跨实例广播 | **保留 Redis Pub/Sub** | 低延迟、fire-and-forget 语义匹配,换 MQ 是负优化 | ✅ 在用 |
+| 业务事件、通知削峰、跨服务最终一致 | **RocketMQ**,事件格式直接复用既有 `common/cloudevent` 包 | 存量格式已是 CloudEvents 兼容 | ❌ **未引入**：审计写入仍是内核直写目标表；审批→通知走内部 HTTP 端点并退避重试 |
+| 限流熔断降级 | **Sentinel**,规则持久化到 Nacos | — | ⚠️ 仅在 2.0 门禁的 Spike 中验证，业务服务与网关尚未接入 |
+| 数据 | 每服务独立 schema(同实例逻辑分库),Flyway 按服务分目录 | 为阶段 4 ShardingSphere 铺路 | ✅ 8 个服务已独立；`iboot_admin` 因迁移成本保留为历史名称（见 §4.2 系统域改名） |
+| 调度 | Quartz `isClustered` 由 false → true,或 ElasticJob | 拆分后不集群化会重复执行 | ✅ `iboot-job` 已以集群模式运行 |
 
 #### 2.5 诚实的成本
 
-- **内存**:8 个 JVM,叠加现有 19 个中间件容器,本机内存是真实瓶颈(每服务 512MB–1GB 堆)。缓解:本地只跑正在改的服务(按需 docker profiles)+ 依赖服务 mock。这也让阶段 4 的 native 化有了**非练手**的理由。
+- **内存**:9 个服务进程(网关 + 8 个业务服务),叠加现有 19 个中间件容器,本机内存是真实瓶颈(每服务 512MB–1GB 堆)。缓解:本地只跑正在改的服务(按需 docker profiles)+ 依赖服务 mock。这也让阶段 4 的 native 化有了**非练手**的理由。
 - **复杂度**:部分失败、幂等、调试面扩大——这正是链路追踪必须先行的原因。
 
 #### 2.6 验收判据
 
-1. 端到端链路 TraceID 贯穿(网关 → auth → system → file → notify)。
-2. 停掉任一服务:网关返回明确降级错误,不雪崩,Sentinel 规则可观测。
-3. Seata 回滚演练:跨服务事务中途失败,数据最终一致。
-4. Nacos 配置热更新不需重启生效;bootstrap 相关配置已完成迁移。
-5. **前端零改动**跑通:登录 → 改用户 → 上传文件 → 收到 SSE 消息。
+| # | 判据 | 状态 | 证据 |
+|---|---|---|---|
+| 1 | 端到端链路 TraceID 贯穿 | ✅ 分段验证 | 网关→系统 10 个 span；网关→文件→系统(数据权限扇出)三条服务落在同一 TraceID；网关→认证、网关→监控、网关→审批在各自变更中验证。业务上不存在 auth→system→file→notify 这样一条真实调用链，因此按「每一跳都贯穿」验证 |
+| 2 | 停掉任一服务：网关明确降级、不雪崩、Sentinel 规则可观测 | ✅ 每次拆分都做过 | 系统服务那次最严：带数据范围查询在 60 秒缓存过期后失败关闭（500），无数据范围接口仍 200，网关 503，全部响应 7–49 ms；停 monitor / workflow / job 时各自域降级、其余域不受影响 |
+| 3 | Seata 回滚演练：跨服务事务中途失败，数据最终一致 | ❌ **未做** | Seata 尚未引入（`grep seata` 无命中），也没有真实的跨服务强一致写场景。当前所有跨服务写入都是旁路（审计、通知），失败不影响主流程。留待出现真实需要回滚的边界（如删部门级联用户与角色）时再上 |
+| 4 | Nacos 配置热更新生效；bootstrap 迁移完成 | ✅ | `add-microservice-foundation` 已验证；八个服务统一走 `spring.config.import`，仓内无 `bootstrap.yml` |
+| 5 | 前端零改动：登录 → 改用户 → 上传文件 → 收到 SSE | ✅ | `regress.sh` 的冒烟用例覆盖同一条链路；`iboot-portal` 在五次拆分与一次改名中未修改 |
+
+**阶段 2 的收尾状态**：九个服务全部独立可部署，业务服务拆分已结束。唯一未达标的判据是第 3 条
+（Seata 分布式事务）——它不是拆分的前置条件，而是「出现真实的跨服务强一致写」时才需要的能力。
+另有两项已登记、明确排在后续变更的收尾工作：`iboot_admin` schema 改名，以及该 schema 中
+25 张前几次拆分遗留的表清理。
 
 ### 4.3 阶段 3:云原生(ACK + Helm)
 
