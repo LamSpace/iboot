@@ -1,0 +1,175 @@
+server:
+  port: 8085
+  servlet:
+    context-path: /
+  tomcat:
+    threads:
+      virtual:
+        enabled: true
+    max-connections: 10000
+
+spring:
+  application:
+    name: iboot-job
+  # 注册中心与配置中心：走 spring.config.import，optional: 保证配置中心不可用时仍能启动
+  config:
+    import: optional:nacos:iboot-job.yml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+        fail-fast: false
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        file-extension: yml
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+  threads:
+    virtual:
+      enabled: true
+  jmx:
+    enabled: false
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      # 独立 schema：任务、Quartz 与备份记录表归本服务所有，结构由本服务的 Flyway 管理
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_job?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:root}
+      initial-size: 2
+      min-idle: 2
+      max-active: 10
+      max-wait: 60000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: true
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      filters: stat,wall,slf4j
+  # 迁移脚本只作用于本服务 schema；跨 schema 的数据搬迁见 scripts/migrate/
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 10s
+  # Quartz 集群：多实例下同一任务只执行一次
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    scheduler-name: iBootScheduler
+    overwrite-existing-jobs: true
+    wait-for-jobs-to-complete-on-shutdown: true
+    properties:
+      org.quartz.jobStore.tablePrefix: QRTZ_
+      org.quartz.jobStore.isClustered: true
+      org.quartz.scheduler.instanceId: AUTO
+      org.quartz.jobStore.misfireThreshold: 60000
+      org.quartz.threadPool.threadCount: 10
+
+# 鉴权：与既有服务共用密钥与会话，token 由认证服务签发
+jwt:
+  secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
+  expiration: 604800
+  session-timeout: 30
+  # 双栈窗口已关闭：只接受认证服务签发的自包含令牌，旧对称签名令牌返回业务码 40101
+  legacy-enabled: false
+
+iboot:
+  security:
+    whitelist:
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /v3/api-docs/**
+      - /v3/api-docs
+      - /v3/api-docs.yaml
+      - /v3/api-docs/swagger-config
+      - /swagger-resources/**
+      - /webjars/**
+      - /doc.html
+      - /actuator/**
+      - /error
+  # 任务列表的数据权限范围：由管理端只读提供，失败关闭
+  job:
+    permission:
+      scope-url: ${IBOOT_JOB_SCOPE_URL:http://iboot-admin/api/auth/scope}
+      cache-seconds: ${IBOOT_JOB_SCOPE_CACHE_SECONDS:60}
+  # 数据备份与恢复
+  backup:
+    enabled: ${IBOOT_BACKUP_ENABLED:false}
+    encryption-key: ${IBOOT_BACKUP_ENCRYPTION_KEY:}
+    database:
+      host: ${MYSQL_HOST:localhost}
+      port: ${MYSQL_PORT:3306}
+      name: ${IBOOT_BACKUP_DATABASE:iboot_admin}
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:root}
+    command:
+      # 本地默认通过 docker exec 复用 MySQL 容器内的 mysqldump，避免宿主机安装客户端
+      dump-prefix:
+        - docker
+        - exec
+        - -i
+        - -e
+        - MYSQL_PWD
+        - ${IBOOT_BACKUP_DOCKER_CONTAINER:iboot-mysql}
+        - mysqldump
+      restore-prefix:
+        - docker
+        - exec
+        - -i
+        - -e
+        - MYSQL_PWD
+        - ${IBOOT_BACKUP_DOCKER_CONTAINER:iboot-mysql}
+        - mysql
+    restore:
+      schema: ${IBOOT_BACKUP_RESTORE_SCHEMA:iboot_restore_drill}
+      prefix: ${IBOOT_BACKUP_RESTORE_PREFIX:iboot_restore_}
+    stale-running-minutes: ${IBOOT_BACKUP_STALE_MINUTES:30}
+
+mybatis:
+  type-aliases-package: com.iboot.job.infrastructure.persistence.po
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+    version: OPENAPI_3_1
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    url: /v3/api-docs
+
+management:
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${TEMPO_OTLP:http://localhost:4318/v1/traces}
+  otlp:
+    metrics:
+      export:
+        enabled: false
+  tracing:
+    export:
+      enabled: ${IBOOT_TRACING_ENABLED:true}
+    sampling:
+      probability: ${IBOOT_TRACING_SAMPLE:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

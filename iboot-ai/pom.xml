@@ -194,6 +194,11 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
+        <!-- 服务间调用按服务名寻址：智能体工具代理访问 admin 与 job -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
         <!-- 链路追踪：Boot 4 将追踪自动配置拆到独立 starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

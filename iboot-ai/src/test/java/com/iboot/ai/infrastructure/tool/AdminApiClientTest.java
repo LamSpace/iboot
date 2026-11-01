@@ -86,35 +86,6 @@ class AdminApiClientTest {
     }
 
     /**
-     * 触发备份使用 POST。
-     */
-    @Test
-    void triggerBackupUsesPost() {
-        server.expect(requestTo("http://admin.test/api/monitor/backup/records"))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(header("Authorization", "Bearer tk-1"))
-                .andRespond(withSuccess("{\"code\":200,\"data\":{\"id\":7}}", MediaType.APPLICATION_JSON));
-
-        String body = client.triggerBackup("tk-1");
-
-        assertThat(body).contains("\"id\":7");
-        server.verify();
-    }
-
-    /**
-     * 下游 403 映射为可辨识异常。
-     */
-    @Test
-    void mapsForbiddenToException() {
-        server.expect(requestTo("http://admin.test/api/monitor/backup/summary"))
-                .andRespond(withStatus(HttpStatus.FORBIDDEN));
-
-        assertThatThrownBy(() -> client.backupSummary("tk-1"))
-                .isInstanceOf(AdminApiException.class)
-                .hasMessage("无权访问下游接口");
-    }
-
-    /**
      * 缺少令牌时不发起请求。
      */
     @Test

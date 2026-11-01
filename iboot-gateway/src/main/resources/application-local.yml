@@ -35,6 +35,15 @@ spring:
               predicates:
                 - Path=/api/message/**,/api/notice/**,/api/notification/**,/api/search
 
+            # 调度服务：定时任务与数据备份。
+            # 备份的路径挂在 /api/monitor 下，而 monitor 尚未拆分，因此这里必须按路径登记，
+            # 不能占用 /api/monitor/** 前缀。
+            - id: job
+              uri: ${IBOOT_JOB_URI:http://localhost:8085}
+              order: 28
+              predicates:
+                - Path=/api/monitor/backup/**,/api/job/**
+
             # 认证服务：旧的登录/登出/注册 + OAuth2/OIDC 标准端点与登录页。
             # GET /api/auth/scope 返回数据权限范围，属于系统域，仍由管理端承载，
             # 因此认证相关路径必须逐条列出而不是 /api/auth/**。

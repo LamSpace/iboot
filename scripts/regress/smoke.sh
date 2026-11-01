@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 关键链路端到端冒烟：登录、用户信息、文件上传下载、实时推送、数据备份、审批流转。
+# 关键链路端到端冒烟：登录、用户信息、文件上传下载、实时推送、定时任务、数据备份、审批流转。
 #
 # 用法：smoke.sh
 # 环境变量：REG_BASE（默认 http://localhost:8080）、REG_USER、REG_PASS
@@ -123,9 +123,34 @@ else
     reg_fail "无法准备可重试的投递记录"
 fi
 
-reg_log "== 5. 数据备份 =="
-backup=$(reg_post /api/monitor/backup/records)
-reg_expect_ok "触发一次手动备份" "$backup"
+reg_log "== 5. 定时任务与数据备份（经网关，已迁至 iboot-job） =="
+job_body='{"jobName":"回归冒烟任务","jobGroup":"DEFAULT","invokeTarget":"sampleTask.noParams","cronExpression":"0 0 3 * * ?","status":0,"remark":"回归冒烟"}'
+job_created=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+    -d "$job_body" "$REG_GATEWAY/api/job" | reg_unwrap)
+reg_expect_ok "经网关创建一条暂停任务" "$job_created"
+job_id=$(printf '%s' "$job_created" | jq -r '.data.id // empty')
+if [ -n "$job_id" ] && [ "$job_id" != "null" ]; then
+    job_run=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/job/$job_id/run" | reg_unwrap)
+    reg_expect_ok "经网关立即执行一次任务" "$job_run"
+    job_log=""
+    for _ in $(seq 1 10); do
+        job_log=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+            "$REG_GATEWAY/api/job/log/list?jobId=$job_id&pageNum=1&pageSize=10" | reg_unwrap)
+        [ "$(printf '%s' "$job_log" | jq -r '.data.total // 0')" -gt 0 ] && break
+        sleep 1
+    done
+    reg_expect_jq "执行日志中出现该任务的记录" '.data.total > 0' "$job_log"
+    job_removed=$(curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/job/$job_id" | reg_unwrap)
+    reg_expect_ok "经网关删除任务" "$job_removed"
+else
+    reg_fail "创建任务未返回 ID"
+fi
+
+backup=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/monitor/backup/records" | reg_unwrap)
+reg_expect_ok "经网关触发一次手动备份" "$backup"
 
 reg_log "== 6. 审批流转 =="
 reg_ensure_user "regress_approver" "回归审批人" 2

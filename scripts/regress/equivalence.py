@@ -5,7 +5,7 @@
 
 用法：python3 -I equivalence.py <base-url> <token> <output-file> [service]
 
-service 取 file（默认）或 notify，决定采集哪一组只读请求。
+service 取 file（默认）、notify 或 job，决定采集哪一组只读请求。
 """
 
 import hashlib
@@ -121,15 +121,41 @@ def collect_notify(base, token):
     }
 
 
+def collect_job(base, token):
+    """调度服务：任务列表、任务详情、执行日志、备份记录、还原记录与备份汇总。
+
+    只取只读接口；写操作（立即执行、触发备份）由冒烟覆盖，录制与校验之间不能有写入，
+    否则记录数量变化会被当成差异。
+    """
+    list_result = evaluate(base, token, "/api/job/list?pageNum=1&pageSize=10")
+    results = {"jobList": list_result, "jobLogList": evaluate(base, token,
+                                                             "/api/job/log/list?pageNum=1&pageSize=10")}
+    rows = []
+    try:
+        rows = list_result["body"]["data"]["data"]["data"]
+    except (KeyError, TypeError):
+        pass
+    if rows:
+        results["jobDetail"] = evaluate(base, token, f"/api/job/{rows[0]['id']}")
+    else:
+        results["jobDetail"] = {"skipped": "无任务可查"}
+
+    results["backupRecords"] = evaluate(base, token, "/api/monitor/backup/records?pageNum=1&pageSize=10")
+    results["restoreRecords"] = evaluate(base, token, "/api/monitor/backup/restores?pageNum=1&pageSize=10")
+    results["backupSummary"] = evaluate(base, token, "/api/monitor/backup/summary")
+    return results
+
+
 PROFILES = {
     "file": collect_file,
     "notify": collect_notify,
+    "job": collect_job,
 }
 
 
 def main() -> int:
     if len(sys.argv) not in (4, 5):
-        print("用法: equivalence.py <base-url> <token> <output-file> [file|notify]", file=sys.stderr)
+        print("用法: equivalence.py <base-url> <token> <output-file> [file|notify|job]", file=sys.stderr)
         return 2
     base, token, output = sys.argv[1].rstrip("/"), sys.argv[2], sys.argv[3]
     service = sys.argv[4] if len(sys.argv) == 5 else "file"

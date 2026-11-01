@@ -48,13 +48,19 @@ public class QueryLoginLogsTool extends AdminToolSupport {
     private static final String PERMISSION = "loginlog:list";
 
     /**
+     * 下游客户端。
+     */
+    private final AdminApiClient client;
+
+    /**
      * 创建工具。
      *
      * @param client  下游客户端
      * @param trimmer 结果裁剪器
      */
     public QueryLoginLogsTool(AdminApiClient client, ToolResultTrimmer trimmer) {
-        super(client, trimmer);
+        super(trimmer);
+        this.client = client;
     }
 
     @Override

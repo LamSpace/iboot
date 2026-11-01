@@ -102,41 +102,6 @@ public class AdminApiClient {
         return get(token, "/api/log/login/list", params);
     }
 
-    /**
-     * 查询备份概览。
-     *
-     * @param token 调用者令牌
-     * @return 原始响应 JSON
-     * @throws AdminApiException 下游不可用或返回错误
-     */
-    public String backupSummary(String token) {
-        return get(token, "/api/monitor/backup/summary", Map.of());
-    }
-
-    /**
-     * 触发一次手动备份。
-     *
-     * @param token 调用者令牌
-     * @return 原始响应 JSON
-     * @throws AdminApiException 下游不可用或返回错误
-     */
-    public String triggerBackup(String token) {
-        requireToken(token);
-        try {
-            return restClient.post()
-                    .uri("/api/monitor/backup/records")
-                    .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + token)
-                    .header(VERSION_HEADER, VERSION)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .body(String.class);
-        } catch (RestClientResponseException e) {
-            throw new AdminApiException(e.getStatusCode().value(), downstreamMessage(e), e);
-        } catch (RuntimeException e) {
-            throw new AdminApiException(0, "admin 服务不可用", e);
-        }
-    }
-
     private String get(String token, String path, Map<String, Object> params) {
         requireToken(token);
         try {

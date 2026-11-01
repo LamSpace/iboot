@@ -28,8 +28,8 @@ import java.util.function.Supplier;
 /**
  * admin 代理工具的公共基类。
  *
- * <p>统一完成本地权限前置校验、异常映射与结果裁剪。子类只负责组装参数与调用
- * {@link AdminApiClient}，不得自行访问下游。
+ * <p>统一完成本地权限前置校验、异常映射与结果裁剪。子类自行持有目标服务的客户端
+ * 并负责组装参数，不得绕过本类直接处理鉴权与异常。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -42,11 +42,6 @@ public abstract class AdminToolSupport implements AgentTool {
     protected static final int DEFAULT_PAGE_SIZE = 10;
 
     /**
-     * 下游客户端。
-     */
-    protected final AdminApiClient client;
-
-    /**
      * 结果裁剪器。
      */
     protected final ToolResultTrimmer trimmer;
@@ -54,11 +49,9 @@ public abstract class AdminToolSupport implements AgentTool {
     /**
      * 创建工具。
      *
-     * @param client  下游客户端
      * @param trimmer 结果裁剪器
      */
-    protected AdminToolSupport(AdminApiClient client, ToolResultTrimmer trimmer) {
-        this.client = client;
+    protected AdminToolSupport(ToolResultTrimmer trimmer) {
         this.trimmer = trimmer;
     }
 
