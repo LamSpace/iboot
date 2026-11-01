@@ -340,39 +340,3 @@ iboot:
     # 通知登记：由 iboot-notify 承接，内部端点不经网关
     base-url: ${IBOOT_NOTIFY_BASE_URL:http://localhost:8084}
     internal-token: ${IBOOT_NOTIFY_INTERNAL_TOKEN:}
-    in-app-enabled: ${IBOOT_NOTIFICATION_IN_APP_ENABLED:true}
-    email:
-      enabled: ${IBOOT_NOTIFICATION_EMAIL_ENABLED:true}
-      from: ${MAIL_FROM:}
-    dingtalk:
-      enabled: ${IBOOT_DINGTALK_ENABLED:false}
-      webhook: ${IBOOT_DINGTALK_WEBHOOK:}
-      secret: ${IBOOT_DINGTALK_SECRET:}
-      keyword-prefix: "【iBoot】"
-      rate-per-minute: ${IBOOT_DINGTALK_RATE_PER_MINUTE:20}
-    sms:
-      enabled: ${IBOOT_SMS_ENABLED:false}
-      access-key-id: ${IBOOT_SMS_ACCESS_KEY_ID:}
-      access-key-secret: ${IBOOT_SMS_ACCESS_KEY_SECRET:}
-      sign-name: ${IBOOT_SMS_SIGN_NAME:}
-      template-code: ${IBOOT_SMS_TEMPLATE_CODE:}
-      region: ${IBOOT_SMS_REGION:cn-hangzhou}
-    retry:
-      max-attempts: ${IBOOT_NOTIFICATION_RETRY_MAX:5}
-      backoff-seconds: ${IBOOT_NOTIFICATION_RETRY_BACKOFF_SECONDS:60}
-      batch-size: ${IBOOT_NOTIFICATION_RETRY_BATCH_SIZE:100}
-  push:
-    enabled: true
-    # SSE 配置
-    sse:
-      timeout: 300000        # 连接超时 (5 分钟)
-      heartbeat-interval: 30000  # 心跳间隔 (30 秒)
-      reconnect-interval: 5000   # 重连间隔 (5 秒)
-    # 推送配置
-    notification:
-      max-unread: 50         # 最大未读消息数
-      batch-size: 20         # 批量推送大小
-    # 广播器配置
-    broadcaster: local       # local | redis
-    redis:
-      channel: iboot:push:events

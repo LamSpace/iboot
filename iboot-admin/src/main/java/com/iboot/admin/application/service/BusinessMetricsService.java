@@ -50,13 +50,6 @@ public class BusinessMetricsService {
 
     private DistributionSummary fileUploadSizeSummary;
 
-    // 消息推送指标
-    private AtomicInteger pushConnectionCount;
-
-    private Counter pushEventSentCounter;
-
-    private Counter pushEventFailedCounter;
-
     /**
      * 初始化业务监控指标
      * <p>
@@ -102,21 +95,6 @@ public class BusinessMetricsService {
                 .description("文件上传大小分布")
                 .tag("application", "iboot-admin")
                 .baseUnit(BaseUnits.BYTES)
-                .register(meterRegistry);
-        // 消息推送指标
-        pushConnectionCount = new AtomicInteger(0);
-        Gauge.builder("push_connection_active", pushConnectionCount, AtomicInteger::get)
-                .description("当前活跃的 SSE 推送连接数")
-                .tag("application", "iboot-admin")
-                .baseUnit(BaseUnits.CONNECTIONS)
-                .register(meterRegistry);
-        pushEventSentCounter = Counter.builder("push_event_sent")
-                .description("推送事件发送成功次数")
-                .tag("application", "iboot-admin")
-                .register(meterRegistry);
-        pushEventFailedCounter = Counter.builder("push_event_failed")
-                .description("推送事件发送失败次数")
-                .tag("application", "iboot-admin")
                 .register(meterRegistry);
         log.info("业务监控指标初始化完成");
     }
@@ -227,38 +205,6 @@ public class BusinessMetricsService {
     }
 
     /**
-     * 更新推送连接数
-     *
-     * @param count 连接数
-     */
-    public void updatePushConnectionCount(int count) {
-        pushConnectionCount.set(count);
-    }
-
-    /**
-     * 记录推送事件发送成功
-     */
-    public void recordPushEventSent() {
-        pushEventSentCounter.increment();
-    }
-
-    /**
-     * 记录推送事件发送失败
-     */
-    public void recordPushEventFailed() {
-        pushEventFailedCounter.increment();
-    }
-
-    /**
-     * 获取推送连接数
-     *
-     * @return 推送连接数
-     */
-    public int getPushConnectionCount() {
-        return pushConnectionCount.get();
-    }
-
-    /**
      * 获取指标统计信息
      * <p>
      * 返回简化的指标汇总字符串，用于日志或快速查看。
@@ -267,8 +213,7 @@ public class BusinessMetricsService {
      * @return 指标汇总字符串
      */
     public String getMetricsSummary() {
-        return String.format("缓存命中率：%.2f%%, 推送连接：%d", calculateCacheHitRate(),
-                getPushConnectionCount());
+        return String.format("缓存命中率：%.2f%%", calculateCacheHitRate());
     }
 
 }

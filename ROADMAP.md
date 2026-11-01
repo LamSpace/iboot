@@ -293,8 +293,7 @@ Boot 4.0.3 这一前提改变了可选生态:
 > | `iboot-kernel`(库) | 已完成 | `add-shared-kernel` |
 > | `iboot-file` | 已完成 | `add-file-service` / `remove-file-from-admin` |
 > | `iboot-auth` | 已抽出（协议不变） | `extract-auth-service` |
-> | `iboot-notify` | 已抽出（过渡期共享表，旧实现保留） | `add-notify-service` |
-> | `remove-notify-from-admin` | 待办 | 迁 schema、迁维护任务、删除管理端旧实现 |
+> | `iboot-notify` | 已完成（独立 schema，旧实现已删除） | `add-notify-service` / `remove-notify-from-admin` |
 > | `job` / `monitor` / `workflow` / `system` | 待办 | 按 2.3 蓝图顺序 |
 >
 > `iboot-file` 的当前状态:`sys_file` 已迁至独立 schema `iboot_file`(本服务 Flyway 管理),
@@ -331,8 +330,10 @@ Boot 4.0.3 这一前提改变了可选生态:
 > SSE 实时推送与内容检索(`/api/message/**`、`/api/notice/**`、`/api/notification/**`、
 > `/api/push/**`、`/api/search`)。审批提交改为经内部端点 `POST /internal/notifications` 触发通知,
 > 通知失败**不阻断**审批,失败计入 `notification_trigger_failed_total` 并按退避重试。
-> 过渡期共享 `iboot_admin` 的六张表,管理端旧实现保留,改回网关路由即可回滚;
-> 数据迁移、维护任务迁移与旧实现删除见后续变更 `remove-notify-from-admin`。操作见 `doc/23` §11.7。
+> 变更 `remove-notify-from-admin` 随后完成收尾:六张表迁入独立 schema `iboot_notify` 并由本服务 Flyway 管理,
+> 通知重试与索引对账改由本服务的进程内调度执行(管理端 `sys_job` 两行已删除),
+> 管理端旧实现(88 个 Java 文件、6 个 mapper XML、15 个测试类)已删除,只保留跨服务契约件。
+> 回滚方式相应变为 `git revert` + 数据源指回 `iboot_admin`。操作见 `doc/23` §11.7。
 
 
 #### 2.0 前置门禁(Spike 不过则不开拆)

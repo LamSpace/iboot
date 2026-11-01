@@ -13,11 +13,11 @@
 /api/file admin file done
 # 消息与通知：过渡期管理端仍保留旧实现（绞杀者），路由已指向 iboot-notify；
 # 第二个变更 remove-notify-from-admin 删除旧实现后，逐条改为 done。
-/api/message admin notify transitional
-/api/notice admin notify transitional
-/api/notification admin notify transitional
-/api/push admin notify transitional
-/api/search admin notify transitional
+/api/message admin notify done
+/api/notice admin notify done
+/api/notification admin notify done
+/api/push admin notify done
+/api/search admin notify done
 # 认证接口：只迁登录/登出/注册。GET /api/auth/scope 仍在 admin（数据权限范围属系统域），
 # 因此这里逐条登记，而不是登记 /api/auth 前缀——后者永远无法达到 done。
 # `/api/auth/login` 不在这里登记：它随 OAuth2 协议切换整体下线（不是搬家到别的服务），

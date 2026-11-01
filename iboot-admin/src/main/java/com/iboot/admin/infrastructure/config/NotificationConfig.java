@@ -22,9 +22,10 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Clock;
 
 /**
- * 通知基础设施配置。
+ * 时间源配置。
  *
- * <p>提供可替换的 {@link Clock}，让投递退避与测试时间可控。
+ * <p>提供可替换的 {@link Clock}，让备份、恢复演练等按时间推进的逻辑可在测试中控制。
+ * 通知投递已迁出本服务，其时钟由 {@code iboot-notify} 自行提供。
  *
  * @author iBoot Team
  * @since 1.0.0

@@ -33,8 +33,8 @@ spring:
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      # 过渡期共享管理端 schema：六张消息/公告/投递表仍由 iboot_admin 管理，本服务不启用 Flyway
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_admin?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      # 独立 schema：六张消息/公告/投递表归本服务所有，结构由本服务的 Flyway 管理
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_notify?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
       username: ${MYSQL_USERNAME:root}
       password: ${MYSQL_PASSWORD:root}
       initial-size: 2
@@ -48,6 +48,10 @@ spring:
       pool-prepared-statements: true
       max-pool-prepared-statement-per-connection-size: 20
       filters: stat,wall,slf4j
+  # 迁移脚本只作用于本服务 schema；跨 schema 数据搬迁见 scripts/migrate/
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
   data:
     redis:
       host: ${REDIS_HOST:localhost}
