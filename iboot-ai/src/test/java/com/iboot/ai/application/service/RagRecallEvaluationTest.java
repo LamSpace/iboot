@@ -37,7 +37,7 @@ import com.iboot.ai.infrastructure.security.PermissionScope;
 import com.iboot.ai.support.FakeOcrParser;
 import com.iboot.ai.support.InMemoryKnowledgeStorage;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.flywaydb.core.Flyway;
+import com.iboot.dbinit.SchemaMigrator;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -274,7 +274,7 @@ class RagRecallEvaluationTest {
         RuntimeException last = null;
         for (int attempt = 1; attempt <= 30; attempt++) {
             try {
-                Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load().migrate();
+                SchemaMigrator.migrate(dataSource);
                 return;
             } catch (RuntimeException e) {
                 last = e;

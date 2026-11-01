@@ -20,7 +20,7 @@ import com.iboot.ai.domain.knowledge.DocumentChunk;
 import com.iboot.ai.domain.knowledge.DocumentStatus;
 import com.iboot.ai.domain.knowledge.KnowledgeBase;
 import com.iboot.ai.domain.knowledge.KnowledgeDocument;
-import org.flywaydb.core.Flyway;
+import com.iboot.dbinit.SchemaMigrator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -83,7 +83,7 @@ class KnowledgeRepositoryTest {
         RuntimeException last = null;
         for (int attempt = 1; attempt <= 30; attempt++) {
             try {
-                Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load().migrate();
+                SchemaMigrator.migrate(dataSource);
                 return;
             } catch (RuntimeException e) {
                 last = e;

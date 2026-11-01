@@ -16,7 +16,7 @@
 
 package com.iboot.system.infrastructure.system;
 
-import org.flywaydb.core.Flyway;
+import com.iboot.dbinit.SchemaMigrator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -61,9 +61,11 @@ class GraphMenuMigrationTest {
 
     private JdbcTemplate jdbcTemplate;
 
+    private DriverManagerDataSource dataSource;
+
     @BeforeEach
     void migrate() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
         dataSource.setUrl("jdbc:mysql://" + MYSQL.getHost() + ":" + MYSQL.getMappedPort(MYSQL_PORT)
                 + "/iboot_graph_menu?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC");
@@ -101,31 +103,15 @@ class GraphMenuMigrationTest {
                 Integer.class, GRAPH_MENU_ID);
     }
 
-    private void executeMigrationAgain() throws Exception {
-        String sql;
-        try (InputStream input = new ClassPathResource("db/migration/V27__add_graph_permission.sql")
-                .getInputStream()) {
-            sql = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-        }
-        String withoutComments = Arrays.stream(sql.split("\n"))
-                .filter(line -> !line.trim().startsWith("--"))
-                .collect(Collectors.joining("\n"));
-        for (String statement : withoutComments.split(";")) {
-            if (!statement.isBlank()) {
-                jdbcTemplate.execute(statement);
-            }
-        }
+    private void executeMigrationAgain() {
+        SchemaMigrator.migrate(dataSource);
     }
 
     private void migrateWithRetry(DriverManagerDataSource dataSource) {
         RuntimeException last = null;
         for (int attempt = 1; attempt <= 30; attempt++) {
             try {
-                Flyway.configure()
-                        .dataSource(dataSource)
-                        .locations("classpath:db/migration")
-                        .load()
-                        .migrate();
+                SchemaMigrator.migrate(dataSource);
                 return;
             } catch (RuntimeException e) {
                 last = e;

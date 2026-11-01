@@ -26,7 +26,7 @@ import java.util.Optional;
  * 只读的用户信息访问器。
  *
  * <p>消息与通知只需要用户的标识、邮箱与手机号：全量发送时枚举用户 ID，外部渠道投递时取收件地址。
- * 直接读管理端 schema 的 {@code iboot_admin.sys_user}，不引入完整的用户领域模型。
+ * 直接读管理端 schema 的 {@code sys_user}，不引入完整的用户领域模型。
  *
  * <p>退出条件：{@code iboot-system} 拆分时改为调用系统服务的用户查询接口。
  *
@@ -54,7 +54,7 @@ public class NotifyUserReader {
      */
     public List<Long> findAllUserIds() {
         return jdbcTemplate.queryForList(
-                "SELECT id FROM iboot_admin.sys_user WHERE deleted = 0 ORDER BY create_time DESC", Long.class);
+                "SELECT id FROM sys_user WHERE deleted = 0 ORDER BY create_time DESC", Long.class);
     }
 
     /**
@@ -65,7 +65,7 @@ public class NotifyUserReader {
      */
     public Optional<NotifyUser> findById(final Long id) {
         List<NotifyUser> users = jdbcTemplate.query(
-                "SELECT id, username, nickname, email, phone FROM iboot_admin.sys_user WHERE id = ? AND deleted = 0",
+                "SELECT id, username, nickname, email, phone FROM sys_user WHERE id = ? AND deleted = 0",
                 (rs, rowNum) -> new NotifyUser(rs.getLong("id"), rs.getString("username"),
                         rs.getString("nickname"), rs.getString("email"), rs.getString("phone")),
                 id);

@@ -32,6 +32,11 @@
     <description>iBoot 审批工作流服务：请假审批与 Flowable 流程引擎</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-db-init</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 共享内核：响应信封、资源服务器鉴权、操作日志 -->
         <dependency>
             <groupId>com.iboot</groupId>

@@ -28,7 +28,7 @@ import com.iboot.workflow.infrastructure.config.MyBatisConfig;
 import com.iboot.workflow.infrastructure.repository.LeaveApplicationRepositoryImpl;
 import com.iboot.workflow.infrastructure.workflow.FlowableWorkflowAdapter;
 import org.flowable.engine.RuntimeService;
-import org.flywaydb.core.Flyway;
+import com.iboot.dbinit.SchemaMigrator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -197,11 +197,7 @@ class ApprovalApplicationServiceIntegrationTest {
                     + "/iboot_approval_service?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC");
             dataSource.setUsername("root");
             dataSource.setPassword("root");
-            Flyway.configure()
-                    .dataSource(dataSource)
-                    .locations("classpath:db/migration")
-                    .load()
-                    .migrate();
+            SchemaMigrator.migrate(dataSource);
             return dataSource;
         }
 

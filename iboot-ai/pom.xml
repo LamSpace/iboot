@@ -32,6 +32,11 @@
     <description>iBoot AI 工作台服务</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-db-init</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 共享内核 -->
         <dependency>
             <groupId>com.iboot</groupId>

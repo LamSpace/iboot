@@ -60,21 +60,22 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 
 **服务与端口**
 
-| 服务 | 端口 | 职责 | 数据 schema |
+| 服务 | 端口 | 职责 | 主要表组 |
 |---|---|---|---|
 | `iboot-gateway` | 8088 | 统一入口、路由、跨域、SSE 长连接透传 | — |
-| `iboot-system` | 8080 | 用户、角色、菜单、部门、岗位、字典、参数；仪表板与统计；数据权限范围 | `iboot_admin` |
-| `iboot-ai` | 8081 | 对话、知识库 RAG、智能体编排、知识图谱 | `iboot_ai` |
-| `iboot-file` | 8082 | 文件上传、下载、预览与分类 | `iboot_file` |
-| `iboot-auth` | 8083 | OAuth2 / OIDC 授权服务器、登录页、登出与注册 | `iboot_admin`（直连） |
-| `iboot-notify` | 8084 | 消息中心、公告、模板、多渠道投递、SSE 推送、内容检索 | `iboot_notify` |
-| `iboot-job` | 8085 | 定时任务调度、数据备份与恢复 | `iboot_job` |
-| `iboot-workflow` | 8086 | 请假审批与 Flowable 流程引擎 | `iboot_workflow` |
-| `iboot-monitor` | 8087 | 操作/登录/运行日志、在线会话、资源监控 | `iboot_monitor` |
+| `iboot-system` | 8080 | 用户、角色、菜单、部门、岗位、字典、参数；仪表板与统计；数据权限范围 | 系统与组织 |
+| `iboot-ai` | 8081 | 对话、知识库 RAG、智能体编排、知识图谱 | `ai_*` |
+| `iboot-file` | 8082 | 文件上传、下载、预览与分类 | `sys_file` |
+| `iboot-auth` | 8083 | OAuth2 / OIDC 授权服务器、登录页、登出与注册 | 系统表（直连） |
+| `iboot-notify` | 8084 | 消息中心、公告、模板、多渠道投递、SSE 推送、内容检索 | `sys_message*` / `sys_notice*` |
+| `iboot-job` | 8085 | 定时任务调度、数据备份与恢复 | `sys_job*` / `QRTZ_*` / 备份记录 |
+| `iboot-workflow` | 8086 | 请假审批与 Flowable 流程引擎 | `ACT_*` / `FLW_RU_*` / 审批表 |
+| `iboot-monitor` | 8087 | 操作/登录/运行日志、在线会话、资源监控 | `sys_operate_log` / `sys_login_log` |
 | `iboot-kernel` | — | 共享内核库（统一响应、鉴权、审计写入），不独立部署 | — |
 
-**数据边界**：每个服务拥有独立 schema 的写入所有权；跨 schema 只读是长期接受模式，
-消费清单与写入例外见 [doc/23](<./doc/23-微服务底座操作指南.md>) §11.12。
+**数据边界**：所有服务共用一个数据库 `iboot`；每张表只有一个所有者，其余服务只读登记的表与列。
+结构由 `iboot-db-init` 统一迁移，服务不执行 DDL。消费清单与写入例外见
+[doc/23](<./doc/23-微服务底座操作指南.md>) §11.12。
 
 ## 技术栈
 
@@ -172,20 +173,25 @@ cnpm install
 cnpm run dev --host
 ```
 
-首次启动时各服务的 Flyway 会建立自己的表；`docker/init.sql` 只负责创建 `iboot_admin`，
-其余 schema 由 `scripts/dev-init.sh` 创建（手工启动时需自行建库）。
+启动服务前先运行 `iboot-db-init` 建库建表；`scripts/dev-init.sh` 会自动完成这一步：
+
+```bash
+mvn -pl iboot-db-init -am package
+MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root \
+  java -jar iboot-db-init/target/iboot-db-init-1.0.0-exec.jar
+```
 
 **访问与验证**
 
 - 前端开发地址：<http://localhost:5173>，API 经 Vite 代理到网关 `8088`
 - 网关健康检查：<http://localhost:8088/actuator/health>
-- 默认管理员：`admin` / `admin123`（Flyway `V2` 种子数据，首次登录后请立即修改）
+- 默认管理员：`admin` / `admin123456`（baseline 种子数据，首次登录后请立即修改）
 
 ## 目录结构
 
 ```
 iboot/
-├── pom.xml                  # 父 POM，聚合十个后端模块
+├── pom.xml                  # 父 POM，聚合十一个后端模块
 ├── docker/                  # 中间件编排与初始化脚本
 │   ├── docker-compose.yml
 │   └── init.sql
@@ -197,6 +203,7 @@ iboot/
 │   ├── migrate/             # 五次服务拆分时的一次性迁移脚本（历史）
 │   └── regress/             # 契约快照、路由覆盖、冒烟、权限矩阵
 ├── iboot-kernel/            # 共享内核库：统一响应、鉴权、审计写入
+├── iboot-db-init/           # 数据库初始化：建库与集中式迁移，运行后退出
 ├── iboot-gateway/           # 网关 :8088
 ├── iboot-system/            # 系统域 :8080
 ├── iboot-ai/                # AI 工作台 :8081
@@ -266,7 +273,7 @@ Helm 组织与 ACK 部署见 [ROADMAP 阶段 3](ROADMAP.md#阶段-3云原生ack-
 |---|---|
 | [doc/README.md](doc/README.md) | 全部项目文档的入口 |
 | [ROADMAP.md](ROADMAP.md) | 未完成路线、版本矩阵、风险与决策记录 |
-| [doc/23 微服务底座操作指南](<./doc/23-微服务底座操作指南.md>) | Nacos、网关、链路追踪与跨 schema 契约 |
+| [doc/23 微服务底座操作指南](<./doc/23-微服务底座操作指南.md>) | Nacos、网关、链路追踪与表级只读契约 |
 | [doc/22 AI 工作台操作指南](<./doc/22-AI 工作台操作指南.md>) | 模型配置、RAG、智能体与知识图谱 |
 | [doc/11 可观测性设计](<./doc/11-可观测性设计.md>) | 指标、日志、告警与追踪 |
 | [openspec/specs](openspec/specs) | 19 份能力契约 |

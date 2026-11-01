@@ -178,7 +178,7 @@ iboot/
 
 - JDK 25 (最低 21)
 - Node.js 20 LTS
-- MySQL 8.x（AI 知识库使用独立 schema `iboot_ai`）
+- MySQL 8.x（全部服务共用数据库 `iboot`）
 - Redis 7.x
 - Elasticsearch 9.x（公告/消息检索与知识库 RAG）
 - MinIO（知识库原文件）
