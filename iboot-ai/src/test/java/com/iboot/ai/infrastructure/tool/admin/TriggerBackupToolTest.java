@@ -21,7 +21,7 @@ import com.iboot.ai.domain.agent.ApprovalGrant;
 import com.iboot.ai.domain.agent.PendingAction;
 import com.iboot.ai.domain.agent.ToolOutcome;
 import com.iboot.ai.infrastructure.config.AiProperties;
-import com.iboot.ai.infrastructure.tool.AdminApiClient;
+import com.iboot.ai.infrastructure.tool.JobApiClient;
 import com.iboot.ai.infrastructure.tool.ToolArguments;
 import com.iboot.ai.infrastructure.tool.ToolResultTrimmer;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ class TriggerBackupToolTest {
 
     private static final String PERMISSION = "backup:record:create";
 
-    private final AdminApiClient client = mock(AdminApiClient.class);
+    private final JobApiClient client = mock(JobApiClient.class);
 
     private final TriggerBackupTool tool = new TriggerBackupTool(client,
             new ToolResultTrimmer(new AiProperties()));

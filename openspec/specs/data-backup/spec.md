@@ -8,7 +8,7 @@
 
 ### Requirement: 备份功能的启用与密钥校验
 
-系统 SHALL 通过 `iboot.backup.enabled` 控制备份能力，默认值为 `false`。启用时，系统 MUST 从环境变量 `IBOOT_BACKUP_ENCRYPTION_KEY` 读取 Base64 编码的 32 字节密钥；密钥缺失、无法解码或长度不为 32 字节时，应用 MUST 启动失败并明确指出该环境变量，不得降级为明文备份。
+系统 SHALL 通过 `iboot.backup.enabled` 控制备份能力，默认值为 `false`。启用时，系统 MUST 从环境变量 `IBOOT_BACKUP_ENCRYPTION_KEY` 读取 Base64 编码的 32 字节密钥；密钥缺失、无法解码或长度不为 32 字节时，**承载备份能力的调度服务** MUST 启动失败并明确指出该环境变量，不得降级为明文备份。备份配置与密钥校验只属于调度服务；管理端 MUST NOT 读取该配置，也 MUST NOT 因该密钥无效而启动失败。
 
 #### Scenario: 默认关闭时不影响启动
 
@@ -20,9 +20,15 @@
 #### Scenario: 启用但密钥无效
 
 - **WHEN** `iboot.backup.enabled` 为 `true`，密钥缺失或解码后不是 32 字节
-- **THEN** 应用启动失败
+- **THEN** 调度服务启动失败
 - **AND** 错误信息包含 `IBOOT_BACKUP_ENCRYPTION_KEY`
 - **AND** 系统不会创建任何备份记录或产物
+
+#### Scenario: 管理端不受备份密钥影响
+
+- **WHEN** 管理端以未配置或无效的 `IBOOT_BACKUP_ENCRYPTION_KEY` 启动
+- **THEN** 管理端正常启动并提供其余管理功能
+- **AND** 备份相关接口由调度服务的可用性决定，与本次启动无关
 
 #### Scenario: 密钥不落库不入日志
 
@@ -31,7 +37,7 @@
 
 ### Requirement: 定时与手动触发
 
-系统 SHALL 支持两种触发方式：由 Quartz 按 `sys_job` 中维护的 cron 定时触发，以及由具备权限的管理员手动触发。同一时刻 MUST 最多存在一个处于运行中的备份；已有备份运行时，新的触发 MUST 被拒绝并返回明确原因，且不得创建新的备份记录。
+系统 SHALL 支持两种触发方式：由调度服务按任务定义中维护的 cron 定时触发，以及由具备权限的管理员手动触发。同一时刻 MUST 最多存在一个处于运行中的备份；已有备份运行时，新的触发 MUST 被拒绝并返回明确原因，且不得创建新的备份记录。该唯一性约束 MUST 在调度服务以多个实例部署时同样成立。
 
 #### Scenario: 定时备份
 
@@ -54,7 +60,13 @@
 #### Scenario: 定时任务不并发执行
 
 - **WHEN** 上一次定时备份尚未结束且下一次 cron 时间已到
-- **THEN** Quartz 不启动新的执行
+- **THEN** 调度器不启动新的执行
+
+#### Scenario: 多实例下不重复备份
+
+- **WHEN** 调度服务以两个实例运行且定时备份任务到达执行时间
+- **THEN** 只创建一条定时备份记录
+- **AND** 不会出现两条并行的运行中记录
 
 ### Requirement: 备份产物加密与完整性
 

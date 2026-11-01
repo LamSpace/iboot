@@ -153,7 +153,9 @@ iboot:
     agent:
       # 默认关闭；开启后 /api/ai/agent/** 才可用
       enabled: ${IBOOT_AI_AGENT_ENABLED:false}
-      admin-base-url: ${IBOOT_AI_AGENT_ADMIN_BASE_URL:http://localhost:8080}
+      # 按注册中心的服务名寻址；本地排障时可覆盖为固定地址
+      admin-base-url: ${IBOOT_AI_AGENT_ADMIN_BASE_URL:http://iboot-admin}
+      job-base-url: ${IBOOT_AI_AGENT_JOB_BASE_URL:http://iboot-job}
       max-steps: ${IBOOT_AI_AGENT_MAX_STEPS:6}
       step-timeout-seconds: ${IBOOT_AI_AGENT_STEP_TIMEOUT_SECONDS:30}
       max-result-chars: ${IBOOT_AI_AGENT_MAX_RESULT_CHARS:2000}

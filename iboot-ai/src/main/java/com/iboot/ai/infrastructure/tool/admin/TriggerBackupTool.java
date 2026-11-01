@@ -19,7 +19,7 @@ package com.iboot.ai.infrastructure.tool.admin;
 import com.iboot.ai.domain.agent.AgentContext;
 import com.iboot.ai.domain.agent.PendingAction;
 import com.iboot.ai.domain.agent.ToolOutcome;
-import com.iboot.ai.infrastructure.tool.AdminApiClient;
+import com.iboot.ai.infrastructure.tool.JobApiClient;
 import com.iboot.ai.infrastructure.tool.AdminApiException;
 import com.iboot.ai.infrastructure.tool.AdminToolSupport;
 import com.iboot.ai.infrastructure.tool.ToolArguments;
@@ -49,13 +49,19 @@ public class TriggerBackupTool extends AdminToolSupport {
     private static final String PERMISSION = "backup:record:create";
 
     /**
+     * 下游客户端。
+     */
+    private final JobApiClient client;
+
+    /**
      * 创建工具。
      *
      * @param client  下游客户端
      * @param trimmer 结果裁剪器
      */
-    public TriggerBackupTool(AdminApiClient client, ToolResultTrimmer trimmer) {
-        super(client, trimmer);
+    public TriggerBackupTool(JobApiClient client, ToolResultTrimmer trimmer) {
+        super(trimmer);
+        this.client = client;
     }
 
     @Override

@@ -18,4 +18,8 @@
 /.well-known iboot-auth
 /connect iboot-auth
 /login iboot-auth
+# 调度服务：定时任务与数据备份。备份路径挂在 /api/monitor 下，而 monitor 尚未拆分，
+# 因此按路径级登记；最长前缀优先保证它不会被 admin 兜底抢走。
+/api/monitor/backup iboot-job
+/api/job iboot-job
 /api    iboot-admin

@@ -33,6 +33,7 @@ import com.iboot.ai.infrastructure.graph.GraphScopeResolver;
 import com.iboot.ai.infrastructure.metrics.AiMetrics;
 import com.iboot.ai.infrastructure.persistence.AgentRepository;
 import com.iboot.ai.infrastructure.tool.AdminApiClient;
+import com.iboot.ai.infrastructure.tool.JobApiClient;
 import com.iboot.ai.infrastructure.tool.AgentToolRegistry;
 import com.iboot.ai.infrastructure.tool.ToolResultTrimmer;
 import com.iboot.ai.infrastructure.tool.admin.QueryBackupSummaryTool;
@@ -123,11 +124,12 @@ class AgentEvaluationReplayTest {
     private Map<String, Object> runCase(Map<String, Object> evalCase) {
         String id = String.valueOf(evalCase.get("id"));
         AdminApiClient client = mock(AdminApiClient.class);
+        JobApiClient jobClient = mock(JobApiClient.class);
         when(client.queryUsers(any(), any(), any(), anyInt(), anyInt()))
                 .thenReturn("{\"code\":200,\"data\":{\"data\":[],\"total\":0}}");
         when(client.queryLoginLogs(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                 .thenReturn("{\"code\":200,\"data\":{\"data\":[],\"total\":0}}");
-        when(client.backupSummary(any())).thenReturn("{\"code\":200,\"data\":{\"enabled\":true}}");
+        when(jobClient.backupSummary(any())).thenReturn("{\"code\":200,\"data\":{\"enabled\":true}}");
 
         AiProperties properties = new AiProperties();
         properties.getAgent().setEnabled(true);
@@ -152,8 +154,8 @@ class AgentEvaluationReplayTest {
         AgentToolRegistry registry = new AgentToolRegistry(List.of(
                 new QueryUsersTool(client, trimmer),
                 new QueryLoginLogsTool(client, trimmer),
-                new QueryBackupSummaryTool(client, trimmer),
-                new TriggerBackupTool(client, trimmer),
+                new QueryBackupSummaryTool(jobClient, trimmer),
+                new TriggerBackupTool(jobClient, trimmer),
                 new QueryOrgGraphTool(graphQueryService, scopeResolver)));
 
         AgentRepository repository = mock(AgentRepository.class);
@@ -175,7 +177,7 @@ class AgentEvaluationReplayTest {
         boolean pending = "PENDING_APPROVAL".equals(events.getLast().data().get("status"));
         boolean writeExecuted;
         try {
-            verify(client, never()).triggerBackup(anyString());
+            verify(jobClient, never()).triggerBackup(anyString());
             writeExecuted = false;
         } catch (AssertionError error) {
             writeExecuted = true;

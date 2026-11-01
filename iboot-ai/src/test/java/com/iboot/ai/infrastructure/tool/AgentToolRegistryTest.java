@@ -45,6 +45,8 @@ class AgentToolRegistryTest {
 
     private final AdminApiClient client = mock(AdminApiClient.class);
 
+    private final JobApiClient jobClient = mock(JobApiClient.class);
+
     private final ToolResultTrimmer trimmer = new ToolResultTrimmer(new AiProperties());
 
     /**
@@ -55,8 +57,8 @@ class AgentToolRegistryTest {
         AgentToolRegistry registry = new AgentToolRegistry(List.of(
                 new QueryUsersTool(client, trimmer),
                 new QueryLoginLogsTool(client, trimmer),
-                new QueryBackupSummaryTool(client, trimmer),
-                new TriggerBackupTool(client, trimmer)));
+                new QueryBackupSummaryTool(jobClient, trimmer),
+                new TriggerBackupTool(jobClient, trimmer)));
 
         assertThat(registry.names()).containsExactlyInAnyOrder(
                 "query_users", "query_login_logs", "query_backup_summary", "trigger_backup");

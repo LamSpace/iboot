@@ -25,6 +25,8 @@ FILE_ROLE_ID=""
 FILE_USER_ID=""
 NOTIFY_ROLE_ID=""
 NOTIFY_USER_ID=""
+JOB_ROLE_ID=""
+JOB_USER_ID=""
 REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
 
 cleanup() {
@@ -36,6 +38,8 @@ cleanup() {
     if [ -n "$FILE_ROLE_ID" ]; then reg_del "/api/role/$FILE_ROLE_ID" >/dev/null 2>&1 || true; fi
     if [ -n "$NOTIFY_USER_ID" ]; then reg_del "/api/user/$NOTIFY_USER_ID" >/dev/null 2>&1 || true; fi
     if [ -n "$NOTIFY_ROLE_ID" ]; then reg_del "/api/role/$NOTIFY_ROLE_ID" >/dev/null 2>&1 || true; fi
+    if [ -n "${JOB_USER_ID:-}" ]; then reg_del "/api/user/$JOB_USER_ID" >/dev/null 2>&1 || true; fi
+    if [ -n "${JOB_ROLE_ID:-}" ]; then reg_del "/api/role/$JOB_ROLE_ID" >/dev/null 2>&1 || true; fi
 }
 trap cleanup EXIT
 
@@ -82,7 +86,9 @@ else
     reg_fail "[数据范围][对比] 超管($admin_total) 未多于受限用户($scope_total)，数据范围可能未生效"
 fi
 
-reg_expect_status "[功能权限][拒绝] 受限用户访问备份记录（无 backup 权限）" "$(reg_status /api/monitor/backup/records)" "401 403"
+backup_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/monitor/backup/records")
+reg_expect_status "[功能权限][拒绝] 受限用户访问备份记录（无 backup 权限）" "$backup_denied" "401 403"
 file_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/file/list?pageNum=1&pageSize=10")
 reg_expect_status "[功能权限][拒绝] 受限用户访问文件列表（无 file:list）" "$file_denied" "401 403"
@@ -130,6 +136,61 @@ if [ "$admin_file_total" -gt "$scope_file_total" ]; then
 else
     reg_fail "[数据范围][对比] 超管($admin_file_total) 未多于受限用户($scope_file_total)，文件数据范围可能未生效"
 fi
+
+reg_log "== 调度域：功能权限与数据范围（经网关，已迁至 iboot-job） =="
+reg_login
+admin_jobs=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/job/list?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "[功能权限][允许] 超管经网关查询定时任务列表" "$admin_jobs"
+admin_job_total=$(printf '%s' "$admin_jobs" | jq -r '.data.total // 0')
+
+# 受限角色同时持有 job:list（菜单 8）与 backup:record:list（菜单 9300），
+# 但没有执行、新增与触发备份的按钮权限，数据范围仅本人。
+JOB_ROLE_CODE="ROLE_JOB_TEST"
+JOB_MENU_ID=8
+BACKUP_MENU_ID=9300
+job_roles=$(reg_get /api/role/all)
+JOB_ROLE_ID=$(printf '%s' "$job_roles" | jq -r --arg c "$JOB_ROLE_CODE" '.data[]? | select(.roleCode == $c) | .id' | head -1)
+if [ -z "$JOB_ROLE_ID" ]; then
+    created=$(reg_post /api/role "{\"roleCode\":\"$JOB_ROLE_CODE\",\"roleName\":\"回归调度角色\",\"orderNum\":97,\"dataScope\":5,\"status\":1,\"menuIds\":[$JOB_MENU_ID,$BACKUP_MENU_ID]}")
+    JOB_ROLE_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$JOB_ROLE_ID" ] || reg_die "创建调度角色失败：$created"
+fi
+JOB_USER_NAME="regress_job"
+users=$(reg_get "/api/user/list?pageNum=1&pageSize=100&username=$JOB_USER_NAME")
+JOB_USER_ID=$(printf '%s' "$users" | jq -r --arg u "$JOB_USER_NAME" '.data.data[]? | select(.username == $u) | .id' | head -1)
+if [ -z "$JOB_USER_ID" ]; then
+    created=$(reg_post /api/user "{\"username\":\"$JOB_USER_NAME\",\"password\":\"$USER_PASS\",\"nickname\":\"回归调度用户\",\"deptId\":1,\"roleIds\":[$JOB_ROLE_ID],\"status\":1}")
+    JOB_USER_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$JOB_USER_ID" ] || reg_die "创建调度用户失败：$created"
+fi
+
+reg_login "$JOB_USER_NAME" "$USER_PASS"
+scope_jobs=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/job/list?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "[功能权限][允许] 持有 job:list 的受限用户可访问任务列表" "$scope_jobs"
+scope_job_total=$(printf '%s' "$scope_jobs" | jq -r '.data.total // 0')
+if [ "$admin_job_total" -gt "$scope_job_total" ]; then
+    reg_pass "[数据范围][对比] 超管可见 $admin_job_total 条任务，受限用户可见 $scope_job_total 条"
+else
+    reg_fail "[数据范围][对比] 超管($admin_job_total) 未多于受限用户($scope_job_total)，任务数据范围可能未生效"
+fi
+
+job_run_denied=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/job/1/run")
+reg_expect_status "[功能权限][拒绝] 无 job:run 的用户不能立即执行任务" "$job_run_denied" "401 403"
+job_add_denied=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $REG_TOKEN" \
+    -H 'Content-Type: application/json' \
+    -d '{"jobName":"越权用例","jobGroup":"DEFAULT","invokeTarget":"sampleTask.noParams","cronExpression":"0 0 3 * * ?"}' \
+    "$REG_GATEWAY/api/job")
+reg_expect_status "[功能权限][拒绝] 无 job:add 的用户不能创建任务" "$job_add_denied" "401 403"
+
+scope_backups=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/monitor/backup/records?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "[功能权限][允许] 持有 backup:record:list 的受限用户可查看备份记录" "$scope_backups"
+backup_create_denied=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/monitor/backup/records")
+reg_expect_status "[功能权限][拒绝] 无 backup:record:create 的用户不能触发备份" "$backup_create_denied" "401 403"
 
 reg_log "== 消息与通知域：功能权限（经网关） =="
 # 当前登录的是只持有 file:list 的受限用户，正好作为「无消息/公告权限」的拒绝用例

@@ -185,9 +185,15 @@ public class AiProperties {
         private boolean enabled = false;
 
         /**
-         * 下游 admin 服务基地址，工具经此地址代理调用。
+         * 下游管理端基地址。默认取注册中心里的服务名，由负载均衡解析出实例；
+         * 本地排障时可改为固定的主机端口。
          */
-        private String adminBaseUrl = "http://localhost:8080";
+        private String adminBaseUrl = "http://iboot-admin";
+
+        /**
+         * 下游调度服务基地址，备份相关工具经此地址代理调用。
+         */
+        private String jobBaseUrl = "http://iboot-job";
 
         /**
          * 单次运行的最大模型调用步数。
@@ -228,6 +234,14 @@ public class AiProperties {
 
         public void setAdminBaseUrl(String adminBaseUrl) {
             this.adminBaseUrl = adminBaseUrl;
+        }
+
+        public String getJobBaseUrl() {
+            return jobBaseUrl;
+        }
+
+        public void setJobBaseUrl(String jobBaseUrl) {
+            this.jobBaseUrl = jobBaseUrl;
         }
 
         public int getMaxSteps() {

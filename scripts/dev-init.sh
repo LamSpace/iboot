@@ -32,7 +32,7 @@ VERSION="1.0.0"
 
 # 后端服务：名称:端口
 # 管理端必须排在最前：它负责 Flyway 建表，其余服务启动时要读共享库（sys_config、sys_user 等）。
-SERVICES=("iboot-admin:8080" "iboot-auth:8083" "iboot-file:8082" "iboot-notify:8084" "iboot-ai:8081" "iboot-gateway:8088")
+SERVICES=("iboot-admin:8080" "iboot-auth:8083" "iboot-file:8082" "iboot-notify:8084" "iboot-job:8085" "iboot-ai:8081" "iboot-gateway:8088")
 
 FORCE_BUILD=0
 WITH_FRONTEND=0
@@ -172,6 +172,11 @@ start_middleware() {
     docker exec iboot-mysql mysql -uroot -proot \
         -e 'CREATE DATABASE IF NOT EXISTS iboot_notify CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
         || fail '创建 iboot_notify 库失败'
+
+    # 调度服务的独立 schema（含 Quartz 表），同上。
+    docker exec iboot-mysql mysql -uroot -proot \
+        -e 'CREATE DATABASE IF NOT EXISTS iboot_job CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
+        || fail '创建 iboot_job 库失败'
 
     wait_http 'Elasticsearch' 'http://localhost:9200' 180 || fail 'Elasticsearch 未就绪'
     wait_http 'MinIO' 'http://localhost:9000/minio/health/live' 120 || fail 'MinIO 未就绪'

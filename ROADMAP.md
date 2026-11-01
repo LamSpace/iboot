@@ -294,7 +294,8 @@ Boot 4.0.3 这一前提改变了可选生态:
 > | `iboot-file` | 已完成 | `add-file-service` / `remove-file-from-admin` |
 > | `iboot-auth` | 已抽出（协议不变） | `extract-auth-service` |
 > | `iboot-notify` | 已完成（独立 schema，旧实现已删除） | `add-notify-service` / `remove-notify-from-admin` |
-> | `job` / `monitor` / `workflow` / `system` | 待办 | 按 2.3 蓝图顺序 |
+> | `iboot-job` | 已抽出（独立 schema，旧实现待删除） | `add-job-service` |
+> | `monitor` / `workflow` / `system` | 待办 | 按 2.3 蓝图顺序 |
 >
 > `iboot-file` 的当前状态:`sys_file` 已迁至独立 schema `iboot_file`(本服务 Flyway 管理),
 > 仍以 `iboot_admin.` 限定名只读共享库的 `sys_config`/`sys_dict_data`/`sys_user`,
@@ -323,6 +324,21 @@ Boot 4.0.3 这一前提改变了可选生态:
 > 项目尚未对外发布,不存在需要保护的在线旧令牌,因此没有按「观察一个发布周期」执行收敛。
 >
 > 门禁过程中修正的既有缺陷:数据权限拦截器此前从未生效、备份锁跨线程释放导致只能备份一次。
+>
+> ### 调度与备份服务(2026-11-01)
+>
+> 变更 `add-job-service` 已交付:`iboot-job`(8085)承载定时任务管理与数据备份恢复
+> (`/api/job/**`、`/api/monitor/backup/**`)。独立 schema `iboot_job` 由本服务 Flyway 管理,
+> Quartz 以集群模式运行(`isClustered: true`),启动时只做增量对账,不再清空调度器。
+> 任务列表的数据权限经服务名调用管理端 `GET /api/auth/scope`,失败关闭。
+> 备份启用时在启动阶段自检存储可写与导出命令可达,而不是等到第一次执行才失败。
+> 管理端旧实现保留,`remove-job-from-admin` 负责数据搬迁与删除。
+>
+> **服务间调用约定(本变更首次落地)**:`iboot-ai` 的备份工具改为 `JobApiClient`,与管理端客户端一样
+> 按 Nacos 服务名寻址,不回穿网关。`iboot-file` / `iboot-notify` 调 admin 的 scope 仍是静态地址,
+> 作为后续收敛项记录。
+>
+> 验收过程中修正的既有缺陷:任务列表的数量统计未应用数据权限,导致「总数与列表不一致」。
 >
 > ### 消息与通知服务(2026-11-01)
 >

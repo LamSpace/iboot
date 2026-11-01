@@ -210,6 +210,16 @@ iboot/
 │   │   │   │   └── interfaces/     # SSE / RAG / 知识库控制器与 DTO
 │   │   │   └── resources/
 │   └── pom.xml
+├── iboot-job/            # 调度服务（8085）：定时任务与数据备份恢复
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/iboot/job/
+│   │   │   │   ├── application/    # 任务编排与备份/演练应用服务
+│   │   │   │   ├── domain/         # 任务与备份领域模型
+│   │   │   │   ├── infrastructure/ # Quartz 集群、外部命令、加密、存储、数据权限
+│   │   │   │   └── interfaces/     # 任务与备份控制器
+│   │   │   └── resources/
+│   └── pom.xml
 ├── iboot-portal/         # 前端项目
 │   ├── src/
 │   │   ├── views/

@@ -28,3 +28,9 @@
 # 这里以 admin 作为名义来源登记，使「凭空出现」的检查仍然生效：
 # 目标服务确实有这些路径、来源服务确实没有，路径守恒才能通过。
 /login admin auth done
+
+# 调度服务：过渡期管理端仍保留 job/backup 旧实现（绞杀者），路由已指向 iboot-job；
+# 第二个变更 remove-job-from-admin 删除旧实现后，逐条改为 done。
+# 备份路径必须按路径登记而不是 /api/monitor 前缀——后者会覆盖尚未拆分的监控接口。
+/api/job admin job transitional
+/api/monitor/backup admin job transitional

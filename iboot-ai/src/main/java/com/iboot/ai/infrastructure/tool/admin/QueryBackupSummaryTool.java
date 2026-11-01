@@ -18,7 +18,7 @@ package com.iboot.ai.infrastructure.tool.admin;
 
 import com.iboot.ai.domain.agent.AgentContext;
 import com.iboot.ai.domain.agent.ToolOutcome;
-import com.iboot.ai.infrastructure.tool.AdminApiClient;
+import com.iboot.ai.infrastructure.tool.JobApiClient;
 import com.iboot.ai.infrastructure.tool.AdminToolSupport;
 import com.iboot.ai.infrastructure.tool.ToolResultTrimmer;
 import org.springframework.stereotype.Component;
@@ -45,13 +45,19 @@ public class QueryBackupSummaryTool extends AdminToolSupport {
     private static final String PERMISSION = "backup:record:list";
 
     /**
+     * 下游客户端。
+     */
+    private final JobApiClient client;
+
+    /**
      * 创建工具。
      *
      * @param client  下游客户端
      * @param trimmer 结果裁剪器
      */
-    public QueryBackupSummaryTool(AdminApiClient client, ToolResultTrimmer trimmer) {
-        super(client, trimmer);
+    public QueryBackupSummaryTool(JobApiClient client, ToolResultTrimmer trimmer) {
+        super(trimmer);
+        this.client = client;
     }
 
     @Override

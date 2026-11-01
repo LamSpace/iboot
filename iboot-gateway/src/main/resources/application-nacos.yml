@@ -35,6 +35,13 @@ spring:
               predicates:
                 - Path=/api/message/**,/api/notice/**,/api/notification/**,/api/search
 
+            # 调度服务：定时任务与数据备份（备份路径按路径级登记，见 local profile 的说明）
+            - id: job
+              uri: lb://iboot-job
+              order: 28
+              predicates:
+                - Path=/api/monitor/backup/**,/api/job/**
+
             # 认证服务：旧登录接口 + OAuth2/OIDC 标准端点与登录页；/api/auth/scope 仍由管理端承载
             - id: auth
               uri: lb://iboot-auth
