@@ -291,9 +291,9 @@ public class AiProperties {
     public static class Permission {
 
         /**
-         * admin 只读 scope 接口地址。
+         * 系统服务只读 scope 接口地址；按注册中心服务名寻址。
          */
-        private String scopeUrl = "http://localhost:8080/api/auth/scope";
+        private String scopeUrl = "http://iboot-system/api/auth/scope";
 
         /**
          * 权限范围本地缓存秒数。

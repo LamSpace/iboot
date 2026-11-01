@@ -77,6 +77,11 @@ iboot:
   # 操作审计：审计表归 iboot-monitor 所有，本服务跨 schema 写入，退出条件见 doc/23 §11.10
   logging:
     operate-log-table: iboot_monitor.sys_operate_log
+  file:
+    # 数据权限范围由系统服务提供；按注册中心服务名寻址，由本服务负载均衡
+    permission:
+      scope-url: ${IBOOT_FILE_SCOPE_URL:http://iboot-system/api/auth/scope}
+      cache-seconds: ${IBOOT_FILE_SCOPE_CACHE_SECONDS:60}
   security:
     whitelist:
       - /swagger-ui/**

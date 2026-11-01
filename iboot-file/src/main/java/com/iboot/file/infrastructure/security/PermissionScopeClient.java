@@ -19,6 +19,7 @@ package com.iboot.file.infrastructure.security;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iboot.kernel.security.SecurityUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
@@ -33,11 +34,10 @@ import java.util.List;
 /**
  * 管理端数据权限范围客户端。
  *
- * <p>带当前用户 JWT 调用管理端的只读 scope 接口，本地缓存 60 秒；任何失败都抛出
+ * <p>带当前用户 JWT 调用系统服务的只读 scope 接口，本地缓存 60 秒；任何失败都抛出
  * {@link ScopeUnavailableException}，由调用方按失败关闭处理。
  *
- * <p>这是路线图 D10 的方向：数据权限由 system 提供 scope，各服务本地缓存并自行应用过滤。
- * 退出条件：管理端提供稳定的 scope 契约后，调用地址切到 {@code iboot-system}。
+ * <p>调用按注册中心服务名寻址，由负载均衡选择实例，不经过网关，也不依赖固定主机与端口。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -58,12 +58,12 @@ public class PermissionScopeClient {
     /**
      * 创建客户端。
      *
-     * @param builder REST 客户端构建器
-     * @param scopeUrl 管理端 scope 接口地址
+     * @param builder 按服务名寻址的 REST 客户端构建器
+     * @param scopeUrl 系统服务 scope 接口地址
      * @param cacheSeconds 缓存秒数
      */
-    public PermissionScopeClient(RestClient.Builder builder,
-                                 @Value("${iboot.file.permission.scope-url:http://localhost:8080/api/auth/scope}")
+    public PermissionScopeClient(@Qualifier("loadBalancedRestClientBuilder") RestClient.Builder builder,
+                                 @Value("${iboot.file.permission.scope-url:http://iboot-system/api/auth/scope}")
                                  String scopeUrl,
                                  @Value("${iboot.file.permission.cache-seconds:60}") long cacheSeconds) {
         this.restClient = builder.build();
