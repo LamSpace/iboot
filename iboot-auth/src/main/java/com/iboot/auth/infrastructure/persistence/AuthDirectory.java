@@ -208,7 +208,7 @@ public class AuthDirectory {
     public void insertLoginLog(String username, String ipAddress, String loginLocation, String browser,
                                String os, Integer status, String message, LocalDateTime loginTime) {
         jdbcTemplate.update(
-                "INSERT INTO sys_login_log (username, ip_address, login_location, browser, os, status, message, "
+                "INSERT INTO iboot_monitor.sys_login_log (username, ip_address, login_location, browser, os, status, message, "
                         + "login_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 username, ipAddress, loginLocation, browser, os, status, message, loginTime);
     }

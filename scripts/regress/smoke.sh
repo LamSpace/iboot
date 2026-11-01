@@ -30,8 +30,9 @@ reg_expect_jq "返回的用户名为 $REG_USER" ".data.username == \"$REG_USER\"
 reg_log "== 3. 文件上传与下载（经网关，/api/file/** 已迁至 iboot-file） =="
 REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
 # 记录文件操作审计的基线，稍后确认本次链路确实新增了记录
+# 审计表已归 iboot-monitor 所有，所有服务跨 schema 写入该表
 operate_log_before=$(docker exec iboot-mysql mysql --default-character-set=utf8mb4 -uroot -proot -N -e "
-    SELECT COUNT(*) FROM iboot_admin.sys_operate_log WHERE url LIKE '/api/file/%'" 2>/dev/null | tail -1)
+    SELECT COUNT(*) FROM iboot_monitor.sys_operate_log WHERE url LIKE '/api/file/%'" 2>/dev/null | tail -1)
 operate_log_before="${operate_log_before:-0}"
 echo "iBoot 回归冒烟 $(date +%s)" > "$WORK/smoke.txt"
 upload=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
@@ -64,7 +65,7 @@ fi
 operate_log_count="$operate_log_before"
 for _ in $(seq 1 10); do
     operate_log_count=$(docker exec iboot-mysql mysql --default-character-set=utf8mb4 -uroot -proot -N -e "
-        SELECT COUNT(*) FROM iboot_admin.sys_operate_log
+        SELECT COUNT(*) FROM iboot_monitor.sys_operate_log
         WHERE url LIKE '/api/file/%'" 2>/dev/null | tail -1)
     if [ "${operate_log_count:-0}" -gt "${operate_log_before:-0}" ]; then break; fi
     sleep 1
@@ -74,6 +75,23 @@ if [ "${operate_log_count:-0}" -gt "${operate_log_before:-0}" ]; then
 else
     reg_fail "文件服务的操作日志未写入共享审计表（基线 ${operate_log_before}，当前 ${operate_log_count:-0}）"
 fi
+
+reg_log "== 3b. 日志与在线会话（经网关，日志与会话已迁至 iboot-monitor） =="
+login_logs=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/log/login/list?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "经网关查询登录日志" "$login_logs"
+reg_expect_jq "登录日志分页结构完整" '.data.total >= 1 and (.data.data | type) == "array"' "$login_logs"
+
+operate_logs=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/log/operate/list?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "经网关查询操作日志" "$operate_logs"
+# 操作日志由内核异步写入监控服务的审计表，列表里应能看到本次链路产生的记录
+reg_expect_jq "操作日志包含经网关产生的记录" '[.data.data[]? | select(.operUrl? // "" | startswith("/api/file/"))] | length > 0' "$operate_logs"
+
+online_count=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/online/count" | reg_unwrap)
+reg_expect_ok "经网关查询在线人数" "$online_count"
+reg_expect_jq "在线人数为整数" '(.data | type) == "number" or (.data | type) == "string"' "$online_count"
 
 reg_log "== 4. 实时推送（经网关，消息与 SSE 已迁至 iboot-notify） =="
 message=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \

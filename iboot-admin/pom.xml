@@ -73,11 +73,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
-        </dependency>
+        <!-- 已随监控服务迁出 -->
 
         <!-- Spring Boot DevTools -->
         <dependency>
@@ -167,12 +163,7 @@
             <groupId>de.codecentric</groupId>
             <artifactId>spring-boot-admin-starter-client</artifactId>
         </dependency>
-
-        <!-- Oshi System Info -->
-        <dependency>
-            <groupId>com.github.oshi</groupId>
-            <artifactId>oshi-core</artifactId>
-        </dependency>
+        <!-- 已随监控服务迁出 -->
 
         <!-- ==================== Security & JWT ==================== -->
         <dependency>

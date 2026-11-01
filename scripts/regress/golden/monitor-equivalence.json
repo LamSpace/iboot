@@ -1,0 +1,317 @@
+{
+  "loginFiltered": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 0
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/log/login/list",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "onlineFiltered": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 0
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/online/list",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "operateDetail": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "businessType": 3,
+          "costTime": 10,
+          "deptName": "",
+          "errorMsg": "角色已分配给用户，不能删除",
+          "id": 45,
+          "jsonResult": null,
+          "method": "com.iboot.admin.interfaces.controller.RoleController.delete()",
+          "operIp": "0:0:0:0:0:0:0:1",
+          "operLocation": "",
+          "operParam": "[9]",
+          "operTime": "2026-11-01T17:19:16",
+          "operUrl": "/api/role/9",
+          "operatorName": "admin",
+          "requestMethod": "DELETE",
+          "status": 0,
+          "title": "角色管理"
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/log/operate/45",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "operatePage": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [
+            {
+              "businessType": 3,
+              "costTime": 10,
+              "deptName": "",
+              "errorMsg": "角色已分配给用户，不能删除",
+              "id": 45,
+              "jsonResult": null,
+              "method": "com.iboot.admin.interfaces.controller.RoleController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[9]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/role/9",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 0,
+              "title": "角色管理"
+            },
+            {
+              "businessType": 3,
+              "costTime": 25,
+              "deptName": "",
+              "errorMsg": null,
+              "id": 34,
+              "jsonResult": "{\"code\":200,\"data\":null,\"message\":\"操作成功\",\"timestamp\":1793524755551}",
+              "method": "com.iboot.admin.interfaces.controller.UserController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[3]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/user/3",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 1,
+              "title": "用户管理"
+            },
+            {
+              "businessType": 3,
+              "costTime": 15,
+              "deptName": "",
+              "errorMsg": "角色已分配给用户，不能删除",
+              "id": 35,
+              "jsonResult": null,
+              "method": "com.iboot.admin.interfaces.controller.RoleController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[4]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/role/4",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 0,
+              "title": "角色管理"
+            },
+            {
+              "businessType": 3,
+              "costTime": 17,
+              "deptName": "",
+              "errorMsg": null,
+              "id": 36,
+              "jsonResult": "{\"code\":200,\"data\":null,\"message\":\"操作成功\",\"timestamp\":1793524755632}",
+              "method": "com.iboot.admin.interfaces.controller.UserController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[4]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/user/4",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 1,
+              "title": "用户管理"
+            },
+            {
+              "businessType": 3,
+              "costTime": 8,
+              "deptName": "",
+              "errorMsg": "角色已分配给用户，不能删除",
+              "id": 37,
+              "jsonResult": null,
+              "method": "com.iboot.admin.interfaces.controller.RoleController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[5]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/role/5",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 0,
+              "title": "角色管理"
+            },
+            {
+              "businessType": 3,
+              "costTime": 19,
+              "deptName": "",
+              "errorMsg": null,
+              "id": 38,
+              "jsonResult": "{\"code\":200,\"data\":null,\"message\":\"操作成功\",\"timestamp\":1793524755706}",
+              "method": "com.iboot.admin.interfaces.controller.UserController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[6]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/user/6",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 1,
+              "title": "用户管理"
+            },
+            {
+              "businessType": 3,
+              "costTime": 10,
+              "deptName": "",
+              "errorMsg": "角色已分配给用户，不能删除",
+              "id": 39,
+              "jsonResult": null,
+              "method": "com.iboot.admin.interfaces.controller.RoleController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[7]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/role/7",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 0,
+              "title": "角色管理"
+            },
+            {
+              "businessType": 3,
+              "costTime": 19,
+              "deptName": "",
+              "errorMsg": null,
+              "id": 44,
+              "jsonResult": "{\"code\":200,\"data\":null,\"message\":\"操作成功\",\"timestamp\":1793524755929}",
+              "method": "com.iboot.admin.interfaces.controller.UserController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[8]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/user/8",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 1,
+              "title": "用户管理"
+            },
+            {
+              "businessType": 3,
+              "costTime": 21,
+              "deptName": "",
+              "errorMsg": null,
+              "id": 40,
+              "jsonResult": "{\"code\":200,\"data\":null,\"message\":\"操作成功\",\"timestamp\":1793524755780}",
+              "method": "com.iboot.admin.interfaces.controller.UserController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[5]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/user/5",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 1,
+              "title": "用户管理"
+            },
+            {
+              "businessType": 3,
+              "costTime": 10,
+              "deptName": "",
+              "errorMsg": "角色已分配给用户，不能删除",
+              "id": 43,
+              "jsonResult": null,
+              "method": "com.iboot.admin.interfaces.controller.RoleController.delete()",
+              "operIp": "0:0:0:0:0:0:0:1",
+              "operLocation": "",
+              "operParam": "[8]",
+              "operTime": "2026-11-01T17:19:16",
+              "operUrl": "/api/role/8",
+              "operatorName": "admin",
+              "requestMethod": "DELETE",
+              "status": 0,
+              "title": "角色管理"
+            }
+          ],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 45
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/log/operate/list",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "runFiltered": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 0
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/log/run/list",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  }
+}

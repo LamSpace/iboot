@@ -95,9 +95,9 @@ jwt:
   jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8083/oauth2/jwks}
 
 iboot:
-  # 操作审计：本服务 schema 没有审计表，跨库写入管理端审计表（临时约定，退出条件见 doc/23）
+  # 操作审计：审计表归 iboot-monitor 所有，本服务跨 schema 写入，退出条件见 doc/23 §11.10
   logging:
-    operate-log-table: iboot_admin.sys_operate_log
+    operate-log-table: iboot_monitor.sys_operate_log
   security:
     whitelist:
       - /swagger-ui/**

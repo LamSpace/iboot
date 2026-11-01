@@ -296,7 +296,8 @@ Boot 4.0.3 这一前提改变了可选生态:
 > | `iboot-notify` | 已完成（独立 schema，旧实现已删除） | `add-notify-service` / `remove-notify-from-admin` |
 > | `iboot-job` | 已完成（独立 schema，旧实现已删除） | `add-job-service` / `remove-job-from-admin` |
 > | `iboot-workflow` | 已完成（独立 schema，旧实现已删除） | `add-workflow-service` / `remove-workflow-from-admin` |
-> | `monitor` / `system` | 待办 | 按 2.3 蓝图顺序（workflow 已前移到 monitor 之前） |
+> | `iboot-monitor` | 已完成（独立 schema，旧实现已删除） | `add-monitor-service` / `remove-monitor-from-admin` |
+> | `system` | 待办 | 按 2.3 蓝图顺序 |
 >
 > `iboot-file` 的当前状态:`sys_file` 已迁至独立 schema `iboot_file`(本服务 Flyway 管理),
 > 仍以 `iboot_admin.` 限定名只读共享库的 `sys_config`/`sys_dict_data`/`sys_user`,
@@ -366,6 +367,33 @@ Boot 4.0.3 这一前提改变了可选生态:
 > 1 个 mapper XML、1 个 BPMN)与 Flowable 依赖已删除,`iboot_admin` 中的 33 张表与审批菜单
 > 保留一个发布周期。回滚方式变为 `git revert` + 数据源指回 `iboot_admin`。
 > 操作见 `doc/23` §11.9。
+
+> ### 监控与日志服务(2026-11-01)
+>
+> 变更 `add-monitor-service` 已交付:`iboot-monitor`(8087)承接 `/api/log/**`、`/api/online/**` 与
+> `/api/monitor/{server,redis,minio}/**` 共 19 条路径。独立 schema `iboot_monitor` 由本服务 Flyway 管理,
+> **审计表 `sys_operate_log` 与 `sys_login_log` 的所有权随之转移**:其余 8 个服务把内核的审计写入目标改为
+> `iboot_monitor.sys_operate_log`,认证服务跨 schema 写登录日志;旧表保留一个发布周期作为回滚点。
+>
+> 与前四次拆分不同,这次搬的是「别人也在写」的表,切换必须在停机窗口内完成:建表 → 停全部服务 →
+> 复制并校验行数与 `max(id)` → 改 8 处写入配置 → 启动 monitor 再启动其余服务 → 终检旧表不再增长。
+> 回滚方式为路由改回 admin + 配置改回旧表 + `monitor_back_to_iboot_admin.sql` 复制切换后新增的记录。
+>
+> 三个刻意没有搬走的东西:每服务自监控埋点(`MonitorFilter`/`BusinessMetricsService`/`DruidMetricsBinder`)、
+> dashboard/statistics 聚合、Spring Boot Admin 与 Druid 控制台。前两者分别属于各服务自身与系统域,
+> 搬动会造成面板静默变空与扇入失控;`doc/11` §11.5.1 与 `doc/23` §11.10 记录了判定方法。
+>
+> 验收过程中修正的既有缺陷:登录日志与操作日志的**无条件下拉分页总数未应用数据范围**,表现为受限用户
+> 「列表为空但总数不为零」。
+>
+> 变更 `remove-monitor-from-admin` 随后完成收尾:5 个控制器、7 个应用服务、7 个 DTO 与导出 VO、
+> 2 个仓储接口与实现、`ElasticsearchConfig` 已删除,管理端同时移除 Elasticsearch 与 OSHI 依赖;
+> 契约基线从 76 条降到 57 条,`migrations.txt` 的五条登记收敛为 `done`。
+> 仪表板与统计仍需要日志数据,改为跨 schema 只读 `iboot_monitor` 的两张表,
+> 登记为临时债务(退出条件:`iboot-system` 拆分时改为调用监控服务);
+> 这使两者在监控服务故障时仍可用,停 monitor 时实测仍返回 200。
+>
+> 操作见 `doc/23` §11.10。
 
 
 #### 2.0 前置门禁(Spike 不过则不开拆)
