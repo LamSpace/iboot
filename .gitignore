@@ -23,6 +23,7 @@ Desktop.ini
 .vscode/
 *.swp
 *.swo
+*.sw?
 *~
 .project
 .classpath
@@ -43,6 +44,7 @@ log/
 # 临时文件
 temp/
 tmp/
+.tmp/
 *.tmp
 
 # 其他
@@ -55,9 +57,73 @@ tmp/
 .env
 .env.*
 !.env.example
+# 本地覆盖配置（可能含数据库口令与云密钥）
+application-local.yml
+application-local.properties
 
 # 本地文件存储目录（冒烟与手工测试产生）
 uploads/
 
-# Maven 构建产物
+# 后端构建产物（Maven）
 target/
+*.class
+*.jar
+*.war
+*.ear
+dependency-reduced-pom.xml
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+buildNumber.properties
+release.properties
+.mvn/timing.properties
+*.hprof
+# 分发包与归档
+*.zip
+*.tar.gz
+*.rar
+# Maven Wrapper 需要随仓库分发
+!.mvn/wrapper/maven-wrapper.jar
+
+# 构建输出目录（前端 Vite 与 IDE 共用）
+build/
+out/
+dist/
+dist-ssr/
+bin/
+.vite/
+
+# 前端依赖
+node_modules/
+
+# 前端缓存与测试产物
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+.parcel-cache/
+# 测试覆盖率（前端与后端）
+coverage/
+.nyc_output/
+*.lcov
+.jacoco/
+jacoco.exec
+
+# 前端工具日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 前端本地调试残留（无头 Chromium 配置目录、进程号文件）
+.chrome-*
+*.pid
+*.pid.lock
+*.seed
+
+# Visual Studio 工程文件（原 iboot-portal/.gitignore 覆盖项）
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
