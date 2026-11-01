@@ -22,4 +22,6 @@
 # 因此按路径级登记；最长前缀优先保证它不会被 admin 兜底抢走。
 /api/monitor/backup iboot-job
 /api/job iboot-job
+# 审批工作流：请假审批全部接口
+/api/approval iboot-workflow
 /api    iboot-admin

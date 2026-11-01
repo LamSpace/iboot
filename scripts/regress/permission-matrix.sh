@@ -27,6 +27,10 @@ NOTIFY_ROLE_ID=""
 NOTIFY_USER_ID=""
 JOB_ROLE_ID=""
 JOB_USER_ID=""
+APPROVAL_APPLY_ROLE_ID=""
+APPROVAL_APPLY_USER_ID=""
+APPROVAL_APPROVE_ROLE_ID=""
+APPROVAL_APPROVE_USER_ID=""
 REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
 
 cleanup() {
@@ -40,6 +44,10 @@ cleanup() {
     if [ -n "$NOTIFY_ROLE_ID" ]; then reg_del "/api/role/$NOTIFY_ROLE_ID" >/dev/null 2>&1 || true; fi
     if [ -n "${JOB_USER_ID:-}" ]; then reg_del "/api/user/$JOB_USER_ID" >/dev/null 2>&1 || true; fi
     if [ -n "${JOB_ROLE_ID:-}" ]; then reg_del "/api/role/$JOB_ROLE_ID" >/dev/null 2>&1 || true; fi
+    if [ -n "${APPROVAL_APPLY_USER_ID:-}" ]; then reg_del "/api/user/$APPROVAL_APPLY_USER_ID" >/dev/null 2>&1 || true; fi
+    if [ -n "${APPROVAL_APPLY_ROLE_ID:-}" ]; then reg_del "/api/role/$APPROVAL_APPLY_ROLE_ID" >/dev/null 2>&1 || true; fi
+    if [ -n "${APPROVAL_APPROVE_USER_ID:-}" ]; then reg_del "/api/user/$APPROVAL_APPROVE_USER_ID" >/dev/null 2>&1 || true; fi
+    if [ -n "${APPROVAL_APPROVE_ROLE_ID:-}" ]; then reg_del "/api/role/$APPROVAL_APPROVE_ROLE_ID" >/dev/null 2>&1 || true; fi
 }
 trap cleanup EXIT
 
@@ -231,6 +239,65 @@ reg_expect_ok "[功能权限][允许] 持有 notice:list 的受限用户可访�
 
 status=$(curl -sS -o /dev/null -w '%{http_code}' "$REG_BASE/api/user/list?pageNum=1&pageSize=10")
 reg_expect_status "[功能权限][拒绝] 未携带令牌访问用户列表" "$status" "401 403"
+
+reg_log "== 审批域：功能权限（经网关） =="
+# 无审批权限的受限用户：复用数据范围角色
+reg_login "$USER_NAME" "$USER_PASS"
+mine_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/approval/mine")
+reg_expect_status "[功能权限][拒绝] 无审批权限访问我的申请" "$mine_denied" "401 403"
+todo_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/approval/todo")
+reg_expect_status "[功能权限][拒绝] 无审批权限访问待办" "$todo_denied" "401 403"
+
+# 仅申请权限：可以看自己的申请，不能看待办
+APPROVAL_APPLY_ROLE_CODE="ROLE_APPROVAL_APPLY_TEST"
+APPROVAL_APPLY_USER_NAME="regress_approval_apply"
+reg_login
+roles=$(reg_get /api/role/all)
+APPROVAL_APPLY_ROLE_ID=$(printf '%s' "$roles" | jq -r --arg c "$APPROVAL_APPLY_ROLE_CODE" '.data[]? | select(.roleCode == $c) | .id' | head -1)
+if [ -z "$APPROVAL_APPLY_ROLE_ID" ]; then
+    created=$(reg_post /api/role "{\"roleCode\":\"$APPROVAL_APPLY_ROLE_CODE\",\"roleName\":\"回归审批申请角色\",\"orderNum\":96,\"dataScope\":5,\"status\":1,\"menuIds\":[9101]}")
+    APPROVAL_APPLY_ROLE_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$APPROVAL_APPLY_ROLE_ID" ] || reg_die "创建审批申请角色失败：$created"
+fi
+users=$(reg_get "/api/user/list?pageNum=1&pageSize=100&username=$APPROVAL_APPLY_USER_NAME")
+APPROVAL_APPLY_USER_ID=$(printf '%s' "$users" | jq -r --arg u "$APPROVAL_APPLY_USER_NAME" '.data.data[]? | select(.username == $u) | .id' | head -1)
+if [ -z "$APPROVAL_APPLY_USER_ID" ]; then
+    created=$(reg_post /api/user "{\"username\":\"$APPROVAL_APPLY_USER_NAME\",\"password\":\"$USER_PASS\",\"nickname\":\"回归审批申请用户\",\"deptId\":1,\"roleIds\":[$APPROVAL_APPLY_ROLE_ID],\"status\":1}")
+    APPROVAL_APPLY_USER_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$APPROVAL_APPLY_USER_ID" ] || reg_die "创建审批申请用户失败：$created"
+fi
+reg_login "$APPROVAL_APPLY_USER_NAME" "$USER_PASS"
+mine_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/approval/mine?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "[功能权限][允许] 持有 approval:apply 的用户可查询我的申请" "$mine_allowed"
+todo_denied_by_apply=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/approval/todo")
+reg_expect_status "[功能权限][拒绝] 仅有 approval:apply 的用户不能看待办" "$todo_denied_by_apply" "401 403"
+
+# 审批权限：可以看待办
+APPROVAL_APPROVE_ROLE_CODE="ROLE_APPROVAL_APPROVE_TEST"
+APPROVAL_APPROVE_USER_NAME="regress_approval_approve"
+reg_login
+roles=$(reg_get /api/role/all)
+APPROVAL_APPROVE_ROLE_ID=$(printf '%s' "$roles" | jq -r --arg c "$APPROVAL_APPROVE_ROLE_CODE" '.data[]? | select(.roleCode == $c) | .id' | head -1)
+if [ -z "$APPROVAL_APPROVE_ROLE_ID" ]; then
+    created=$(reg_post /api/role "{\"roleCode\":\"$APPROVAL_APPROVE_ROLE_CODE\",\"roleName\":\"回归审批操作角色\",\"orderNum\":95,\"dataScope\":5,\"status\":1,\"menuIds\":[9101,9102]}")
+    APPROVAL_APPROVE_ROLE_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$APPROVAL_APPROVE_ROLE_ID" ] || reg_die "创建审批操作角色失败：$created"
+fi
+users=$(reg_get "/api/user/list?pageNum=1&pageSize=100&username=$APPROVAL_APPROVE_USER_NAME")
+APPROVAL_APPROVE_USER_ID=$(printf '%s' "$users" | jq -r --arg u "$APPROVAL_APPROVE_USER_NAME" '.data.data[]? | select(.username == $u) | .id' | head -1)
+if [ -z "$APPROVAL_APPROVE_USER_ID" ]; then
+    created=$(reg_post /api/user "{\"username\":\"$APPROVAL_APPROVE_USER_NAME\",\"password\":\"$USER_PASS\",\"nickname\":\"回归审批操作用户\",\"deptId\":1,\"roleIds\":[$APPROVAL_APPROVE_ROLE_ID],\"status\":1}")
+    APPROVAL_APPROVE_USER_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$APPROVAL_APPROVE_USER_ID" ] || reg_die "创建审批操作用户失败：$created"
+fi
+reg_login "$APPROVAL_APPROVE_USER_NAME" "$USER_PASS"
+todo_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/approval/todo?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "[功能权限][允许] 持有 approval:approve 的用户可查看待办" "$todo_allowed"
 
 reg_log "== 清理 =="
 reg_login

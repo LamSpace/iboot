@@ -295,7 +295,8 @@ Boot 4.0.3 这一前提改变了可选生态:
 > | `iboot-auth` | 已抽出（协议不变） | `extract-auth-service` |
 > | `iboot-notify` | 已完成（独立 schema，旧实现已删除） | `add-notify-service` / `remove-notify-from-admin` |
 > | `iboot-job` | 已完成（独立 schema，旧实现已删除） | `add-job-service` / `remove-job-from-admin` |
-> | `monitor` / `workflow` / `system` | 待办 | 按 2.3 蓝图顺序 |
+> | `iboot-workflow` | 已完成（独立 schema，旧实现已删除） | `add-workflow-service` / `remove-workflow-from-admin` |
+> | `monitor` / `system` | 待办 | 按 2.3 蓝图顺序（workflow 已前移到 monitor 之前） |
 >
 > `iboot-file` 的当前状态:`sys_file` 已迁至独立 schema `iboot_file`(本服务 Flyway 管理),
 > 仍以 `iboot_admin.` 限定名只读共享库的 `sys_config`/`sys_dict_data`/`sys_user`,
@@ -353,6 +354,19 @@ Boot 4.0.3 这一前提改变了可选生态:
 > 管理端旧实现(88 个 Java 文件、6 个 mapper XML、15 个测试类)已删除,只保留跨服务契约件。
 > 回滚方式相应变为 `git revert` + 数据源指回 `iboot_admin`。操作见 `doc/23` §11.7。
 
+> ### 审批工作流服务(2026-11-01)
+>
+> 变更 `add-workflow-service` 已交付:`iboot-workflow`(8086)承载 `/api/approval/**` 的 7 个接口,
+> Flowable 引擎与请假业务表同库同事务。独立 schema `iboot_workflow` 的 33 张表由本服务 Flyway 管理,
+> 菜单与权限种子仍留在管理端 V17。数据在停机窗口内从 `iboot_admin` 全量搬迁(含在途实例与部署记录),
+> 启动后引擎不重复部署 BPMN。审批人校验跨库只读 `iboot_admin.sys_user`,通知登记按 Nacos 服务名
+> 调 notify 的内部端点,失败不阻断审批。
+>
+> 变更 `remove-workflow-from-admin` 随后完成收尾:管理端旧实现(20 个 Java 文件、8 个测试类、
+> 1 个 mapper XML、1 个 BPMN)与 Flowable 依赖已删除,`iboot_admin` 中的 33 张表与审批菜单
+> 保留一个发布周期。回滚方式变为 `git revert` + 数据源指回 `iboot_admin`。
+> 操作见 `doc/23` §11.9。
+
 
 #### 2.0 前置门禁(Spike 不过则不开拆)
 
@@ -403,7 +417,11 @@ Boot 4.0.3 这一前提改变了可选生态:
 | `iboot-system` | 用户/角色/菜单/部门/岗位/字典/配置 | **最后拆**,被所有服务依赖 |
 | `iboot-ai` | 阶段 1 产出 | 只做注册 + 路由,零改造 |
 
-**拆分顺序**:依赖少的先拆 → `file` → `notify` → `job` → `monitor` → `workflow` → `system`。
+**拆分顺序**:依赖少的先拆 → `file` → `notify` → `job` → `workflow` → `monitor` → `system`。
+
+`workflow` 已前移到 `monitor` 之前：它独占 33 张表、没有外部写入，只依赖 `sys_user` 一次只读与 notify
+的内部端点；`monitor` 是读侧扇入（登录日志、操作日志、在线会话、系统域聚合），先拆会把多条跨服务
+写路径压到一个尚未定义的边界上。据此按“依赖数”重排，原蓝图顺序保留在 §2.3 的表格中。
 
 **前端零改动的关键机制**:portal 继续只访问网关 `/api/**`,接口归属变化只改网关路由表。
 

@@ -5,7 +5,7 @@
 
 用法：python3 -I equivalence.py <base-url> <token> <output-file> [service]
 
-service 取 file（默认）、notify 或 job，决定采集哪一组只读请求。
+service 取 file（默认）、notify、job 或 workflow，决定采集哪一组只读请求。
 """
 
 import hashlib
@@ -146,16 +146,41 @@ def collect_job(base, token):
     return results
 
 
+def collect_workflow(base, token):
+    """审批服务：我的申请、待办、已办与首条详情。
+
+    只取只读接口；发起、通过、驳回由冒烟覆盖，录制与校验之间不能有写入，
+    否则分页数量与列表内容变化会被当成差异。
+    """
+    mine = evaluate(base, token, "/api/approval/mine?pageNum=1&pageSize=10")
+    results = {
+        "mine": mine,
+        "todo": evaluate(base, token, "/api/approval/todo?pageNum=1&pageSize=10"),
+        "done": evaluate(base, token, "/api/approval/done?pageNum=1&pageSize=10"),
+    }
+    rows = []
+    try:
+        rows = mine["body"]["data"]["data"]["data"]
+    except (KeyError, TypeError):
+        pass
+    if rows:
+        results["detail"] = evaluate(base, token, f"/api/approval/{rows[0]['id']}")
+    else:
+        results["detail"] = {"skipped": "无申请可查"}
+    return results
+
+
 PROFILES = {
     "file": collect_file,
     "notify": collect_notify,
     "job": collect_job,
+    "workflow": collect_workflow,
 }
 
 
 def main() -> int:
     if len(sys.argv) not in (4, 5):
-        print("用法: equivalence.py <base-url> <token> <output-file> [file|notify|job]", file=sys.stderr)
+        print("用法: equivalence.py <base-url> <token> <output-file> [file|notify|job|workflow]", file=sys.stderr)
         return 2
     base, token, output = sys.argv[1].rstrip("/"), sys.argv[2], sys.argv[3]
     service = sys.argv[4] if len(sys.argv) == 5 else "file"

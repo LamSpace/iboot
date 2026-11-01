@@ -19,7 +19,8 @@ REG_FILE_BASE="${REG_FILE_BASE:-http://localhost:8082}"
 REG_AUTH_BASE="${REG_AUTH_BASE:-http://localhost:8083}"
 REG_NOTIFY_BASE="${REG_NOTIFY_BASE:-http://localhost:8084}"
 REG_JOB_BASE="${REG_JOB_BASE:-http://localhost:8085}"
-export REG_BASE REG_AI_BASE REG_FILE_BASE REG_AUTH_BASE REG_NOTIFY_BASE REG_JOB_BASE
+REG_WORKFLOW_BASE="${REG_WORKFLOW_BASE:-http://localhost:8086}"
+export REG_BASE REG_AI_BASE REG_FILE_BASE REG_AUTH_BASE REG_NOTIFY_BASE REG_JOB_BASE REG_WORKFLOW_BASE
 
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
@@ -43,6 +44,7 @@ printf '===== 1. 接口契约快照 =====\n'
 "$HERE/api-snapshot.sh" "$REG_AUTH_BASE" auth "$TMP_DIR/auth.json"
 "$HERE/api-snapshot.sh" "$REG_NOTIFY_BASE" notify "$TMP_DIR/notify.json"
 "$HERE/api-snapshot.sh" "$REG_JOB_BASE" job "$TMP_DIR/job.json"
+"$HERE/api-snapshot.sh" "$REG_WORKFLOW_BASE" workflow "$TMP_DIR/workflow.json"
 
 if [ "$REFRESH" -eq 1 ]; then
     mkdir -p "$GOLDEN"
@@ -52,10 +54,11 @@ if [ "$REFRESH" -eq 1 ]; then
     cp "$TMP_DIR/auth.json" "$GOLDEN/auth.json"
     cp "$TMP_DIR/notify.json" "$GOLDEN/notify.json"
     cp "$TMP_DIR/job.json" "$GOLDEN/job.json"
+    cp "$TMP_DIR/workflow.json" "$GOLDEN/workflow.json"
     printf '基线已刷新：%s\n' "$GOLDEN"
 else
     [ -d "$GOLDEN" ] || fail "缺少 golden 基线，请先执行 regress.sh --refresh"
-    for svc in admin ai file auth notify job; do
+    for svc in admin ai file auth notify job workflow; do
         if [ ! -f "$GOLDEN/$svc.json" ]; then
             fail "缺少 $svc 的基线，确认差异合理后执行 regress.sh --refresh"
             continue

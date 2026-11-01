@@ -1,0 +1,1002 @@
+{
+  "components": {
+    "schemas": {
+      "ApprovalDecisionRequest": {
+        "description": "审批决定请求",
+        "properties": {
+          "comment": {
+            "description": "审批意见或驳回原因",
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ApprovalDetailResponse": {
+        "description": "审批详情响应",
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/LeaveApplicationResponse",
+            "description": "请假申请"
+          },
+          "history": {
+            "description": "审批历史",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalHistoryResponse"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "ApprovalHistoryResponse": {
+        "description": "审批历史节点",
+        "properties": {
+          "activityName": {
+            "description": "节点名称",
+            "type": "string"
+          },
+          "actorId": {
+            "description": "操作人用户 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "actorName": {
+            "description": "操作人显示名",
+            "type": "string"
+          },
+          "approved": {
+            "description": "审批结论",
+            "type": "boolean"
+          },
+          "comment": {
+            "description": "审批意见或驳回原因",
+            "type": "string"
+          },
+          "time": {
+            "description": "节点发生时间",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ApprovalItemResponse": {
+        "description": "审批中心列表项",
+        "properties": {
+          "applicantId": {
+            "description": "申请人用户 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "applicantName": {
+            "description": "申请人显示名",
+            "type": "string"
+          },
+          "approveComment": {
+            "description": "审批意见或驳回原因",
+            "type": "string"
+          },
+          "approverId": {
+            "description": "审批人用户 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "approverName": {
+            "description": "审批人显示名",
+            "type": "string"
+          },
+          "completedTime": {
+            "description": "任务完成时间",
+            "format": "date-time",
+            "type": "string"
+          },
+          "createTime": {
+            "description": "提交时间",
+            "format": "date-time",
+            "type": "string"
+          },
+          "endTime": {
+            "description": "结束时间",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "申请 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "leaveType": {
+            "description": "请假类型",
+            "type": "string"
+          },
+          "reason": {
+            "description": "请假事由",
+            "type": "string"
+          },
+          "startTime": {
+            "description": "开始时间",
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "description": "状态",
+            "type": "string"
+          },
+          "taskCreateTime": {
+            "description": "任务创建时间",
+            "format": "date-time",
+            "type": "string"
+          },
+          "taskId": {
+            "description": "当前任务 ID",
+            "type": "string"
+          },
+          "taskName": {
+            "description": "当前任务名称",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LeaveApplicationResponse": {
+        "description": "请假申请响应",
+        "properties": {
+          "applicantId": {
+            "description": "申请人用户 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "applicantName": {
+            "description": "申请人显示名",
+            "type": "string"
+          },
+          "approveComment": {
+            "description": "审批意见或驳回原因",
+            "type": "string"
+          },
+          "approverId": {
+            "description": "审批人用户 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "approverName": {
+            "description": "审批人显示名",
+            "type": "string"
+          },
+          "createTime": {
+            "description": "提交时间",
+            "format": "date-time",
+            "type": "string"
+          },
+          "endTime": {
+            "description": "结束时间",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "申请 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "leaveType": {
+            "description": "请假类型",
+            "type": "string"
+          },
+          "reason": {
+            "description": "请假事由",
+            "type": "string"
+          },
+          "startTime": {
+            "description": "开始时间",
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "description": "状态",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LeaveApplyRequest": {
+        "description": "发起请假请求",
+        "properties": {
+          "approverId": {
+            "description": "审批人用户 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "endTime": {
+            "description": "结束时间",
+            "format": "date-time",
+            "type": "string"
+          },
+          "leaveType": {
+            "description": "请假类型",
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "reason": {
+            "description": "请假事由",
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "startTime": {
+            "description": "开始时间",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approverId",
+          "endTime",
+          "leaveType",
+          "reason",
+          "startTime"
+        ],
+        "type": "object"
+      },
+      "PageResultApprovalItemResponse": {
+        "properties": {
+          "code": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ApprovalItemResponse"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          },
+          "pageNum": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pageSize": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "timestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ResultApprovalDetailResponse": {
+        "properties": {
+          "code": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ApprovalDetailResponse"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ResultLeaveApplicationResponse": {
+        "properties": {
+          "code": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LeaveApplicationResponse"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ResultPageResultApprovalItemResponse": {
+        "properties": {
+          "code": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResultApprovalItemResponse"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ResultVoid": {
+        "properties": {
+          "code": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {},
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/approval/done": {
+      "get": {
+        "operationId": "done",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pageNum",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultApprovalItemResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "查询我的已办",
+        "tags": [
+          "审批中心"
+        ]
+      }
+    },
+    "/api/approval/leave": {
+      "post": {
+        "operationId": "apply",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaveApplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultLeaveApplicationResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "发起请假",
+        "tags": [
+          "审批中心"
+        ]
+      }
+    },
+    "/api/approval/mine": {
+      "get": {
+        "operationId": "mine",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageNum",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultApprovalItemResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "查询我的申请",
+        "tags": [
+          "审批中心"
+        ]
+      }
+    },
+    "/api/approval/todo": {
+      "get": {
+        "operationId": "todo",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pageNum",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultPageResultApprovalItemResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "查询我的待办",
+        "tags": [
+          "审批中心"
+        ]
+      }
+    },
+    "/api/approval/{id}": {
+      "get": {
+        "operationId": "detail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultApprovalDetailResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "查询申请详情",
+        "tags": [
+          "审批中心"
+        ]
+      }
+    },
+    "/api/approval/{id}/approve": {
+      "post": {
+        "operationId": "approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "审批通过",
+        "tags": [
+          "审批中心"
+        ]
+      }
+    },
+    "/api/approval/{id}/reject": {
+      "post": {
+        "operationId": "reject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "审批驳回",
+        "tags": [
+          "审批中心"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "请假审批相关接口",
+      "name": "审批中心"
+    }
+  ]
+}

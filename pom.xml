@@ -39,6 +39,7 @@
         <module>iboot-file</module>
         <module>iboot-notify</module>
         <module>iboot-job</module>
+        <module>iboot-workflow</module>
         <module>iboot-auth</module>
         <module>iboot-admin</module>
         <module>iboot-ai</module>

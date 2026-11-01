@@ -181,7 +181,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 
 ```
 iboot/
-├── pom.xml                # 父 POM（聚合 iboot-admin / iboot-ai）
+├── pom.xml                # 父 POM（聚合各服务模块）
 ├── scripts/               # 脚本目录
 │   ├── build.sh          # 构建脚本
 │   └── install-dependencies.sh  # 依赖安装脚本
@@ -219,7 +219,17 @@ iboot/
 │   │   │   │   ├── infrastructure/ # Quartz 集群、外部命令、加密、存储、数据权限
 │   │   │   │   └── interfaces/     # 任务与备份控制器
 │   │   │   └── resources/
-│   └── pom.xml
+│   │   └── pom.xml
+├── iboot-workflow/       # 审批工作流服务（8086）：请假审批与 Flowable 引擎
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/iboot/workflow/
+│   │   │   │   ├── application/    # 审批编排与通知登记
+│   │   │   │   ├── domain/         # 请假申请与流程任务模型
+│   │   │   │   ├── infrastructure/ # Flowable 适配、MyBatis、用户目录只读
+│   │   │   │   └── interfaces/     # 审批控制器与 DTO
+│   │   │   └── resources/
+│   │   └── pom.xml
 ├── iboot-portal/         # 前端项目
 │   ├── src/
 │   │   ├── views/
@@ -370,7 +380,7 @@ docker run -d -p 80:80 --name iboot-portal iboot-portal
 
 ```
 iboot/
-├── pom.xml                # 父 POM（聚合 iboot-admin / iboot-ai）
+├── pom.xml                # 父 POM（聚合各服务模块）
 ├── scripts/               # 脚本目录
 │   ├── build.sh          # 构建脚本
 │   └── install-dependencies.sh  # 依赖安装脚本

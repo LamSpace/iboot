@@ -35,6 +35,13 @@ spring:
               predicates:
                 - Path=/api/message/**,/api/notice/**,/api/notification/**,/api/search
 
+            # 审批工作流：请假审批全部接口
+            - id: workflow
+              uri: lb://iboot-workflow
+              order: 26
+              predicates:
+                - Path=/api/approval/**
+
             # 调度服务：定时任务与数据备份（备份路径按路径级登记，见 local profile 的说明）
             - id: job
               uri: lb://iboot-job

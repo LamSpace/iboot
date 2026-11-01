@@ -1,0 +1,308 @@
+{
+  "detail": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "application": {
+            "applicantId": 1,
+            "applicantName": "管理员",
+            "approveComment": null,
+            "approverId": 2,
+            "approverName": "回归审批人",
+            "createTime": "2026-11-01T15:39:01",
+            "endTime": "2026-11-02T18:00:00",
+            "id": 14,
+            "leaveType": "annual",
+            "reason": "回归冒烟",
+            "startTime": "2026-11-02T09:00:00",
+            "status": "PENDING"
+          },
+          "history": [
+            {
+              "activityName": "提交申请",
+              "actorId": 1,
+              "actorName": "管理员",
+              "approved": null,
+              "comment": null,
+              "time": "2026-11-01T15:39:01"
+            },
+            {
+              "activityName": "审批中",
+              "actorId": 2,
+              "actorName": "回归审批人",
+              "approved": null,
+              "comment": null,
+              "time": "2026-11-01T15:39:01.35"
+            }
+          ]
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/approval/14",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "done": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 0
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/approval/done",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "mine": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:39:01",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 14,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            },
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:38:33",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 13,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            },
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:38:02",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 12,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            },
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:29:42",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 11,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            },
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:29:10",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 10,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            },
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:28:41",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 9,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            },
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:28:12",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 8,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            },
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:27:39",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 7,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            },
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:27:00",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 6,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            },
+            {
+              "applicantId": 1,
+              "applicantName": "管理员",
+              "approveComment": null,
+              "approverId": 2,
+              "approverName": "回归审批人",
+              "completedTime": null,
+              "createTime": "2026-11-01T15:22:13",
+              "endTime": "2026-11-02T18:00:00",
+              "id": 5,
+              "leaveType": "annual",
+              "reason": "回归冒烟",
+              "startTime": "2026-11-02T09:00:00",
+              "status": "PENDING",
+              "taskCreateTime": null,
+              "taskId": null,
+              "taskName": null
+            }
+          ],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 14
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/approval/mine",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  },
+  "todo": {
+    "body": {
+      "data": {
+        "code": 200,
+        "data": {
+          "code": 200,
+          "data": [],
+          "message": "查询成功",
+          "pageNum": 1,
+          "pageSize": 10,
+          "timestamp": "<ts>",
+          "total": 0
+        },
+        "message": "操作成功",
+        "timestamp": "<ts>"
+      },
+      "datacontenttype": "application/json",
+      "id": "<volatile>",
+      "source": "/api/approval/todo",
+      "specversion": "1.0",
+      "time": "<volatile>",
+      "type": "com.iboot.response.success"
+    },
+    "status": 200
+  }
+}
