@@ -36,8 +36,8 @@
 ```
 interfaces  → controller / dto / advisor / config
 application → service / mapper(MapStruct)
-domain      → 实体与仓储接口(system / job / backup)
-infrastructure → config / persistence / repository / security / filter / interceptor / aspect / job / push / storage
+domain      → 实体与仓储接口(system)
+infrastructure → config / persistence / repository / filter / interceptor / storage
 ```
 
 前端为独立的 `iboot-portal`(Vue 3 + TypeScript + Vite)。
@@ -46,53 +46,59 @@ infrastructure → config / persistence / repository / security / filter / inter
 
 | 能力域 | 具体内容 | 关键实现 |
 |---|---|---|
-| 认证授权 | 登录、JWT 签发校验、滑动过期、RBAC、五级数据权限 | `AuthController`、`JwtAuthenticationFilter`、`DataScopeInterceptor` |
-| 系统管理 | 用户 / 角色 / 菜单 / 字典 / 参数配置 | 25 个 Controller 中的 6 个,`sys_*` 表族 |
-| 组织架构 | 部门树、岗位、组织架构图 | `DeptController`、`PostController` |
-| 消息中心 | 站内消息、消息模板、公告、已读同步 | `MessageController`、`MessageTemplateController`、`NoticeController` |
-| 实时推送 | SSE 单播/组播/广播,集群下 Redis Pub/Sub 广播,CloudEvents 事件格式 | `SseEmitterManager`、`PushEventService`、`common/cloudevent` |
-| 文件管理 | 上传/下载/预览/分类,MinIO 与本地双存储 | `FileController`、`MinioService` |
-| 数据备份 | 全量逻辑备份、AES-256-GCM 加密、MinIO/本地/OSS 存储、独立演练库恢复校验 | `BackupController`、`BackupApplicationService`、`RestoreDrillService`、`BackupCipher`、doc 21 |
-| 定时任务 | Quartz 任务 CRUD、启停、执行日志 | `JobController`(`isClustered: false`) |
-| 日志 | 操作日志、登录日志、运行日志(入 ES) | `LogController`、`RunLogApplicationService` |
-| 监控运维 | 在线用户、Server 资源(Oshi)、Redis 监控、MinIO 监控、SQL 监控(Druid) | `OnlineUserController`、`ServerMonitorController`、`RedisMonitorController`、`MinioMonitorController` |
-| 统计分析 | 仪表板、趋势统计、Excel 导出(FastExcel) | `DashboardController`、`StatisticsController` |
+| 认证授权 | 登录、JWT 签发校验、滑动过期、RBAC、五级数据权限 | 认证在 `iboot-auth`(OAuth2 / OIDC),过滤器在 `iboot-kernel`,数据权限在 `iboot-system` |
+| 系统管理 | 用户 / 角色 / 菜单 / 字典 / 参数配置 | `iboot-system` 承载,`sys_*` 表族 |
+| 组织架构 | 部门树、岗位、组织架构图 | `iboot-system` 的 `DeptController`、`PostController` |
+| 消息中心 | 站内消息、消息模板、公告、已读同步 | `iboot-notify` 的 `MessageController`、`MessageTemplateController`、`NoticeController` |
+| 实时推送 | SSE 单播/组播/广播,集群下 Redis Pub/Sub 广播,CloudEvents 事件格式 | `iboot-notify` 的 `SseEmitterManager`、`PushEventService`;事件格式沿用各服务内的 `common/cloudevent` |
+| 文件管理 | 上传/下载/预览/分类,MinIO 与本地双存储 | `iboot-file` 的 `FileController`、`MinioService` |
+| 数据备份 | 全量逻辑备份、AES-256-GCM 加密、MinIO/本地/OSS 存储、独立演练库恢复校验 | `iboot-job` 的 `BackupController`、`BackupApplicationService`、`RestoreDrillService`、`BackupCipher`、doc 21 |
+| 定时任务 | Quartz 任务 CRUD、启停、执行日志,集群模式 | `iboot-job` 的 `JobController`(`isClustered: true`) |
+| 日志 | 操作日志、登录日志、运行日志(入 ES) | `iboot-monitor` 的 `LogController`、`RunLogApplicationService` |
+| 监控运维 | 在线用户、Server 资源(Oshi)、Redis 监控、MinIO 监控、SQL 监控(Druid) | `iboot-monitor` 的 `OnlineUserController`、`ServerMonitorController`、`RedisMonitorController`、`MinioMonitorController` |
+| 统计分析 | 仪表板、趋势统计、Excel 导出(FastExcel) | `iboot-system` 的 `DashboardController`、`StatisticsController` |
 | AI 对话 | 独立 `iboot-ai` 服务:多轮流式对话、Redis 记忆、每日配额、token/延迟观测 | `ChatApplicationService`、`AiChatController`、doc 22 |
 | AI 知识库 RAG | 知识库 CRUD、PDF/DOCX/TXT/MD 解析、分块、Embedding、BM25+kNN+应用层 RRF、引用溯源、RBAC+五级数据权限前置过滤、OCR 可选 | `KnowledgeIngestionService`、`KnowledgeRetrievalService`、`RagChatController`、doc 22 |
-| 智能体编排 | 受控工具注册（3 只读 + 1 可写）、以用户 JWT 代理 admin、工具级权限继承、写操作两段式确认、运行轨迹审计、确定性回放与真实模型回测 | `AgentRunService`、`AgentScopeRuntime`、`AgentToolRegistry`、`AgentChatController`、doc 22 |
+| 智能体编排 | 受控工具注册（3 只读 + 1 可写）、以用户 JWT 代理系统服务、工具级权限继承、写操作两段式确认、运行轨迹审计、确定性回放与真实模型回测 | `AgentRunService`、`AgentScopeRuntime`、`AgentToolRegistry`、`AgentChatController`、doc 22 |
 | 知识图谱 | 组织架构与 RBAC 四类节点五类关系入图、幂等同步、6 个固定模板（含名称解析）的多跳查询、查询前数据权限过滤与失败关闭、2 个只读智能体工具 | `GraphSyncService`、`GraphQueryService`、`Neo4jGraphRepository`、`QueryOrgGraphTool`、doc 22 §13 |
-| 国际化 | 前端 vue-i18n + 后端 MessageSource,中英文语言包分层 | `I18nController`、`common/i18n`、doc 17/18 |
-| 二级缓存 | Caffeine(L1)+ Redis(L2),Pub/Sub 失效广播,穿透/击穿/雪崩防护 | `TwoLevelCacheManager` |
+| 国际化 | 前端 vue-i18n + 后端 MessageSource,中英文语言包分层 | `iboot-system` 的 `I18nController`,各服务的 `resources/i18n` 语言包,doc 17/18 |
+| 二级缓存 | Caffeine(L1)+ Redis(L2),Pub/Sub 失效广播,穿透/击穿/雪崩防护 | `iboot-system` 的 `TwoLevelCacheManager` |
 | 可观测性 | Actuator + Micrometer + Prometheus + Alertmanager + Thanos 长期存储 + Grafana + ELK + 各类 exporter | 见 doc 11 |
 | 并发模型 | 虚拟线程已启用(Tomcat + 异步执行器) | 见 doc 16 |
 | API 文档 | Springdoc OpenAPI + Swagger UI | `OpenApiConfig` |
 
-数据库版本管理用 Flyway,`iboot-admin` 已推进到 `V27`;`iboot-ai` 使用独立 schema `iboot_ai`,迁移由自身 Flyway 管理(已到 `V2`)。
+数据库版本管理用 Flyway,每个服务管理自己的 schema:系统服务(原 `iboot-admin`)已推进到 `V28`,`iboot-ai` 独立 schema `iboot_ai`(已到 `V2`),file / notify / job / workflow / monitor 各自维护迁移目录。
 
 ### 1.3 运行环境
 
-`docker/docker-compose.yml` 提供 **19 个中间件/可观测容器**(其中 neo4j 位于 `graph` profile,默认不启动):
+`docker/docker-compose.yml` 提供 **21 个中间件/可观测容器**(neo4j 位于 `graph` profile,注册中心与追踪后端位于 `platform` profile,默认都不启动):
 
 | 分组 | 容器 |
 |---|---|
 | 数据 | mysql 8.0.45、redis 7.0.14、minio、elasticsearch 9.2.3、neo4j 5.26.29(`graph` profile) |
 | 日志 | logstash 9.2.3、kibana 9.2.3、elasticsearch-exporter |
 | 指标 | prometheus、alertmanager、grafana、thanos(sidecar / store / query / compact)、mysqld-exporter、redis-exporter、node-exporter |
+| 注册与追踪 | nacos 3.1.1、tempo 2.10.8(均在 `platform` profile) |
 | 初始化 | minio-init |
 
-**重要事实**:应用本身不在 compose 中(`iboot-admin` 服务块处于注释状态),后端跑在宿主机;前端仅有 `iboot-portal/Dockerfile`,后端镜像尚不存在。
+**重要事实**:应用本身不在 compose 中(`iboot-system` 服务块处于注释状态),后端跑在宿主机;后端镜像只有 `iboot-system/Dockerfile` 一份,其余 8 个服务与网关尚无镜像(见 §1.4)。
 
 ### 1.4 已确认缺口
 
-| 缺口 | 证据 |
-|---|---|
-| 业务数据行级多语言 | 现有 i18n 只覆盖 UI 文案与异常消息;已决策**暂不做**(原阶段 0.4) |
-| 链路追踪 | compose 中无 Zipkin / Tempo / SkyWalking / Jaeger,doc 11 提到但环境未落地 |
-| 服务注册 / 配置中心 / MQ / 分布式事务 | 完全未引入 |
-| K8s 编排 | 无 Deployment/Helm 清单,只有 docker-compose |
-| 后端容器镜像 | 无 `iboot-admin/Dockerfile` |
-| GraalVM Native | 计划文档存在,零实施 |
-| SSO / 零信任 / 多租户 | 未起步 |
+阶段 2 收尾后重新盘点。已补齐的缺口保留在表内并标注日期，便于对照这条主线走了多远。
+
+| 缺口 | 现状 | 证据 |
+|---|---|---|
+| 业务数据行级多语言 | ❌ 仍未做 | 现有 i18n 只覆盖 UI 文案与异常消息;已决策**暂不做**(原阶段 0.4) |
+| 链路追踪 | ✅ 已补齐(2026-10-31) | Tempo 2.10.8 + OpenTelemetry 随 `add-microservice-foundation` 落地(`platform` profile),九个服务参与追踪,`scripts/regress/trace-chain.sh` 按 TraceID 核验 |
+| 服务注册 / 配置中心 | ✅ 已补齐(2026-10-31) | Nacos 3.1.1(`platform` profile),八个业务服务统一走 `spring.config.import`(网关按 profile 切换静态地址与服务发现),仓内无 `bootstrap.yml` |
+| MQ / 分布式事务 | ❌ 未引入 | RocketMQ 与 Seata 均无依赖;跨服务写入都是旁路(审计、通知),失败不影响主流程 |
+| 服务网格零信任 | ❌ 未引入 | 未接入 ASM / Istio,服务间无 mTLS |
+| K8s 编排 | ❌ 未做 | 无 Deployment / Helm 清单,只有 docker-compose |
+| 后端容器镜像 | ⚠️ 部分 | 只有 `iboot-system/Dockerfile` 与 `iboot-portal/Dockerfile`;其余 8 个服务与网关尚无镜像 |
+| GraalVM Native | ❌ 零实施 | 计划与方法勘误见 §7.1 |
+| SSO | ✅ 已补齐(2026-10-31) | OAuth2 / OIDC 授权服务器(`iboot-auth`),授权码 + PKCE、JWK 公钥集与发现文档;其余服务为纯资源服务器 |
+| 多租户 | ❌ 未起步 | `tenant_id` 横切改造成本高,刻意推迟到阶段 4 |
 
 ### 1.5 文档与实现的偏差
 
