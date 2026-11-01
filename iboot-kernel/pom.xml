@@ -81,6 +81,11 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
         </dependency>
+        <!-- 共享日志配置的结构化投递；随内核传递给全部消费方 -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>

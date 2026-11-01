@@ -283,13 +283,6 @@
             </exclusions>
         </dependency>
 
-        <!-- ==================== Logging ==================== -->
-        <!-- Logstash Logback Encoder -->
-        <dependency>
-            <groupId>net.logstash.logback</groupId>
-            <artifactId>logstash-logback-encoder</artifactId>
-        </dependency>
-
         <!-- ==================== CloudEvents ==================== -->
         <dependency>
             <groupId>io.cloudevents</groupId>
