@@ -2,8 +2,8 @@
 # 只读接口的响应等价性：迁移前录制，迁移后经网关重放并比对。
 #
 # 用法：
-#   equivalence.sh --record [--service file|notify|job|workflow]   从录制源录制基线
-#   equivalence.sh --verify [--service file|notify|job|workflow]   经网关重放并与基线比对
+#   equivalence.sh --record [--service file|notify|job|workflow|monitor]   从录制源录制基线
+#   equivalence.sh --verify [--service file|notify|job|workflow|monitor]   经网关重放并与基线比对
 #
 # 环境变量：REG_BASE（登录与默认录制源，默认 http://localhost:8080）、
 #           REG_RECORD_BASE（仅 --record 的取数地址；旧实现删除后指向对应服务）、
@@ -33,15 +33,15 @@ while [ $# -gt 0 ]; do
             SERVICE="${1:-}"
             ;;
         *)
-            echo "用法: equivalence.sh --record|--verify [--service file|notify|job|workflow]" >&2
+            echo "用法: equivalence.sh --record|--verify [--service file|notify|job|workflow|monitor]" >&2
             exit 2
             ;;
     esac
     shift
 done
-[ -n "$MODE" ] || { echo "用法: equivalence.sh --record|--verify [--service file|notify|job|workflow]" >&2; exit 2; }
+[ -n "$MODE" ] || { echo "用法: equivalence.sh --record|--verify [--service file|notify|job|workflow|monitor]" >&2; exit 2; }
 case "$SERVICE" in
-    file|notify|job|workflow) ;;
+    file|notify|job|workflow|monitor) ;;
     *) echo "[ERROR] 未知服务：$SERVICE" >&2; exit 2 ;;
 esac
 

@@ -299,6 +299,49 @@ todo_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/approval/todo?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 持有 approval:approve 的用户可查看待办" "$todo_allowed"
 
+reg_log "== 监控域：功能权限与数据范围（经网关，已迁至 iboot-monitor） =="
+# 当前登录的是只持有审批权限的用户，正好作为「无日志权限」的拒绝用例
+log_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/log/login/list?pageNum=1&pageSize=10")
+reg_expect_status "[功能权限][拒绝] 无 loginlog:list 的用户访问登录日志" "$log_denied" "401 403"
+
+MONITOR_ROLE_CODE="ROLE_MONITOR_TEST"
+MONITOR_LOGIN_LOG_MENU_ID=300   # 菜单：登录日志（权限码 loginlog:list）
+MONITOR_USER_NAME="regress_monitor"
+reg_login
+admin_login_total=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/log/login/list?pageNum=1&pageSize=10" | reg_unwrap | jq -r '.data.total // 0')
+roles=$(reg_get /api/role/all)
+MONITOR_ROLE_ID=$(printf '%s' "$roles" | jq -r --arg c "$MONITOR_ROLE_CODE" '.data[]? | select(.roleCode == $c) | .id' | head -1)
+if [ -z "$MONITOR_ROLE_ID" ]; then
+    # dataScope=3（本部门）：受限用户只能看到本部门的登录日志
+    created=$(reg_post /api/role "{\"roleCode\":\"$MONITOR_ROLE_CODE\",\"roleName\":\"回归监控角色\",\"orderNum\":94,\"dataScope\":3,\"status\":1,\"menuIds\":[$MONITOR_LOGIN_LOG_MENU_ID]}")
+    MONITOR_ROLE_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$MONITOR_ROLE_ID" ] || reg_die "创建监控角色失败：$created"
+fi
+users=$(reg_get "/api/user/list?pageNum=1&pageSize=100&username=$MONITOR_USER_NAME")
+MONITOR_USER_ID=$(printf '%s' "$users" | jq -r --arg u "$MONITOR_USER_NAME" '.data.data[]? | select(.username == $u) | .id' | head -1)
+if [ -z "$MONITOR_USER_ID" ]; then
+    created=$(reg_post /api/user "{\"username\":\"$MONITOR_USER_NAME\",\"password\":\"$USER_PASS\",\"nickname\":\"回归监控用户\",\"deptId\":1,\"roleIds\":[$MONITOR_ROLE_ID],\"status\":1}")
+    MONITOR_USER_ID=$(printf '%s' "$created" | jq -r '.data.id // empty')
+    [ -n "$MONITOR_USER_ID" ] || reg_die "创建监控用户失败：$created"
+fi
+reg_login "$MONITOR_USER_NAME" "$USER_PASS"
+log_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/log/login/list?pageNum=1&pageSize=10" | reg_unwrap)
+reg_expect_ok "[功能权限][允许] 持有 loginlog:list 的受限用户可访问登录日志" "$log_allowed"
+monitor_login_total=$(printf '%s' "$log_allowed" | jq -r '.data.total // 0')
+if [ "${monitor_login_total:-0}" -le "${admin_login_total:-0}" ]; then
+    reg_pass "[数据范围][收紧] 本部门范围可见 $monitor_login_total 条，不超过超管的 $admin_login_total 条"
+else
+    reg_fail "[数据范围][收紧] 受限用户可见 $monitor_login_total 条，多于超管的 $admin_login_total 条"
+fi
+# 在线会话需要独立的 online:list 权限，这里回到超管验证同一端点
+reg_login
+online_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/online/count" | reg_unwrap)
+reg_expect_ok "[功能权限][允许] 超管可查询在线人数" "$online_allowed"
+
 reg_log "== 清理 =="
 reg_login
 reg_pass "矩阵执行完毕"

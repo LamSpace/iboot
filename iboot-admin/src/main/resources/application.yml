@@ -84,13 +84,6 @@ spring:
           max-idle: 8
           max-active: 8
           max-wait: -1ms
-    elasticsearch:
-      repositories:
-        enabled: false
-  elasticsearch:
-    Uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
-    connection-timeout: 5s
-    socket-timeout: 30s
   Jackson:
     deserialization:
       fail-on-unknown-properties: false
@@ -187,9 +180,6 @@ management:
       show-details: always
     logfile:
       external-file: logs/iboot-admin.log
-  health:
-    elasticsearch:
-      enabled: false
   info:
     git:
       mode: full
@@ -229,6 +219,10 @@ jwt:
 
 # SSE 推送配置
 iboot:
+  # 操作审计：审计表已归 iboot-monitor 所有，管理端与其它服务一样跨 schema 写入，
+  # 避免切换后管理端的审计记录落在旧表而日志页看不到。
+  logging:
+    operate-log-table: iboot_monitor.sys_operate_log
   # 免鉴权路径白名单，由共享内核（iboot-kernel）读取并与过滤器链共用
   security:
     whitelist:

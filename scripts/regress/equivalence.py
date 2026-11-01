@@ -5,7 +5,7 @@
 
 用法：python3 -I equivalence.py <base-url> <token> <output-file> [service]
 
-service 取 file（默认）、notify、job 或 workflow，决定采集哪一组只读请求。
+service 取 file（默认）、notify、job、workflow 或 monitor，决定采集哪一组只读请求。
 """
 
 import hashlib
@@ -170,17 +170,46 @@ def collect_workflow(base, token):
     return results
 
 
+def collect_monitor(base, token):
+    """监控与日志服务：操作日志列表与详情，以及三条必然为空的过滤查询。
+
+    登录日志与在线会话会随回归过程中的登录而变化，运行日志由 ELK 持续写入，
+    三者都不适合作为迁移前后的等价基线。这里取操作日志（两次采集之间没有新的
+    带审计注解的请求）和三条非匹配过滤，验证过滤链路与响应结构未发生漂移。
+    """
+    page = evaluate(base, token, "/api/log/operate/list?pageNum=1&pageSize=10")
+    results = {
+        "operatePage": page,
+        "loginFiltered": evaluate(base, token,
+                                  "/api/log/login/list?pageNum=1&pageSize=10&username=__equivalence__"),
+        "runFiltered": evaluate(base, token,
+                                "/api/log/run/list?pageNum=1&pageSize=10&keyword=__equivalence__"),
+        "onlineFiltered": evaluate(base, token, "/api/online/list?username=__equivalence__"),
+    }
+    rows = []
+    try:
+        rows = page["body"]["data"]["data"]["data"]
+    except (KeyError, TypeError):
+        pass
+    if rows:
+        results["operateDetail"] = evaluate(base, token, f"/api/log/operate/{rows[0]['id']}")
+    else:
+        results["operateDetail"] = {"skipped": "无操作日志可查"}
+    return results
+
+
 PROFILES = {
     "file": collect_file,
     "notify": collect_notify,
     "job": collect_job,
     "workflow": collect_workflow,
+    "monitor": collect_monitor,
 }
 
 
 def main() -> int:
     if len(sys.argv) not in (4, 5):
-        print("用法: equivalence.py <base-url> <token> <output-file> [file|notify|job|workflow]", file=sys.stderr)
+        print("用法: equivalence.py <base-url> <token> <output-file> [file|notify|job|workflow|monitor]", file=sys.stderr)
         return 2
     base, token, output = sys.argv[1].rstrip("/"), sys.argv[2], sys.argv[3]
     service = sys.argv[4] if len(sys.argv) == 5 else "file"

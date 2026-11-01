@@ -17,7 +17,7 @@
 # - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo），
 #   不启动 Prometheus、Kibana、Thanos 等观测组件；
 # - 全新数据卷下 MySQL 会执行 docker/init.sql 建出 iboot_admin，
-#   iboot_ai、iboot_file、iboot_notify、iboot_job 与 iboot_workflow 由本脚本创建；
+#   iboot_ai、iboot_file、iboot_notify、iboot_job、iboot_workflow 与 iboot_monitor 由本脚本创建；
 # - 后端日志写入 logs/，进程号写入 logs/<name>.pid。
 
 set -uo pipefail
@@ -32,7 +32,7 @@ VERSION="1.0.0"
 
 # 后端服务：名称:端口
 # 管理端必须排在最前：它负责 Flyway 建表，其余服务启动时要读共享库（sys_config、sys_user 等）。
-SERVICES=("iboot-admin:8080" "iboot-auth:8083" "iboot-file:8082" "iboot-notify:8084" "iboot-job:8085" "iboot-workflow:8086" "iboot-ai:8081" "iboot-gateway:8088")
+SERVICES=("iboot-monitor:8087" "iboot-admin:8080" "iboot-auth:8083" "iboot-file:8082" "iboot-notify:8084" "iboot-job:8085" "iboot-workflow:8086" "iboot-ai:8081" "iboot-gateway:8088")
 
 FORCE_BUILD=0
 WITH_FRONTEND=0
@@ -182,6 +182,11 @@ start_middleware() {
     docker exec iboot-mysql mysql -uroot -proot \
         -e 'CREATE DATABASE IF NOT EXISTS iboot_workflow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
         || fail '创建 iboot_workflow 库失败'
+
+    # 监控与日志服务的独立 schema（审计表归本服务所有），同上。
+    docker exec iboot-mysql mysql -uroot -proot \
+        -e 'CREATE DATABASE IF NOT EXISTS iboot_monitor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' 2>/dev/null \
+        || fail '创建 iboot_monitor 库失败'
 
     wait_http 'Elasticsearch' 'http://localhost:9200' 180 || fail 'Elasticsearch 未就绪'
     wait_http 'MinIO' 'http://localhost:9000/minio/health/live' 120 || fail 'MinIO 未就绪'

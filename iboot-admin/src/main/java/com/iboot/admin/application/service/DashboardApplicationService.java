@@ -16,8 +16,10 @@
 
 package com.iboot.admin.application.service;
 
-import com.iboot.admin.domain.system.model.LoginLog;
-import com.iboot.kernel.logging.OperateLog;
+import com.iboot.admin.infrastructure.persistence.mapper.LoginLogMapper;
+import com.iboot.admin.infrastructure.persistence.mapper.OperateLogMapper;
+import com.iboot.admin.infrastructure.persistence.po.LoginLogPO;
+import com.iboot.admin.infrastructure.persistence.po.OperateLogPO;
 import com.iboot.admin.interfaces.dto.response.DashboardSummaryResponse;
 import com.iboot.admin.interfaces.dto.response.LoginLogResponse;
 import com.iboot.admin.interfaces.dto.response.OperateLogResponse;
@@ -31,8 +33,12 @@ import java.util.stream.Collectors;
 /**
  * 仪表盘应用服务
  * <p>
- * 提供 Dashboard 首页数据汇总功能，包括各模块统计数量和最新日志记录
+ * 提供 Dashboard 首页数据汇总功能，包括各模块统计数量和最新日志记录。
  * </p>
+ *
+ * <p>日志数据由监控服务拥有，这里跨 schema 只读 {@code iboot_monitor} 的两张表：
+ * 仪表盘只取总数与最近 5 条，为它引入一次跨服务调用不划算。
+ * 退出条件：{@code iboot-system} 拆分时改为调用监控服务的查询接口。</p>
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -42,6 +48,11 @@ public class DashboardApplicationService {
 
     private static final Logger log = LoggerFactory.getLogger(DashboardApplicationService.class);
 
+    /**
+     * 仪表盘展示的最近日志条数。
+     */
+    private static final int RECENT_LOG_LIMIT = 5;
+
     private final UserApplicationService userApplicationService;
 
     private final RoleApplicationService roleApplicationService;
@@ -50,22 +61,22 @@ public class DashboardApplicationService {
 
     private final PostApplicationService postApplicationService;
 
-    private final LoginLogApplicationService loginLogApplicationService;
+    private final LoginLogMapper loginLogMapper;
 
-    private final OperateLogApplicationService operateLogApplicationService;
+    private final OperateLogMapper operateLogMapper;
 
     @SuppressWarnings("all")
     public DashboardApplicationService(final UserApplicationService userApplicationService,
                                        final RoleApplicationService roleApplicationService, final DeptApplicationService deptApplicationService,
                                        final PostApplicationService postApplicationService,
-                                       final LoginLogApplicationService loginLogApplicationService,
-                                       final OperateLogApplicationService operateLogApplicationService) {
+                                       final LoginLogMapper loginLogMapper,
+                                       final OperateLogMapper operateLogMapper) {
         this.userApplicationService = userApplicationService;
         this.roleApplicationService = roleApplicationService;
         this.deptApplicationService = deptApplicationService;
         this.postApplicationService = postApplicationService;
-        this.loginLogApplicationService = loginLogApplicationService;
-        this.operateLogApplicationService = operateLogApplicationService;
+        this.loginLogMapper = loginLogMapper;
+        this.operateLogMapper = operateLogMapper;
     }
 
     /**
@@ -81,10 +92,10 @@ public class DashboardApplicationService {
         long roleCount = roleApplicationService.countRoles();
         long deptCount = deptApplicationService.countDepts();
         long postCount = postApplicationService.countPosts();
-        long loginLogCount = loginLogApplicationService.countLoginLogs();
-        long operateLogCount = operateLogApplicationService.countOperateLogs();
-        List<LoginLog> recentLoginLogs = loginLogApplicationService.getLoginLogPage(1, 5);
-        List<OperateLog> recentOperateLogs = operateLogApplicationService.getOperateLogPage(1, 5);
+        long loginLogCount = loginLogMapper.count();
+        long operateLogCount = operateLogMapper.count();
+        List<LoginLogPO> recentLoginLogs = loginLogMapper.selectPage(0, RECENT_LOG_LIMIT);
+        List<OperateLogPO> recentOperateLogs = operateLogMapper.selectPage(0, RECENT_LOG_LIMIT);
         List<LoginLogResponse> loginLogResponses = recentLoginLogs.stream()
                 .map(this::convertLoginLog)
                 .collect(Collectors.toList());
@@ -110,7 +121,7 @@ public class DashboardApplicationService {
      *
      * @return 登录日志响应对象
      */
-    private LoginLogResponse convertLoginLog(LoginLog log) {
+    private LoginLogResponse convertLoginLog(LoginLogPO log) {
         return LoginLogResponse.builder()
                 .id(log.getId())
                 .username(log.getUsername())
@@ -131,7 +142,7 @@ public class DashboardApplicationService {
      *
      * @return 操作日志响应对象
      */
-    private OperateLogResponse convertOperateLog(OperateLog log) {
+    private OperateLogResponse convertOperateLog(OperateLogPO log) {
         return OperateLogResponse.builder()
                 .id(log.getId())
                 .title(log.getTitle())

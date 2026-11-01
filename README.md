@@ -130,6 +130,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 - 登录日志
 - 操作日志
 - 运行日志
+- 由独立服务 `iboot-monitor`（8087）承载，审计表 `iboot_monitor.sys_operate_log` / `sys_login_log` 归其所有
 
 ### 📁 文件管理
 - 文件上传下载
@@ -156,6 +157,7 @@ iBoot 是一个现代化的前后端分离管理系统，采用 Vue 3 和 Spring
 - 运行日志管理
 
 ### 📈 监控运维
+- 同上，日志、在线会话与服务/中间件资源检查由 `iboot-monitor` 提供；Prometheus/Grafana/Kibana 等外部控制台仍为管理端页面内的链接
 - 在线用户监控
 - 服务监控检查
 - Redis缓存监控
@@ -219,6 +221,16 @@ iboot/
 │   │   │   │   ├── infrastructure/ # Quartz 集群、外部命令、加密、存储、数据权限
 │   │   │   │   └── interfaces/     # 任务与备份控制器
 │   │   │   └── resources/
+│   │   └── pom.xml
+├── iboot-monitor/        # 监控与日志服务（8087）：日志查询、在线会话、资源检查
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/iboot/monitor/
+│   │   │   │   ├── application/    # 日志查询、会话管理、资源检查
+│   │   │   │   ├── domain/         # 登录日志模型与仓储
+│   │   │   │   ├── infrastructure/ # MyBatis、数据权限、共享库只读、Elasticsearch
+│   │   │   │   └── interfaces/     # 日志/会话/监控控制器与 DTO
+│   │   │   └── resources/          # Flyway V1（审计表）、mapper XML、i18n
 │   │   └── pom.xml
 ├── iboot-workflow/       # 审批工作流服务（8086）：请假审批与 Flowable 引擎
 │   ├── src/

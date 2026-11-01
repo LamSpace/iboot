@@ -1,0 +1,139 @@
+server:
+  port: 8087
+  servlet:
+    context-path: /
+  tomcat:
+    threads:
+      virtual:
+        enabled: true
+    max-connections: 10000
+
+spring:
+  application:
+    name: iboot-monitor
+  # 注册中心与配置中心：走 spring.config.import，optional: 保证配置中心不可用时仍能启动
+  config:
+    import: optional:nacos:iboot-monitor.yml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+        fail-fast: false
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        file-extension: yml
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+  threads:
+    virtual:
+      enabled: true
+  jmx:
+    enabled: false
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      # 独立 schema：审计表归本服务所有，其他服务跨 schema 写入
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot_monitor?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:root}
+      initial-size: 2
+      min-idle: 2
+      max-active: 10
+      max-wait: 60000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: true
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      filters: stat,wall,slf4j
+  # 迁移脚本只作用于本服务 schema；跨 schema 的数据搬迁见 scripts/migrate/
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 10s
+    # 运行日志由 Logstash 直接写入 ES，本服务只做查询
+    elasticsearch:
+      repositories:
+        enabled: false
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+    connection-timeout: 5s
+    socket-timeout: 30s
+
+# 鉴权：与既有服务共用密钥与会话，token 由认证服务签发
+jwt:
+  secret: iboot-admin-secret-key-for-jwt-token-generation-minimum-256-bits
+  expiration: 604800
+  session-timeout: 30
+  legacy-enabled: false
+
+iboot:
+  logging:
+    # 审计表归本服务所有，写入本 schema
+    operate-log-table: iboot_monitor.sys_operate_log
+  security:
+    whitelist:
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /v3/api-docs/**
+      - /v3/api-docs
+      - /v3/api-docs.yaml
+      - /v3/api-docs/swagger-config
+      - /swagger-resources/**
+      - /webjars/**
+      - /doc.html
+      - /actuator/**
+      - /error
+  # 数据权限范围：按注册中心服务名调用管理端只读接口，失败关闭
+  monitor:
+    permission:
+      scope-url: ${IBOOT_PERMISSION_SCOPE_URL:http://iboot-admin/api/auth/scope}
+      cache-seconds: 60
+
+mybatis:
+  type-aliases-package: com.iboot.monitor.infrastructure.persistence.po
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+    version: OPENAPI_3_1
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    url: /v3/api-docs
+
+management:
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${TEMPO_OTLP:http://localhost:4318/v1/traces}
+  otlp:
+    metrics:
+      export:
+        enabled: false
+  tracing:
+    export:
+      enabled: ${IBOOT_TRACING_ENABLED:true}
+    sampling:
+      probability: ${IBOOT_TRACING_SAMPLE:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

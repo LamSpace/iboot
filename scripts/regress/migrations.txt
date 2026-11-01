@@ -37,3 +37,11 @@
 # 审批工作流：add-workflow-service 期间管理端保留旧实现，路由已指向 workflow；
 # remove-workflow-from-admin 删除旧实现后改为 done。
 /api/approval admin workflow done
+
+# 监控与日志：remove-monitor-from-admin 已删除管理端旧实现，五条登记收敛为 done。
+# 按路径登记而不是 /api/monitor 前缀——后者会覆盖由 job 承接的备份路径。
+/api/log admin monitor done
+/api/online admin monitor done
+/api/monitor/server admin monitor done
+/api/monitor/redis admin monitor done
+/api/monitor/minio admin monitor done
