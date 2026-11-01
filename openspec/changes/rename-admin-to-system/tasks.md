@@ -32,7 +32,7 @@
 
 ## 5. 端到端验收
 
-- [ ] 5.1 契约与回归全量通过。验证：`bash scripts/regress/regress.sh`、`smoke.sh`、`permission-matrix.sh`、`equivalence.sh verify` 依次退出码为 0，契约基线为 57 条。
-- [ ] 5.2 链路追踪。验证：`trace-chain.sh <traceId> --expect iboot-gateway,iboot-auth,iboot-system` 通过，一次登录产生贯穿的 TraceID。
-- [ ] 5.3 故障隔离演练：停 `iboot-system` 后逐个采样依赖方。验证：已登录会话访问普通业务接口仍 200；job/monitor 在缓存 60 秒内仍可用、过期后返回明确 5xx；auth 登录、notify 与 workflow 的用户读取返回可辨识错误；网关快速失败，无重试风暴；重启后各服务无需重启即自愈。演练前确认注册中心列表只剩 `iboot-system`，避免旧实例造成假象。
-- [ ] 5.4 回滚演练。验证：`git revert` 后重新构建并启动全部服务，回归全绿；确认过程中不需要任何数据补偿动作。
+- [x] 5.1 契约与回归全量通过。验证：`bash scripts/regress/regress.sh`、`smoke.sh`、`permission-matrix.sh`、`equivalence.sh verify` 依次退出码为 0，契约基线为 57 条。
+- [x] 5.2 链路追踪。验证：`trace-chain.sh <traceId> --expect iboot-gateway,iboot-auth,iboot-system` 通过，一次登录产生贯穿的 TraceID。
+- [x] 5.3 故障隔离演练：停 `iboot-system` 后逐个采样依赖方。验证：已登录会话访问普通业务接口仍 200；job/monitor 在缓存 60 秒内仍可用、过期后返回明确 5xx；auth 登录、notify 与 workflow 的用户读取返回可辨识错误；网关快速失败，无重试风暴；重启后各服务无需重启即自愈。演练前确认注册中心列表只剩 `iboot-system`，避免旧实例造成假象。
+- [x] 5.4 回滚演练。验证：`git revert` 后重新构建并启动全部服务，回归全绿；确认过程中不需要任何数据补偿动作。
