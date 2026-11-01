@@ -83,6 +83,9 @@ jwt:
   legacy-enabled: false
 
 iboot:
+  # 操作审计：本服务 schema 没有审计表，跨库写入管理端审计表（临时约定，退出条件见 doc/23）
+  logging:
+    operate-log-table: iboot_admin.sys_operate_log
   security:
     whitelist:
       - /swagger-ui/**

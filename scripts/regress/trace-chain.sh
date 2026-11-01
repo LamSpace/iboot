@@ -4,6 +4,9 @@
 # 用法：
 #   trace-chain.sh <traceId> [--expect svc1,svc2] [--tempo URL] [--wait 秒]
 #
+# 审批工作流示例：
+#   trace-chain.sh <traceId> --expect iboot-gateway,iboot-workflow
+#
 # 复现来源是网关响应头 X-Trace-Id（应用日志的 MDC 亦可），不使用按时间范围检索，
 # 因此结论不受系统时钟与查询窗口边界影响。
 #

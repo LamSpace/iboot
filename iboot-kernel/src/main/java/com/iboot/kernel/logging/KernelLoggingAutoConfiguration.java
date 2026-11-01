@@ -16,8 +16,11 @@
 
 package com.iboot.kernel.logging;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -35,7 +38,8 @@ import java.util.concurrent.ThreadPoolExecutor;
  * <p>注册切面、异步记录器与日志专用线程池。宿主只需加依赖并使用 {@code @Log}，
  * 不需要再配置 AOP 或异步执行器。
  *
- * <p>日志写入是旁路行为：线程池独立于业务线程池，写失败只记告警，不影响请求结果。
+ * <p>日志写入是旁路行为：线程池独立于业务线程池，写失败只记错误并累加指标，不影响请求结果。
+ * 写入目标由 {@code iboot.logging.operate-log-table} 指定，启动时会校验格式并检查表可达性。
  * 数据源按需获取，测试切片没有数据源时不会阻断上下文启动。
  *
  * @author iBoot Team
@@ -69,16 +73,49 @@ public class KernelLoggingAutoConfiguration {
     /**
      * 操作日志记录器。
      *
+     * <p>写入目标由 {@code iboot.logging.operate-log-table} 指定；格式非法时让启动失败，
+     * 避免运行期写入未知表后静默丢日志。
+     *
      * @param dataSourceProvider 数据源，可缺省
      * @param executor 日志专用线程池
+     * @param meterRegistryProvider 指标注册表，可缺省
+     * @param operateLogTable 审计表名，默认 {@code sys_operate_log}
+     * @param applicationName 应用名，作为失败计数的标签
      * @return 异步记录器
+     * @throws IllegalStateException 审计表名格式非法时抛出
      */
     @Bean
     @ConditionalOnMissingBean
-    public OperateLogRecorder operateLogRecorder(ObjectProvider<DataSource> dataSourceProvider,
-                                                 @Qualifier("operateLogTaskExecutor") Executor executor) {
+    public OperateLogRecorder operateLogRecorder(
+            ObjectProvider<DataSource> dataSourceProvider,
+            @Qualifier("operateLogTaskExecutor") Executor executor,
+            ObjectProvider<MeterRegistry> meterRegistryProvider,
+            @Value("${iboot.logging.operate-log-table:sys_operate_log}") String operateLogTable,
+            @Value("${spring.application.name:unknown}") String applicationName) {
         DataSource dataSource = dataSourceProvider.getIfAvailable();
-        return new OperateLogRecorder(dataSource == null ? null : new JdbcTemplate(dataSource), executor);
+        String tableName;
+        try {
+            tableName = OperateLogRecorder.requireValidTableName(operateLogTable);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+        return new OperateLogRecorder(
+                dataSource == null ? null : new JdbcTemplate(dataSource),
+                executor, tableName, meterRegistryProvider.getIfAvailable(), applicationName);
+    }
+
+    /**
+     * 操作日志目标表的启动检查。
+     *
+     * <p>启动完成后做一次只读探测；表不可达时记录错误，但不阻止服务启动。
+     *
+     * @param recorder 操作日志记录器
+     * @return 启动检查任务
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "operateLogTargetVerifier")
+    public ApplicationRunner operateLogTargetVerifier(OperateLogRecorder recorder) {
+        return args -> recorder.verifyTarget();
     }
 
     /**

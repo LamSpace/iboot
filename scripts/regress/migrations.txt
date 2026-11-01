@@ -33,3 +33,7 @@
 # 备份路径必须按路径登记而不是 /api/monitor 前缀——后者会覆盖尚未拆分的监控接口。
 /api/job admin job done
 /api/monitor/backup admin job done
+
+# 审批工作流：add-workflow-service 期间管理端保留旧实现，路由已指向 workflow；
+# remove-workflow-from-admin 删除旧实现后改为 done。
+/api/approval admin workflow done

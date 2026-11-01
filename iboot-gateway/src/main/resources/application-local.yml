@@ -35,6 +35,13 @@ spring:
               predicates:
                 - Path=/api/message/**,/api/notice/**,/api/notification/**,/api/search
 
+            # 审批工作流：请假审批全部接口
+            - id: workflow
+              uri: ${IBOOT_WORKFLOW_URI:http://localhost:8086}
+              order: 26
+              predicates:
+                - Path=/api/approval/**
+
             # 调度服务：定时任务与数据备份。
             # 备份的路径挂在 /api/monitor 下，而 monitor 尚未拆分，因此这里必须按路径登记，
             # 不能占用 /api/monitor/** 前缀。

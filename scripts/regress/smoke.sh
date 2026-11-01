@@ -29,6 +29,10 @@ reg_expect_jq "返回的用户名为 $REG_USER" ".data.username == \"$REG_USER\"
 
 reg_log "== 3. 文件上传与下载（经网关，/api/file/** 已迁至 iboot-file） =="
 REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
+# 记录文件操作审计的基线，稍后确认本次链路确实新增了记录
+operate_log_before=$(docker exec iboot-mysql mysql --default-character-set=utf8mb4 -uroot -proot -N -e "
+    SELECT COUNT(*) FROM iboot_admin.sys_operate_log WHERE url LIKE '/api/file/%'" 2>/dev/null | tail -1)
+operate_log_before="${operate_log_before:-0}"
 echo "iBoot 回归冒烟 $(date +%s)" > "$WORK/smoke.txt"
 upload=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
     -F "file=@$WORK/smoke.txt" -F "fileCategory=regress" \
@@ -56,6 +60,21 @@ else
     reg_fail "上传未返回文件 ID"
 fi
 
+# 操作日志由内核异步写入共享审计表；给 file 服务的记录一点落库时间
+operate_log_count="$operate_log_before"
+for _ in $(seq 1 10); do
+    operate_log_count=$(docker exec iboot-mysql mysql --default-character-set=utf8mb4 -uroot -proot -N -e "
+        SELECT COUNT(*) FROM iboot_admin.sys_operate_log
+        WHERE url LIKE '/api/file/%'" 2>/dev/null | tail -1)
+    if [ "${operate_log_count:-0}" -gt "${operate_log_before:-0}" ]; then break; fi
+    sleep 1
+done
+if [ "${operate_log_count:-0}" -gt "${operate_log_before:-0}" ]; then
+    reg_pass "文件服务的操作日志写入共享审计表"
+else
+    reg_fail "文件服务的操作日志未写入共享审计表（基线 ${operate_log_before}，当前 ${operate_log_count:-0}）"
+fi
+
 reg_log "== 4. 实时推送（经网关，消息与 SSE 已迁至 iboot-notify） =="
 message=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
     -d '{"title":"回归冒烟消息","content":"回归冒烟内容","messageType":"1","priority":"1","receiverType":"0"}' \
@@ -66,7 +85,14 @@ message_id=$(printf '%s' "$message" | jq -r '.data.id // empty')
 curl -sN --max-time 15 -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/push/connect?t=$REG_TOKEN" > "$WORK/sse.txt" 2>/dev/null &
 SSE_PID=$!
-sleep 2
+# 固定等待在负载下会漏事件：先确认连接已注册到 notify，再发送消息
+sse_online=""
+for _ in $(seq 1 10); do
+    sse_online=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/push/status" | reg_unwrap | jq -r '.data.online // false')
+    [ "$sse_online" = "true" ] && break
+    sleep 1
+done
 
 if [ -n "$message_id" ] && [ "$message_id" != "null" ]; then
     sent=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
@@ -109,7 +135,7 @@ if [ -n "$retry_id" ]; then
     retry_status=""
     for _ in $(seq 1 15); do
         retry_status=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
-            "$REG_GATEWAY/api/notification/delivery?pageNum=1&pageSize=50" | reg_unwrap \
+            "$REG_GATEWAY/api/notification/delivery?pageNum=1&pageSize=200" | reg_unwrap \
             | jq -r --argjson id "$retry_id" '[.data.data[]? | select(.id == $id)][0].status // empty')
         [ "$retry_status" = "PENDING" ] || [ "$retry_status" = "SENDING" ] || break
         sleep 1
@@ -152,14 +178,60 @@ backup=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/monitor/backup/records" | reg_unwrap)
 reg_expect_ok "经网关触发一次手动备份" "$backup"
 
-reg_log "== 6. 审批流转 =="
+reg_log "== 6. 审批流转（经网关，/api/approval/** 已迁至 iboot-workflow） =="
+approval_post() {
+    curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+        -d "${2:-}" "$REG_GATEWAY$1" | reg_unwrap
+}
+approval_get() {
+    curl -sS -H "Authorization: Bearer $REG_TOKEN" "$REG_GATEWAY$1" | reg_unwrap
+}
+
 reg_ensure_user "regress_approver" "回归审批人" 2
 approver_id="$REG_LAST_ID"
-leave=$(reg_post /api/approval/leave "{\"approverId\":$approver_id,\"leaveType\":\"annual\",\"startTime\":\"2026-11-02T09:00:00\",\"endTime\":\"2026-11-02T18:00:00\",\"reason\":\"回归冒烟\"}")
-reg_expect_ok "发起一条请假申请" "$leave"
-mine=$(reg_get /api/approval/mine)
-reg_expect_ok "查询我发起的审批" "$mine"
+# 审批权限由专用角色授予；复用历史账号时也能确保拿到 approval:apply / approval:approve
+docker exec iboot-mysql mysql -uroot -proot -e "
+    INSERT INTO iboot_admin.sys_role (role_code, role_name, role_sort, data_scope, status, create_by)
+    SELECT 'ROLE_APPROVAL_SMOKE', '回归冒烟审批角色', 96, 1, 1, 'system' FROM DUAL
+    WHERE NOT EXISTS (SELECT 1 FROM iboot_admin.sys_role WHERE role_code = 'ROLE_APPROVAL_SMOKE');
+    INSERT IGNORE INTO iboot_admin.sys_role_menu (role_id, menu_id)
+    SELECT id, 9101 FROM iboot_admin.sys_role WHERE role_code = 'ROLE_APPROVAL_SMOKE';
+    INSERT IGNORE INTO iboot_admin.sys_role_menu (role_id, menu_id)
+    SELECT id, 9102 FROM iboot_admin.sys_role WHERE role_code = 'ROLE_APPROVAL_SMOKE';
+    DELETE FROM iboot_admin.sys_user_role WHERE user_id = $approver_id;
+    INSERT INTO iboot_admin.sys_user_role (user_id, role_id)
+    SELECT $approver_id, id FROM iboot_admin.sys_role WHERE role_code = 'ROLE_APPROVAL_SMOKE';
+" 2>/dev/null
+
+leave=$(approval_post /api/approval/leave "{\"approverId\":$approver_id,\"leaveType\":\"annual\",\"startTime\":\"2026-11-02T09:00:00\",\"endTime\":\"2026-11-02T18:00:00\",\"reason\":\"回归冒烟\"}")
+reg_expect_ok "经网关发起一条请假申请" "$leave"
+leave_id=$(printf '%s' "$leave" | jq -r '.data.id // empty')
+leave2=$(approval_post /api/approval/leave "{\"approverId\":$approver_id,\"leaveType\":\"annual\",\"startTime\":\"2026-11-03T09:00:00\",\"endTime\":\"2026-11-03T18:00:00\",\"reason\":\"回归冒烟驳回\"}")
+reg_expect_ok "经网关发起第二条请假申请" "$leave2"
+leave2_id=$(printf '%s' "$leave2" | jq -r '.data.id // empty')
+
+mine=$(approval_get "/api/approval/mine?pageNum=1&pageSize=50")
+reg_expect_ok "经网关查询我发起的审批" "$mine"
 reg_expect_jq "审批列表中包含刚发起的申请" '[.data.data[]? | select(.reason == "回归冒烟")] | length > 0' "$mine"
+detail=$(approval_get "/api/approval/$leave_id")
+reg_expect_jq "详情包含审批历史" '.data.history | length >= 1' "$detail"
+
+admin_token="$REG_TOKEN"
+reg_login "regress_approver" "Regress123" >/dev/null
+todo=$(approval_get "/api/approval/todo?pageNum=1&pageSize=50")
+reg_expect_jq "审批人待办包含该申请" "[.data.data[]? | select(.id == $leave_id)] | length == 1" "$todo"
+approved=$(approval_post "/api/approval/$leave_id/approve" '{"comment":"同意"}')
+reg_expect_ok "经网关审批通过" "$approved"
+rejected=$(approval_post "/api/approval/$leave2_id/reject" '{"comment":"材料不齐"}')
+reg_expect_ok "经网关审批驳回" "$rejected"
+done=$(approval_get "/api/approval/done?pageNum=1&pageSize=50")
+reg_expect_jq "已办包含通过记录" "[.data.data[]? | select(.id == $leave_id)] | length == 1" "$done"
+reg_expect_jq "已办包含驳回记录" "[.data.data[]? | select(.id == $leave2_id)] | length == 1" "$done"
+
+REG_TOKEN="$admin_token"
+detail2=$(approval_get "/api/approval/$leave2_id")
+reg_expect_jq "驳回后详情状态为 REJECTED" '.data.application.status == "REJECTED"' "$detail2"
+reg_expect_jq "详情包含驳回意见" '[.data.history[]? | select(.comment == "材料不齐")] | length == 1' "$detail2"
 
 reg_log "== 7. 登出与会话撤销 =="
 logout=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" "$REG_AUTH_BASE/api/auth/logout" | reg_unwrap)

@@ -41,7 +41,7 @@ public class AsyncConfig {
      * 创建基于虚拟线程的异步任务执行器。
      *
      * <p>以 {@link AsyncTaskExecutor} 暴露，使依赖 {@code @ConditionalOnMissingBean} 按类型判断
-     * 的第三方自动配置（如 Flowable）能够识别并退让，避免同名 Bean 冲突。
+     * 的第三方自动配置能够识别并退让，避免同名 Bean 冲突。
      *
      * @return 虚拟线程执行器
      */

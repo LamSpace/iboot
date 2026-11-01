@@ -93,13 +93,13 @@ public class SseEmitterManager {
         // 注册完成回调
         emitter.onCompletion(() -> {
             log.info("SSE 连接完成，userId: {}", userId);
-            userEmitters.remove(userId);
+            removeEmitter(userId, emitter);
             updateMetrics();
         });
         // 注册超时回调
         emitter.onTimeout(() -> {
             log.warn("SSE 连接超时，userId: {}，将在 {}ms 后断开", userId, getTimeout());
-            userEmitters.remove(userId);
+            removeEmitter(userId, emitter);
             try {
                 emitter.complete();
             } catch (Exception e) {
@@ -110,7 +110,7 @@ public class SseEmitterManager {
         // 注册错误回调
         emitter.onError(throwable -> {
             log.error("SSE 连接错误，userId: {}, error: {}", userId, throwable.getMessage());
-            userEmitters.remove(userId);
+            removeEmitter(userId, emitter);
             updateMetrics();
         });
         // 发送心跳保持连接
@@ -138,6 +138,43 @@ public class SseEmitterManager {
         }
         // 更新监控指标
         updateMetrics();
+    }
+
+    /**
+     * 断开指定的连接实例。
+     *
+     * <p>只有该实例仍是用户的当前连接时才从连接池移除，避免旧连接的发送失败连带移除新连接。
+     * 无论是否移除成功都完成该实例，释放容器资源。
+     *
+     * @param userId 用户 ID
+     * @param emitter 要断开的连接；为 {@code null} 时只刷新指标
+     */
+    private void disconnect(Long userId, SseEmitter emitter) {
+        if (emitter == null) {
+            updateMetrics();
+            return;
+        }
+        boolean removed = userEmitters.remove(userId, emitter);
+        try {
+            emitter.complete();
+            if (removed) {
+                log.info("SSE 连接断开，userId: {}", userId);
+            }
+        } catch (Exception e) {
+            log.error("SSE 连接断开失败，userId: {}", userId, e);
+        }
+        // 更新监控指标
+        updateMetrics();
+    }
+
+    /**
+     * 仅当连接实例仍是当前连接时移除它。
+     *
+     * @param userId 用户 ID
+     * @param emitter 触发回调的连接实例
+     */
+    private void removeEmitter(Long userId, SseEmitter emitter) {
+        userEmitters.remove(userId, emitter);
     }
 
     /**
@@ -177,8 +214,8 @@ public class SseEmitterManager {
             if (pushMetrics != null) {
                 pushMetrics.recordPushEventFailed();
             }
-            // 发送失败时断开连接
-            disconnect(userId);
+            // 发送失败时断开当前连接实例
+            disconnect(userId, emitter);
             return false;
         } catch (Exception e) {
             log.error("推送事件发送异常，userId: {}", userId, e);
@@ -186,7 +223,7 @@ public class SseEmitterManager {
             if (pushMetrics != null) {
                 pushMetrics.recordPushEventFailed();
             }
-            disconnect(userId);
+            disconnect(userId, emitter);
             return false;
         }
     }
@@ -200,12 +237,12 @@ public class SseEmitterManager {
      */
     public int broadcast(PushEvent event) {
         int successCount = 0;
-        List<Long> offlineUsers = new ArrayList<>();
+        List<Map.Entry<Long, SseEmitter>> offlineEmitters = new ArrayList<>();
         for (Map.Entry<Long, SseEmitter> entry : userEmitters.entrySet()) {
             Long userId = entry.getKey();
             SseEmitter emitter = entry.getValue();
             if (emitter == null) {
-                offlineUsers.add(userId);
+                offlineEmitters.add(entry);
                 continue;
             }
             try {
@@ -214,14 +251,14 @@ public class SseEmitterManager {
                 successCount++;
             } catch (IOException e) {
                 log.warn("广播推送失败，userId: {}, error: {}", userId, e.getMessage());
-                offlineUsers.add(userId);
+                offlineEmitters.add(entry);
             }
         }
-        // 清理离线用户
-        for (Long userId : offlineUsers) {
-            disconnect(userId);
+        // 只清理发送失败的连接实例
+        for (Map.Entry<Long, SseEmitter> entry : offlineEmitters) {
+            disconnect(entry.getKey(), entry.getValue());
         }
-        log.info("广播推送完成，成功：{}/{}, 离线：{}", successCount, userEmitters.size(), offlineUsers.size());
+        log.info("广播推送完成，成功：{}/{}, 离线：{}", successCount, userEmitters.size(), offlineEmitters.size());
         return successCount;
     }
 
@@ -289,7 +326,7 @@ public class SseEmitterManager {
                 });
         scheduler.scheduleAtFixedRate(() -> {
             try {
-                if (userEmitters.containsKey(userId)) {
+                if (userEmitters.get(userId) == emitter) {
                     emitter.send(SseEmitter.event().name("heartbeat").data("ping"));
                     log.trace("发送心跳，userId: {}", userId);
                 } else {
@@ -297,7 +334,7 @@ public class SseEmitterManager {
                 }
             } catch (IOException e) {
                 log.debug("心跳发送失败，userId: {}, error: {}", userId, e.getMessage());
-                disconnect(userId);
+                disconnect(userId, emitter);
                 scheduler.shutdown();
             }
         }, getHeartbeatInterval(), getHeartbeatInterval(), TimeUnit.MILLISECONDS);
