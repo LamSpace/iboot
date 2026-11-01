@@ -239,8 +239,15 @@ CI 见 `.github/workflows/regress.yml`：PR 阶段跑路由覆盖、构建与网
 
 ## 镜像与部署现状
 
-当前**只有 `iboot-system` 与 `iboot-portal` 提供 Dockerfile**，其余服务仍需在宿主机运行；
-`docker/docker-compose.yml` 中的应用编排块处于注释状态，实际运行的是 21 个中间件容器。
+九个后端服务与前端都提供 Dockerfile。后端使用统一模板：`openjdk:25-jdk-slim`、非 root 用户、
+`script/run-java.sh` 启动、拷贝预构建 jar，差异仅限应用名、端口与 jar 文件名。
+
+```bash
+# 先在宿主机构建 jar，再按模块构建镜像
+mvn -DskipTests package
+cd iboot-job && docker build -t iboot-job .
+docker run --rm -p 8085:8085 iboot-job
+```
 
 前端的生产镜像由 nginx 提供静态资源，并把 `/iboot/api` 反向代理到 `iboot-gateway:8088`：
 
@@ -250,7 +257,8 @@ docker build -t iboot-portal .
 docker run -d -p 80:80 --name iboot-portal iboot-portal
 ```
 
-其余服务的镜像、Helm 组织与 ACK 部署见 [ROADMAP 阶段 3](ROADMAP.md#阶段-3云原生ack--helm)。
+`docker/docker-compose.yml` 中的应用编排块仍处于注释状态，实际运行的是 21 个中间件容器。
+Helm 组织与 ACK 部署见 [ROADMAP 阶段 3](ROADMAP.md#阶段-3云原生ack--helm)。
 
 ## 文档导航
 
