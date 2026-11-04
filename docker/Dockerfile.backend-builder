@@ -1,0 +1,37 @@
+#
+# 后端共享构建阶段：一次 Maven reactor 构建产出全部可部署模块的 jar。
+# 该镜像只作为构建产物来源（iboot-backend-builder:local），不会被运行。
+#
+# 依赖下载走 docker/maven/settings.xml 中的阿里云 mirror，并通过 BuildKit
+# cache mount 复用本地 Maven 仓库；宿主机带凭据的 settings.xml 不会进入镜像。
+
+FROM maven:3.9.14-eclipse-temurin-25 AS builder
+
+WORKDIR /workspace
+
+# 只含公共镜像地址，不含任何凭据
+COPY docker/maven/settings.xml /root/.m2/settings.xml
+
+# 先复制 POM，尽量让依赖下载层与源码变更解耦
+COPY pom.xml ./
+COPY iboot-kernel/pom.xml iboot-kernel/pom.xml
+COPY iboot-db-init/pom.xml iboot-db-init/pom.xml
+COPY iboot-file/pom.xml iboot-file/pom.xml
+COPY iboot-notify/pom.xml iboot-notify/pom.xml
+COPY iboot-job/pom.xml iboot-job/pom.xml
+COPY iboot-workflow/pom.xml iboot-workflow/pom.xml
+COPY iboot-monitor/pom.xml iboot-monitor/pom.xml
+COPY iboot-ops/pom.xml iboot-ops/pom.xml
+COPY iboot-auth/pom.xml iboot-auth/pom.xml
+COPY iboot-system/pom.xml iboot-system/pom.xml
+COPY iboot-ai/pom.xml iboot-ai/pom.xml
+COPY iboot-gateway/pom.xml iboot-gateway/pom.xml
+
+# 预热依赖是优化项，失败不阻断；真正的构建门禁是下面的 package
+RUN --mount=type=cache,target=/root/.m2/repository,sharing=locked \
+    mvn -B -q -DskipTests dependency:go-offline || true
+
+COPY . .
+
+RUN --mount=type=cache,target=/root/.m2/repository,sharing=locked \
+    mvn -B -DskipTests package

@@ -1,0 +1,38 @@
+#
+# 后端运行期镜像模板：共享 builder 产物 + 各模块自己的 run-java.sh。
+# 差异仅限 MODULE、PORT 与 jar 版本，运行期不包含 Maven/JDK 构建工具链。
+#
+# 构建上下文为仓库根目录，示例：
+#   docker build -f docker/Dockerfile.backend --build-arg MODULE=iboot-system -t iboot-system .
+
+FROM eclipse-temurin:25-jre AS runtime
+
+ARG MODULE
+ARG PORT=8080
+ARG VERSION=1.0.0
+
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+WORKDIR /app
+
+# 非 root 运行，并准备可写的日志与上传目录（命名卷会继承这里的属主）。
+# Nacos 客户端会把日志写到 ${user.home}/logs/nacos，因此也要准备 /home/app。
+RUN groupadd -r app && useradd -r -g app app \
+ && mkdir -p /app/logs /app/uploads /app/keys /home/app/logs/nacos \
+ && chown -R app:app /app /home/app
+
+COPY --from=iboot-backend-builder:local \
+     /workspace/${MODULE}/target/${MODULE}-${VERSION}.jar /app/app.jar
+COPY ${MODULE}/script/run-java.sh /app/run-java.sh
+RUN chmod +x /app/run-java.sh && chown app:app /app/app.jar /app/run-java.sh
+
+USER app
+
+EXPOSE ${PORT}
+
+ENV JAVA_APP_JAR=/app/app.jar \
+    JAVA_APP_NAME=${MODULE} \
+    JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
+
+ENTRYPOINT ["/app/run-java.sh"]

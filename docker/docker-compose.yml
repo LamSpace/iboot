@@ -1,77 +1,412 @@
-version: '3.8'
+# iBoot 全栈 Docker Compose 编排
+#
+# 构建前置：
+#   scripts/docker-deploy.sh 会先构建共享 builder 镜像 iboot-backend-builder:local，
+#   再执行 docker compose build。单独执行 docker compose build 前必须先完成这一步。
+#
+# 常用命令：
+#   docker compose -f docker/docker-compose.yml up -d --wait
+#   docker compose -f docker/docker-compose.yml --profile observability --profile graph up -d --wait
+
+x-app-env: &app-env
+  TZ: Asia/Shanghai
+  MYSQL_HOST: mysql
+  MYSQL_PORT: "3306"
+  MYSQL_USERNAME: root
+  MYSQL_PASSWORD: root
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  ELASTICSEARCH_URIS: http://elasticsearch:9200
+  NACOS_ADDR: nacos:8848
+  TEMPO_OTLP: http://tempo:4318/v1/traces
+  LOGSTASH_HOST: logstash
+  JWT_JWK_SET_URI: http://iboot-auth:8083/oauth2/jwks
+  IBOOT_NOTIFY_BASE_URL: http://iboot-notify:8084
+  IBOOT_AI_MINIO_ENDPOINT: http://minio:9000
+  IBOOT_AI_GRAPH_URI: bolt://neo4j:7687
+  MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+
+x-app-common: &app-common
+  env_file:
+    - ../.env
+  restart: unless-stopped
+  networks:
+    - iboot-network
+
+x-app-healthcheck: &app-healthcheck
+  interval: 15s
+  timeout: 5s
+  retries: 10
+  start_period: 90s
+
+x-backend-build: &backend-build
+  context: ..
+  dockerfile: docker/Dockerfile.backend
 
 services:
-  # # ==================== 应用服务 ====================
-  # iboot-system:
-  #   build:
-  #     context: ../iboot-system
-  #     dockerfile: Dockerfile
-  #   container_name: iboot-system
-  #   ports:
-  #     - "8080:8080"
-  #   environment:
-  #     - TZ=Asia/Shanghai
-  #     - SPRING_PROFILES_ACTIVE=docker
-  #     # 数据库配置（使用简单变量名，与 application.yml 占位符对应）
-  #     - MYSQL_HOST=mysql
-  #     - MYSQL_PORT=3306
-  #     - MYSQL_USERNAME=root
-  #     - MYSQL_PASSWORD=root
-  #     # Redis 配置
-  #     - REDIS_HOST=redis
-  #     - REDIS_PORT=6379
-  #     # MinIO 配置
-  #     - MINIO_URL=http://minio:9000
-  #     - MINIO_ACCESS_KEY=minioadmin
-  #     - MINIO_SECRET_KEY=minioadmin
-  #     # Elasticsearch 配置
-  #     - ELASTICSEARCH_URIS=http://elasticsearch:9200
-  #     # Logstash 配置
-  #     - LOGSTASH_HOST=logstash
-  #     # JVM 配置 - 优化启动性能，减少频繁 GC
-  #     # 固定堆内存大小，避免运行时动态扩展导致 GC
-  #     - JAVA_OPTIONS=-Xms1024m -Xmx1024m -XX:MaxGCPauseMillis=500 -XX:G1HeapRegionSize=2m -XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=512m -XX:+UseG1GC --enable-native-access=ALL-UNNAMED
-  #     - JAVA_DIAGNOSTICS=true
-  #     # SSE 推送配置
-  #     - IBOOT_PUSH_SSE_HEARTBEAT_INTERVAL=30000
-  #   volumes:
-  #     - admin_logs:/app/logs
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q 'UP' || exit 1"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 5
-  #     start_period: 60s
-  #   restart: unless-stopped
-  #   networks:
-  #     - iboot-network
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_started
-  #     minio:
-  #       condition: service_healthy
-  #     elasticsearch:
-  #       condition: service_healthy
-  #     logstash:
-  #       condition: service_healthy
+  # ==================== 构建阶段 ====================
+  # 只作为构建目标，不会常驻；由 scripts/docker-deploy.sh 先构建。
+  iboot-backend-builder:
+    image: iboot-backend-builder:local
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend-builder
+    profiles: ["build"]
 
-  # iboot-portal:
-  #   build:
-  #     context: ../iboot-portal
-  #     dockerfile: Dockerfile
-  #   container_name: iboot-portal
-  #   ports:
-  #     - "80:80"
-  #   environment:
-  #     - TZ=Asia/Shanghai
-  #   restart: unless-stopped
-  #   networks:
-  #     - iboot-network
-  #   depends_on:
-  #     - iboot-system
+  # ==================== 数据库初始化 ====================
+  db-init:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dbinit
+    container_name: iboot-db-init
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: root
+      IBOOT_DB_NAME: iboot
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - iboot-network
 
+  # ==================== 应用服务 ====================
+  iboot-system:
+    <<: *app-common
+    container_name: iboot-system
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-system
+        PORT: "8080"
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms512m -Xmx1024m --enable-native-access=ALL-UNNAMED"
+    volumes:
+      - admin_logs:/app/logs
+      - uploads_data:/app/uploads
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      start_period: 120s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-ai:
+    <<: *app-common
+    container_name: iboot-ai
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-ai
+        PORT: "8081"
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms512m -Xmx1024m --enable-native-access=ALL-UNNAMED"
+      # 开启智能体与智能体管理页面所需的控制器
+      IBOOT_AI_AGENT_ENABLED: "true"
+    volumes:
+      - admin_logs:/app/logs
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8081"]
+      start_period: 150s
+    depends_on:
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-file:
+    <<: *app-common
+    container_name: iboot-file
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-file
+        PORT: "8082"
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+    volumes:
+      - admin_logs:/app/logs
+      - uploads_data:/app/uploads
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8082"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-auth:
+    <<: *app-common
+    container_name: iboot-auth
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-auth
+        PORT: "8083"
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+      IBOOT_AUTH_ISSUER: http://localhost:8088
+      IBOOT_AUTH_REDIRECT_URI: http://localhost/callback
+      IBOOT_AUTH_LOGOUT_REDIRECT_URI: http://localhost/login
+      # 持久化签名密钥：认证服务重启后仍能验证此前签发的令牌
+      IBOOT_AUTH_JWK_FILE: /app/keys/iboot-auth-jwk.json
+    volumes:
+      - admin_logs:/app/logs
+      - auth_keys:/app/keys
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8083"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-notify:
+    <<: *app-common
+    container_name: iboot-notify
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-notify
+        PORT: "8084"
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+    volumes:
+      - admin_logs:/app/logs
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8084"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-job:
+    <<: *app-common
+    container_name: iboot-job
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-job
+        PORT: "8085"
+    ports:
+      - "8085:8085"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+      # 容器内没有 docker CLI；启用备份会触发启动自检失败
+      IBOOT_BACKUP_ENABLED: "false"
+    volumes:
+      - admin_logs:/app/logs
+      - uploads_data:/app/uploads
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8085"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-workflow:
+    <<: *app-common
+    container_name: iboot-workflow
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-workflow
+        PORT: "8086"
+    ports:
+      - "8086:8086"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+    volumes:
+      - admin_logs:/app/logs
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8086"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-monitor:
+    <<: *app-common
+    container_name: iboot-monitor
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-monitor
+        PORT: "8087"
+    ports:
+      - "8087:8087"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+    volumes:
+      - admin_logs:/app/logs
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8087"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-gateway:
+    <<: *app-common
+    container_name: iboot-gateway
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-gateway
+        PORT: "8088"
+    ports:
+      - "8088:8088"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+      SPRING_PROFILES_ACTIVE: nacos
+    volumes:
+      - admin_logs:/app/logs
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8088"]
+      start_period: 90s
+    depends_on:
+      nacos:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-ops:
+    <<: *app-common
+    container_name: iboot-ops
+    build:
+      <<: *backend-build
+      args:
+        MODULE: iboot-ops
+        PORT: "8089"
+    ports:
+      - "8089:8089"
+    environment:
+      <<: *app-env
+      JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+      # 本地全栈默认关闭控制台认证；生产部署必须开启并注入密码
+      IBOOT_OPS_SECURITY_ENABLED: "false"
+      IBOOT_OPS_USER: ops
+    volumes:
+      - admin_logs:/app/logs
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8089"]
+    depends_on:
+      nacos:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+
+  iboot-portal:
+    build:
+      context: ../iboot-portal
+      dockerfile: Dockerfile
+    container_name: iboot-portal
+    ports:
+      - "80:80"
+    depends_on:
+      iboot-gateway:
+        condition: service_healthy
+      # nginx 启动时解析 /sba、/druid、/swagger 上游
+      iboot-ops:
+        condition: service_healthy
+      iboot-system:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      # 用 IPv4 回环：nginx 只监听 IPv4，localhost 可能解析到 ::1
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ==================== 基础设施 ====================
   mysql:
     image: mysql:8.0.45
     container_name: iboot-mysql
@@ -80,6 +415,9 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: iboot
+      # 允许其它容器以 root 连接；仅用于本地/单机部署
+      MYSQL_ROOT_HOST: "%"
+      TZ: Asia/Shanghai
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -87,11 +425,12 @@ services:
     networks:
       - iboot-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      # 强制走 TCP：初始化临时实例只监听 socket，避免健康检查过早通过
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 10
+      start_period: 60s
 
   redis:
     image: redis:7.0.14
@@ -103,6 +442,12 @@ services:
     restart: unless-stopped
     networks:
       - iboot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
@@ -120,107 +465,12 @@ services:
     networks:
       - iboot-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  # 知识图谱（1.4）：默认不启动，需要时执行 docker compose --profile graph up -d neo4j
-  neo4j:
-    image: neo4j:5.26.29-community
-    container_name: iboot-neo4j
-    profiles: ["graph"]
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    environment:
-      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-iboot123456}
-      # 受本机内存约束（R4）：堆与页缓存显式限制
-      - NEO4J_server_memory_heap_initial__size=512m
-      - NEO4J_server_memory_heap_max__size=512m
-      - NEO4J_server_memory_pagecache_size=256m
-    volumes:
-      - neo4j_data:/data
-      - neo4j_logs:/logs
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
-      interval: 30s
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 20s
 
-  # 监控组件
-  prometheus:
-    image: prom/prometheus:v2.53.4
-    container_name: iboot-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./scripts/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./scripts/prometheus/alerts:/etc/prometheus/alerts
-      - prometheus_data:/prometheus
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=24h'
-      - '--storage.tsdb.max-block-duration=2h'
-      - '--web.enable-admin-api'
-      - '--web.enable-lifecycle'
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    # depends_on:
-    #   iboot-system:
-    #     condition: service_healthy
-
-  grafana:
-    image: grafana/grafana:12.2.0
-    container_name: iboot-grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./scripts/grafana/provisioning:/etc/grafana/provisioning
-      - ./scripts/grafana/grafana.ini:/etc/grafana/grafana.ini
-      - grafana_data:/var/lib/grafana
-    environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://localhost:3000
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      - prometheus
-      - thanos-query
-
-  alertmanager:
-    image: prom/alertmanager:v0.29.0
-    container_name: iboot-alertmanager
-    ports:
-      - "9093:9093"
-    volumes:
-      - ./scripts/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
-      - alertmanager_data:/alertmanager
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      - prometheus
-
-  # MinIO 初始化 - 创建 thanos 存储桶
   minio-init:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: minio-init
@@ -237,150 +487,6 @@ services:
       minio:
         condition: service_healthy
 
-  # Thanos 组件
-  thanos-sidecar:
-    image: thanosio/thanos:v0.36.1
-    container_name: thanos-sidecar
-    ports:
-      - "19191:19191"
-    volumes:
-      - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
-      - prometheus_data:/prometheus
-    user: "root"
-    command:
-      - sidecar
-      - '--tsdb.path=/prometheus'
-      - '--prometheus.url=http://prometheus:9090'
-      - '--objstore.config-file=/etc/thanos/bucket.yml'
-      - '--grpc-address=0.0.0.0:19191'
-      - '--http-address=0.0.0.0:19192'
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      prometheus:
-        condition: service_started
-      minio:
-        condition: service_healthy
-
-  thanos-store:
-    image: thanosio/thanos:v0.36.1
-    container_name: thanos-store
-    ports:
-      - "19193:19192"
-    volumes:
-      - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
-      - thanos_store_data:/var/thanos/store
-    user: "root"
-    command:
-      - store
-      - '--objstore.config-file=/etc/thanos/bucket.yml'
-      - '--data-dir=/var/thanos/store'
-      - '--grpc-address=0.0.0.0:19191'
-      - '--http-address=0.0.0.0:19192'
-      - '--index-cache-size=500MB'
-      - '--chunk-pool-size=2GB'
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      minio:
-        condition: service_healthy
-
-  thanos-query:
-    image: thanosio/thanos:v0.36.1
-    container_name: thanos-query
-    ports:
-      - "19192:19192"
-    command:
-      - query
-      - '--grpc-address=0.0.0.0:19191'
-      - '--http-address=0.0.0.0:19192'
-      - '--store=thanos-sidecar:19191'
-      - '--store=thanos-store:19191'
-      - '--query.replica-label=replica'
-      - '--query.timeout=5m'
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      - thanos-sidecar
-      - thanos-store
-
-  thanos-compact:
-    image: thanosio/thanos:v0.36.1
-    container_name: thanos-compact
-    ports:
-      - "19194:19192"
-    volumes:
-      - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
-      - thanos_compact_data:/var/thanos/compact
-    user: "root"
-    command:
-      - compact
-      - '--objstore.config-file=/etc/thanos/bucket.yml'
-      - '--data-dir=/var/thanos/compact'
-      - '--http-address=0.0.0.0:19192'
-      - '--wait'
-      - '--retention.resolution-raw=30d'
-      - '--retention.resolution-5m=90d'
-      - '--retention.resolution-1h=1y'
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      minio:
-        condition: service_healthy
-
-  # 数据库与基础设施 Exporter
-  mysql-exporter:
-    image: prom/mysqld-exporter:v0.15.0
-    container_name: iboot-mysql-exporter
-    ports:
-      - "9104:9104"
-    environment:
-      MYSQLD_EXPORTER_PASSWORD: root
-    command:
-      - '--mysqld.address=mysql:3306'
-      - '--mysqld.username=root'
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      - mysql
-
-  redis-exporter:
-    image: oliver006/redis_exporter:v1.69.0
-    container_name: iboot-redis-exporter
-    ports:
-      - "9121:9121"
-    environment:
-      REDIS_ADDR: redis://redis:6379
-    restart: unless-stopped
-    networks:
-      - iboot-network
-    depends_on:
-      - redis
-
-  node-exporter:
-    image: prom/node-exporter:v1.10.2
-    container_name: iboot-node-exporter
-    ports:
-      - "9100:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--path.rootfs=/rootfs'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    restart: unless-stopped
-    networks:
-      - iboot-network
-
-  # ELK 日志收集
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.2.3
     container_name: iboot-elasticsearch
@@ -421,29 +527,275 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9600/_node/stats/pipelines?pretty | grep -q 'main' || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:9.2.3
-    container_name: iboot-kibana
+  # ==================== 注册中心与链路追踪 ====================
+  # Nacos 3.x 控制台与主端口分离，控制台映射到宿主机 8849。
+  nacos:
+    image: nacos/nacos-server:v3.1.1
+    container_name: iboot-nacos
     ports:
-      - "5601:5601"
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+      - "8849:8080"
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - MODE=standalone
+      - NACOS_AUTH_ENABLE=false
+      - NACOS_AUTH_TOKEN=aWJvb3QtZGV2LW5hY29zLWF1dGgtdG9rZW4tMzJieXRl
+      - NACOS_AUTH_IDENTITY_KEY=iboot-dev
+      - NACOS_AUTH_IDENTITY_VALUE=iboot-dev
+      - JVM_XMS=512m
+      - JVM_XMX=512m
+      - JVM_XMN=256m
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v3/console/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  tempo:
+    image: grafana/tempo:2.10.8
+    container_name: iboot-tempo
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "3200:3200"
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    restart: unless-stopped
+    networks:
+      - iboot-network
+
+  # ==================== 监控组件（observability profile） ====================
+  prometheus:
+    image: prom/prometheus:v2.53.4
+    container_name: iboot-prometheus
+    profiles: ["observability"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./scripts/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./scripts/prometheus/alerts:/etc/prometheus/alerts
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=24h'
+      - '--storage.tsdb.max-block-duration=2h'
+      - '--web.enable-admin-api'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    container_name: iboot-grafana
+    profiles: ["observability"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./scripts/grafana/provisioning:/etc/grafana/provisioning
+      - ./scripts/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
     restart: unless-stopped
     networks:
       - iboot-network
     depends_on:
-      elasticsearch:
+      - prometheus
+      - thanos-query
+
+  alertmanager:
+    image: prom/alertmanager:v0.29.0
+    container_name: iboot-alertmanager
+    profiles: ["observability"]
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./scripts/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - prometheus
+
+  thanos-sidecar:
+    image: thanosio/thanos:v0.36.1
+    container_name: thanos-sidecar
+    profiles: ["observability"]
+    ports:
+      - "19191:19191"
+    volumes:
+      - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - prometheus_data:/prometheus
+    user: "root"
+    command:
+      - sidecar
+      - '--tsdb.path=/prometheus'
+      - '--prometheus.url=http://prometheus:9090'
+      - '--objstore.config-file=/etc/thanos/bucket.yml'
+      - '--grpc-address=0.0.0.0:19191'
+      - '--http-address=0.0.0.0:19192'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      prometheus:
+        condition: service_started
+      minio:
         condition: service_healthy
 
-  # Elasticsearch Exporter for Prometheus
+  thanos-store:
+    image: thanosio/thanos:v0.36.1
+    container_name: thanos-store
+    profiles: ["observability"]
+    ports:
+      - "19193:19192"
+    volumes:
+      - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - thanos_store_data:/var/thanos/store
+    user: "root"
+    command:
+      - store
+      - '--objstore.config-file=/etc/thanos/bucket.yml'
+      - '--data-dir=/var/thanos/store'
+      - '--grpc-address=0.0.0.0:19191'
+      - '--http-address=0.0.0.0:19192'
+      - '--index-cache-size=500MB'
+      - '--chunk-pool-size=2GB'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  thanos-query:
+    image: thanosio/thanos:v0.36.1
+    container_name: thanos-query
+    profiles: ["observability"]
+    ports:
+      - "19192:19192"
+    command:
+      - query
+      - '--grpc-address=0.0.0.0:19191'
+      - '--http-address=0.0.0.0:19192'
+      - '--store=thanos-sidecar:19191'
+      - '--store=thanos-store:19191'
+      - '--query.replica-label=replica'
+      - '--query.timeout=5m'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - thanos-sidecar
+      - thanos-store
+
+  thanos-compact:
+    image: thanosio/thanos:v0.36.1
+    container_name: thanos-compact
+    profiles: ["observability"]
+    ports:
+      - "19194:19192"
+    volumes:
+      - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - thanos_compact_data:/var/thanos/compact
+    user: "root"
+    command:
+      - compact
+      - '--objstore.config-file=/etc/thanos/bucket.yml'
+      - '--data-dir=/var/thanos/compact'
+      - '--http-address=0.0.0.0:19192'
+      - '--wait'
+      - '--retention.resolution-raw=30d'
+      - '--retention.resolution-5m=90d'
+      - '--retention.resolution-1h=1y'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  mysql-exporter:
+    image: prom/mysqld-exporter:v0.15.0
+    container_name: iboot-mysql-exporter
+    profiles: ["observability"]
+    ports:
+      - "9104:9104"
+    environment:
+      MYSQLD_EXPORTER_PASSWORD: root
+    command:
+      - '--mysqld.address=mysql:3306'
+      - '--mysqld.username=root'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - mysql
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.69.0
+    container_name: iboot-redis-exporter
+    profiles: ["observability"]
+    ports:
+      - "9121:9121"
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      - redis
+
+  node-exporter:
+    image: prom/node-exporter:v1.10.2
+    container_name: iboot-node-exporter
+    profiles: ["observability"]
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+    networks:
+      - iboot-network
+
   elasticsearch-exporter:
     image: prometheuscommunity/elasticsearch-exporter:v1.5.0
     container_name: iboot-elasticsearch-exporter
+    profiles: ["observability"]
     ports:
       - "9114:9114"
     command:
@@ -457,60 +809,47 @@ services:
       elasticsearch:
         condition: service_healthy
 
-  # 注册中心 + 配置中心（阶段 2）：默认不启动，需要时执行 docker compose --profile platform up -d nacos
-  #
-  # 端口说明（Nacos 3.x 起控制台与主端口分离，且控制台路径不再带 /nacos 前缀）：
-  #   8848 HTTP API / 9848 客户端 gRPC / 9849 集群 gRPC / 容器内 8080 为控制台
-  # 控制台映射到宿主机 8849，避免与 iboot-system 的 8080 冲突。
-  nacos:
-    image: nacos/nacos-server:v3.1.1
-    container_name: iboot-nacos
-    profiles: ["platform"]
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.2.3
+    container_name: iboot-kibana
+    profiles: ["observability"]
     ports:
-      - "8848:8848"
-      - "9848:9848"
-      - "9849:9849"
-      - "8849:8080"
+      - "5601:5601"
     environment:
-      - MODE=standalone
-      # 本地开发关闭鉴权；但 Nacos 3.x 镜像仍要求提供令牌，否则拒绝启动
-      - NACOS_AUTH_ENABLE=false
-      - NACOS_AUTH_TOKEN=aWJvb3QtZGV2LW5hY29zLWF1dGgtdG9rZW4tMzJieXRl
-      - NACOS_AUTH_IDENTITY_KEY=iboot-dev
-      - NACOS_AUTH_IDENTITY_VALUE=iboot-dev
-      # 受本机内存约束（R4）：显式限制堆与直接内存
-      - JVM_XMS=512m
-      - JVM_XMX=512m
-      - JVM_XMN=256m
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  # ==================== 知识图谱（graph profile） ====================
+  neo4j:
+    image: neo4j:5.26.29-community
+    container_name: iboot-neo4j
+    profiles: ["graph"]
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-iboot123456}
+      # 受本机内存约束（R4）：堆与页缓存显式限制
+      - NEO4J_server_memory_heap_initial__size=512m
+      - NEO4J_server_memory_heap_max__size=512m
+      - NEO4J_server_memory_pagecache_size=256m
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
     restart: unless-stopped
     networks:
       - iboot-network
     healthcheck:
-      # Nacos 3.x 移除了 v1 健康检查接口，健康检查走控制台端口的 v3 接口
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v3/console/health/readiness || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-
-  # 链路追踪后端（阶段 2）：默认不启动，需要时执行 docker compose --profile platform up -d tempo
-  #
-  # 应用通过 OTLP 直连写入（4317 gRPC / 4318 HTTP），Grafana 经 3200 查询，无需额外 Collector。
-  tempo:
-    image: grafana/tempo:2.10.8
-    container_name: iboot-tempo
-    profiles: ["platform"]
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "3200:3200"
-    command: ["-config.file=/etc/tempo.yaml"]
-    volumes:
-      - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
-      - tempo_data:/var/tempo
-    restart: unless-stopped
-    networks:
-      - iboot-network
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
 networks:
   iboot-network:
@@ -529,4 +868,6 @@ volumes:
   thanos_store_data:
   thanos_compact_data:
   admin_logs:
+  uploads_data:
+  auth_keys:
   tempo_data:

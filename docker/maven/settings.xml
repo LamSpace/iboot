@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  iBoot Docker 构建专用 Maven 配置。
+
+  只包含公共镜像地址，不包含任何 <servers>、用户名或密码；宿主机上带发布凭据的
+  settings.xml 不得复制到镜像中。构建阶段把它复制到 /root/.m2/settings.xml。
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0
+          https://maven.apache.org/xsd/settings-1.2.0.xsd">
+
+  <mirrors>
+    <mirror>
+      <id>aliyun</id>
+      <name>Aliyun Public Maven Mirror</name>
+      <url>https://maven.aliyun.com/repository/public</url>
+      <mirrorOf>central,apache.snapshots</mirrorOf>
+    </mirror>
+
+    <mirror>
+      <id>spring-aliyun</id>
+      <name>Aliyun Spring Maven Mirror</name>
+      <url>https://maven.aliyun.com/repository/spring</url>
+      <mirrorOf>spring</mirrorOf>
+    </mirror>
+  </mirrors>
+
+</settings>

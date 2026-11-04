@@ -22,32 +22,30 @@ scrape_configs:
   - job_name: 'iboot-system'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      # 注意：iboot-system 应用在 Docker 外部运行，使用 host.docker.internal 访问宿主机
-      - targets: ['host.docker.internal:8080']
+      # 服务运行在同一个 compose 网络中，按服务名抓取
+      - targets: ['iboot-system:8080']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'host.docker.internal:8080'
+        replacement: 'iboot-system:8080'
 
   - job_name: 'iboot-ai'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      # iboot-ai 同样跑在宿主机，监听 8081
-      - targets: ['host.docker.internal:8081']
+      - targets: ['iboot-ai:8081']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'host.docker.internal:8081'
+        replacement: 'iboot-ai:8081'
 
   - job_name: 'iboot-ops'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      # 运维控制台跑在宿主机，监听 8089；关闭控制台时该目标会显示为 down
-      - targets: ['host.docker.internal:8089']
+      - targets: ['iboot-ops:8089']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'host.docker.internal:8089'
+        replacement: 'iboot-ops:8089'
 
   - job_name: 'mysql-exporter'
     static_configs:
