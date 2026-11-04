@@ -8,7 +8,7 @@
           t("monitor.server.spring_boot_admin")
         }}</el-tag>
       </div>
-      <div class="toolbar-right">
+      <div v-if="sbaEnabled" class="toolbar-right">
         <el-tooltip :content="t('monitor.server.open_in_new')" placement="top">
           <el-button
             :icon="TopRight"
@@ -27,7 +27,17 @@
         </el-tooltip>
       </div>
     </div>
+    <div v-if="!sbaEnabled" class="monitor-disabled">
+      <el-icon :size="32"><Lock /></el-icon>
+      <p class="monitor-disabled-title">
+        {{ t("monitor.server.internal_only") }}
+      </p>
+      <p class="monitor-disabled-hint">
+        {{ t("monitor.server.internal_only_hint") }}
+      </p>
+    </div>
     <IframePanel
+      v-else
       ref="iframePanel"
       :src="sbaUrl"
       :error-text="t('common.load_failed')"
@@ -37,43 +47,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import { Monitor, TopRight, Refresh } from "@element-plus/icons-vue";
+import { Monitor, TopRight, Refresh, Lock } from "@element-plus/icons-vue";
 import { getConfigByKey } from "@/api/system";
 import IframePanel from "@/components/IframePanel.vue";
 
 const { t } = useI18n();
 
 /**
- * SBA 监控地址：
- * - 优先从系统配置中获取（配置键：monitor.sba.url）
- * - 开发环境默认：前端 localhost:3000、后端 localhost:8080，iframe 必须直连后端
- * - 生产环境默认：前后端同源，使用相对路径即可
+ * 运维控制台地址与开关：
+ * - 地址优先从系统配置中获取（配置键：monitor.sba.url），默认走同源 /sba，
+ *   由 Vite 或生产反向代理转发到 iboot-ops；
+ * - 开关来自配置键 monitor.sba.enabled；生产环境默认关闭，只允许内网访问。
  */
-const defaultSbaUrl = import.meta.env.DEV
-  ? "http://localhost:8080/sba"
-  : "/sba";
-const sbaUrl = ref(defaultSbaUrl);
+const sbaUrl = ref("/sba");
+const sbaEnabled = ref(import.meta.env.DEV);
 const iframePanel = ref<InstanceType<typeof IframePanel>>();
 
-async function loadSbaUrl() {
+/**
+ * 新窗口打开时使用的绝对地址。
+ *
+ * <p>iframe 必须使用同源路径 /sba，才能通过控制台的 SAMEORIGIN 头；新窗口不受此限制，
+ * 开发环境直接指向 iboot-ops 的 8089 端口，避免打开门户自身的 5173 地址。
+ */
+const externalSbaUrl = computed(() => {
+  if (import.meta.env.DEV && sbaUrl.value.startsWith("/")) {
+    return `http://localhost:8089${sbaUrl.value}`;
+  }
+  return sbaUrl.value;
+});
+
+async function loadSbaConfig() {
   try {
-    const res = await getConfigByKey("monitor.sba.url");
-    if (res.code === 200 && res.data) {
-      sbaUrl.value = res.data;
+    const urlRes = await getConfigByKey("monitor.sba.url");
+    if (urlRes.code === 200 && urlRes.data) {
+      sbaUrl.value = urlRes.data;
     }
   } catch {
-    // 配置不存在时使用默认值
+    // 地址配置不存在时保留默认值
+  }
+
+  try {
+    const enabledRes = await getConfigByKey("monitor.sba.enabled");
+    if (enabledRes.code === 200 && enabledRes.data !== undefined) {
+      sbaEnabled.value = String(enabledRes.data) !== "false";
+    }
+  } catch {
+    // 开关配置不存在时保留环境默认值
   }
 }
 
 function openInNewWindow() {
-  window.open(sbaUrl.value, "_blank");
+  window.open(externalSbaUrl.value, "_blank");
 }
 
 onMounted(async () => {
-  await loadSbaUrl();
+  await loadSbaConfig();
 });
 </script>
 
@@ -113,5 +143,31 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.monitor-disabled {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 480px;
+  border: 1px solid var(--ib-color-hairline);
+  border-radius: 0 0 8px 8px;
+  background: var(--ib-color-canvas);
+  color: var(--ib-color-ink);
+}
+
+.monitor-disabled-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ib-color-ink);
+}
+
+.monitor-disabled-hint {
+  margin: 0;
+  font-size: 13px;
 }
 </style>

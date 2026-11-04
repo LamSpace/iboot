@@ -1,0 +1,66 @@
+server:
+  port: 8089
+  servlet:
+    context-path: /
+  tomcat:
+    threads:
+      virtual:
+        enabled: true
+    max-connections: 10000
+
+spring:
+  application:
+    name: iboot-ops
+  # 注册中心与配置中心：与其它服务一致，使用 spring.config.import 引入 Nacos 配置
+  config:
+    import: optional:nacos:iboot-ops.yml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+        fail-fast: false
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        file-extension: yml
+        enabled: ${IBOOT_NACOS_ENABLED:true}
+  threads:
+    virtual:
+      enabled: true
+  jmx:
+    enabled: false
+  # Spring Boot Admin：控制台自身挂在 /sba，实例通过注册中心拉取
+  boot:
+    admin:
+      context-path: /sba
+      discovery:
+        services: iboot-*
+        ignored-services: iboot-ops
+        converter:
+          management-context-path: /actuator
+          health-endpoint-path: health
+
+iboot:
+  ops:
+    security:
+      # 默认开启认证；本地开发可通过 IBOOT_OPS_SECURITY_ENABLED=false 免认证
+      enabled: ${IBOOT_OPS_SECURITY_ENABLED:true}
+      # 密码不设默认值：认证开启且缺失时启动失败，避免以匿名控制台运行
+      username: ${IBOOT_OPS_USER:ops}
+      password: ${IBOOT_OPS_PASSWORD:}
+  logging:
+    dir: ${IBOOT_LOGGING_DIR:logs}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: iboot-ops
+      namespace: default

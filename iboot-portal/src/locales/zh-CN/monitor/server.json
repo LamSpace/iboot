@@ -4,5 +4,7 @@
   "spring_boot_admin": "Spring Boot Admin",
   "open_in_new": "在新窗口中打开",
   "refresh": "刷新监控页面",
-  "loading_text": "加载监控页面中..."
+  "loading_text": "加载监控页面中...",
+  "internal_only": "运维控制台仅限内网访问",
+  "internal_only_hint": "请通过内网入口或 kubectl port-forward 访问 iboot-ops，公网门户不提供该页面。"
 }

@@ -64,7 +64,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // SSE 完成时会触发 ASYNC/ERROR 二次分派，首次请求已完成认证，这里放行
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
+                        // 运维控制台按实例巡检需要读取全部 Actuator 端点；服务只在内部网络可达
+                        .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

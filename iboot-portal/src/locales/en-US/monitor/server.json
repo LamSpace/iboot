@@ -4,5 +4,7 @@
   "spring_boot_admin": "Spring Boot Admin",
   "open_in_new": "Open in new window",
   "refresh": "Refresh monitor page",
-  "loading_text": "Loading monitor page..."
+  "loading_text": "Loading monitor page...",
+  "internal_only": "Ops console is internal-only",
+  "internal_only_hint": "Access iboot-ops through the internal entry or kubectl port-forward. The public portal does not expose this page."
 }

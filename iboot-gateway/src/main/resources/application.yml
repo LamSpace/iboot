@@ -45,7 +45,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,gateway,metrics,prometheus,loggers,threaddump,env,configprops,beans,caches,scheduledtasks,mappings
   endpoint:
     health:
       show-details: always

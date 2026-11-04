@@ -158,18 +158,6 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
-        <!-- Spring Boot Admin -->
-        <dependency>
-            <groupId>de.codecentric</groupId>
-            <artifactId>spring-boot-admin-starter-server</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>de.codecentric</groupId>
-            <artifactId>spring-boot-admin-starter-client</artifactId>
-        </dependency>
-        <!-- 已随监控服务迁出 -->
-
         <!-- ==================== Security & JWT ==================== -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

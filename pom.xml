@@ -42,6 +42,7 @@
         <module>iboot-job</module>
         <module>iboot-workflow</module>
         <module>iboot-monitor</module>
+        <module>iboot-ops</module>
         <module>iboot-auth</module>
         <module>iboot-system</module>
         <module>iboot-ai</module>
@@ -221,11 +222,6 @@
             <dependency>
                 <groupId>de.codecentric</groupId>
                 <artifactId>spring-boot-admin-starter-server</artifactId>
-                <version>${spring-boot-admin.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>de.codecentric</groupId>
-                <artifactId>spring-boot-admin-starter-client</artifactId>
                 <version>${spring-boot-admin.version}</version>
             </dependency>
             <dependency>
