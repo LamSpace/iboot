@@ -30,19 +30,21 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/iboot\/ai/, '/api/ai')
       },
       '/sba': {
-        target: 'http://localhost:8080', // Spring Boot Admin 监控页面
-        changeOrigin: true
+        target: 'http://localhost:8089', // 运维控制台（Spring Boot Admin）
+        // 必须保留原始 Host：SBA 用请求 Host 生成页面 base href。
+        // 改成 8089 会让 SPA 的接口请求跨源，iframe 内表现为空白页。
+        changeOrigin: false
       },
       '/actuator': {
-        target: 'http://localhost:8080', // Actuator 端点（SBA 需要）
+        target: 'http://localhost:8089', // 运维控制台自身的 Actuator
         changeOrigin: true
       },
       '/instances': {
-        target: 'http://localhost:8080', // SBA 实例注册端点
+        target: 'http://localhost:8089', // 运维控制台实例端点
         changeOrigin: true
       },
       '/applications': {
-        target: 'http://localhost:8080', // SBA 应用端点
+        target: 'http://localhost:8089', // 运维控制台应用端点
         changeOrigin: true
       }
     }

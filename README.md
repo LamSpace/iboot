@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <strong>一个前后端分离的微服务管理系统：九个可独立部署的服务 + 统一网关，DDD 分层，带 AI 工作台。</strong><br>
+  <strong>一个前后端分离的微服务管理系统：九个可独立部署的业务服务、独立运维控制台与统一网关，DDD 分层，带 AI 工作台。</strong><br>
   Vue 3 + TypeScript + Vite / Java 25 + Spring Boot 4.0.3 + Spring Cloud Alibaba
 </p>
 
@@ -34,7 +34,7 @@
 
 iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RBAC 权限模型之上，逐步长出三块能力：
 
-- **微服务**：单体按限界上下文拆分为九个独立可部署的服务，注册中心、配置中心、网关、链路追踪真实承载。
+- **微服务**：单体按限界上下文拆分为九个独立可部署的业务服务，并增加一个独立的运维控制台；注册中心、配置中心、网关、链路追踪真实承载。
 - **云原生**：容器化与 Helm 化路线（尚未实施，见 [ROADMAP](ROADMAP.md)）。
 - **智能 Agent**：以百炼 Qwen 为底座的对话、RAG、智能体编排与知识图谱。
 
@@ -54,9 +54,12 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
                                                           iboot-job      :8085
                                                           iboot-workflow :8086
                                                           iboot-monitor  :8087
+
+[iboot-portal] --/sba 同源代理（开发/内网）--> [iboot-ops :8089] --Nacos 发现--> 上述业务服务
 ```
 
-前端只访问网关；服务之间的调用按 Nacos 服务名寻址，不经过网关。
+前端业务接口只访问网关；服务之间的调用按 Nacos 服务名寻址，不经过网关。运维控制台是旁路，
+开发环境经 Vite 代理以同源 iframe 打开，生产环境只允许内网访问，公网网关不提供 `/sba` 路由。
 
 **服务与端口**
 
@@ -71,6 +74,7 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 | `iboot-job` | 8085 | 定时任务调度、数据备份与恢复 | `sys_job*` / `QRTZ_*` / 备份记录 |
 | `iboot-workflow` | 8086 | 请假审批与 Flowable 流程引擎 | `ACT_*` / `FLW_RU_*` / 审批表 |
 | `iboot-monitor` | 8087 | 操作/登录/运行日志、在线会话、资源监控 | `sys_operate_log` / `sys_login_log` |
+| `iboot-ops` | 8089 | 运维控制台：注册中心发现实例、单实例巡检、运行期日志级别调整 | — |
 | `iboot-kernel` | — | 共享内核库（统一响应、鉴权、审计写入），不独立部署 | — |
 
 **数据边界**：所有服务共用一个数据库 `iboot`；每张表只有一个所有者，其余服务只读登记的表与列。
@@ -121,6 +125,8 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 
 **监控 `iboot-monitor`**：登录日志、操作日志、运行日志；在线会话与强制下线；服务资源、Redis、MinIO、SQL 监控入口。
 
+**运维控制台 `iboot-ops`**：通过注册中心自动发现全部业务实例，提供健康、JVM、环境、配置、Bean、缓存、定时任务与线程巡检，并可在不重启的情况下调整日志级别。开发环境从门户的服务器监控页进入，`dev-init.sh` 默认关闭控制台认证以便 iframe 直接打开；生产环境保持认证开启且仅限内网访问。
+
 **AI 工作台 `iboot-ai`**：多轮流式对话与 Redis 会话记忆；知识库解析、Embedding、BM25 + kNN + RRF 混合检索与引用溯源；受控智能体工具与写操作二次确认；组织与 RBAC 知识图谱。
 
 **网关 `iboot-gateway`**：统一路由、跨域、SSE 长连接透传与服务降级。
@@ -140,7 +146,7 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 cp .env.example .env
 #    至少填写百炼 API Key；其余按需
 
-# 2. 拉起中间件、构建后端、按依赖顺序启动九个服务
+# 2. 拉起中间件、构建后端、按依赖顺序启动九个业务服务与运维控制台
 bash scripts/dev-init.sh
 
 # 3. 需要前端时
@@ -213,6 +219,7 @@ iboot/
 ├── iboot-job/               # 调度与备份 :8085
 ├── iboot-workflow/          # 审批工作流 :8086
 ├── iboot-monitor/           # 监控与日志 :8087
+├── iboot-ops/               # 运维控制台 :8089
 ├── iboot-portal/            # 前端（Vue 3 + Vite）
 ├── doc/                     # 项目文档，入口 doc/README.md
 ├── openspec/                # 能力契约与变更记录
@@ -220,7 +227,8 @@ iboot/
 └── README.md
 ```
 
-每个服务内部遵循 DDD 四层：`interfaces` → `application` → `domain` → `infrastructure`。
+业务服务内部遵循 DDD 四层：`interfaces` → `application` → `domain` → `infrastructure`；
+网关与运维控制台是没有业务领域的可部署模块，不强行套用四层结构。
 
 ## 构建、测试与回归
 
@@ -241,12 +249,12 @@ bash scripts/regress/regress.sh
 bash scripts/regress/trace-chain.sh <traceId> --expect iboot-gateway,iboot-system
 ```
 
-回归脚本要求九个服务与中间件已启动；`--refresh` 仅在确认接口差异合理时用于重建基线。
+回归脚本要求九个业务服务、运维控制台与中间件已启动；`--refresh` 仅在确认接口差异合理时用于重建基线。
 CI 见 `.github/workflows/regress.yml`：PR 阶段跑路由覆盖、构建与网关测试，定时任务跑全栈回归。
 
 ## 镜像与部署现状
 
-九个后端服务与前端都提供 Dockerfile。后端使用统一模板：`openjdk:25-jdk-slim`、非 root 用户、
+九个业务服务、运维控制台与前端都提供 Dockerfile。后端使用统一模板：`openjdk:25-jdk-slim`、非 root 用户、
 `script/run-java.sh` 启动、拷贝预构建 jar，差异仅限应用名、端口与 jar 文件名。
 
 ```bash

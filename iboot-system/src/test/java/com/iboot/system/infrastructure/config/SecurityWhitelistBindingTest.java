@@ -53,8 +53,7 @@ class SecurityWhitelistBindingTest {
             "/v3/api-docs/swagger-config", "/swagger-resources/**", "/webjars/**", "/doc.html",
             "/favicon.ico", "/error", "/static/**",
             "/**/*.ico", "/**/*.png", "/**/*.jpg", "/**/*.jpeg", "/**/*.gif", "/**/*.css", "/**/*.js",
-            "/actuator/**", "/druid/**",
-            "/sba/**", "/instances/**", "/applications/**");
+            "/actuator/**", "/druid/**");
 
     /**
      * application.yml 中的白名单必须与期望列表完全一致（顺序无关）。

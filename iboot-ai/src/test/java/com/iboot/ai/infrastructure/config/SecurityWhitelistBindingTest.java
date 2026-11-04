@@ -32,8 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * 白名单配置绑定测试。
  *
- * <p>AI 服务只允许健康检查与指标端点匿名访问；这份列表从内核硬编码改为配置项后必须保持不变，
- * 否则会把业务接口暴露成免鉴权路径。
+ * <p>AI 服务的 Actuator 端点在内部网络对运维控制台开放；这份列表从内核硬编码改为配置项后
+ * 必须保持可控，否则会把业务接口暴露成免鉴权路径。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -41,21 +41,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SecurityWhitelistBindingTest {
 
     /**
-     * 迁移前 {@code com.iboot.ai.infrastructure.security.SecurityWhitelistConfig} 的完整内容。
+     * 期望的白名单完整内容：只放行 Actuator，不放行任何业务接口。
      */
-    private static final List<String> LEGACY_WHITELIST = List.of(
-            "/actuator/health",
-            "/actuator/prometheus");
+    private static final List<String> EXPECTED_WHITELIST = List.of("/actuator/**");
 
     /**
-     * application.yml 中的白名单必须与迁移前的集合完全一致（顺序无关）。
+     * application.yml 中的白名单必须与期望集合完全一致（顺序无关）。
      *
      * @throws IOException 读取配置失败时抛出
      */
     @Test
-    void whitelistMatchesLegacySet() throws IOException {
+    void whitelistMatchesExpectedSet() throws IOException {
         assertThat(loadWhitelist("application.yml"))
-                .containsExactlyInAnyOrderElementsOf(LEGACY_WHITELIST);
+                .containsExactlyInAnyOrderElementsOf(EXPECTED_WHITELIST);
     }
 
     private List<String> loadWhitelist(String resource) throws IOException {

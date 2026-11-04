@@ -89,14 +89,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         // 禁用 CSRF
-        // 允许 iframe 嵌入 SBA 监控页面（开发环境前后端端口不同，需 disable）
         // 配置 CORS
         // 配置会话管理为无状态
         // 配置授权规则
         // 配置异常处理
         // 添加 JWT 过滤器
         http.csrf(AbstractHttpConfigurer::disable)
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(

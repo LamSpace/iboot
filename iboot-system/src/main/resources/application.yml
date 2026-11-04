@@ -98,11 +98,6 @@ spring:
       force: true
   flyway:
     enabled: false
-  security:
-    user:
-      name: actuator
-      password: actuator123
-      roles: ACTUATOR
   mail:
     host: ${MAIL_HOST:}
     port: ${MAIL_PORT:465}
@@ -167,7 +162,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,beans,env,configprops,mappings,logfile,threaddump,caches,scheduledtasks,conditions,prometheus
+        include: health,info,metrics,beans,env,configprops,mappings,logfile,threaddump,caches,scheduledtasks,conditions,loggers,prometheus
       base-path: /actuator
   endpoint:
     health:
@@ -250,10 +245,6 @@ iboot:
       # 监控
       - /actuator/**
       - /druid/**
-      # Spring Boot Admin
-      - /sba/**
-      - /instances/**
-      - /applications/**
 
   notification:
     # 通知登记：由 iboot-notify 承接，内部端点不经网关

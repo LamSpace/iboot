@@ -58,6 +58,7 @@
 | 知识图谱 | 组织与 RBAC 入图、多跳查询与名称解析 | `iboot-ai` | [doc/22](<./doc/22-AI 工作台操作指南.md>) |
 | 国际化 | 前端 vue-i18n + 后端 MessageSource 中英文语言包 | `iboot-portal` + 各服务 | [doc/17](<./doc/17-国际化设计.md>) |
 | 可观测性 | Actuator + Micrometer + Prometheus/Grafana + ELK + Tempo 链路追踪 | 全部服务 | [doc/11](<./doc/11-可观测性设计.md>) |
+| 运维控制台 | 独立 SBA 控制台，经 Nacos 发现全部实例，支持单实例巡检与运行期日志级别调整 | `iboot-ops` | [doc/11](<./doc/11-可观测性设计.md>) |
 
 ---
 
@@ -77,11 +78,16 @@
 | Sentinel 业务接入 | 仅在 2.0 门禁的 Spike 中验证过，业务服务与网关尚未接入规则 | 各服务 pom 无 sentinel 依赖 |
 | RocketMQ | 未引入。审批 → 通知走内部 HTTP 端点并退避重试 | `grep -ri rocketmq` 无命中 |
 
+**运维控制面（辅助项，不替代上述三项）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
+发现九个业务实例，提供单实例健康、JVM、环境、配置、Bean、缓存、定时任务、线程巡检与运行期日志
+级别调整。它不解决 Seata / Sentinel / RocketMQ 中的任何一项，也不改变上述判据；验收标准是：
+控制台可独立启停、业务服务零 SBA client 配置、停控制台不影响业务、生产环境不经公网网关暴露。
+
 ### 阶段 3：云原生（ACK + Helm）
 
 | 编号 | 内容 | 技术栈 | 约束 | 验收判据 |
 |---|---|---|---|---|
-| 3.1 | 镜像工程 | 每服务 Dockerfile + 非 root 运行 + 推 **ACR** | 当前仅 `iboot-system` 与 `iboot-portal` 有 Dockerfile；基础镜像需与 GraalVM/native 路线兼容 | 每服务镜像可构建、可启动 |
+| 3.1 | 镜像工程 | 每服务 Dockerfile + 非 root 运行 + 推 **ACR** | 九个业务服务、`iboot-ops` 与前端均已有 Dockerfile；基础镜像需与 GraalVM/native 路线兼容 | 每服务镜像可构建、可启动 |
 | 3.2 | Helm 组织 | **Helmfile + 一个通用 library chart** | 避免 9 份重复 chart 样板 | `helmfile sync` 幂等 |
 | 3.3 | K8s 清单 | Deployment / Service / ConfigMap / Secret / HPA / PDB / NetworkPolicy / Ingress(ALB) / 命名空间(dev, prod) | Secret 走 KMS 或 ACK Secret 管理，不入仓 | 滚动升级零 5xx；删 Pod 自愈 |
 | 3.4 | 中间件分层混合 | 本地 Kind 全自建（MySQL/Redis/ES/Nacos/RocketMQ）练手；云上数据层用 RDS MySQL / Tair / 阿里云 ES / **OSS（替 MinIO）** / MSE Nacos / 云 RocketMQ | 云上跑有状态中间件的学习收益 < 运维成本；MinIO→OSS 依赖 `FileStorageStrategy` 抽象 | 本地与云上同一份镜像、不同 values 可跑 |
@@ -118,6 +124,7 @@
 | Spring AI | **2.0.1（GA）** | Boot 4 必需；1.1.x 仅到 Boot 3.5 |
 | AgentScope Java | 2.0.1（GA） | JDK 25 已 Spike 通过；starter 构建于 Boot 4.0.3 |
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
+| Spring Boot Admin | **4.0.2** | 运维控制台；4.x 对应 Boot 4，勿与 Boot 3 的 3.x 混搭 |
 | 对话模型 | **百炼 `qwen3.8-flash`**（备用 `qwen3.7-flash`） | thinking 默认开启，须显式关闭 |
 | DeepSeek（备用） | `deepseek-flash`（OpenAI 兼容端点） | 仅用于故障切换，不默认启用 |
 | Embedding | 百炼 `text-embedding-v4` 或本地 BGE-M3 | 第二供应商必然存在 |
@@ -138,7 +145,7 @@
 | ID | 风险 | 影响阶段 | 处置 |
 |---|---|---|---|
 | R2 | Dubbo 不支持 Boot 4 | 3 / 4 | 服务间 HTTP 先行；延后至出现 Boot 4 兼容版本后重评 |
-| R4 | 本机内存：N×JVM + 21 个中间件容器 | 全阶段 | 按需 profiles 只跑改动服务；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
+| R4 | 本机内存：N×JVM + 21 个中间件容器 | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
 | R6 | LLM token 与云账单失控 | 全阶段 | 配额 + 用量看板 + Alertmanager 告警 |
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
@@ -157,7 +164,8 @@
 本地开发策略：
 
 - 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / minio / es / nacos / tempo；阶段 3 起本地增加 Kind 集群。
-- 应用：`scripts/dev-init.sh` 一键拉起九个后端服务并按依赖顺序等待健康；也可单独 `mvn spring-boot:run` 调试。
+- 应用：`scripts/dev-init.sh` 一键拉起九个业务服务与运维控制台并按依赖顺序等待健康；也可单独 `mvn spring-boot:run` 调试。
+- 运维控制台：默认随开发环境启动，`IBOOT_OPS_ENABLED=false` 可跳过；生产环境不经公网网关暴露。
 - 密钥：统一放根目录 `.env`（已在 `.gitignore` 中），模板见 `.env.example`。
 
 ---

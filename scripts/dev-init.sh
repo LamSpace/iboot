@@ -2,7 +2,7 @@
 # 一键拉起本地开发环境：中间件 → 构建（按需）→ db-init 建库建表 → 启动后端 → 等待健康。
 #
 # 用法：
-#   dev-init.sh              拉起中间件、初始化数据库并启动九个后端服务
+#   dev-init.sh              拉起中间件、初始化数据库并启动九个业务服务与运维控制台
 #   dev-init.sh --build      强制重新构建后端
 #   dev-init.sh --frontend   同时安装前端依赖并启动开发服务器
 #   dev-init.sh --status     查看中间件、后端与前端的状态
@@ -31,7 +31,8 @@ VERSION="1.0.0"
 
 # 后端服务：名称:端口
 # 系统服务必须排在最前（监控服务除外）：它负责 Flyway 建表，其余服务启动时要读共享库（sys_config、sys_user 等）。
-SERVICES=("iboot-monitor:8087" "iboot-system:8080" "iboot-auth:8083" "iboot-file:8082" "iboot-notify:8084" "iboot-job:8085" "iboot-workflow:8086" "iboot-ai:8081" "iboot-gateway:8088")
+# iboot-ops 是旁路的运维控制台，可随 IBOOT_OPS_ENABLED=false 关闭而不影响业务服务。
+SERVICES=("iboot-monitor:8087" "iboot-system:8080" "iboot-auth:8083" "iboot-file:8082" "iboot-notify:8084" "iboot-job:8085" "iboot-workflow:8086" "iboot-ai:8081" "iboot-gateway:8088" "iboot-ops:8089")
 
 FORCE_BUILD=0
 WITH_FRONTEND=0
@@ -60,6 +61,15 @@ if [ -f "$ROOT/.env" ]; then
     . "$ROOT/.env"
     set +a
 fi
+
+# 运维控制台：默认开启，可通过 IBOOT_OPS_ENABLED=false 关闭以节省本机内存。
+ops_enabled() { [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; }
+
+# 控制台密码在生产环境必须由密钥管理注入；本地开发使用固定默认值。
+export IBOOT_OPS_USER="${IBOOT_OPS_USER:-ops}"
+export IBOOT_OPS_PASSWORD="${IBOOT_OPS_PASSWORD:-ops123}"
+# 本地开发默认关闭控制台认证，门户 iframe 可直接打开；生产必须保持开启。
+export IBOOT_OPS_SECURITY_ENABLED="${IBOOT_OPS_SECURITY_ENABLED:-false}"
 
 mkdir -p "$LOG_DIR"
 
@@ -173,6 +183,9 @@ build_backend() {
     if [ "$FORCE_BUILD" -eq 0 ]; then
         for entry in "${SERVICES[@]}"; do
             name="${entry%%:*}"
+            if [ "$name" = "iboot-ops" ] && ! ops_enabled; then
+                continue
+            fi
             jar="$name/target/$name-$VERSION.jar"
             if [ ! -f "$jar" ]; then
                 log "  缺少 $jar，需要构建"
@@ -212,6 +225,10 @@ start_backend() {
     for entry in "${SERVICES[@]}"; do
         name="${entry%%:*}"
         port="${entry##*:}"
+        if [ "$name" = "iboot-ops" ] && ! ops_enabled; then
+            log "  $name 已关闭（IBOOT_OPS_ENABLED=false）"
+            continue
+        fi
         local pidfile="$LOG_DIR/$name.pid" running
         running="$(service_pid "$name")"
         if [ -n "$running" ]; then
@@ -236,6 +253,9 @@ wait_backend() {
     for entry in "${SERVICES[@]}"; do
         name="${entry%%:*}"
         port="${entry##*:}"
+        if [ "$name" = "iboot-ops" ] && ! ops_enabled; then
+            continue
+        fi
         if ! wait_http "$name" "http://localhost:$port/actuator/health" 240; then
             printf '  最近日志（logs/%s.log）：\n' "$name" >&2
             tail -20 "$LOG_DIR/$name.log" 2>/dev/null >&2
@@ -265,6 +285,10 @@ show_status() {
     for entry in "${SERVICES[@]}"; do
         name="${entry%%:*}"
         port="${entry##*:}"
+        if [ "$name" = "iboot-ops" ] && ! ops_enabled; then
+            printf '  %-16s %-24s %s  http://localhost:%s\n' "$name" "已关闭（IBOOT_OPS_ENABLED=false）" "-" "$port"
+            continue
+        fi
         pid="$(service_pid "$name")"
         state='未运行'
         [ -n "$pid" ] && state="运行中（pid $pid）"
@@ -315,7 +339,11 @@ case "$ACTION" in
         log ''
         show_status
         log ''
-        log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083'
+        if ops_enabled; then
+            log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，运维控制台 http://localhost:8089/sba'
+        else
+            log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083（运维控制台已关闭）'
+        fi
         log '登录账号 admin / admin123456'
         ;;
 esac

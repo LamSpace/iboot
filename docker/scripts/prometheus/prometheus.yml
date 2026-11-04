@@ -39,6 +39,16 @@ scrape_configs:
         target_label: instance
         replacement: 'host.docker.internal:8081'
 
+  - job_name: 'iboot-ops'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      # 运维控制台跑在宿主机，监听 8089；关闭控制台时该目标会显示为 down
+      - targets: ['host.docker.internal:8089']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'host.docker.internal:8089'
+
   - job_name: 'mysql-exporter'
     static_configs:
       - targets: ['mysql-exporter:9104']
