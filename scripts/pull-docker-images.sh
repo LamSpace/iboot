@@ -217,6 +217,56 @@ docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/otel/opentelemetry
 echo "OpenTelemetry Collector 镜像拉取完成！"
 echo ""
 
+# ======================================
+# 构建与运行期基础镜像（多阶段构建）
+# ======================================
+
+# Maven 构建阶段：与运行期保持 JDK 25 主版本一致
+echo "======================================"
+echo "正在拉取 Maven 构建镜像..."
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/maven:3.9.14-eclipse-temurin-25
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/maven:3.9.14-eclipse-temurin-25  docker.io/maven:3.9.14-eclipse-temurin-25
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/maven:3.9.14-eclipse-temurin-25
+echo "Maven 构建镜像拉取完成！"
+echo ""
+
+# 前端构建阶段：Node.js 22（glibc，兼容 sass-embedded）
+echo "======================================"
+echo "正在拉取 Node.js 构建镜像..."
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/node:22-bookworm-slim
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/node:22-bookworm-slim  docker.io/node:22-bookworm-slim
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/node:22-bookworm-slim
+echo "Node.js 构建镜像拉取完成！"
+echo ""
+
+# 后端运行期：JRE 25。注意镜像站上 temurin 的路径必须带 library/
+echo "======================================"
+echo "正在拉取 Eclipse Temurin JRE 镜像..."
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/library/eclipse-temurin:25-jre
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/library/eclipse-temurin:25-jre  docker.io/library/eclipse-temurin:25-jre
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/library/eclipse-temurin:25-jre
+echo "Eclipse Temurin JRE 镜像拉取完成！"
+echo ""
+
+# 前端运行期：nginx
+echo "======================================"
+echo "正在拉取 Nginx 运行期镜像..."
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:stable-alpine3.23
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:stable-alpine3.23  docker.io/nginx:stable-alpine3.23
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:stable-alpine3.23
+echo "Nginx 运行期镜像拉取完成！"
+echo ""
+
+# 可选回退：openjdk:25-jdk-slim。当前运行期镜像统一使用 eclipse-temurin:25-jre，
+# 仅当需要切回 openjdk 时取消下面的注释。镜像站上 openjdk 的路径不带 library/。
+# echo "======================================"
+# echo "正在拉取 OpenJDK 回退镜像..."
+# docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/openjdk:25-jdk-slim
+# docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/openjdk:25-jdk-slim  docker.io/openjdk:25-jdk-slim
+# docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/openjdk:25-jdk-slim
+# echo "OpenJDK 回退镜像拉取完成！"
+# echo ""
+
 # 统计拉取的镜像数量
 IMAGE_COUNT=$(docker images | wc -l)
 echo "共拉取 $((IMAGE_COUNT - 1)) 个镜像"

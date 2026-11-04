@@ -74,8 +74,12 @@ export async function beginLogin(returnTo?: string): Promise<void> {
   const state = randomString(16);
   sessionStorage.setItem(CODE_VERIFIER_KEY, verifier);
   sessionStorage.setItem(STATE_KEY, state);
-  if (returnTo) {
+  // 回调页不能作为登录后的返回目标：它带着一次性 code/state，
+  // 再次导航只会复用回调组件而不重新执行登录流程，表现为一直转圈。
+  if (returnTo && !returnTo.startsWith("/callback")) {
     sessionStorage.setItem(RETURN_TO_KEY, returnTo);
+  } else {
+    sessionStorage.removeItem(RETURN_TO_KEY);
   }
   const params = new URLSearchParams({
     response_type: "code",

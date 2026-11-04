@@ -75,7 +75,13 @@ async function requireLogin(): Promise<void> {
   const userStore = useUserStore();
   userStore.clearUser();
   ElMessage({ message: "登录已过期，请重新登录", type: "warning", duration: 3 * 1000 });
-  await beginLogin(router.currentRoute.value.fullPath);
+  const current = router.currentRoute.value;
+  // 回调页已经持有一次性 code：再次跳登录会把回调地址当作 returnTo，
+  // 导致 code 复用与回调组件不重新执行。交给 CallbackView 处理失败。
+  if (current.path === "/callback") {
+    return;
+  }
+  await beginLogin(current.fullPath);
 }
 
 /**

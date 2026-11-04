@@ -34,7 +34,11 @@ onMounted(async () => {
     userStore.syncFromStorage();
     await usePermissionStore().loadUserPermissions();
     const returnTo = consumeReturnTo();
-    await router.replace(returnTo && returnTo !== "/login" ? returnTo : "/dashboard");
+    const target =
+      returnTo && returnTo !== "/login" && !returnTo.startsWith("/callback")
+        ? returnTo
+        : "/dashboard";
+    await router.replace(target);
   } catch (e: any) {
     ElMessage.error(e?.message || "登录失败，请重试");
     await router.replace("/login");
