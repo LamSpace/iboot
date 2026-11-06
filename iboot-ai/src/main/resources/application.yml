@@ -120,7 +120,7 @@ management:
       namespace: default
 
 iboot:
-  # 操作审计：审计表归 iboot-monitor 所有，本服务跨 schema 写入，退出条件见 doc/23 §11.10
+  # 操作审计：审计表归 iboot-monitor 所有，本服务跨 schema 写入，退出条件见 docs/23 §11.10
   logging:
     operate-log-table: sys_operate_log
   # 免鉴权路径白名单：AI 服务的管理端点在内部网络对运维控制台开放

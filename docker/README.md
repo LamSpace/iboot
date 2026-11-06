@@ -45,7 +45,6 @@ scripts/docker-deploy.sh down                # 停止并移除容器，保留数
 scripts/docker-deploy.sh purge --yes         # 删除容器与数据卷（不可恢复）
 ```
 
-`docker/deploy.sh` 仍保留为兼容入口，等价于 `scripts/docker-deploy.sh`。
 
 ## 构建流程
 
@@ -237,7 +236,7 @@ scripts/dev-init.sh
 
 ## 与旧部署方式的差异
 
-- 旧 `docker/deploy.sh` 只构建 `iboot-system`，并假设 `docker-compose` v1；现在由
+- 旧部署入口只构建 `iboot-system`，并假设 `docker-compose` v1；现在由
   `scripts/docker-deploy.sh` 统一处理全部模块与 compose v2。
 - 旧的 10 个 `iboot-*/Dockerfile` 已由 `docker/Dockerfile.backend` 共享模板替代；
   `iboot-*/script/run-java.sh` 保持不变。

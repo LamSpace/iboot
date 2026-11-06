@@ -49,7 +49,7 @@ import java.util.List;
  * 基于 AgentScope Java 2.0.1 的运行时实现。
  *
  * <p>只使用 {@code AgentTool} 注册工具（不经反射生成 schema），不启用结构化输出重载，
- * 以规避 victools 双版本冲突（见 {@code doc/spike/ai-1.3-spike-report.md}）。
+ * 以规避 victools 双版本冲突（见 {@code docs/spike/ai-1.3-spike-report.md}）。
  * 模型配置复用 {@code spring.ai.openai.chat.*}，与 1.1/1.2 指向同一端点。
  *
  * @author iBoot Team

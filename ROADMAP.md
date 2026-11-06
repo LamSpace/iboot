@@ -43,22 +43,22 @@
 
 | 能力 | 一句话 | 归属服务 | 文档 |
 |---|---|---|---|
-| 认证与授权 | OAuth2 / OIDC 授权码 + PKCE、JWK 验签、RBAC 与五级数据权限 | `iboot-auth`、`iboot-kernel`、`iboot-system` | [doc/23](<./doc/23-微服务底座操作指南.md>) |
+| 认证与授权 | OAuth2 / OIDC 授权码 + PKCE、JWK 验签、RBAC 与五级数据权限 | `iboot-auth`、`iboot-kernel`、`iboot-system` | [docs/23](<./docs/23-微服务底座操作指南.md>) |
 | 系统与组织 | 用户、角色、菜单、字典、参数，以及部门树、岗位与组织架构图 | `iboot-system` | — |
-| 消息与推送 | 站内消息、公告、模板、多渠道投递，SSE 单播/组播/广播与集群广播 | `iboot-notify` | [doc/20](<./doc/20-多渠道通知操作指南.md>)、[doc/15](<./doc/15-SSE 推送集成.md>) |
+| 消息与推送 | 站内消息、公告、模板、多渠道投递，SSE 单播/组播/广播与集群广播 | `iboot-notify` | [docs/20](<./docs/20-多渠道通知操作指南.md>)、[docs/15](<./docs/15-SSE 推送集成.md>) |
 | 文件管理 | 上传、下载、预览、分类，MinIO / 本地 / OSS 存储抽象 | `iboot-file` | — |
 | 定时任务 | Quartz 集群任务 CRUD、启停与执行日志 | `iboot-job` | — |
-| 数据备份 | 全量逻辑备份、AES-256-GCM 加密、独立演练库恢复校验 | `iboot-job` | [doc/21](<./doc/21-数据备份与恢复操作指南.md>) |
+| 数据备份 | 全量逻辑备份、AES-256-GCM 加密、独立演练库恢复校验 | `iboot-job` | [docs/21](<./docs/21-数据备份与恢复操作指南.md>) |
 | 审批工作流 | Flowable 8 请假流程、审批中心与通知登记 | `iboot-workflow` | — |
-| 日志与监控 | 操作/登录/运行日志、在线会话、服务与中间件资源检查 | `iboot-monitor` | [doc/11](<./doc/11-可观测性设计.md>) |
+| 日志与监控 | 操作/登录/运行日志、在线会话、服务与中间件资源检查 | `iboot-monitor` | [docs/11](<./docs/11-可观测性设计.md>) |
 | 统计分析 | 仪表板、趋势统计与 Excel 导出 | `iboot-system` | — |
-| AI 对话 | 多轮流式对话、Redis 会话记忆、每日配额与 token 观测 | `iboot-ai` | [doc/22](<./doc/22-AI 工作台操作指南.md>) |
-| 知识库 RAG | PDF/DOCX/TXT 解析、分块、Embedding、BM25 + kNN + RRF、引用溯源 | `iboot-ai` | [doc/22](<./doc/22-AI 工作台操作指南.md>) |
-| 智能体编排 | 受控工具调用、写操作二次确认、运行审计与确定性回放 | `iboot-ai` | [doc/22](<./doc/22-AI 工作台操作指南.md>) |
-| 知识图谱 | 组织与 RBAC 入图、多跳查询与名称解析 | `iboot-ai` | [doc/22](<./doc/22-AI 工作台操作指南.md>) |
-| 国际化 | 前端 vue-i18n + 后端 MessageSource 中英文语言包 | `iboot-portal` + 各服务 | [doc/17](<./doc/17-国际化设计.md>) |
-| 可观测性 | Actuator + Micrometer + Prometheus/Grafana + ELK + Tempo 链路追踪 | 全部服务 | [doc/11](<./doc/11-可观测性设计.md>) |
-| 运维控制台 | 独立 SBA 控制台，经 Nacos 发现全部实例，支持单实例巡检与运行期日志级别调整 | `iboot-ops` | [doc/11](<./doc/11-可观测性设计.md>) |
+| AI 对话 | 多轮流式对话、Redis 会话记忆、每日配额与 token 观测 | `iboot-ai` | [docs/22](<./docs/22-AI 工作台操作指南.md>) |
+| 知识库 RAG | PDF/DOCX/TXT 解析、分块、Embedding、BM25 + kNN + RRF、引用溯源 | `iboot-ai` | [docs/22](<./docs/22-AI 工作台操作指南.md>) |
+| 智能体编排 | 受控工具调用、写操作二次确认、运行审计与确定性回放 | `iboot-ai` | [docs/22](<./docs/22-AI 工作台操作指南.md>) |
+| 知识图谱 | 组织与 RBAC 入图、多跳查询与名称解析 | `iboot-ai` | [docs/22](<./docs/22-AI 工作台操作指南.md>) |
+| 国际化 | 前端 vue-i18n + 后端 MessageSource 中英文语言包 | `iboot-portal` + 各服务 | [docs/17](<./docs/17-国际化设计.md>) |
+| 可观测性 | Actuator + Micrometer + Prometheus/Grafana + ELK + Tempo 链路追踪 | 全部服务 | [docs/11](<./docs/11-可观测性设计.md>) |
+| 运维控制台 | 独立 SBA 控制台，经 Nacos 发现全部实例，支持单实例巡检与运行期日志级别调整 | `iboot-ops` | [docs/11](<./docs/11-可观测性设计.md>) |
 
 ---
 
@@ -134,7 +134,7 @@
 | Apache Dubbo | **阻塞** | 无 Boot 4 支持 |
 | GraalVM（若做 native） | 工具链必须 **25** | Boot 4 native 构建要求 |
 
-数据边界：所有服务共用数据库 `iboot`；每张表只有一个所有者，其余服务只读登记的表与列。该只读关系是**长期接受**模式，不是待还的债；消费清单与写入例外见 [doc/23](<./doc/23-微服务底座操作指南.md>) §11.12。
+数据边界：所有服务共用数据库 `iboot`；每张表只有一个所有者，其余服务只读登记的表与列。该只读关系是**长期接受**模式，不是待还的债；消费清单与写入例外见 [docs/23](<./docs/23-微服务底座操作指南.md>) §11.12。
 
 ---
 

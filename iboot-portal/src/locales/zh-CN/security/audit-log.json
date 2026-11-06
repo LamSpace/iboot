@@ -18,7 +18,7 @@
   "please_select": "请选择",
   "placeholder": {
     "keyword": "搜索消息内容",
-    "logger": "如 com.iboot.admin"
+    "logger": "如 com.iboot.system"
   },
   "level_options": {
     "ERROR": "ERROR",

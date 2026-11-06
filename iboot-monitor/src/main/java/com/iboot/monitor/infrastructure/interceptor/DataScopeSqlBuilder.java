@@ -29,7 +29,7 @@ import java.util.List;
  * 不访问数据库，保证五级范围生成的 SQL 可被单独测试。
  *
  * <p>用户表与调用方共用同一个数据库，因此数据权限子查询直接使用未限定的
- * {@code sys_user}；只读消费范围见 doc/23 §11.12。
+ * {@code sys_user}；只读消费范围见 docs/23 §11.12。
  *
  * @author iBoot Team
  * @since 1.0.0

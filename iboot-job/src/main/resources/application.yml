@@ -82,7 +82,7 @@ jwt:
   legacy-enabled: false
 
 iboot:
-  # 操作审计：审计表归 iboot-monitor 所有，本服务跨 schema 写入，退出条件见 doc/23 §11.10
+  # 操作审计：审计表归 iboot-monitor 所有，本服务跨 schema 写入，退出条件见 docs/23 §11.10
   logging:
     operate-log-table: sys_operate_log
   security:
