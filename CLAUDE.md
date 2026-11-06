@@ -83,7 +83,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - 禁止：同义反复（`@param id 用户 ID`）、变更历史、个人署名、未转义的 `<`/`>`。
 - 类级标签：`@author iBoot Team`、`@since 1.0.0`；只在确有语义时加 `@see`。
 
-详细模板、深度预算与正反例见 `doc/19-JavaDoc 规范.md`。
+详细模板、深度预算与正反例见 `docs/19-JavaDoc 规范.md`。
 
 ## 6. Git 提交与 GitHub 操作
 

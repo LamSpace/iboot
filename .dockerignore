@@ -13,6 +13,6 @@ iboot-portal/dist
 logs
 uploads
 spike
-doc
+docs
 openspec
 *.log

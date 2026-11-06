@@ -79,7 +79,7 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 
 **数据边界**：所有服务共用一个数据库 `iboot`；每张表只有一个所有者，其余服务只读登记的表与列。
 结构由 `iboot-db-init` 统一迁移，服务不执行 DDL。消费清单与写入例外见
-[doc/23](<./doc/23-微服务底座操作指南.md>) §11.12。
+[docs/23](<./docs/23-微服务底座操作指南.md>) §11.12。
 
 ## 技术栈
 
@@ -197,16 +197,14 @@ MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root \
 
 ```
 iboot/
-├── pom.xml                  # 父 POM，聚合十一个后端模块
+├── pom.xml                  # 父 POM，聚合十二个后端模块
 ├── docker/                  # 中间件编排与初始化脚本
 │   ├── docker-compose.yml
 │   └── init.sql
 ├── scripts/
 │   ├── dev-init.sh          # 一键拉起本地开发环境
 │   ├── build.sh             # 前后端一键构建
-│   ├── install-dependencies.sh
 │   ├── pull-docker-images.sh
-│   ├── migrate/             # 五次服务拆分时的一次性迁移脚本（历史）
 │   └── regress/             # 契约快照、路由覆盖、冒烟、权限矩阵
 ├── iboot-kernel/            # 共享内核库：统一响应、鉴权、审计写入
 ├── iboot-db-init/           # 数据库初始化：建库与集中式迁移，运行后退出
@@ -221,7 +219,7 @@ iboot/
 ├── iboot-monitor/           # 监控与日志 :8087
 ├── iboot-ops/               # 运维控制台 :8089
 ├── iboot-portal/            # 前端（Vue 3 + Vite）
-├── doc/                     # 项目文档，入口 doc/README.md
+├── docs/                     # 项目文档，入口 docs/README.md
 ├── openspec/                # 能力契约与变更记录
 ├── ROADMAP.md               # 未完成路线与仍然生效的约束
 └── README.md
@@ -254,36 +252,31 @@ CI 见 `.github/workflows/regress.yml`：PR 阶段跑路由覆盖、构建与网
 
 ## 镜像与部署现状
 
-九个业务服务、运维控制台与前端都提供 Dockerfile。后端使用统一模板：`openjdk:25-jdk-slim`、非 root 用户、
-`script/run-java.sh` 启动、拷贝预构建 jar，差异仅限应用名、端口与 jar 文件名。
+后端统一使用 `docker/Dockerfile.backend` 共享模板（`eclipse-temurin:25-jre`、非 root 用户、
+`script/run-java.sh` 启动），数据库初始化使用 `docker/Dockerfile.dbinit`，前端使用
+`iboot-portal/Dockerfile`。所有服务由 `docker/docker-compose.yml` 编排，不再有模块级 Dockerfile。
 
 ```bash
-# 先在宿主机构建 jar，再按模块构建镜像
-mvn -DskipTests package
-cd iboot-job && docker build -t iboot-job .
-docker run --rm -p 8085:8085 iboot-job
+# 一键构建并启动全栈（默认核心 + 可观测性）
+scripts/docker-deploy.sh up
+
+# 只启动核心组件
+scripts/docker-deploy.sh up core
 ```
 
-前端的生产镜像由 nginx 提供静态资源，并把 `/iboot/api` 反向代理到 `iboot-gateway:8088`：
-
-```bash
-cd iboot-portal
-docker build -t iboot-portal .
-docker run -d -p 80:80 --name iboot-portal iboot-portal
-```
-
-`docker/docker-compose.yml` 中的应用编排块仍处于注释状态，实际运行的是 21 个中间件容器。
-Helm 组织与 ACK 部署见 [ROADMAP 阶段 3](ROADMAP.md#阶段-3云原生ack--helm)。
+前端生产镜像由 nginx 提供静态资源，并把 `/iboot/api` 反向代理到 `iboot-gateway:8088`；
+容器编排、端口、卷与排障见 [`docker/README.md`](docker/README.md)。Helm 组织与 ACK 部署见
+[ROADMAP 阶段 3](ROADMAP.md#阶段-3云原生ack--helm)。
 
 ## 文档导航
 
 | 文档 | 内容 |
 |---|---|
-| [doc/README.md](doc/README.md) | 全部项目文档的入口 |
+| [docs/README.md](docs/README.md) | 全部项目文档的入口 |
 | [ROADMAP.md](ROADMAP.md) | 未完成路线、版本矩阵、风险与决策记录 |
-| [doc/23 微服务底座操作指南](<./doc/23-微服务底座操作指南.md>) | Nacos、网关、链路追踪与表级只读契约 |
-| [doc/22 AI 工作台操作指南](<./doc/22-AI 工作台操作指南.md>) | 模型配置、RAG、智能体与知识图谱 |
-| [doc/11 可观测性设计](<./doc/11-可观测性设计.md>) | 指标、日志、告警与追踪 |
+| [docs/23 微服务底座操作指南](<./docs/23-微服务底座操作指南.md>) | Nacos、网关、链路追踪与表级只读契约 |
+| [docs/22 AI 工作台操作指南](<./docs/22-AI 工作台操作指南.md>) | 模型配置、RAG、智能体与知识图谱 |
+| [docs/11 可观测性设计](<./docs/11-可观测性设计.md>) | 指标、日志、告警与追踪 |
 | [openspec/specs](openspec/specs) | 19 份能力契约 |
 | [openspec/changes/archive](openspec/changes/archive) | 历次变更的 proposal / design / tasks |
 

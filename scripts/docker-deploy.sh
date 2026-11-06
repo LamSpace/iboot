@@ -207,7 +207,7 @@ usage() {
 }
 
 case "${1:-up}" in
-  up)      shift || true; up "${1:-core}" ;;
+  up)      shift || true; up "${1:-observability}" ;;
   status)  status ;;
   logs)    shift || true; logs "${1:-}" ;;
   down)    down ;;

@@ -26,7 +26,8 @@ cd "$ROOT"
 
 COMPOSE=(docker compose -f docker/docker-compose.yml)
 LOG_DIR="$ROOT/logs"
-MAVEN_SETTINGS="${MAVEN_SETTINGS:-/home/lam/repo/settings.xml}"
+MAVEN_SETTINGS="${MAVEN_SETTINGS:-$HOME/repo/settings.xml}"
+[ -f "$MAVEN_SETTINGS" ] || MAVEN_SETTINGS=""
 VERSION="1.0.0"
 
 # 后端服务：名称:端口
@@ -200,7 +201,11 @@ build_backend() {
     fi
     if [ "$FORCE_BUILD" -eq 1 ]; then
         log '=== 2. 构建后端 ==='
-        mvn -s "$MAVEN_SETTINGS" -q -DskipTests package \
+        MVN_ARGS=()
+        if [ -n "$MAVEN_SETTINGS" ]; then
+            MVN_ARGS=(-s "$MAVEN_SETTINGS")
+        fi
+        mvn "${MVN_ARGS[@]}" -q -DskipTests package \
             || fail '构建失败，先看上面的 Maven 输出'
         log '  构建完成'
     else

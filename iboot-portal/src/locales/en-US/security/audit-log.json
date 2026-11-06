@@ -18,7 +18,7 @@
   "please_select": "Please select",
   "placeholder": {
     "keyword": "Search message content",
-    "logger": "e.g. com.iboot.admin"
+    "logger": "e.g. com.iboot.system"
   },
   "level_options": {
     "ERROR": "ERROR",
