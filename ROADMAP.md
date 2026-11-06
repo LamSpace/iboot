@@ -3,7 +3,7 @@
 > 本文只保留**尚未完成**的路线与**仍然生效**的约束；已完成能力见 [§2 能力索引](#2-能力索引)，
 > 用户视角的功能清单与启动方式见 [README](README.md)，每次交付的完整过程见 `openspec/changes/archive/`。
 > 项目性质：技术栈练习项目，在可运行的管理系统之上逐步长出**微服务**、**云原生**、**智能 Agent** 三块能力。
-> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-01
+> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-06
 
 ## 目录
 
@@ -77,11 +77,14 @@
 | Seata 分布式事务 | 未引入。当前跨服务写入都是旁路（审计、通知），失败不影响主流程 | `grep -ri seata --include=pom.xml` 无命中 |
 | Sentinel 业务接入 | 仅在 2.0 门禁的 Spike 中验证过，业务服务与网关尚未接入规则 | 各服务 pom 无 sentinel 依赖 |
 | RocketMQ | 未引入。审批 → 通知走内部 HTTP 端点并退避重试 | `grep -ri rocketmq` 无命中 |
+| Kafka 日志收集 | 未引入。各服务日志经 Logstash TCP 直投 ES，Kafka 不在链路中 | `grep -ri kafka --include=pom.xml` 无命中；compose 无 kafka 服务 |
 
-**运维控制面（辅助项，不替代上述三项）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
+**运维控制面（辅助项，不替代 Seata / Sentinel / RocketMQ 三项）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
 发现九个业务实例，提供单实例健康、JVM、环境、配置、Bean、缓存、定时任务、线程巡检与运行期日志
 级别调整。它不解决 Seata / Sentinel / RocketMQ 中的任何一项，也不改变上述判据；验收标准是：
 控制台可独立启停、业务服务零 SBA client 配置、停控制台不影响业务、生产环境不经公网网关暴露。
+
+**Kafka 日志收集（新增项，不替代上述判据）**：以 KRaft 模式单进程引入 Kafka，不部署 ZooKeeper（Kafka 4.0 起已移除 ZK 支持）；把链路从「服务 → Logstash TCP → ES」改为「服务 → Kafka → Logstash kafka input → ES」，Kibana 与监控服务的查询接口不变。验收标准：九个服务的日志全部经 Kafka 进入 ES，且可按 `app` 与 `traceId` 检索；停 Kafka 时业务请求不受影响、恢复后投递自动续上，停机期间的日志允许丢弃。代价是本地常驻进程 +1，已计入 R4。
 
 ### 阶段 3：云原生（ACK + Helm）
 
@@ -106,7 +109,7 @@
 | **Spring Batch** | 批处理（报表、备份、对账） | 与 Quartz 职责划清 |
 | **多租户 SaaS 化** | `tenant_id` + MyBatis 插件 + Nacos 命名空间隔离 | 横切改造，会让每张表都背租户改动、污染拆分边界；拆分完成后再施加更合理 |
 | **Spring LDAP** | 企业目录接入 | 需真实 LDAP 环境 |
-| **日志/行为流 → Flink** | Kafka + Flink 一条线 | 仅在有真实流分析场景时启动 |
+| **日志/行为流 → Flink** | Flink 消费阶段 2 收尾已引入的 Kafka 日志 topic | Kafka 已就位；仅在有真实流分析场景时启动 |
 
 ---
 
@@ -121,6 +124,7 @@
 | Spring Cloud / SCA | 2025.1.x / **2025.1.0.0** | SCA 首个支持 Boot 4.0.x 的版本线 |
 | Nacos | 3.1.1+（client/server） | bootstrap 方式已移除，必须用 `spring.config.import` |
 | Sentinel / Seata | 1.8.9 / 2.x | 随 SCA，勿自行混搭 |
+| Kafka | **4.1.x（KRaft，无 ZK）** | Boot 4.0.3 托管 kafka-clients 4.1.1 / spring-kafka 4.0.3；4.0 起移除 ZooKeeper |
 | Spring AI | **2.0.1（GA）** | Boot 4 必需；1.1.x 仅到 Boot 3.5 |
 | AgentScope Java | 2.0.1（GA） | JDK 25 已 Spike 通过；starter 构建于 Boot 4.0.3 |
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
@@ -145,7 +149,7 @@
 | ID | 风险 | 影响阶段 | 处置 |
 |---|---|---|---|
 | R2 | Dubbo 不支持 Boot 4 | 3 / 4 | 服务间 HTTP 先行；延后至出现 Boot 4 兼容版本后重评 |
-| R4 | 本机内存：N×JVM + 21 个中间件容器 | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
+| R4 | 本机内存：N×JVM + 21 个中间件容器（Kafka 落地后 22 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
 | R6 | LLM token 与云账单失控 | 全阶段 | 配额 + 用量看板 + Alertmanager 告警 |
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
