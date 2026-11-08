@@ -671,11 +671,11 @@ services:
   rocketmq-init:
     image: apache/rocketmq:5.3.1
     container_name: iboot-rocketmq-init
-    command: >
-      sh -c "sh mqadmin updateTopic -n rocketmq-namesrv:9876 -c DefaultCluster -t iboot-notification -r 4 -w 4 &&
-             sh mqadmin updateSubGroup -n rocketmq-namesrv:9876 -c DefaultCluster -g iboot-notify-consumer"
+    command: sh /home/rocketmq/init-topics.sh
     environment:
       TZ: Asia/Shanghai
+    volumes:
+      - ./rocketmq/init-topics.sh:/home/rocketmq/init-topics.sh:ro
     depends_on:
       rocketmq-broker:
         condition: service_healthy
