@@ -1,0 +1,13 @@
+# 生产/非本地环境的覆盖文件，与 docker-compose.yml 叠加使用：
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
+#
+# Sentinel Dashboard 在生产环境必须开启认证；账号密码由根目录 .env 或密钥管理注入，
+# 缺失时 compose 直接失败，避免回退到 sentinel/sentinel 默认口令。
+services:
+  sentinel-dashboard:
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Xms128m -Xmx256m
+        -Dauth.enabled=true
+        -Dauth.username=${SENTINEL_DASHBOARD_USER:?SENTINEL_DASHBOARD_USER is required}
+        -Dauth.password=${SENTINEL_DASHBOARD_PASSWORD:?SENTINEL_DASHBOARD_PASSWORD is required}

@@ -72,6 +72,9 @@ export IBOOT_OPS_PASSWORD="${IBOOT_OPS_PASSWORD:-ops123}"
 # 本地开发默认关闭控制台认证，门户 iframe 可直接打开；生产必须保持开启。
 export IBOOT_OPS_SECURITY_ENABLED="${IBOOT_OPS_SECURITY_ENABLED:-false}"
 
+# 宿主机开发进程连接容器内的 Sentinel Dashboard（必选治理控制台）。
+export SENTINEL_DASHBOARD="${SENTINEL_DASHBOARD:-localhost:8858}"
+
 mkdir -p "$LOG_DIR"
 
 # 备份能力需要密钥；没有配置时用仅限本地的开发默认值。
@@ -159,7 +162,8 @@ wait_http() {
 start_middleware() {
     log '=== 1. 中间件 ==='
     "${COMPOSE[@]}" up -d mysql redis minio minio-init elasticsearch > /dev/null || fail '中间件启动失败'
-    "${COMPOSE[@]}" --profile platform up -d nacos tempo > /dev/null || fail 'nacos/tempo 启动失败'
+    "${COMPOSE[@]}" --profile platform up -d nacos tempo sentinel-dashboard > /dev/null \
+        || fail 'nacos/tempo/sentinel-dashboard 启动失败'
 
     local i
     for i in $(seq 1 90); do
@@ -176,6 +180,8 @@ start_middleware() {
     # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。
     # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。
     wait_http 'Nacos' 'http://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'
+    wait_http 'Sentinel Dashboard' 'http://localhost:8858/' 120 || fail 'Sentinel Dashboard 未就绪'
+    "$ROOT/scripts/sentinel-init.sh" || fail 'Sentinel 基线规则初始化失败'
     log '  中间件就绪'
 }
 
@@ -345,9 +351,9 @@ case "$ACTION" in
         show_status
         log ''
         if ops_enabled; then
-            log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，运维控制台 http://localhost:8089/sba'
+            log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，运维控制台 http://localhost:8089/sba，Sentinel Dashboard http://localhost:8858'
         else
-            log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083（运维控制台已关闭）'
+            log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，Sentinel Dashboard http://localhost:8858（运维控制台已关闭）'
         fi
         log '登录账号 admin / admin123456'
         ;;

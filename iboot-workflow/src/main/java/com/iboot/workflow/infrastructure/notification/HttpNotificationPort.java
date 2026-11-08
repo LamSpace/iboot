@@ -16,6 +16,10 @@
 
 package com.iboot.workflow.infrastructure.notification;
 
+import com.alibaba.csp.sentinel.Entry;
+import com.alibaba.csp.sentinel.SphU;
+import com.alibaba.csp.sentinel.Tracer;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.iboot.workflow.application.service.notification.NotificationCommand;
 import com.iboot.workflow.application.service.notification.NotificationPort;
 import io.micrometer.core.instrument.Counter;
@@ -41,6 +45,9 @@ import java.util.concurrent.Executors;
  * 调用线程使用虚拟线程；失败按指数退避重试，全部失败后只记录指标与结构化日志，
  * 不向业务调用方传播——审批提交不因通知不可用而失败。
  *
+ * <p>投递过程由 Sentinel 资源 {@value #RESOURCE} 保护：下游持续失败时熔断打开，
+ * 后续请求快速降级，不再等待每次重试耗尽；熔断窗口结束后自动半开探测。
+ *
  * <p>退出条件：引入 RocketMQ 后替换为事件发布器，端口与业务代码不变。
  *
  * @author iBoot Team
@@ -55,6 +62,11 @@ public class HttpNotificationPort implements NotificationPort {
      * 内部端点的共享密钥请求头。
      */
     private static final String TOKEN_HEADER = "X-Internal-Token";
+
+    /**
+     * Sentinel 治理资源名。
+     */
+    static final String RESOURCE = "iboot-workflow:notify-enqueue";
 
     /**
      * 单次登记的最大尝试次数。
@@ -103,7 +115,7 @@ public class HttpNotificationPort implements NotificationPort {
     /**
      * 在事务提交后异步投递登记命令。
      *
-     * <p>无事务时立即异步执行。任何失败都不向调用方抛出。
+     * <p>无事务时立即异步执行。任何失败（含熔断阻塞）都不向调用方抛出。
      *
      * @param command 通知登记命令
      */
@@ -123,6 +135,28 @@ public class HttpNotificationPort implements NotificationPort {
     }
 
     private void send(final NotificationCommand command) {
+        Entry entry = null;
+        try {
+            entry = SphU.entry(RESOURCE);
+            deliverWithRetry(command);
+        } catch (BlockException e) {
+            failedCounter.increment();
+            log.warn("通知登记被熔断，eventId: {}, reason: {}",
+                    command.getEventId(), e.getClass().getSimpleName());
+        } catch (RuntimeException e) {
+            // 把异常计入 Sentinel 统计，异常比例熔断规则才能据此打开
+            Tracer.trace(e);
+            failedCounter.increment();
+            log.error("通知登记失败，重试已耗尽，eventId: {}, template: {}, recipient: {}",
+                    command.getEventId(), command.getTemplateCode(), command.getRecipientId(), e);
+        } finally {
+            if (entry != null) {
+                entry.exit();
+            }
+        }
+    }
+
+    private void deliverWithRetry(final NotificationCommand command) {
         Duration backoff = INITIAL_BACKOFF;
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
@@ -136,10 +170,7 @@ public class HttpNotificationPort implements NotificationPort {
                 return;
             } catch (RuntimeException e) {
                 if (attempt == MAX_ATTEMPTS) {
-                    failedCounter.increment();
-                    log.error("通知登记失败，重试已耗尽，eventId: {}, template: {}, recipient: {}",
-                            command.getEventId(), command.getTemplateCode(), command.getRecipientId(), e);
-                    return;
+                    throw e;
                 }
                 log.warn("通知登记失败，准备重试，eventId: {}, attempt: {}, reason: {}",
                         command.getEventId(), attempt, e.getMessage());

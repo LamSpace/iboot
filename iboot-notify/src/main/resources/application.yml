@@ -24,6 +24,18 @@ spring:
         server-addr: ${NACOS_ADDR:localhost:8848}
         file-extension: yml
         enabled: ${IBOOT_NACOS_ENABLED:true}
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
+      eager: true
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:localhost:8848}
+            data-id: iboot-notify-flow-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: flow
   threads:
     virtual:
       enabled: true

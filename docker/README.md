@@ -27,7 +27,8 @@ scripts/docker-deploy.sh up
 3. 构建共享 Maven builder 镜像（整个 reactor 只构建一次）；
 4. 构建全部后端与前端运行期镜像；
 5. `docker compose up -d` 启动，然后由脚本轮询健康状态；`db-init`、`minio-init`
-   这类一次性服务以退出码 0 视为完成。
+   这类一次性服务以退出码 0 视为完成；
+6. 调用 `scripts/sentinel-init.sh --verify` 把 Sentinel 基线规则写入 Nacos。
 
 首次构建需要下载 Maven 与 npm 依赖，通常 10–15 分钟；后续构建使用 BuildKit
 cache mount，通常 3–5 分钟。
@@ -87,6 +88,7 @@ nginx:stable-alpine3.23
 | iboot-workflow | 8086 | 审批工作流 |
 | iboot-monitor | 8087 | 监控与日志查询 |
 | iboot-ops | 8089 | 运维控制台（SBA） |
+| sentinel-dashboard | 8858 | Sentinel 治理控制台；本地必选，生产必须认证 |
 | mysql | 3306 | MySQL 8.0 |
 | redis | 6379 | Redis 7 |
 | minio | 9000/9001 | 对象存储与控制台 |
@@ -122,6 +124,7 @@ redis / nacos ──> 所有后端服务
 minio ──> iboot-file / iboot-ai
 elasticsearch ──> iboot-notify / iboot-monitor / iboot-ai
 logstash ──> 旁路，不作为启动依赖
+sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影响业务
 ```
 
 - `db-init` 的 `restart` 为 `no`；迁移失败时它以非零退出，所有后端服务都不会启动。
@@ -144,6 +147,8 @@ logstash ──> 旁路，不作为启动依赖
   `auth_keys` 卷。不要删除该卷，否则所有已签发令牌会在认证服务重启后失效。
 - 本地全栈默认关闭运维控制台认证（`IBOOT_OPS_SECURITY_ENABLED=false`）；生产部署必须开启
   并注入 `IBOOT_OPS_PASSWORD`。
+- 本地全栈默认关闭 Sentinel Dashboard 登录（`auth.enabled=false`）；非本地环境必须叠加
+  `docker/docker-compose.prod.yml` 并注入 `SENTINEL_DASHBOARD_USER` / `SENTINEL_DASHBOARD_PASSWORD`。
 - Docker 部署默认关闭 `iboot-job` 备份（`IBOOT_BACKUP_ENABLED=false`），因为运行期镜像没有
   docker CLI，备份自检会失败。需要备份时应另行为该服务挂载 Docker Socket 并安装客户端。
 
@@ -153,6 +158,15 @@ logstash ──> 旁路，不作为启动依赖
 `minio`，还需要把 `sys.file.minio.endpoint` 从种子值 `http://localhost:9000` 改为
 `http://minio:9000`；`sys.minio.console.url` 保持 `http://localhost:9001`，因为它是浏览器
 访问的地址。监控服务的 MinIO 检查只在存储类型为 `minio` 时才真正连接。
+
+## Sentinel 治理
+
+- `sentinel-dashboard` 常驻 `8858`；本地关闭登录，生产叠加 `docker-compose.prod.yml` 并注入账号密码。
+- `scripts/docker-deploy.sh up` 在健康检查后写入 Nacos 基线规则；手动校验：
+  `bash scripts/sentinel-init.sh --verify`。
+- 规则 data-id：`iboot-gateway-flow-rules`、`iboot-workflow-degrade-rules`、`iboot-notify-flow-rules`
+  （group `SENTINEL_GROUP`）。Dashboard 上的修改只作用于运行期内存，重启或 Nacos 刷新后回到基线。
+- 完整说明见 [docs/23 §13](../docs/23-微服务底座操作指南.md)。
 
 ## 卷
 

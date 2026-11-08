@@ -8,6 +8,19 @@ spring:
     # 本地默认走静态地址；接入注册中心后改用 nacos profile
     active: local
   cloud:
+    sentinel:
+      # 必选治理控制台；容器内用服务名，宿主机开发用 localhost
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
+      eager: true
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:localhost:8848}
+            data-id: iboot-gateway-flow-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: flow
     gateway:
       server:
         webflux:

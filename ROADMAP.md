@@ -58,6 +58,7 @@
 | 知识图谱 | 组织与 RBAC 入图、多跳查询与名称解析 | `iboot-ai` | [docs/22](<./docs/22-AI 工作台操作指南.md>) |
 | 国际化 | 前端 vue-i18n + 后端 MessageSource 中英文语言包 | `iboot-portal` + 各服务 | [docs/17](<./docs/17-国际化设计.md>) |
 | 可观测性 | Actuator + Micrometer + Prometheus/Grafana + ELK + Tempo 链路追踪 | 全部服务 | [docs/11](<./docs/11-可观测性设计.md>) |
+| 服务治理 | 网关路由级限流、跨服务熔断降级、Nacos 规则源与 Sentinel Dashboard | `iboot-gateway`、`iboot-workflow`、`iboot-notify` | [docs/23 §13](<./docs/23-微服务底座操作指南.md>) |
 | 运维控制台 | 独立 SBA 控制台，经 Nacos 发现全部实例，支持单实例巡检与运行期日志级别调整 | `iboot-ops` | [docs/11](<./docs/11-可观测性设计.md>) |
 
 ---
@@ -75,13 +76,12 @@
 | 项 | 现状 | 复核方式 |
 |---|---|---|
 | Seata 分布式事务 | 未引入。当前跨服务写入都是旁路（审计、通知），失败不影响主流程 | `grep -ri seata --include=pom.xml` 无命中 |
-| Sentinel 业务接入 | 仅在 2.0 门禁的 Spike 中验证过，业务服务与网关尚未接入规则 | 各服务 pom 无 sentinel 依赖 |
 | RocketMQ | 未引入。审批 → 通知走内部 HTTP 端点并退避重试 | `grep -ri rocketmq` 无命中 |
 | Kafka 日志收集 | 未引入。各服务日志经 Logstash TCP 直投 ES，Kafka 不在链路中 | `grep -ri kafka --include=pom.xml` 无命中；compose 无 kafka 服务 |
 
-**运维控制面（辅助项，不替代 Seata / Sentinel / RocketMQ 三项）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
+**运维控制面（辅助项，不替代 Seata / RocketMQ 两项）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
 发现九个业务实例，提供单实例健康、JVM、环境、配置、Bean、缓存、定时任务、线程巡检与运行期日志
-级别调整。它不解决 Seata / Sentinel / RocketMQ 中的任何一项，也不改变上述判据；验收标准是：
+级别调整。它不解决 Seata / RocketMQ 中的任何一项，也不改变上述判据；验收标准是：
 控制台可独立启停、业务服务零 SBA client 配置、停控制台不影响业务、生产环境不经公网网关暴露。
 
 **Kafka 日志收集（新增项，不替代上述判据）**：以 KRaft 模式单进程引入 Kafka，不部署 ZooKeeper（Kafka 4.0 起已移除 ZK 支持）；把链路从「服务 → Logstash TCP → ES」改为「服务 → Kafka → Logstash kafka input → ES」，Kibana 与监控服务的查询接口不变。验收标准：九个服务的日志全部经 Kafka 进入 ES，且可按 `app` 与 `traceId` 检索；停 Kafka 时业务请求不受影响、恢复后投递自动续上，停机期间的日志允许丢弃。代价是本地常驻进程 +1，已计入 R4。
@@ -152,7 +152,7 @@
 | ID | 风险 | 影响阶段 | 处置 |
 |---|---|---|---|
 | R2 | Dubbo 不支持 Boot 4 | 3 / 4 | 服务间 HTTP 先行；延后至出现 Boot 4 兼容版本后重评 |
-| R4 | 本机内存：N×JVM + 21 个中间件容器（Kafka 落地后 22 个；SkyWalking 实验再 +3 共 25 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
+| R4 | 本机内存：N×JVM + 22 个中间件容器（含 Sentinel Dashboard；Kafka 落地后 23 个；SkyWalking 实验再 +3 共 26 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
 | R6 | LLM token 与云账单失控 | 全阶段 | 配额 + 用量看板 + Alertmanager 告警 |
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
@@ -170,7 +170,7 @@
 
 本地开发策略：
 
-- 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / minio / es / nacos / tempo；阶段 3 起本地增加 Kind 集群。
+- 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / minio / es / nacos / tempo / sentinel-dashboard；阶段 3 起本地增加 Kind 集群。
 - 应用：`scripts/dev-init.sh` 一键拉起九个业务服务与运维控制台并按依赖顺序等待健康；也可单独 `mvn spring-boot:run` 调试。
 - 运维控制台：默认随开发环境启动，`IBOOT_OPS_ENABLED=false` 可跳过；生产环境不经公网网关暴露。
 - 密钥：统一放根目录 `.env`（已在 `.gitignore` 中），模板见 `.env.example`。
@@ -224,7 +224,7 @@ Spring Authorization Server 对「公共客户端 + 授权码」不签发刷新�
 
 ### 7.7 为什么允许一个与 Tempo 职责重叠的 SkyWalking
 
-SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。保留它，是因为练习项目的目标包含技术栈的横向对比，而「装过」不产生认知：agent 字节码增强的零侵入自动埋点与现有 SDK 埋点，在启动开销、常驻内存、虚拟线程下的表现、拓扑发现能力上的差异，只有在同一批服务、同一批流量上并行观测才能看清。因此它被定义为**阶段 2 收尾的辅助对比实验**：有独立验收标准，不替代 Seata / Sentinel / RocketMQ / Kafka 任何一项判据，也不替换 Tempo。实验结束时若结论是收益不足，就下线 SkyWalking、保留对比记录，而不是让它长期挂在主线上。11.x 还能直接接收 OTLP 并把 OAP 作为 Grafana Tempo 的数据源，这为后续「agent vs OTLP」的第二种对比留了口子，但不作为本次实验的前置。
+SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。保留它，是因为练习项目的目标包含技术栈的横向对比，而「装过」不产生认知：agent 字节码增强的零侵入自动埋点与现有 SDK 埋点，在启动开销、常驻内存、虚拟线程下的表现、拓扑发现能力上的差异，只有在同一批服务、同一批流量上并行观测才能看清。因此它被定义为**阶段 2 收尾的辅助对比实验**：有独立验收标准，不替代 Seata / RocketMQ / Kafka 任何一项判据，也不替换 Tempo。实验结束时若结论是收益不足，就下线 SkyWalking、保留对比记录，而不是让它长期挂在主线上。11.x 还能直接接收 OTLP 并把 OAP 作为 Grafana Tempo 的数据源，这为后续「agent vs OTLP」的第二种对比留了口子，但不作为本次实验的前置。
 
 ---
 
