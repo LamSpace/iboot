@@ -133,10 +133,11 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
-        <!-- 治理：通知登记调用的限流与熔断降级 -->
+        <!-- RocketMQ：通知事件的 gRPC 客户端，生产者由 outbox 中继懒创建 -->
         <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-client-java</artifactId>
+            <version>${rocketmq-client-java.version}</version>
         </dependency>
         <!-- 规则源：Nacos Datasource -->
         <dependency>

@@ -3,7 +3,7 @@
 # 把 Sentinel 基线规则幂等写入 Nacos。
 #
 # 用法：
-#   scripts/sentinel-init.sh           写入三个基线规则
+#   scripts/sentinel-init.sh           写入两个基线规则
 #   scripts/sentinel-init.sh --verify  写入后回读并校验内容
 #
 # 说明：
@@ -55,6 +55,5 @@ publish() {
 
 log '=== Sentinel 基线规则 ==='
 publish 'iboot-gateway-flow-rules' "$RULES_DIR/iboot-gateway-flow-rules.json"
-publish 'iboot-workflow-degrade-rules' "$RULES_DIR/iboot-workflow-degrade-rules.json"
 publish 'iboot-notify-flow-rules' "$RULES_DIR/iboot-notify-flow-rules.json"
 log 'Sentinel 基线规则就绪'

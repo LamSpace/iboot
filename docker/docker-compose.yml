@@ -23,6 +23,7 @@ x-app-env: &app-env
   LOGSTASH_HOST: logstash
   JWT_JWK_SET_URI: http://iboot-auth:8083/oauth2/jwks
   IBOOT_NOTIFY_BASE_URL: http://iboot-notify:8084
+  IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-proxy:8081
   IBOOT_AI_MINIO_ENDPOINT: http://minio:9000
   IBOOT_AI_GRAPH_URI: bolt://neo4j:7687
   MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
@@ -584,6 +585,104 @@ services:
       retries: 10
       start_period: 30s
 
+  # ==================== RocketMQ（审批通知事件） ====================
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.1
+    container_name: iboot-rocketmq-namesrv
+    command: sh mqnamesrv
+    environment:
+      TZ: Asia/Shanghai
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/9876'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # 卷由 root 创建，broker 以 uid 3000 运行；先修正属主再启动。
+  rocketmq-store-init:
+    image: apache/rocketmq:5.3.1
+    container_name: iboot-rocketmq-store-init
+    user: "0:0"
+    command: sh -c "mkdir -p /home/rocketmq/store && chown -R 3000:3000 /home/rocketmq/store"
+    volumes:
+      - rocketmq_broker_data:/home/rocketmq/store
+    restart: "no"
+    networks:
+      - iboot-network
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.1
+    container_name: iboot-rocketmq-broker
+    command: sh mqbroker -n rocketmq-namesrv:9876
+    environment:
+      TZ: Asia/Shanghai
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m -XX:MaxDirectMemorySize=256m"
+    volumes:
+      - rocketmq_broker_data:/home/rocketmq/store
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      rocketmq-namesrv:
+        condition: service_healthy
+      rocketmq-store-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/10911'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rocketmq-proxy:
+    image: apache/rocketmq:5.3.1
+    container_name: iboot-rocketmq-proxy
+    command: sh mqproxy -n rocketmq-namesrv:9876
+    environment:
+      TZ: Asia/Shanghai
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+    volumes:
+      - ./rocketmq/rmq-proxy.json:/home/rocketmq/rocketmq-5.3.1/conf/rmq-proxy.json:ro
+    ports:
+      - "18080:8080"
+      - "18081:8081"
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    depends_on:
+      rocketmq-namesrv:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8081'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  rocketmq-init:
+    image: apache/rocketmq:5.3.1
+    container_name: iboot-rocketmq-init
+    command: >
+      sh -c "sh mqadmin updateTopic -n rocketmq-namesrv:9876 -c DefaultCluster -t iboot-notification -r 4 -w 4 &&
+             sh mqadmin updateSubGroup -n rocketmq-namesrv:9876 -c DefaultCluster -g iboot-notify-consumer"
+    environment:
+      TZ: Asia/Shanghai
+    depends_on:
+      rocketmq-broker:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - iboot-network
+
   tempo:
     image: grafana/tempo:2.10.8
     container_name: iboot-tempo
@@ -886,6 +985,7 @@ volumes:
   grafana_data:
   alertmanager_data:
   es_data:
+  rocketmq_broker_data:
   neo4j_data:
   neo4j_logs:
   thanos_store_data:
