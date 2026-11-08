@@ -31,6 +31,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- 治理指标导出：/actuator/prometheus 与 sentinel_* 指标 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
         <!-- 注册中心与负载均衡：nacos profile 下按服务名转发 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
@@ -39,6 +44,25 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+        <!-- 治理：路由级限流与 Nacos 规则源 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+        </dependency>
+        <!-- 规则源：Nacos Datasource -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-datasource-nacos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-alibaba-sentinel-gateway</artifactId>
+        </dependency>
+        <!-- 治理指标桥接：pass/block/exception/RT 进入 Micrometer -->
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-sentinel</artifactId>
         </dependency>
         <!-- 链路追踪：网关是链路入口，必须产生服务端 span 并向下游传递上下文 -->
         <dependency>

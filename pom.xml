@@ -36,6 +36,7 @@
 
     <modules>
         <module>iboot-kernel</module>
+        <module>iboot-sentinel</module>
         <module>iboot-db-init</module>
         <module>iboot-file</module>
         <module>iboot-notify</module>
@@ -187,6 +188,11 @@
             <dependency>
                 <groupId>com.iboot</groupId>
                 <artifactId>iboot-db-init</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iboot</groupId>
+                <artifactId>iboot-sentinel</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

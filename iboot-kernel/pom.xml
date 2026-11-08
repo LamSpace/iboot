@@ -81,6 +81,11 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
         </dependency>
+        <!-- 治理指标桥接：仅在消费方引入 Sentinel 时激活 -->
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-sentinel</artifactId>
+        </dependency>
         <!-- 共享日志配置的结构化投递；随内核传递给全部消费方 -->
         <dependency>
             <groupId>net.logstash.logback</groupId>

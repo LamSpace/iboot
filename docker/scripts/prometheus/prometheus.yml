@@ -47,6 +47,33 @@ scrape_configs:
         target_label: instance
         replacement: 'iboot-ops:8089'
 
+  - job_name: 'iboot-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['iboot-gateway:8088']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'iboot-gateway:8088'
+
+  - job_name: 'iboot-workflow'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['iboot-workflow:8086']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'iboot-workflow:8086'
+
+  - job_name: 'iboot-notify'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['iboot-notify:8084']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'iboot-notify:8084'
+
   - job_name: 'mysql-exporter'
     static_configs:
       - targets: ['mysql-exporter:9104']

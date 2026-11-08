@@ -34,7 +34,7 @@
 
 iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RBAC 权限模型之上，逐步长出三块能力：
 
-- **微服务**：单体按限界上下文拆分为九个独立可部署的业务服务，并增加一个独立的运维控制台；注册中心、配置中心、网关、链路追踪真实承载。
+- **微服务**：单体按限界上下文拆分为九个独立可部署的业务服务，并增加一个独立的运维控制台；注册中心、配置中心、网关、链路追踪与 Sentinel 治理真实承载。
 - **云原生**：容器化与 Helm 化路线（尚未实施，见 [ROADMAP](ROADMAP.md)）。
 - **智能 Agent**：以百炼 Qwen 为底座的对话、RAG、智能体编排与知识图谱。
 
@@ -56,10 +56,13 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
                                                           iboot-monitor  :8087
 
 [iboot-portal] --/sba 同源代理（开发/内网）--> [iboot-ops :8089] --Nacos 发现--> 上述业务服务
+
+[iboot-gateway / iboot-workflow / iboot-notify] --规则与指标--> [sentinel-dashboard :8858]
 ```
 
 前端业务接口只访问网关；服务之间的调用按 Nacos 服务名寻址，不经过网关。运维控制台是旁路，
 开发环境经 Vite 代理以同源 iframe 打开，生产环境只允许内网访问，公网网关不提供 `/sba` 路由。
+Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规则以 Nacos 为唯一持久化来源。
 
 **服务与端口**
 
@@ -75,7 +78,9 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 | `iboot-workflow` | 8086 | 请假审批与 Flowable 流程引擎 | `ACT_*` / `FLW_RU_*` / 审批表 |
 | `iboot-monitor` | 8087 | 操作/登录/运行日志、在线会话、资源监控 | `sys_operate_log` / `sys_login_log` |
 | `iboot-ops` | 8089 | 运维控制台：注册中心发现实例、单实例巡检、运行期日志级别调整 | — |
+| `sentinel-dashboard` | 8858 | 治理控制台：单资源流量、阻塞与规则查看；本地必选，生产必须认证 | — |
 | `iboot-kernel` | — | 共享内核库（统一响应、鉴权、审计写入），不独立部署 | — |
+| `iboot-sentinel` | — | 治理指标桥接库（MetricExtension → Micrometer），不独立部署 | — |
 
 **数据边界**：所有服务共用一个数据库 `iboot`；每张表只有一个所有者，其余服务只读登记的表与列。
 结构由 `iboot-db-init` 统一迁移，服务不执行 DDL。消费清单与写入例外见
@@ -89,7 +94,7 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 |---|---|
 | 运行时 | Java 25（虚拟线程已启用） |
 | 框架 | Spring Boot 4.0.3、Spring Framework 7、Spring Security 7 |
-| 微服务 | Spring Cloud 2025.1.0、Spring Cloud Alibaba 2025.1.0.0（Nacos 3.1.1）、Spring Cloud Gateway |
+| 微服务 | Spring Cloud 2025.1.0、Spring Cloud Alibaba 2025.1.0.0（Nacos 3.1.1、Sentinel 1.8.9）、Spring Cloud Gateway |
 | 持久层 | MyBatis 4.0.1 + PageHelper 2.1.1、Druid 1.2.28、Flyway、MySQL 8.0.45 |
 | 缓存 | Redis 7.0.14 + Caffeine 3.1.8（二级缓存，Pub/Sub 失效广播） |
 | 认证 | OAuth2 / OIDC 授权码 + PKCE（Spring Authorization Server）、JWT、RBAC 与五级数据权限 |
@@ -107,7 +112,7 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 | UI 与状态 | Element Plus 2.6、Pinia 2.1、Vue Router 4.3 |
 | 其他 | vue-i18n 9.14、axios 1.6、markdown-it、DOMPurify、Sass |
 
-**中间件**：`docker/docker-compose.yml` 提供 21 个容器，按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）。
+**中间件**：`docker/docker-compose.yml` 提供 22 个容器，按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）；Sentinel Dashboard 默认常驻。
 
 ## 功能清单
 
@@ -131,6 +136,8 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 
 **网关 `iboot-gateway`**：统一路由、跨域、SSE 长连接透传与服务降级。
 
+**服务治理**：网关按路由限流（`429` 统一 JSON），`iboot-workflow → iboot-notify` 通知登记具备熔断降级，`iboot-notify` 内部端点具备入口流控；规则存 Nacos 并热更新，Sentinel Dashboard（8858）为本地必选组件，治理指标进入 Prometheus。
+
 ## 快速开始
 
 **前置条件**
@@ -146,7 +153,7 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 cp .env.example .env
 #    至少填写百炼 API Key；其余按需
 
-# 2. 拉起中间件、构建后端、按依赖顺序启动九个业务服务与运维控制台
+# 2. 拉起中间件、Sentinel Dashboard 与基线规则，构建后端并启动九个业务服务与运维控制台
 bash scripts/dev-init.sh
 
 # 3. 需要前端时
@@ -191,13 +198,14 @@ MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root \
 
 - 前端开发地址：<http://localhost:5173>，API 经 Vite 代理到网关 `8088`
 - 网关健康检查：<http://localhost:8088/actuator/health>
+- Sentinel Dashboard：<http://localhost:8858>（本地开发必选，生产需认证）
 - 默认管理员：`admin` / `admin123456`（baseline 种子数据，首次登录后请立即修改）
 
 ## 目录结构
 
 ```
 iboot/
-├── pom.xml                  # 父 POM，聚合十二个后端模块
+├── pom.xml                  # 父 POM，聚合 13 个后端模块
 ├── docker/                  # 中间件编排与初始化脚本
 │   ├── docker-compose.yml
 │   └── init.sql
@@ -218,6 +226,7 @@ iboot/
 ├── iboot-workflow/          # 审批工作流 :8086
 ├── iboot-monitor/           # 监控与日志 :8087
 ├── iboot-ops/               # 运维控制台 :8089
+├── iboot-sentinel/          # 治理指标桥接库（不独立部署）
 ├── iboot-portal/            # 前端（Vue 3 + Vite）
 ├── docs/                     # 项目文档，入口 docs/README.md
 ├── openspec/                # 能力契约与变更记录
@@ -277,7 +286,7 @@ scripts/docker-deploy.sh up core
 | [docs/23 微服务底座操作指南](<./docs/23-微服务底座操作指南.md>) | Nacos、网关、链路追踪与表级只读契约 |
 | [docs/22 AI 工作台操作指南](<./docs/22-AI 工作台操作指南.md>) | 模型配置、RAG、智能体与知识图谱 |
 | [docs/11 可观测性设计](<./docs/11-可观测性设计.md>) | 指标、日志、告警与追踪 |
-| [openspec/specs](openspec/specs) | 19 份能力契约 |
+| [openspec/specs](openspec/specs) | 25 份能力契约 |
 | [openspec/changes/archive](openspec/changes/archive) | 历次变更的 proposal / design / tasks |
 
 ## 许可证

@@ -105,6 +105,8 @@
 2. 出站 HTTP 用 `spring-boot-starter-restclient` 自动配置的 `RestClient`，不要手写 `RestClient.builder()`，否则上下文不传递。
 3. OTLP 端点属性为 `management.opentelemetry.tracing.export.otlp.endpoint`。
 4. Sentinel 规则持久化到 Nacos 尚未验证，列入 2.4 的范围。
+   > 2026-11-08 更新：已由 `add-sentinel-governance` 验证并落地；规则经 Nacos Datasource 加载，
+   > 网关改用标准 `flow` 规则（原因见该变更 design D3），运行方式见 `docs/23` §13。
 
 ## 7. 复现步骤
 

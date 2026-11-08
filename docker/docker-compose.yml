@@ -18,6 +18,7 @@ x-app-env: &app-env
   REDIS_PORT: "6379"
   ELASTICSEARCH_URIS: http://elasticsearch:9200
   NACOS_ADDR: nacos:8848
+  SENTINEL_DASHBOARD: sentinel-dashboard:8858
   TEMPO_OTLP: http://tempo:4318/v1/traces
   LOGSTASH_HOST: logstash
   JWT_JWK_SET_URI: http://iboot-auth:8083/oauth2/jwks
@@ -560,6 +561,28 @@ services:
       timeout: 5s
       retries: 10
       start_period: 60s
+
+  sentinel-dashboard:
+    image: bladex/sentinel-dashboard:1.8.9
+    container_name: iboot-sentinel-dashboard
+    ports:
+      - "8858:8858"
+    environment:
+      TZ: Asia/Shanghai
+      # 本地开发关闭登录；非本地部署必须用 docker-compose.prod.yml 覆盖并注入账号密码
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -Dauth.enabled=false"
+    # 宿主机开发进程场景下，Dashboard 反向探测的兜底地址
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8858/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   tempo:
     image: grafana/tempo:2.10.8

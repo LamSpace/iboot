@@ -169,6 +169,9 @@ up() {
     || fail "容器创建/启动失败，请先查看：${COMPOSE[*]} ps"
   log "等待服务健康（最多 600 秒）..."
   wait_ready 600 || fail "服务未在预期时间内达到健康"
+  log "写入 Sentinel 基线规则..."
+  NACOS_ADDR=localhost:8848 "$ROOT/scripts/sentinel-init.sh" --verify \
+    || fail "Sentinel 基线规则初始化失败"
   log "服务已就绪。"
   "${COMPOSE[@]}" "${PROFILE_ARGS[@]}" ps
 }
