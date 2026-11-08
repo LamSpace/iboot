@@ -3,7 +3,7 @@
 > 本文只保留**尚未完成**的路线与**仍然生效**的约束；已完成能力见 [§2 能力索引](#2-能力索引)，
 > 用户视角的功能清单与启动方式见 [README](README.md)，每次交付的完整过程见 `openspec/changes/archive/`。
 > 项目性质：技术栈练习项目，在可运行的管理系统之上逐步长出**微服务**、**云原生**、**智能 Agent** 三块能力。
-> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-06
+> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-08
 
 ## 目录
 
@@ -86,6 +86,8 @@
 
 **Kafka 日志收集（新增项，不替代上述判据）**：以 KRaft 模式单进程引入 Kafka，不部署 ZooKeeper（Kafka 4.0 起已移除 ZK 支持）；把链路从「服务 → Logstash TCP → ES」改为「服务 → Kafka → Logstash kafka input → ES」，Kibana 与监控服务的查询接口不变。验收标准：九个服务的日志全部经 Kafka 进入 ES，且可按 `app` 与 `traceId` 检索；停 Kafka 时业务请求不受影响、恢复后投递自动续上，停机期间的日志允许丢弃。代价是本地常驻进程 +1，已计入 R4。
 
+**APM 对比实验（辅助项，不替代上述判据）**：引入 SkyWalking（OAP + UI + Java Agent）与既有 Tempo 并行观测同一批服务，补齐两条埋点范式的对比：agent 字节码增强的零侵入自动埋点 vs. 现有 SDK 埋点，并体验服务拓扑与方法级慢调用剖析。它不替换 Tempo，也不改变阶段 2 的任何验收判据。验收标准：同一请求在 SkyWalking 与 Tempo 两侧都能还原完整调用链；记录 Java Agent 对启动时间、常驻内存、吞吐的实际影响；产出一页选型结论，说明两者各自适合的场景与代价；停掉 SkyWalking 不影响任何业务，也不影响既有 Tempo 链路。版本为 OAP **11.1.0** + Java Agent **9.8.0**（Agent 9.6.0 起支持 JDK 25，OAP 10.4.0 起支持 JDK 25 与虚拟线程）；存储用默认的 BanyanDB——现有 ES 9.2 不在 SkyWalking 官方支持矩阵（文档上限 8.x），不强行接。代价是本地常驻进程 +3（OAP、UI、BanyanDB），已计入 R4。
+
 ### 阶段 3：云原生（ACK + Helm）
 
 | 编号 | 内容 | 技术栈 | 约束 | 验收判据 |
@@ -129,6 +131,7 @@
 | AgentScope Java | 2.0.1（GA） | JDK 25 已 Spike 通过；starter 构建于 Boot 4.0.3 |
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
 | Spring Boot Admin | **4.0.2** | 运维控制台；4.x 对应 Boot 4，勿与 Boot 3 的 3.x 混搭 |
+| SkyWalking | OAP **11.1.0** + Java Agent **9.8.0** | 阶段 2 辅助对比实验；Agent 9.6.0 起支持 JDK 25，OAP 10.4.0 起支持 JDK 25 与虚拟线程；存储用默认 BanyanDB（ES 9.2 不在官方支持矩阵） |
 | 对话模型 | **百炼 `qwen3.8-flash`**（备用 `qwen3.7-flash`） | thinking 默认开启，须显式关闭 |
 | DeepSeek（备用） | `deepseek-flash`（OpenAI 兼容端点） | 仅用于故障切换，不默认启用 |
 | Embedding | 百炼 `text-embedding-v4` 或本地 BGE-M3 | 第二供应商必然存在 |
@@ -149,7 +152,7 @@
 | ID | 风险 | 影响阶段 | 处置 |
 |---|---|---|---|
 | R2 | Dubbo 不支持 Boot 4 | 3 / 4 | 服务间 HTTP 先行；延后至出现 Boot 4 兼容版本后重评 |
-| R4 | 本机内存：N×JVM + 21 个中间件容器（Kafka 落地后 22 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
+| R4 | 本机内存：N×JVM + 21 个中间件容器（Kafka 落地后 22 个；SkyWalking 实验再 +3 共 25 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
 | R6 | LLM token 与云账单失控 | 全阶段 | 配额 + 用量看板 + Alertmanager 告警 |
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
@@ -219,6 +222,10 @@ Spring Authorization Server 对「公共客户端 + 授权码」不签发刷新�
 
 系统服务宕机时，其余服务的数据权限查询在缓存过期后失败关闭，通知与审批的用户读取不可用；但**认证登录仍然可用**（认证服务直连数据库），已登录用户访问不带数据范围的接口也不受影响（JWT 自包含 + 共享 Redis 会话）。因此系统服务的故障隔离判据是「**失败有界**」，而不是「其它域仍可用」；这也是同库表级只读被接受为长期模式的原因之一：改成远程调用会让可用性倒退。
 
+### 7.7 为什么允许一个与 Tempo 职责重叠的 SkyWalking
+
+SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。保留它，是因为练习项目的目标包含技术栈的横向对比，而「装过」不产生认知：agent 字节码增强的零侵入自动埋点与现有 SDK 埋点，在启动开销、常驻内存、虚拟线程下的表现、拓扑发现能力上的差异，只有在同一批服务、同一批流量上并行观测才能看清。因此它被定义为**阶段 2 收尾的辅助对比实验**：有独立验收标准，不替代 Seata / Sentinel / RocketMQ / Kafka 任何一项判据，也不替换 Tempo。实验结束时若结论是收益不足，就下线 SkyWalking、保留对比记录，而不是让它长期挂在主线上。11.x 还能直接接收 OTLP 并把 OAP 作为 Grafana Tempo 的数据源，这为后续「agent vs OTLP」的第二种对比留了口子，但不作为本次实验的前置。
+
 ---
 
 ## 附：外部事实来源
@@ -233,6 +240,8 @@ Spring Authorization Server 对「公共客户端 + 授权码」不签发刷新�
 - SCA 2025.x 版本说明：https://sca.aliyun.com/docs/2025.x/overview/version-explain/
 - SCA Nacos bootstrap 移除：https://github.com/alibaba/spring-cloud-alibaba/issues/4253
 - SCA 对 Boot 4.1 的升级中：https://github.com/alibaba/spring-cloud-alibaba/issues/4339
+- SkyWalking 11.1.0：https://github.com/apache/skywalking/releases/tag/v11.1.0
+- SkyWalking Java Agent 9.8.0：https://github.com/apache/skywalking-java/releases/tag/v9.8.0
 - Dubbo 对 Boot 4 支持缺失：https://github.com/apache/dubbo/issues/15996
 - Spring Boot × GraalVM：https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-with-GraalVM
 - Boot 4 native 需 GraalVM 25 工具链：https://noregressions.dev/guides/migration/cards/graalvm-25.html
