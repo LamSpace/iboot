@@ -112,7 +112,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | UI 与状态 | Element Plus 2.6、Pinia 2.1、Vue Router 4.3 |
 | 其他 | vue-i18n 9.14、axios 1.6、markdown-it、DOMPurify、Sass |
 
-**中间件**：`docker/docker-compose.yml` 提供 22 个容器，按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）；Sentinel Dashboard 默认常驻。
+**中间件**：`docker/docker-compose.yml` 提供 25 个常驻容器，按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）；Sentinel Dashboard 默认常驻；RocketMQ NameServer / Broker / Proxy 常驻，宿主机通过 `localhost:18081` 接入。
 
 ## 功能清单
 
@@ -126,7 +126,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 
 **定时任务与备份 `iboot-job`**：在管理端维护定时任务、启停并查看执行日志；发起备份、查看备份记录、执行恢复演练，产物加密后落到 MinIO / 本地 / OSS。
 
-**审批 `iboot-workflow`**：请假申请、审批中心、驳回与归档；审批通过后登记站内通知。
+**审批 `iboot-workflow`**：请假申请、审批中心、驳回与归档；审批待办事件经本地 outbox 与 RocketMQ 可靠投递。
 
 **监控 `iboot-monitor`**：登录日志、操作日志、运行日志；在线会话与强制下线；服务资源、Redis、MinIO、SQL 监控入口。
 
@@ -136,7 +136,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 
 **网关 `iboot-gateway`**：统一路由、跨域、SSE 长连接透传与服务降级。
 
-**服务治理**：网关按路由限流（`429` 统一 JSON），`iboot-workflow → iboot-notify` 通知登记具备熔断降级，`iboot-notify` 内部端点具备入口流控；规则存 Nacos 并热更新，Sentinel Dashboard（8858）为本地必选组件，治理指标进入 Prometheus。
+**服务治理**：网关按路由限流（`429` 统一 JSON），`iboot-notify` 内部端点具备入口流控；规则存 Nacos 并热更新，Sentinel Dashboard（8858）为本地必选组件，治理指标进入 Prometheus。审批 → 通知已改为本地 outbox + RocketMQ，消费失败按重试进入死信队列。
 
 ## 快速开始
 
@@ -153,7 +153,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 cp .env.example .env
 #    至少填写百炼 API Key；其余按需
 
-# 2. 拉起中间件、Sentinel Dashboard 与基线规则，构建后端并启动九个业务服务与运维控制台
+# 2. 拉起中间件（含 RocketMQ）、Sentinel Dashboard 与基线规则，构建后端并启动九个业务服务与运维控制台
 bash scripts/dev-init.sh
 
 # 3. 需要前端时
@@ -174,7 +174,8 @@ bash scripts/dev-init.sh --frontend
 
 ```bash
 # 中间件：开发必需的一组
-docker compose -f docker/docker-compose.yml up -d mysql redis minio elasticsearch
+docker compose -f docker/docker-compose.yml up -d mysql redis minio elasticsearch \
+  rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init
 
 # 构建并启动系统服务（其余服务同理）
 mvn -DskipTests clean package

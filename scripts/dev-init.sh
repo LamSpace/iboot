@@ -14,7 +14,7 @@
 # 与 README 里 `set -a; source .env; set +a` 的既有约定一致；脚本会自动加载。
 #
 # 说明：
-# - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo），
+# - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo + rocketmq），
 #   不启动 Prometheus、Kibana、Thanos 等观测组件；
 # - 数据库 iboot 与全部表结构由 iboot-db-init 创建，服务不再自带迁移；
 # - 后端日志写入 logs/，进程号写入 logs/<name>.pid。
@@ -66,6 +66,9 @@ fi
 # 运维控制台：默认开启，可通过 IBOOT_OPS_ENABLED=false 关闭以节省本机内存。
 ops_enabled() { [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; }
 
+# RocketMQ 是通知链路的中间件；关闭后审批仍可提交，事件保留在 outbox。
+rocketmq_enabled() { [ "${IBOOT_ROCKETMQ_ENABLED:-true}" = "true" ]; }
+
 # 控制台密码在生产环境必须由密钥管理注入；本地开发使用固定默认值。
 export IBOOT_OPS_USER="${IBOOT_OPS_USER:-ops}"
 export IBOOT_OPS_PASSWORD="${IBOOT_OPS_PASSWORD:-ops123}"
@@ -74,6 +77,9 @@ export IBOOT_OPS_SECURITY_ENABLED="${IBOOT_OPS_SECURITY_ENABLED:-false}"
 
 # 宿主机开发进程连接容器内的 Sentinel Dashboard（必选治理控制台）。
 export SENTINEL_DASHBOARD="${SENTINEL_DASHBOARD:-localhost:8858}"
+
+# 宿主机进程连接容器内 RocketMQ Proxy 的映射端口；容器内由 compose 注入服务名。
+export IBOOT_ROCKETMQ_ENDPOINTS="${IBOOT_ROCKETMQ_ENDPOINTS:-localhost:18081}"
 
 mkdir -p "$LOG_DIR"
 
@@ -159,9 +165,28 @@ wait_http() {
     return 1
 }
 
+wait_healthy() {
+    local desc="$1" name="$2" timeout="${3:-120}" i status
+    for i in $(seq 1 "$timeout"); do
+        status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' \
+            "$name" 2>/dev/null || true)"
+        if [ "$status" = "healthy" ]; then
+            log "  $desc 就绪"
+            return 0
+        fi
+        sleep 1
+    done
+    printf '[ERROR] %s 在 %s 秒内未就绪：%s\n' "$desc" "$timeout" "$name" >&2
+    return 1
+}
+
 start_middleware() {
     log '=== 1. 中间件 ==='
-    "${COMPOSE[@]}" up -d mysql redis minio minio-init elasticsearch > /dev/null || fail '中间件启动失败'
+    local infra=(mysql redis minio minio-init elasticsearch)
+    if rocketmq_enabled; then
+        infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init)
+    fi
+    "${COMPOSE[@]}" up -d "${infra[@]}" > /dev/null || fail '中间件启动失败'
     "${COMPOSE[@]}" --profile platform up -d nacos tempo sentinel-dashboard > /dev/null \
         || fail 'nacos/tempo/sentinel-dashboard 启动失败'
 
@@ -182,6 +207,13 @@ start_middleware() {
     wait_http 'Nacos' 'http://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'
     wait_http 'Sentinel Dashboard' 'http://localhost:8858/' 120 || fail 'Sentinel Dashboard 未就绪'
     "$ROOT/scripts/sentinel-init.sh" || fail 'Sentinel 基线规则初始化失败'
+    if rocketmq_enabled; then
+        wait_healthy 'RocketMQ NameServer' iboot-rocketmq-namesrv 90 || fail 'RocketMQ NameServer 未就绪'
+        wait_healthy 'RocketMQ Broker' iboot-rocketmq-broker 120 || fail 'RocketMQ Broker 未就绪'
+        wait_healthy 'RocketMQ Proxy' iboot-rocketmq-proxy 60 || fail 'RocketMQ Proxy 未就绪'
+    else
+        log '  RocketMQ 已关闭（IBOOT_ROCKETMQ_ENABLED=false）'
+    fi
     log '  中间件就绪'
 }
 

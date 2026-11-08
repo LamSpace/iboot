@@ -86,10 +86,10 @@ class SentinelMetricsExtensionTest {
      */
     @Test
     void recordsExceptionCount() {
-        extension.addException("iboot-workflow:notify-enqueue", 1, new IllegalStateException("boom"));
+        extension.addException("iboot-demo:resource", 1, new IllegalStateException("boom"));
 
         assertThat(registry.get("sentinel.exception")
-                .tag("resource", "iboot-workflow:notify-enqueue")
+                .tag("resource", "iboot-demo:resource")
                 .tag("application", "iboot-gateway")
                 .counter().count()).isEqualTo(1.0);
     }

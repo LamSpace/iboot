@@ -140,6 +140,9 @@
         <!-- 阶段 2 微服务底座：版本矩阵见 ROADMAP §6.1，Boot 锁 4.0.x 不升 4.1 -->
         <spring-cloud.version>2025.1.0</spring-cloud.version>
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
+
+        <!-- RocketMQ：通知事件可靠投递；gRPC 客户端与 Boot 4 兼容，starter 仍停留在 Boot 2.7 -->
+        <rocketmq-client-java.version>5.2.2</rocketmq-client-java.version>
     </properties>
 
     <dependencyManagement>

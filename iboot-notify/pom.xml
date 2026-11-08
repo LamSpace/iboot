@@ -69,6 +69,13 @@
             <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
         </dependency>
 
+        <!-- RocketMQ：审批待办通知事件的 gRPC 消费者 -->
+        <dependency>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-client-java</artifactId>
+            <version>${rocketmq-client-java.version}</version>
+        </dependency>
+
         <!-- 邮件渠道 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

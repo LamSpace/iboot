@@ -164,7 +164,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - `sentinel-dashboard` 常驻 `8858`；本地关闭登录，生产叠加 `docker-compose.prod.yml` 并注入账号密码。
 - `scripts/docker-deploy.sh up` 在健康检查后写入 Nacos 基线规则；手动校验：
   `bash scripts/sentinel-init.sh --verify`。
-- 规则 data-id：`iboot-gateway-flow-rules`、`iboot-workflow-degrade-rules`、`iboot-notify-flow-rules`
+- 规则 data-id：`iboot-gateway-flow-rules`、`iboot-notify-flow-rules`
   （group `SENTINEL_GROUP`）。Dashboard 上的修改只作用于运行期内存，重启或 Nacos 刷新后回到基线。
 - 完整说明见 [docs/23 §13](../docs/23-微服务底座操作指南.md)。
 

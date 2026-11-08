@@ -129,22 +129,22 @@ class ApprovalApplicationServiceTest {
     }
 
     /**
-     * 验证通知登记抛出异常时审批仍然提交成功。
+     * 验证 outbox 写入失败时审批不再落库。
      *
-     * <p>规格要求业务主流程不因通知失败而失败；端口实现承诺不抛出，服务层仍需兜底。
+     * <p>通知事件与审批同事务写入；持久化失败必须向上抛出，让事务整体回滚。
+     * 模板停用、接收人不存在等错误已移到消费侧，不再由端口同步暴露。
      */
     @Test
-    void submitStillSavesWhenNotificationPortFails() {
+    void submitPropagatesOutboxFailureAndDoesNotSaveApplication() {
         when(userReader.findById(2L)).thenReturn(Optional.of(user(2L, 1)));
         when(workflowService.startProcess(1L, 2L)).thenReturn("pid-1");
-        when(repository.save(any(LeaveApplication.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        doThrow(new BusinessException("消息模板已停用")).when(notificationPort).enqueue(any());
+        doThrow(new IllegalStateException("outbox down")).when(notificationPort).enqueue(any());
 
-        LeaveApplication application = service.submit(1L, "alice", 2L, "ANNUAL",
-                LocalDateTime.of(2026, 11, 2, 9, 0), LocalDateTime.of(2026, 11, 3, 18, 0), "回家");
-
-        assertThat(application).isNotNull();
-        verify(repository).save(any(LeaveApplication.class));
+        assertThatThrownBy(() -> service.submit(1L, "alice", 2L, "ANNUAL",
+                LocalDateTime.of(2026, 11, 2, 9, 0), LocalDateTime.of(2026, 11, 3, 18, 0), "回家"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("outbox down");
+        verify(repository, never()).save(any(LeaveApplication.class));
     }
 
     /**

@@ -46,6 +46,7 @@
 | 认证与授权 | OAuth2 / OIDC 授权码 + PKCE、JWK 验签、RBAC 与五级数据权限 | `iboot-auth`、`iboot-kernel`、`iboot-system` | [docs/23](<./docs/23-微服务底座操作指南.md>) |
 | 系统与组织 | 用户、角色、菜单、字典、参数，以及部门树、岗位与组织架构图 | `iboot-system` | — |
 | 消息与推送 | 站内消息、公告、模板、多渠道投递，SSE 单播/组播/广播与集群广播 | `iboot-notify` | [docs/20](<./docs/20-多渠道通知操作指南.md>)、[docs/15](<./docs/15-SSE 推送集成.md>) |
+| 可靠事件投递 | 审批待办事件经本地 outbox 与 RocketMQ 可靠投递，消费幂等、失败重试与死信可查 | `iboot-workflow`、`iboot-notify` | [docs/23 §14](<./docs/23-微服务底座操作指南.md>) |
 | 文件管理 | 上传、下载、预览、分类，MinIO / 本地 / OSS 存储抽象 | `iboot-file` | — |
 | 定时任务 | Quartz 集群任务 CRUD、启停与执行日志 | `iboot-job` | — |
 | 数据备份 | 全量逻辑备份、AES-256-GCM 加密、独立演练库恢复校验 | `iboot-job` | [docs/21](<./docs/21-数据备份与恢复操作指南.md>) |
@@ -76,12 +77,11 @@
 | 项 | 现状 | 复核方式 |
 |---|---|---|
 | Seata 分布式事务 | 未引入。当前跨服务写入都是旁路（审计、通知），失败不影响主流程 | `grep -ri seata --include=pom.xml` 无命中 |
-| RocketMQ | 未引入。审批 → 通知走内部 HTTP 端点并退避重试 | `grep -ri rocketmq` 无命中 |
 | Kafka 日志收集 | 未引入。各服务日志经 Logstash TCP 直投 ES，Kafka 不在链路中 | `grep -ri kafka --include=pom.xml` 无命中；compose 无 kafka 服务 |
 
-**运维控制面（辅助项，不替代 Seata / RocketMQ 两项）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
+**运维控制面（辅助项，不替代 Seata 项）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
 发现九个业务实例，提供单实例健康、JVM、环境、配置、Bean、缓存、定时任务、线程巡检与运行期日志
-级别调整。它不解决 Seata / RocketMQ 中的任何一项，也不改变上述判据；验收标准是：
+级别调整。它不解决 Seata 项，也不改变上述判据；验收标准是：
 控制台可独立启停、业务服务零 SBA client 配置、停控制台不影响业务、生产环境不经公网网关暴露。
 
 **Kafka 日志收集（新增项，不替代上述判据）**：以 KRaft 模式单进程引入 Kafka，不部署 ZooKeeper（Kafka 4.0 起已移除 ZK 支持）；把链路从「服务 → Logstash TCP → ES」改为「服务 → Kafka → Logstash kafka input → ES」，Kibana 与监控服务的查询接口不变。验收标准：九个服务的日志全部经 Kafka 进入 ES，且可按 `app` 与 `traceId` 检索；停 Kafka 时业务请求不受影响、恢复后投递自动续上，停机期间的日志允许丢弃。代价是本地常驻进程 +1，已计入 R4。
@@ -127,6 +127,7 @@
 | Nacos | 3.1.1+（client/server） | bootstrap 方式已移除，必须用 `spring.config.import` |
 | Sentinel / Seata | 1.8.9 / 2.x | 随 SCA，勿自行混搭 |
 | Kafka | **4.1.x（KRaft，无 ZK）** | Boot 4.0.3 托管 kafka-clients 4.1.1 / spring-kafka 4.0.3；4.0 起移除 ZooKeeper |
+| RocketMQ | **5.3.1（服务端）/ 5.2.2（`rocketmq-client-java`）** | 阶段 2 收尾：审批通知 outbox；Spring Boot Starter 仍停留在 Boot 2.7，不使用 |
 | Spring AI | **2.0.1（GA）** | Boot 4 必需；1.1.x 仅到 Boot 3.5 |
 | AgentScope Java | 2.0.1（GA） | JDK 25 已 Spike 通过；starter 构建于 Boot 4.0.3 |
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
@@ -152,7 +153,7 @@
 | ID | 风险 | 影响阶段 | 处置 |
 |---|---|---|---|
 | R2 | Dubbo 不支持 Boot 4 | 3 / 4 | 服务间 HTTP 先行；延后至出现 Boot 4 兼容版本后重评 |
-| R4 | 本机内存：N×JVM + 22 个中间件容器（含 Sentinel Dashboard；Kafka 落地后 23 个；SkyWalking 实验再 +3 共 26 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
+| R4 | 本机内存：N×JVM + 25 个常驻中间件容器（含 Sentinel Dashboard 与 RocketMQ 三组件；Kafka 落地后 26 个；SkyWalking 实验再 +3 共 29 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；RocketMQ Broker 堆 512MB、Proxy/NameServer 256MB，且不参与业务启动依赖；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
 | R6 | LLM token 与云账单失控 | 全阶段 | 配额 + 用量看板 + Alertmanager 告警 |
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
@@ -224,7 +225,11 @@ Spring Authorization Server 对「公共客户端 + 授权码」不签发刷新�
 
 ### 7.7 为什么允许一个与 Tempo 职责重叠的 SkyWalking
 
-SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。保留它，是因为练习项目的目标包含技术栈的横向对比，而「装过」不产生认知：agent 字节码增强的零侵入自动埋点与现有 SDK 埋点，在启动开销、常驻内存、虚拟线程下的表现、拓扑发现能力上的差异，只有在同一批服务、同一批流量上并行观测才能看清。因此它被定义为**阶段 2 收尾的辅助对比实验**：有独立验收标准，不替代 Seata / RocketMQ / Kafka 任何一项判据，也不替换 Tempo。实验结束时若结论是收益不足，就下线 SkyWalking、保留对比记录，而不是让它长期挂在主线上。11.x 还能直接接收 OTLP 并把 OAP 作为 Grafana Tempo 的数据源，这为后续「agent vs OTLP」的第二种对比留了口子，但不作为本次实验的前置。
+SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。保留它，是因为练习项目的目标包含技术栈的横向对比，而「装过」不产生认知：agent 字节码增强的零侵入自动埋点与现有 SDK 埋点，在启动开销、常驻内存、虚拟线程下的表现、拓扑发现能力上的差异，只有在同一批服务、同一批流量上并行观测才能看清。因此它被定义为**阶段 2 收尾的辅助对比实验**：有独立验收标准，不替代 Seata / Kafka 任何一项判据，也不替换 Tempo。实验结束时若结论是收益不足，就下线 SkyWalking、保留对比记录，而不是让它长期挂在主线上。11.x 还能直接接收 OTLP 并把 OAP 作为 Grafana Tempo 的数据源，这为后续「agent vs OTLP」的第二种对比留了口子，但不作为本次实验的前置。
+
+### 7.8 为什么是生产方 outbox，而不是事务消息或提交后直发
+
+阶段 2 收尾要把「审批 → 通知」从进程内 HTTP 重试换成可靠投递。提交后直发在 broker 不可用时直接丢事件；RocketMQ 事务消息虽然把半消息与本地事务绑定，但半消息发送本身要求 broker 在线，无法满足「broker 停机时审批不受影响」。最终选择生产方 outbox：审批事务内写 `biz_notification_outbox`，中继独立重试发布；代价是一张表与一个后台中继，换来的是与 broker 可用性彻底解耦。消费侧继续用 `sys_notification_delivery` 作为投递 outbox，两级 outbox 分别负责「登记不丢」与「渠道重试」。客户端使用官方 gRPC 客户端而非 Starter，是因为后者仍停留在 Boot 2.7 基线；为它回退 Boot 4 违反原则 6。
 
 ---
 

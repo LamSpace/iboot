@@ -58,15 +58,19 @@ class SchemaMigratorTest {
         MysqlDataSource dataSource = dataSource();
 
         MigrateResult first = migrateWithRetry(dataSource);
-        assertThat(first.migrationsExecuted).isEqualTo(1);
-        assertThat(countTables(dataSource)).isEqualTo(76);
+        assertThat(first.migrationsExecuted).isEqualTo(4);
+        assertThat(countTables(dataSource)).isEqualTo(77);
 
         MigrateResult second = migrateWithRetry(dataSource);
         assertThat(second.migrationsExecuted).isZero();
-        assertThat(countTables(dataSource)).isEqualTo(76);
+        assertThat(countTables(dataSource)).isEqualTo(77);
 
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_user")).isEqualTo(1);
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu")).isGreaterThan(100);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM biz_notification_outbox")).isZero();
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM information_schema.statistics "
+                + "WHERE table_schema = 'iboot_test' AND table_name = 'biz_notification_outbox' "
+                + "AND index_name IN ('uk_event_id', 'idx_status_retry')")).isEqualTo(3);
     }
 
     private MigrateResult migrateWithRetry(MysqlDataSource dataSource) {
