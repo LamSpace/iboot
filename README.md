@@ -34,7 +34,7 @@
 
 iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RBAC 权限模型之上，逐步长出三块能力：
 
-- **微服务**：单体按限界上下文拆分为九个独立可部署的业务服务，并增加一个独立的运维控制台；注册中心、配置中心、网关、链路追踪与 Sentinel 治理真实承载。
+- **微服务**：单体按限界上下文拆分为九个独立可部署的业务服务，并增加一个独立的运维控制台；注册中心、配置中心、网关、链路追踪、Sentinel 治理与 Seata 分布式事务真实承载。
 - **云原生**：容器化与 Helm 化路线（尚未实施，见 [ROADMAP](ROADMAP.md)）。
 - **智能 Agent**：以百炼 Qwen 为底座的对话、RAG、智能体编排与知识图谱。
 
@@ -94,7 +94,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 |---|---|
 | 运行时 | Java 25（虚拟线程已启用） |
 | 框架 | Spring Boot 4.0.3、Spring Framework 7、Spring Security 7 |
-| 微服务 | Spring Cloud 2025.1.0、Spring Cloud Alibaba 2025.1.0.0（Nacos 3.1.1、Sentinel 1.8.9）、Spring Cloud Gateway |
+| 微服务 | Spring Cloud 2025.1.0、Spring Cloud Alibaba 2025.1.0.0（Nacos 3.1.1、Sentinel 1.8.9、Seata 2.5.0）、Spring Cloud Gateway |
 | 持久层 | MyBatis 4.0.1 + PageHelper 2.1.1、Druid 1.2.28、Flyway、MySQL 8.0.45 |
 | 缓存 | Redis 7.0.14 + Caffeine 3.1.8（二级缓存，Pub/Sub 失效广播） |
 | 认证 | OAuth2 / OIDC 授权码 + PKCE（Spring Authorization Server）、JWT、RBAC 与五级数据权限 |
@@ -112,7 +112,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | UI 与状态 | Element Plus 2.6、Pinia 2.1、Vue Router 4.3 |
 | 其他 | vue-i18n 9.14、axios 1.6、markdown-it、DOMPurify、Sass |
 
-**中间件**：`docker/docker-compose.yml` 提供 26 个常驻容器，按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）；Sentinel Dashboard 默认常驻；RocketMQ NameServer / Broker / Proxy 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入。
+**中间件**：`docker/docker-compose.yml` 提供 27 个常驻容器，按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）；Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入。
 
 ## 功能清单
 
@@ -290,7 +290,7 @@ scripts/docker-deploy.sh up core
 |---|---|
 | [docs/README.md](docs/README.md) | 全部项目文档的入口 |
 | [ROADMAP.md](ROADMAP.md) | 未完成路线、版本矩阵、风险与决策记录 |
-| [docs/23 微服务底座操作指南](<./docs/23-微服务底座操作指南.md>) | Nacos、网关、链路追踪与表级只读契约 |
+| [docs/23 微服务底座操作指南](<./docs/23-微服务底座操作指南.md>) | Nacos、网关、链路追踪、Seata 分布式事务与表级只读契约 |
 | [docs/22 AI 工作台操作指南](<./docs/22-AI 工作台操作指南.md>) | 模型配置、RAG、智能体与知识图谱 |
 | [docs/11 可观测性设计](<./docs/11-可观测性设计.md>) | 指标、日志、告警与追踪 |
 | [openspec/specs](openspec/specs) | 25 份能力契约 |

@@ -17,6 +17,8 @@
 package com.iboot.workflow.application.service;
 
 import com.iboot.workflow.application.service.notification.NotificationPort;
+import com.iboot.workflow.application.service.quota.LeaveQuotaPort;
+import com.iboot.workflow.application.service.quota.LeaveQuotaSnapshot;
 import com.iboot.kernel.web.BusinessException;
 import com.iboot.workflow.infrastructure.directory.WorkflowUser;
 import com.iboot.workflow.infrastructure.directory.WorkflowUserReader;
@@ -29,6 +31,7 @@ import com.iboot.workflow.infrastructure.repository.LeaveApplicationRepositoryIm
 import com.iboot.workflow.infrastructure.workflow.FlowableWorkflowAdapter;
 import org.flowable.engine.RuntimeService;
 import com.iboot.dbinit.SchemaMigrator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -51,9 +54,12 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -74,7 +80,8 @@ import static org.mockito.Mockito.when;
                 "flowable.idm.enabled=false",
                 "flowable.eventregistry.enabled=false",
                 "flowable.check-process-definitions=true",
-                "spring.flyway.enabled=false"
+                "spring.flyway.enabled=false",
+                "seata.enabled=false"
         })
 @Testcontainers
 class ApprovalApplicationServiceIntegrationTest {
@@ -100,6 +107,21 @@ class ApprovalApplicationServiceIntegrationTest {
 
     @Autowired
     private RuntimeService runtimeService;
+
+    @Autowired
+    private LeaveQuotaPort leaveQuotaPort;
+
+    /**
+     * 为每个测试重置额度端口，避免上一个测试的桩影响后续用例。
+     */
+    @BeforeEach
+    void resetQuotaPort() {
+        reset(leaveQuotaPort);
+        when(leaveQuotaPort.deduct(anyString(), anyLong(), anyInt()))
+                .thenReturn(new LeaveQuotaSnapshot(10, 1, 0, 9));
+        when(leaveQuotaPort.view(anyLong(), anyInt()))
+                .thenReturn(new LeaveQuotaSnapshot(10, 0, 0, 10));
+    }
 
     /**
      * 验证发起、待办隔离、通过与详情历史。
@@ -170,6 +192,25 @@ class ApprovalApplicationServiceIntegrationTest {
                 .isEqualTo(before);
     }
 
+    /**
+     * 验证额度扣减不可用时审批不落库、任务仍可处理。
+     */
+    @Test
+    void approveRollsBackWhenQuotaUnavailable() {
+        LeaveApplication application = submit(31L, 32L);
+        when(leaveQuotaPort.deduct(anyString(), anyLong(), anyInt()))
+                .thenThrow(new BusinessException(503, "额度服务不可用"));
+
+        assertThatThrownBy(() -> service.approve(application.getId(), 32L, "bob", "同意"))
+                .isInstanceOf(BusinessException.class);
+
+        LeaveApplication unchanged = repository.findById(application.getId()).orElseThrow();
+        assertThat(unchanged.getStatus()).isEqualTo(LeaveStatus.PENDING);
+        assertThat(service.findTodo(32L, 1, 10).getData())
+                .extracting(item -> item.getApplication().getId())
+                .contains(application.getId());
+    }
+
     private LeaveApplication submit(Long applicantId, Long approverId) {
         return service.submit(applicantId, "user-" + applicantId, approverId, "ANNUAL",
                 LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2), "测试请假");
@@ -209,6 +250,16 @@ class ApprovalApplicationServiceIntegrationTest {
         @Bean
         NotificationPort notificationPort() {
             return mock(NotificationPort.class);
+        }
+
+        /**
+         * 提供额度端口的 Mock，避免集成测试触发跨服务调用。
+         *
+         * @return 额度端口
+         */
+        @Bean
+        LeaveQuotaPort leaveQuotaPort() {
+            return mock(LeaveQuotaPort.class);
         }
 
         /**

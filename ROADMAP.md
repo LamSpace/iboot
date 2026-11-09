@@ -3,7 +3,7 @@
 > 本文只保留**尚未完成**的路线与**仍然生效**的约束；已完成能力见 [§2 能力索引](#2-能力索引)，
 > 用户视角的功能清单与启动方式见 [README](README.md)，每次交付的完整过程见 `openspec/changes/archive/`。
 > 项目性质：技术栈练习项目，在可运行的管理系统之上逐步长出**微服务**、**云原生**、**智能 Agent** 三块能力。
-> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-08
+> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-10
 
 ## 目录
 
@@ -60,6 +60,7 @@
 | 国际化 | 前端 vue-i18n + 后端 MessageSource 中英文语言包 | `iboot-portal` + 各服务 | [docs/17](<./docs/17-国际化设计.md>) |
 | 可观测性 | Actuator + Micrometer + Prometheus/Grafana + ELK + Tempo 链路追踪 | 全部服务 | [docs/11](<./docs/11-可观测性设计.md>) |
 | 服务治理 | 网关路由级限流、跨服务熔断降级、Nacos 规则源与 Sentinel Dashboard | `iboot-gateway`、`iboot-workflow`、`iboot-notify` | [docs/23 §13](<./docs/23-微服务底座操作指南.md>) |
+| 分布式事务 | Seata AT：审批通过与请假额度扣减的跨服务原子提交与回滚 | `iboot-workflow`、`iboot-system` | [docs/23 §16](<./docs/23-微服务底座操作指南.md>) |
 | 可靠日志管道 | 服务日志经 Kafka 缓冲（24h）后由 Logstash 写入 ES，索引与字段不变 | 全部服务 | [docs/11 §11.11.1](<./docs/11-可观测性设计.md>)、[docs/23 §15](<./docs/23-微服务底座操作指南.md>) |
 | 运维控制台 | 独立 SBA 控制台，经 Nacos 发现全部实例，支持单实例巡检与运行期日志级别调整 | `iboot-ops` | [docs/11](<./docs/11-可观测性设计.md>) |
 
@@ -73,15 +74,15 @@
 
 ### 阶段 2 收尾
 
-阶段 2 的五项验收判据中四项已达标（TraceID 贯穿、故障隔离、Nacos 配置热更新、前端零改动），唯一未达标的是 Seata 分布式事务。它并非拆分的前置条件，而是「出现真实的跨服务强一致写」时才需要的能力。
+阶段 2 的五项验收判据已全部达标（TraceID 贯穿、故障隔离、Nacos 配置热更新、前端零改动、Seata 分布式事务）。Seata 以「审批通过 → 扣减请假额度」作为真实跨服务强一致写接入：额度归 `iboot-system`，审批结论归 `iboot-workflow`，两侧在同一个 AT 全局事务内提交，任一步失败可整体回滚。
 
 | 项 | 现状 | 复核方式 |
 |---|---|---|
-| Seata 分布式事务 | 未引入。当前跨服务写入都是旁路（审计、通知），失败不影响主流程 | `grep -ri seata --include=pom.xml` 无命中 |
+| Seata 分布式事务 | 已引入 Seata 2.5.0 AT；审批通过 = 流程/申请状态 + 额度扣减的跨服务原子提交，TC 或 system 不可用时 fail-closed | `grep -ri seata --include=pom.xml` 命中 workflow/system；`scripts/regress/seata.sh` 全绿 |
 
-**运维控制面（辅助项，不替代 Seata 项）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
+**运维控制面（辅助项，不替代上述判据）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
 发现九个业务实例，提供单实例健康、JVM、环境、配置、Bean、缓存、定时任务、线程巡检与运行期日志
-级别调整。它不解决 Seata 项，也不改变上述判据；验收标准是：
+级别调整。它不改变上述判据；验收标准是：
 控制台可独立启停、业务服务零 SBA client 配置、停控制台不影响业务、生产环境不经公网网关暴露。
 
 **APM 对比实验（辅助项，不替代上述判据）**：引入 SkyWalking（OAP + UI + Java Agent）与既有 Tempo 并行观测同一批服务，补齐两条埋点范式的对比：agent 字节码增强的零侵入自动埋点 vs. 现有 SDK 埋点，并体验服务拓扑与方法级慢调用剖析。它不替换 Tempo，也不改变阶段 2 的任何验收判据。验收标准：同一请求在 SkyWalking 与 Tempo 两侧都能还原完整调用链；记录 Java Agent 对启动时间、常驻内存、吞吐的实际影响；产出一页选型结论，说明两者各自适合的场景与代价；停掉 SkyWalking 不影响任何业务，也不影响既有 Tempo 链路。版本为 OAP **11.1.0** + Java Agent **9.8.0**（Agent 9.6.0 起支持 JDK 25，OAP 10.4.0 起支持 JDK 25 与虚拟线程）；存储用默认的 BanyanDB——现有 ES 9.2 不在 SkyWalking 官方支持矩阵（文档上限 8.x），不强行接。代价是本地常驻进程 +3（OAP、UI、BanyanDB），已计入 R4。
@@ -123,7 +124,7 @@
 | Spring Boot | **4.0.x（锁死，不升 4.1）** | SCA 对 Boot 4.1 适配仍在进行（#4339 / #4358） |
 | Spring Cloud / SCA | 2025.1.x / **2025.1.0.0** | SCA 首个支持 Boot 4.0.x 的版本线 |
 | Nacos | 3.1.1+（client/server） | bootstrap 方式已移除，必须用 `spring.config.import` |
-| Sentinel / Seata | 1.8.9 / 2.x | 随 SCA，勿自行混搭 |
+| Sentinel / Seata | 1.8.9 / **2.5.0**（`org.apache.seata`） | 随 SCA 2025.1.0.0 BOM；客户端支持 Boot 4 / JDK 25 |
 | Kafka | **4.1.x（KRaft，无 ZK）** | Boot 4.0.3 托管 kafka-clients 4.1.1 / spring-kafka 4.0.3；4.0 起移除 ZooKeeper |
 | RocketMQ | **5.3.1（服务端）/ 5.2.2（`rocketmq-client-java`）** | 阶段 2 收尾：审批通知 outbox；Spring Boot Starter 仍停留在 Boot 2.7，不使用 |
 | Spring AI | **2.0.1（GA）** | Boot 4 必需；1.1.x 仅到 Boot 3.5 |
@@ -151,10 +152,12 @@
 | ID | 风险 | 影响阶段 | 处置 |
 |---|---|---|---|
 | R2 | Dubbo 不支持 Boot 4 | 3 / 4 | 服务间 HTTP 先行；延后至出现 Boot 4 兼容版本后重评 |
-| R4 | 本机内存：N×JVM + 26 个常驻中间件容器（含 Sentinel Dashboard、RocketMQ 三组件与 Kafka；SkyWalking 实验再 +3 共 29 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；RocketMQ Broker 堆 512MB、Proxy/NameServer 256MB，且不参与业务启动依赖；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
+| R4 | 本机内存：N×JVM + 27 个常驻中间件容器（含 Sentinel Dashboard、RocketMQ 三组件、Kafka 与 Seata Server；SkyWalking 实验再 +3 共 30 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；RocketMQ Broker 堆 512MB、Proxy/NameServer 256MB，且不参与业务启动依赖；Seata Server 堆上限 512MB、直接内存 256MB；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
 | R6 | LLM token 与云账单失控 | 全阶段 | 配额 + 用量看板 + Alertmanager 告警 |
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
+| R14 | Seata TC 成为审批路径的强依赖；TC 不可用时审批 fail-closed | 全阶段 | 保持 fail-closed，不提供静默降级；seata-server 常驻并设健康检查；审批 5xx 与 TC 存活告警 |
+| R15 | AT 与 TCC 在同一代理数据源混用会产生双分支与双倍补偿 | 阶段 4 / TCC 变更 | TCC 使用非代理数据源并独占全局事务；见 docs/23 §16.7 |
 
 ---
 
@@ -169,7 +172,8 @@
 
 本地开发策略：
 
-- 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / minio / es / nacos / tempo / sentinel-dashboard；集中日志链路（kafka / kafka-init / logstash）按需单独启动；阶段 3 起本地增加 Kind 集群。
+- 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / minio / es / nacos / tempo / sentinel-dashboard / seata-server；集中日志链路（kafka / kafka-init / logstash）按需单独启动；阶段 3 起本地增加 Kind 集群。
+- 分布式事务：审批通过依赖 `seata-server`（8091），`dev-init.sh` 等待其健康后再拉起 workflow/system；内部令牌由 `.env` 的 `IBOOT_SYSTEM_INTERNAL_TOKEN` 注入，缺省使用本地开发值。
 - 应用：`scripts/dev-init.sh` 一键拉起九个业务服务与运维控制台并按依赖顺序等待健康；也可单独 `mvn spring-boot:run` 调试。
 - 运维控制台：默认随开发环境启动，`IBOOT_OPS_ENABLED=false` 可跳过；生产环境不经公网网关暴露。
 - 密钥：统一放根目录 `.env`（已在 `.gitignore` 中），模板见 `.env.example`。
@@ -235,6 +239,22 @@ SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。
 
 阶段 2 收尾要把「审批 → 通知」从进程内 HTTP 重试换成可靠投递。提交后直发在 broker 不可用时直接丢事件；RocketMQ 事务消息虽然把半消息与本地事务绑定，但半消息发送本身要求 broker 在线，无法满足「broker 停机时审批不受影响」。最终选择生产方 outbox：审批事务内写 `biz_notification_outbox`，中继独立重试发布；代价是一张表与一个后台中继，换来的是与 broker 可用性彻底解耦。消费侧继续用 `sys_notification_delivery` 作为投递 outbox，两级 outbox 分别负责「登记不丢」与「渠道重试」。客户端使用官方 gRPC 客户端而非 Starter，是因为后者仍停留在 Boot 2.7 基线；为它回退 Boot 4 违反原则 6。
 
+### 7.10 为什么在单库上引入 Seata
+
+单库并不等于可以跨服务混写表：表所有权仍按服务划分，审批与额度分属两个服务。如果为了省掉分布式事务而让一个服务直接写另一方的表，就破坏了拆分边界，也让后续拆库成本更高。审批通过与额度扣减是**真实的不变量**：批了不扣或扣了没批都不可接受，因此用 Seata AT 把两侧放进同一个可回滚的全局事务。
+
+代价被明确接受：TC 成为审批路径的强依赖，不可用时 fail-closed；全局事务内只允许纯 DB 写，通知继续走 outbox。可替代方案是把额度表放进 `iboot-workflow` 退回本地事务，但那会掩盖跨服务一致性问题，也违背「额度随用户、由系统域拥有」的边界。选择 Seata 是为了在保留边界的条件下获得原子性，而不是为了给中间件找用途。
+
+### 7.11 AT、TCC 与 outbox 的分工
+
+| 场景 | 机制 | 理由 |
+|---|---|---|
+| 短事务、纯 DB、必须原子 | Seata AT | undo_log 直接覆盖，代码侵入最小 |
+| 需要资源预占或长时间持有 | 业务 TCC / 预占 + 确认 | Try/Confirm/Cancel 的语义比 AT 更贴合 |
+| 旁路通知、审计、事件 | 本地 outbox + MQ | 最终一致即可，失败不应阻断主流程 |
+
+**AT 与 TCC 不能共享同一个被代理的数据源**：Seata 2.5.0 的 `ConnectionProxy.register()` 在全局事务中始终以 `BranchType.AT` 登记分支，TCC 的 Try 若走同一代理数据源会同时产生 AT 分支，回滚时 TCC Cancel 与 AT undo 可能双倍补偿。因此 TCC 实验使用非代理数据源并独占全局事务；这也是把 TCC 放到独立变更、不叠在审批路径上的原因。
+
 ---
 
 ## 附：外部事实来源
@@ -246,6 +266,8 @@ SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。
 - Spring AI Alibaba Releases：https://github.com/alibaba/spring-ai-alibaba/releases
 - AgentScope Java 发布说明（2.0.1）：https://java.agentscope.io/v2/en/docs/others/release-notes.html
 - Spring Cloud Alibaba：https://github.com/alibaba/spring-cloud-alibaba
+- Apache Seata 2.5.0：https://github.com/apache/incubator-seata/releases/tag/v2.5.0
+- Seata AT 模式：https://seata.apache.org/docs/user/transaction-mode/at
 - SCA 2025.x 版本说明：https://sca.aliyun.com/docs/2025.x/overview/version-explain/
 - SCA Nacos bootstrap 移除：https://github.com/alibaba/spring-cloud-alibaba/issues/4253
 - SCA 对 Boot 4.1 的升级中：https://github.com/alibaba/spring-cloud-alibaba/issues/4339

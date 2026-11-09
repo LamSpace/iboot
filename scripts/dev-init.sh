@@ -14,7 +14,7 @@
 # 与 README 里 `set -a; source .env; set +a` 的既有约定一致；脚本会自动加载。
 #
 # 说明：
-# - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo + rocketmq），
+# - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo + seata + rocketmq），
 #   不启动 Prometheus、Kibana、Thanos 等观测组件；
 # - 数据库 iboot 与全部表结构由 iboot-db-init 创建，服务不再自带迁移；
 # - 后端日志写入 logs/，进程号写入 logs/<name>.pid。
@@ -80,6 +80,9 @@ export SENTINEL_DASHBOARD="${SENTINEL_DASHBOARD:-localhost:8858}"
 
 # 宿主机进程连接容器内 RocketMQ Proxy 的映射端口；容器内由 compose 注入服务名。
 export IBOOT_ROCKETMQ_ENDPOINTS="${IBOOT_ROCKETMQ_ENDPOINTS:-localhost:18081}"
+
+# 审批额度内部端点共享密钥；未配置时使用仅限本地的开发默认值，两端保持一致。
+export IBOOT_SYSTEM_INTERNAL_TOKEN="${IBOOT_SYSTEM_INTERNAL_TOKEN:-iboot-dev-internal-token}"
 
 mkdir -p "$LOG_DIR"
 
@@ -182,7 +185,7 @@ wait_healthy() {
 
 start_middleware() {
     log '=== 1. 中间件 ==='
-    local infra=(mysql redis minio minio-init elasticsearch)
+    local infra=(mysql redis minio minio-init elasticsearch seata-server)
     if rocketmq_enabled; then
         infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init)
     fi
@@ -206,6 +209,8 @@ start_middleware() {
     # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。
     wait_http 'Nacos' 'http://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'
     wait_http 'Sentinel Dashboard' 'http://localhost:8858/' 120 || fail 'Sentinel Dashboard 未就绪'
+    # 审批通过依赖全局事务协调器；必须在 workflow/system 启动前就绪
+    wait_healthy 'Seata Server' iboot-seata-server 60 || fail 'Seata Server 未就绪'
     "$ROOT/scripts/sentinel-init.sh" || fail 'Sentinel 基线规则初始化失败'
     if rocketmq_enabled; then
         wait_healthy 'RocketMQ NameServer' iboot-rocketmq-namesrv 90 || fail 'RocketMQ NameServer 未就绪'

@@ -142,6 +142,12 @@
             </exclusions>
         </dependency>
 
+        <!-- 分布式事务：作为额度扣减的资源方参与 AT 全局事务 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+        </dependency>
+
         <!-- ==================== Micrometer & Monitoring ==================== -->
         <dependency>
             <groupId>io.micrometer</groupId>

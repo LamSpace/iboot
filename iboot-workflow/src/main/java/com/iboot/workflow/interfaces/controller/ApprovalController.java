@@ -19,6 +19,7 @@ package com.iboot.workflow.interfaces.controller;
 import com.iboot.workflow.application.service.ApprovalApplicationService;
 import com.iboot.workflow.application.service.ApprovalDetail;
 import com.iboot.workflow.application.service.ApprovalItem;
+import com.iboot.workflow.application.service.quota.LeaveQuotaSnapshot;
 import com.iboot.kernel.logging.Log;
 import com.iboot.kernel.logging.BusinessTypeEnum;
 import com.iboot.kernel.web.BusinessException;
@@ -34,6 +35,7 @@ import com.iboot.workflow.interfaces.dto.response.ApprovalDetailResponse;
 import com.iboot.workflow.interfaces.dto.response.ApprovalHistoryResponse;
 import com.iboot.workflow.interfaces.dto.response.ApprovalItemResponse;
 import com.iboot.workflow.interfaces.dto.response.LeaveApplicationResponse;
+import com.iboot.workflow.interfaces.dto.response.LeaveQuotaViewResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -41,6 +43,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Year;
 
 /**
  * 审批中心控制器。
@@ -139,6 +143,22 @@ public class ApprovalController {
         PageResult<ApprovalItem> page = approvalApplicationService.findMine(
                 SecurityUtils.getCurrentUserId(), parseStatus(status), pageNum, pageSize);
         return Result.success(toItemPage(page));
+    }
+
+    /**
+     * 查询本人年度请假额度。
+     *
+     * @param year 年度，为空时取当前年度
+     * @return 额度视图
+     */
+    @Operation(summary = "查询本人请假额度")
+    @GetMapping(version = "1", value = "/leave/quota")
+    @PreAuthorize("isAuthenticated()")
+    public Result<LeaveQuotaViewResponse> quota(@RequestParam(required = false) Integer year) {
+        int targetYear = year == null ? Year.now().getValue() : year;
+        LeaveQuotaSnapshot snapshot = approvalApplicationService.quota(
+                SecurityUtils.getCurrentUserId(), targetYear);
+        return Result.success(LeaveQuotaViewResponse.from(snapshot));
     }
 
     /**

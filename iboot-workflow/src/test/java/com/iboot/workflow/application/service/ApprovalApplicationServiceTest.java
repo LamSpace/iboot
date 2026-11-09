@@ -18,6 +18,8 @@ package com.iboot.workflow.application.service;
 
 import com.iboot.workflow.application.service.notification.NotificationPort;
 import com.iboot.workflow.application.service.notification.NotificationCommand;
+import com.iboot.workflow.application.service.quota.LeaveQuotaPort;
+import com.iboot.workflow.application.service.quota.LeaveQuotaSnapshot;
 import com.iboot.kernel.web.BusinessException;
 import com.iboot.workflow.domain.notification.model.NotificationEventType;
 import com.iboot.workflow.infrastructure.directory.WorkflowUser;
@@ -40,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -66,6 +69,8 @@ class ApprovalApplicationServiceTest {
 
     private NotificationPort notificationPort;
 
+    private LeaveQuotaPort leaveQuotaPort;
+
     private ApprovalApplicationService service;
 
     @BeforeEach
@@ -74,8 +79,11 @@ class ApprovalApplicationServiceTest {
         workflowService = mock(WorkflowService.class);
         userReader = mock(WorkflowUserReader.class);
         notificationPort = mock(NotificationPort.class);
+        leaveQuotaPort = mock(LeaveQuotaPort.class);
+        when(leaveQuotaPort.deduct(anyString(), anyLong(), anyInt()))
+                .thenReturn(new LeaveQuotaSnapshot(10, 1, 0, 9));
         service = new ApprovalApplicationService(repository, workflowService, userReader,
-                notificationPort);
+                notificationPort, leaveQuotaPort);
     }
 
     /**
@@ -295,6 +303,8 @@ class ApprovalApplicationServiceTest {
         application.setApproverId(approverId);
         application.setStatus(status);
         application.setProcessInstanceId("pid-10");
+        application.setStartTime(LocalDateTime.of(2026, 11, 2, 9, 0));
+        application.setEndTime(LocalDateTime.of(2026, 11, 3, 18, 0));
         application.setCreateTime(LocalDateTime.now());
         return application;
     }

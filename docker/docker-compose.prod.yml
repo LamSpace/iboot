@@ -11,3 +11,11 @@ services:
         -Dauth.enabled=true
         -Dauth.username=${SENTINEL_DASHBOARD_USER:?SENTINEL_DASHBOARD_USER is required}
         -Dauth.password=${SENTINEL_DASHBOARD_PASSWORD:?SENTINEL_DASHBOARD_PASSWORD is required}
+
+  # 审批额度内部端点的共享密钥：生产必须显式注入，禁止回退到 compose 中的本地默认值。
+  iboot-system:
+    environment:
+      IBOOT_SYSTEM_INTERNAL_TOKEN: ${IBOOT_SYSTEM_INTERNAL_TOKEN:?IBOOT_SYSTEM_INTERNAL_TOKEN is required}
+  iboot-workflow:
+    environment:
+      IBOOT_SYSTEM_INTERNAL_TOKEN: ${IBOOT_SYSTEM_INTERNAL_TOKEN:?IBOOT_SYSTEM_INTERNAL_TOKEN is required}
