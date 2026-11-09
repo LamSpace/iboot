@@ -62,10 +62,14 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- 不依赖内核，单独声明结构化日志编码器 -->
+        <!-- 不依赖内核，单独声明结构化日志编码器与 Kafka appender -->
         <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-logging</artifactId>
         </dependency>
 
         <dependency>

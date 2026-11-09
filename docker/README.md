@@ -93,7 +93,8 @@ nginx:stable-alpine3.23
 | redis | 6379 | Redis 7 |
 | minio | 9000/9001 | 对象存储与控制台 |
 | elasticsearch | 9200 | 检索 |
-| logstash | 5000/5044 | 集中日志接收 |
+| kafka | 9092 / 29092 | 日志缓冲（KRaft 单节点；宿主机用 29092） |
+| logstash | 5044 | 集中日志处理，输入来自 Kafka |
 | nacos | 8848/8849/9848/9849 | 注册/配置中心，控制台在 8849 |
 | tempo | 4317/4318/3200 | 链路追踪 |
 
@@ -123,7 +124,7 @@ mysql (healthy)
 redis / nacos ──> 所有后端服务
 minio ──> iboot-file / iboot-ai
 elasticsearch ──> iboot-notify / iboot-monitor / iboot-ai
-logstash ──> 旁路，不作为启动依赖
+kafka ──> logstash ──> 旁路，不作为启动依赖；kafka-init 一次性建 iboot-logs
 sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影响业务
 ```
 

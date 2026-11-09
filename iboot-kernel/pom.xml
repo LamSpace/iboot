@@ -91,6 +91,11 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
         </dependency>
+        <!-- 日志经 Kafka 投递的 appender；由内核传递给全部业务服务 -->
+        <dependency>
+            <groupId>com.iboot</groupId>
+            <artifactId>iboot-logging</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>

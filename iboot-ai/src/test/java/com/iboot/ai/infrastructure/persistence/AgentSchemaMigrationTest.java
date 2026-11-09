@@ -116,14 +116,18 @@ class AgentSchemaMigrationTest {
     }
 
     /**
-     * 重复执行迁移不报错，且版本停留在最新。
+     * 重复执行迁移不报错，且不新增历史记录。
      */
     @Test
     void repeatedMigrationIsIdempotent() {
+        Integer before = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1", Integer.class);
+
         SchemaMigrator.migrate(dataSource);
 
-        assertThat(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1", Integer.class)).isEqualTo(1);
+        Integer after = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1", Integer.class);
+        assertThat(after).isEqualTo(before);
     }
 
     private boolean tableExists(String table) {

@@ -112,7 +112,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | UI 与状态 | Element Plus 2.6、Pinia 2.1、Vue Router 4.3 |
 | 其他 | vue-i18n 9.14、axios 1.6、markdown-it、DOMPurify、Sass |
 
-**中间件**：`docker/docker-compose.yml` 提供 25 个常驻容器，按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）；Sentinel Dashboard 默认常驻；RocketMQ NameServer / Broker / Proxy 常驻，宿主机通过 `localhost:18081` 接入。
+**中间件**：`docker/docker-compose.yml` 提供 26 个常驻容器，按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）；Sentinel Dashboard 默认常驻；RocketMQ NameServer / Broker / Proxy 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入。
 
 ## 功能清单
 
@@ -168,7 +168,10 @@ bash scripts/dev-init.sh --frontend
 | `--stop` / `--down` / `--purge` | 停服务 / 连中间件一起停 / 连数据卷一起删 |
 
 脚本会自动加载根目录 `.env`；需要自定义 Maven settings 时设置 `MAVEN_SETTINGS` 环境变量。
-后端日志与进程号写入根目录 `logs/`。
+后端日志与进程号写入根目录 `logs/`。集中日志（Kafka → Logstash → ES）默认不在 `dev-init.sh`
+中启用：需要时先 `docker compose -f docker/docker-compose.yml up -d kafka kafka-init`，再设置
+`IBOOT_LOGGING_KAFKA_ENABLED=true` 与 `IBOOT_LOGGING_KAFKA_BOOTSTRAP_SERVERS=localhost:29092`，
+详见 [docs/11 §11.11.1](./docs/11-可观测性设计.md)。
 
 **手工启动**
 
@@ -176,6 +179,9 @@ bash scripts/dev-init.sh --frontend
 # 中间件：开发必需的一组
 docker compose -f docker/docker-compose.yml up -d mysql redis minio elasticsearch \
   rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init
+
+# 可选：集中日志链路
+docker compose -f docker/docker-compose.yml up -d kafka kafka-init logstash
 
 # 构建并启动系统服务（其余服务同理）
 mvn -DskipTests clean package
