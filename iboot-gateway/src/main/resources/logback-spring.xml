@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   共享日志配置：由 iboot-kernel 提供给全部依赖它的服务。
-  应用名取自 spring.application.name，使文件名、Logstash 的 app 字段与注册名一致；
+  应用名取自 spring.application.name，使文件名、Kafka 日志的 app 字段与注册名一致；
   日志目录可由 iboot.logging.dir（环境变量 IBOOT_LOGGING_DIR）覆盖。
   网关不依赖内核，单独维护一份等价配置。
 -->
@@ -9,7 +9,8 @@
 
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="iboot"/>
     <springProperty scope="context" name="LOG_HOME" source="iboot.logging.dir" defaultValue="logs"/>
-    <springProperty scope="context" name="LOGSTASH_HOST" source="LOGSTASH_HOST" defaultValue="localhost"/>
+    <springProperty scope="context" name="KAFKA_LOGGING_ENABLED" source="iboot.logging.kafka.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="KAFKA_BOOTSTRAP_SERVERS" source="iboot.logging.kafka.bootstrap-servers" defaultValue="localhost:29092"/>
 
     <!-- 控制台输出（容器与本地都能直接看到） -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -52,15 +53,17 @@
         </rollingPolicy>
     </appender>
 
-    <!-- Logstash 结构化投递：缓冲耗尽时丢弃，不阻塞业务线程 -->
-    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-        <destination>${LOGSTASH_HOST}:5000</destination>
+    <!-- Kafka 结构化投递：缓冲耗尽时丢弃，不阻塞业务线程；默认关闭，部署时由配置开启 -->
+    <appender name="KAFKA" class="com.iboot.logging.KafkaAppender">
+        <enabled>${KAFKA_LOGGING_ENABLED}</enabled>
+        <bootstrapServers>${KAFKA_BOOTSTRAP_SERVERS}</bootstrapServers>
+        <topic>iboot-logs</topic>
+        <clientId>${APP_NAME}</clientId>
+        <ringBufferSize>8192</ringBufferSize>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"app":"${APP_NAME}"}</customFields>
             <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS</timestampPattern>
         </encoder>
-        <reconnectionDelay>5 seconds</reconnectionDelay>
-        <ringBufferSize>8192</ringBufferSize>
     </appender>
 
     <!-- 所有环境输出同一组目标 -->
@@ -68,7 +71,7 @@
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
         <appender-ref ref="ERROR"/>
-        <appender-ref ref="LOGSTASH"/>
+        <appender-ref ref="KAFKA"/>
     </root>
 
 </configuration>

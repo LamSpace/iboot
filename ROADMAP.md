@@ -60,6 +60,7 @@
 | 国际化 | 前端 vue-i18n + 后端 MessageSource 中英文语言包 | `iboot-portal` + 各服务 | [docs/17](<./docs/17-国际化设计.md>) |
 | 可观测性 | Actuator + Micrometer + Prometheus/Grafana + ELK + Tempo 链路追踪 | 全部服务 | [docs/11](<./docs/11-可观测性设计.md>) |
 | 服务治理 | 网关路由级限流、跨服务熔断降级、Nacos 规则源与 Sentinel Dashboard | `iboot-gateway`、`iboot-workflow`、`iboot-notify` | [docs/23 §13](<./docs/23-微服务底座操作指南.md>) |
+| 可靠日志管道 | 服务日志经 Kafka 缓冲（24h）后由 Logstash 写入 ES，索引与字段不变 | 全部服务 | [docs/11 §11.11.1](<./docs/11-可观测性设计.md>)、[docs/23 §15](<./docs/23-微服务底座操作指南.md>) |
 | 运维控制台 | 独立 SBA 控制台，经 Nacos 发现全部实例，支持单实例巡检与运行期日志级别调整 | `iboot-ops` | [docs/11](<./docs/11-可观测性设计.md>) |
 
 ---
@@ -77,14 +78,11 @@
 | 项 | 现状 | 复核方式 |
 |---|---|---|
 | Seata 分布式事务 | 未引入。当前跨服务写入都是旁路（审计、通知），失败不影响主流程 | `grep -ri seata --include=pom.xml` 无命中 |
-| Kafka 日志收集 | 未引入。各服务日志经 Logstash TCP 直投 ES，Kafka 不在链路中 | `grep -ri kafka --include=pom.xml` 无命中；compose 无 kafka 服务 |
 
 **运维控制面（辅助项，不替代 Seata 项）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
 发现九个业务实例，提供单实例健康、JVM、环境、配置、Bean、缓存、定时任务、线程巡检与运行期日志
 级别调整。它不解决 Seata 项，也不改变上述判据；验收标准是：
 控制台可独立启停、业务服务零 SBA client 配置、停控制台不影响业务、生产环境不经公网网关暴露。
-
-**Kafka 日志收集（新增项，不替代上述判据）**：以 KRaft 模式单进程引入 Kafka，不部署 ZooKeeper（Kafka 4.0 起已移除 ZK 支持）；把链路从「服务 → Logstash TCP → ES」改为「服务 → Kafka → Logstash kafka input → ES」，Kibana 与监控服务的查询接口不变。验收标准：九个服务的日志全部经 Kafka 进入 ES，且可按 `app` 与 `traceId` 检索；停 Kafka 时业务请求不受影响、恢复后投递自动续上，停机期间的日志允许丢弃。代价是本地常驻进程 +1，已计入 R4。
 
 **APM 对比实验（辅助项，不替代上述判据）**：引入 SkyWalking（OAP + UI + Java Agent）与既有 Tempo 并行观测同一批服务，补齐两条埋点范式的对比：agent 字节码增强的零侵入自动埋点 vs. 现有 SDK 埋点，并体验服务拓扑与方法级慢调用剖析。它不替换 Tempo，也不改变阶段 2 的任何验收判据。验收标准：同一请求在 SkyWalking 与 Tempo 两侧都能还原完整调用链；记录 Java Agent 对启动时间、常驻内存、吞吐的实际影响；产出一页选型结论，说明两者各自适合的场景与代价；停掉 SkyWalking 不影响任何业务，也不影响既有 Tempo 链路。版本为 OAP **11.1.0** + Java Agent **9.8.0**（Agent 9.6.0 起支持 JDK 25，OAP 10.4.0 起支持 JDK 25 与虚拟线程）；存储用默认的 BanyanDB——现有 ES 9.2 不在 SkyWalking 官方支持矩阵（文档上限 8.x），不强行接。代价是本地常驻进程 +3（OAP、UI、BanyanDB），已计入 R4。
 
@@ -153,7 +151,7 @@
 | ID | 风险 | 影响阶段 | 处置 |
 |---|---|---|---|
 | R2 | Dubbo 不支持 Boot 4 | 3 / 4 | 服务间 HTTP 先行；延后至出现 Boot 4 兼容版本后重评 |
-| R4 | 本机内存：N×JVM + 25 个常驻中间件容器（含 Sentinel Dashboard 与 RocketMQ 三组件；Kafka 落地后 26 个；SkyWalking 实验再 +3 共 29 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；RocketMQ Broker 堆 512MB、Proxy/NameServer 256MB，且不参与业务启动依赖；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
+| R4 | 本机内存：N×JVM + 26 个常驻中间件容器（含 Sentinel Dashboard、RocketMQ 三组件与 Kafka；SkyWalking 实验再 +3 共 29 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；RocketMQ Broker 堆 512MB、Proxy/NameServer 256MB，且不参与业务启动依赖；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
 | R6 | LLM token 与云账单失控 | 全阶段 | 配额 + 用量看板 + Alertmanager 告警 |
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
@@ -171,7 +169,7 @@
 
 本地开发策略：
 
-- 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / minio / es / nacos / tempo / sentinel-dashboard；阶段 3 起本地增加 Kind 集群。
+- 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / minio / es / nacos / tempo / sentinel-dashboard；集中日志链路（kafka / kafka-init / logstash）按需单独启动；阶段 3 起本地增加 Kind 集群。
 - 应用：`scripts/dev-init.sh` 一键拉起九个业务服务与运维控制台并按依赖顺序等待健康；也可单独 `mvn spring-boot:run` 调试。
 - 运维控制台：默认随开发环境启动，`IBOOT_OPS_ENABLED=false` 可跳过；生产环境不经公网网关暴露。
 - 密钥：统一放根目录 `.env`（已在 `.gitignore` 中），模板见 `.env.example`。
@@ -227,7 +225,13 @@ Spring Authorization Server 对「公共客户端 + 授权码」不签发刷新�
 
 SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。保留它，是因为练习项目的目标包含技术栈的横向对比，而「装过」不产生认知：agent 字节码增强的零侵入自动埋点与现有 SDK 埋点，在启动开销、常驻内存、虚拟线程下的表现、拓扑发现能力上的差异，只有在同一批服务、同一批流量上并行观测才能看清。因此它被定义为**阶段 2 收尾的辅助对比实验**：有独立验收标准，不替代 Seata / Kafka 任何一项判据，也不替换 Tempo。实验结束时若结论是收益不足，就下线 SkyWalking、保留对比记录，而不是让它长期挂在主线上。11.x 还能直接接收 OTLP 并把 OAP 作为 Grafana Tempo 的数据源，这为后续「agent vs OTLP」的第二种对比留了口子，但不作为本次实验的前置。
 
-### 7.8 为什么是生产方 outbox，而不是事务消息或提交后直发
+### 7.8 为什么日志走 Kafka，业务事件仍走 RocketMQ
+
+两条链路都可靠，但语义不同：日志是高频、可丢尾批、无顺序与事务要求、且需要被流处理消费的数据；业务事件要求与本地事务绑定、可按事件重放、有死信可查。日志若混入 RocketMQ，会让日志流量进入业务 broker 的故障半径，并通过 outbox 与消费重试机制制造两套语义；反过来，业务事件若走 Kafka，则要自行补 outbox、死信与重试分类。因此保留两条链路：Kafka 只做日志缓冲（24 小时、无长期存储职责），业务事件仍由 outbox + RocketMQ 承载。
+
+服务端日志投递由自研的 `KafkaAppender` 完成，而不是 Filebeat 或第三方 appender：`logstash-logback-encoder` 9.0 不提供 Kafka appender；第三方实现停留在 `kafka-clients` 2.x；Filebeat 在本地需要给十个容器挂共享日志卷并新增常驻进程，到阶段 3 用采集器读 stdout 才自然。自研实现只补缺失的积木，环形缓冲、丢弃与停机排空仍由 encoder 的基类提供。
+
+### 7.9 为什么是生产方 outbox，而不是事务消息或提交后直发
 
 阶段 2 收尾要把「审批 → 通知」从进程内 HTTP 重试换成可靠投递。提交后直发在 broker 不可用时直接丢事件；RocketMQ 事务消息虽然把半消息与本地事务绑定，但半消息发送本身要求 broker 在线，无法满足「broker 停机时审批不受影响」。最终选择生产方 outbox：审批事务内写 `biz_notification_outbox`，中继独立重试发布；代价是一张表与一个后台中继，换来的是与 broker 可用性彻底解耦。消费侧继续用 `sys_notification_delivery` 作为投递 outbox，两级 outbox 分别负责「登记不丢」与「渠道重试」。客户端使用官方 gRPC 客户端而非 Starter，是因为后者仍停留在 Boot 2.7 基线；为它回退 Boot 4 违反原则 6。
 

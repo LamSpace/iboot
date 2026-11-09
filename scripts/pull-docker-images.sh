@@ -199,6 +199,15 @@ docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apacherocketmq/roc
 echo "RocketMQ Dashboard 镜像拉取完成！"
 echo ""
 
+# 拉取 Kafka 镜像（日志缓冲层，KRaft 单进程；版本与 Boot 4.0.3 托管的 kafka-clients 4.1.1 同线）
+echo "======================================"
+echo "正在拉取 Kafka 镜像..."
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/kafka:4.1.1
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/kafka:4.1.1  docker.io/apache/kafka:4.1.1
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/kafka:4.1.1
+echo "Kafka 镜像拉取完成！"
+echo ""
+
 # 拉取 Tempo 镜像（链路追踪后端，Grafana 可直接作为查询界面）
 echo "======================================"
 echo "正在拉取 Tempo 镜像..."
