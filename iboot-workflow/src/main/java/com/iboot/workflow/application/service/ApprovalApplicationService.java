@@ -18,6 +18,8 @@ package com.iboot.workflow.application.service;
 
 import com.iboot.workflow.application.service.notification.NotificationCommand;
 import com.iboot.workflow.application.service.notification.NotificationPort;
+import com.iboot.workflow.application.service.quota.LeaveQuotaPort;
+import com.iboot.workflow.application.service.quota.LeaveQuotaSnapshot;
 import com.iboot.kernel.web.BusinessException;
 import com.iboot.kernel.web.PageResult;
 import com.iboot.workflow.domain.notification.model.NotificationEventType;
@@ -29,6 +31,7 @@ import com.iboot.workflow.domain.workflow.model.WorkflowHistoryItem;
 import com.iboot.workflow.domain.workflow.model.WorkflowTask;
 import com.iboot.workflow.domain.workflow.repository.LeaveApplicationRepository;
 import com.iboot.workflow.domain.workflow.service.WorkflowService;
+import org.apache.seata.spring.annotation.GlobalTransactional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +48,8 @@ import java.util.stream.Collectors;
  * 审批应用服务。
  *
  * <p>编排请假业务记录与工作流推进：发起时校验审批人并启动流程，审批时校验任务归属、
- * 禁止自审与重复处理，并在同一事务内更新业务状态。历史展示由业务状态与流程历史组合而成。
+ * 禁止自审与重复处理，并在同一事务内更新业务状态。审批通过还会在同一个全局事务内
+ * 调用系统服务扣减额度，任一步失败时两侧一起回滚。历史展示由业务状态与流程历史组合而成。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -63,26 +67,31 @@ public class ApprovalApplicationService {
 
     private final NotificationPort notificationPort;
 
+    private final LeaveQuotaPort leaveQuotaPort;
+
     private static final DateTimeFormatter NOTIFICATION_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     /**
      * 创建审批应用服务。
      *
-     * @param leaveApplicationRepository     请假申请仓储
-     * @param workflowService               工作流服务
-     * @param userReader                     系统用户只读适配器
-     * @param notificationPort               通知登记端口
+     * @param leaveApplicationRepository 请假申请仓储
+     * @param workflowService           工作流服务
+     * @param userReader                 系统用户只读适配器
+     * @param notificationPort           通知登记端口
+     * @param leaveQuotaPort             请假额度端口
      */
     @SuppressWarnings("all")
     public ApprovalApplicationService(final LeaveApplicationRepository leaveApplicationRepository,
                                       final WorkflowService workflowService,
                                       final WorkflowUserReader userReader,
-                                      final NotificationPort notificationPort) {
+                                      final NotificationPort notificationPort,
+                                      final LeaveQuotaPort leaveQuotaPort) {
         this.leaveApplicationRepository = leaveApplicationRepository;
         this.workflowService = workflowService;
         this.userReader = userReader;
         this.notificationPort = notificationPort;
+        this.leaveQuotaPort = leaveQuotaPort;
     }
 
     /**
@@ -239,19 +248,37 @@ public class ApprovalApplicationService {
     }
 
     /**
+     * 查询指定用户的年度请假额度。
+     *
+     * @param userId 用户 ID
+     * @param year   年度
+     * @return 额度快照
+     * @throws BusinessException 系统服务不可用时抛出
+     */
+    public LeaveQuotaSnapshot quota(final Long userId, final int year) {
+        return leaveQuotaPort.view(userId, year);
+    }
+
+    /**
      * 审批通过。
+     *
+     * <p>在同一个全局事务内先扣减额度，再推进流程并更新申请状态。远程扣减放在
+     * 本地写之前，使“远程已提交、后续本地失败”能够触发跨服务回滚；额度不足或
+     * 下游不可用时审批不落库。
      *
      * @param id           申请 ID
      * @param operatorId   操作人用户 ID
      * @param operatorName 操作人用户名
      * @param comment      审批意见，可为 {@code null}
-     * @throws BusinessException      申请不存在、已处理或任务不存在时抛出
+     * @throws BusinessException      申请不存在、已处理、额度不足或下游不可用时抛出
      * @throws AccessDeniedException 非当前审批人或自审时抛出
      */
+    @GlobalTransactional(name = "approve-leave", rollbackFor = Exception.class)
     @Transactional(rollbackFor = Exception.class)
     public void approve(final Long id, final Long operatorId, final String operatorName, final String comment) {
         LeaveApplication application = loadApplication(id);
         WorkflowTask task = requireActiveTask(application, operatorId);
+        leaveQuotaPort.deduct("leave-" + id, application.getApplicantId(), application.getStartTime().getYear());
         workflowService.completeTask(task.getTaskId(), true, comment);
         application.markApproved(comment);
         application.setUpdateBy(operatorName);

@@ -19,6 +19,11 @@
     "APPROVED": "Approved",
     "REJECTED": "Rejected"
   },
+  "quota": {
+    "remaining": "Remaining quota {remaining}/{total}",
+    "unavailable": "Quota is temporarily unavailable",
+    "exhausted": "Quota exhausted for this year; approval may fail"
+  },
   "leaveType": {
     "ANNUAL": "Annual",
     "SICK": "Sick",

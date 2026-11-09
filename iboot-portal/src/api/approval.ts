@@ -88,6 +88,32 @@ export interface ApprovalQuery {
 }
 
 /**
+ * 本人年度请假额度。
+ */
+export interface LeaveQuota {
+  /** 年度总额度 */
+  totalCount: number;
+  /** 已用次数 */
+  usedCount: number;
+  /** 剩余次数 */
+  remainingCount: number;
+}
+
+/**
+ * 查询本人年度请假额度。
+ * @param year 年度，缺省为当前年度
+ */
+export function getMyLeaveQuota(
+  year?: number,
+): Promise<ApiResponse<LeaveQuota>> {
+  return request({
+    url: "/approval/leave/quota",
+    method: "get",
+    params: year ? { year } : undefined,
+  });
+}
+
+/**
  * 发起请假。
  * @param data 请假参数
  */

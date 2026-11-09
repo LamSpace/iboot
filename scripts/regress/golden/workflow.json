@@ -240,6 +240,23 @@
         ],
         "type": "object"
       },
+      "LeaveQuotaViewResponse": {
+        "properties": {
+          "remainingCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "usedCount": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "PageResultApprovalItemResponse": {
         "properties": {
           "code": {
@@ -301,6 +318,25 @@
           },
           "data": {
             "$ref": "#/components/schemas/LeaveApplicationResponse"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ResultLeaveQuotaViewResponse": {
+        "properties": {
+          "code": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LeaveQuotaViewResponse"
           },
           "message": {
             "type": "string"
@@ -527,6 +563,88 @@
           }
         },
         "summary": "发起请假",
+        "tags": [
+          "审批中心"
+        ]
+      }
+    },
+    "/api/approval/leave/quota": {
+      "get": {
+        "operationId": "quota",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultLeaveQuotaViewResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "查询本人请假额度",
         "tags": [
           "审批中心"
         ]

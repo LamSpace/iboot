@@ -77,6 +77,21 @@ jwt:
   # 双栈窗口已关闭：只接受认证服务签发的自包含令牌，旧对称签名令牌返回业务码 40101
   legacy-enabled: false
 
+# 分布式事务：审批通过与额度扣减的 AT 全局事务发起方
+seata:
+  enabled: ${IBOOT_SEATA_ENABLED:true}
+  application-id: ${spring.application.name}
+  tx-service-group: iboot_tx_group
+  service:
+    vgroup-mapping:
+      iboot_tx_group: default
+    grouplist:
+      default: ${SEATA_SERVER_ADDR:localhost:8091}
+  registry:
+    type: file
+  config:
+    type: file
+
 iboot:
   # 操作审计：审计表归 iboot-monitor 所有，本服务跨 schema 写入，退出条件见 docs/23 §11.10
   logging:
@@ -98,6 +113,10 @@ iboot:
   notification:
     base-url: ${IBOOT_NOTIFICATION_BASE_URL:http://iboot-notify}
     internal-token: ${IBOOT_NOTIFY_INTERNAL_TOKEN:}
+  # 请假额度：审批通过时调用 system 的内部扣减端点；密钥缺失时失败关闭
+  leave-quota:
+    base-url: ${IBOOT_SYSTEM_BASE_URL:http://iboot-system}
+    internal-token: ${IBOOT_SYSTEM_INTERNAL_TOKEN:}
 
 mybatis:
   type-aliases-package: com.iboot.workflow.infrastructure.persistence.po

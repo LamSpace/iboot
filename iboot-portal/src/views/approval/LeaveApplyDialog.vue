@@ -5,8 +5,32 @@
     width="520px"
     destroy-on-close
     @update:model-value="emit('update:modelValue', $event)"
-    @open="loadApprovers"
+    @open="loadDialog"
   >
+    <el-alert
+      v-if="quotaLoaded && quota"
+      :title="
+        t('approval.quota.remaining', {
+          remaining: quota.remainingCount,
+          total: quota.totalCount,
+        })
+      "
+      :type="quota.remainingCount > 0 ? 'info' : 'warning'"
+      :description="
+        quota.remainingCount > 0 ? undefined : t('approval.quota.exhausted')
+      "
+      :closable="false"
+      show-icon
+      class="leave-quota-tip"
+    />
+    <el-alert
+      v-else-if="quotaLoaded"
+      :title="t('approval.quota.unavailable')"
+      type="warning"
+      :closable="false"
+      show-icon
+      class="leave-quota-tip"
+    />
     <el-form ref="formRef" :model="form" :rules="rules" label-width="96px">
       <el-form-item :label="t('approval.form.approver')" prop="approverId">
         <el-select
@@ -76,10 +100,14 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
-import { applyLeave } from "@/api/approval";
+import {
+  applyLeave,
+  getMyLeaveQuota,
+  type LeaveQuota,
+} from "@/api/approval";
 import { getUserList, type User } from "@/api/system";
 import { useUserStore } from "@/stores/user";
 
@@ -96,6 +124,9 @@ const leaveTypes = ["ANNUAL", "SICK", "PERSONAL"];
 
 const formRef = ref<FormInstance>();
 const approvers = ref<User[]>([]);
+const quota = ref<LeaveQuota | null>(null);
+const quotaLoaded = ref(false);
+const quotaYear = ref(new Date().getFullYear());
 const submitting = ref(false);
 
 const form = reactive({
@@ -133,6 +164,34 @@ const loadApprovers = async () => {
   }
 };
 
+const loadQuota = async (year = quotaYear.value) => {
+  quotaLoaded.value = false;
+  try {
+    const res = await getMyLeaveQuota(year);
+    quota.value = res.code === 200 ? res.data : null;
+  } catch {
+    quota.value = null;
+  } finally {
+    quotaLoaded.value = true;
+  }
+};
+
+const loadDialog = () => {
+  quotaYear.value = new Date().getFullYear();
+  void Promise.all([loadApprovers(), loadQuota()]);
+};
+
+watch(
+  () => form.startTime,
+  (value) => {
+    const year = value ? Number(value.slice(0, 4)) : Number.NaN;
+    if (Number.isInteger(year) && year !== quotaYear.value) {
+      quotaYear.value = year;
+      void loadQuota(year);
+    }
+  },
+);
+
 const submit = async () => {
   if (!formRef.value) return;
   const valid = await formRef.value.validate().catch(() => false);
@@ -157,3 +216,9 @@ const submit = async () => {
   }
 };
 </script>
+
+<style scoped>
+.leave-quota-tip {
+  margin-bottom: 16px;
+}
+</style>

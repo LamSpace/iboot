@@ -42,6 +42,7 @@ CI 的 PR 任务只跑路由覆盖、构建与网关测试；定时 / 手动任�
 | `regress/path-conservation.sh` | 校验服务迁移前后的路径并集守恒。 |
 | `regress/permission-matrix.sh` | 角色 × 接口 × 期望结果的权限边界矩阵。 |
 | `regress/smoke.sh` | 登录、用户、文件、推送、任务、备份、审批的关键链路冒烟。 |
+| `regress/seata.sh` | Seata AT 跨服务验收：正常提交、额度不足、后置失败回滚、TC/RM 不可用、并发与幂等。 |
 | `regress/trace-chain.sh` | 按 TraceID 查询链路并校验期望服务是否出现。 |
 
 ## 历史脚本

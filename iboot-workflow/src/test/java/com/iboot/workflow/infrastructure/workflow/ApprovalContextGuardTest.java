@@ -57,7 +57,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "flowable.idm.enabled=false",
                 "flowable.eventregistry.enabled=false",
                 "flowable.check-process-definitions=false",
-                "spring.flyway.enabled=false"
+                "spring.flyway.enabled=false",
+                "seata.enabled=false"
         })
 @Testcontainers
 class ApprovalContextGuardTest {

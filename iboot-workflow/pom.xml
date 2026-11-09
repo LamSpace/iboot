@@ -56,6 +56,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- 切面：seata-demo profile 的远程扣减后故障注入 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aspectj</artifactId>
+        </dependency>
         <!-- 指标导出：/actuator/prometheus 与 notification_trigger_failed 计数 -->
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -148,6 +153,11 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+        <!-- 分布式事务：审批通过与额度扣减的 AT 全局事务发起方 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -18,6 +18,11 @@ x-app-env: &app-env
   REDIS_PORT: "6379"
   ELASTICSEARCH_URIS: http://elasticsearch:9200
   NACOS_ADDR: nacos:8848
+  SEATA_SERVER_ADDR: seata-server:8091
+  IBOOT_SEATA_ENABLED: "true"
+  IBOOT_SYSTEM_BASE_URL: http://iboot-system
+  # 本地开发默认值；生产通过 .env 或 KMS 注入
+  IBOOT_SYSTEM_INTERNAL_TOKEN: ${IBOOT_SYSTEM_INTERNAL_TOKEN:-iboot-dev-internal-token}
   SENTINEL_DASHBOARD: sentinel-dashboard:8858
   TEMPO_OTLP: http://tempo:4318/v1/traces
   IBOOT_LOGGING_KAFKA_ENABLED: "true"
@@ -585,6 +590,31 @@ services:
       retries: 10
       start_period: 30s
 
+  # ==================== Seata（AT 全局事务协调器） ====================
+  seata-server:
+    image: apache/seata-server:2.5.0
+    container_name: iboot-seata-server
+    ports:
+      - "8091:8091"
+    environment:
+      TZ: Asia/Shanghai
+      # 本地开发限制堆与直接内存；镜像默认 2g
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      JVM_MaxDirectMemorySize: 256m
+    volumes:
+      # file store 的会话目录；不覆盖 /seata-server，否则会遮住应用类与配置
+      - seata_data:/seata-server/sessionStore
+    restart: unless-stopped
+    networks:
+      - iboot-network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8091' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   # ==================== RocketMQ（审批通知事件） ====================
   rocketmq-namesrv:
     image: apache/rocketmq:5.3.1
@@ -1050,3 +1080,4 @@ volumes:
   uploads_data:
   auth_keys:
   tempo_data:
+  seata_data:

@@ -58,6 +58,7 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "flowable.eventregistry.enabled=false",
                 "flowable.check-process-definitions=true",
                 "spring.flyway.enabled=false",
+                "seata.enabled=false",
                 "spring.autoconfigure.exclude=org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration,"
                         + "de.codecentric.boot.admin.server.config.AdminServerNotifierAutoConfiguration"
         })

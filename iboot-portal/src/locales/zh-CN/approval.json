@@ -19,6 +19,11 @@
     "APPROVED": "已通过",
     "REJECTED": "已驳回"
   },
+  "quota": {
+    "remaining": "剩余额度 {remaining}/{total} 次",
+    "unavailable": "额度暂不可用",
+    "exhausted": "本年度额度已用完，审批时可能无法通过"
+  },
   "leaveType": {
     "ANNUAL": "年假",
     "SICK": "病假",
