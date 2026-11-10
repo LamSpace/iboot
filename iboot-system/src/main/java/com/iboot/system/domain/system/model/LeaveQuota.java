@@ -19,8 +19,8 @@ package com.iboot.system.domain.system.model;
 /**
  * 用户年度请假额度。
  *
- * <p>按用户与年度记录总额度、已用次数与冻结次数。冻结次数为后续 TCC 预占预留，
- * 当前业务只使用总额度与已用次数；剩余次数由三者计算，不单独持久化。
+ * <p>按用户与年度记录总额度、已用次数与冻结次数。冻结次数由额度划转的 TCC Try 预占，
+ * Cancel 释放、Confirm 结算；剩余次数由三者计算，不单独持久化。
  *
  * @author iBoot Team
  * @since 1.0.0

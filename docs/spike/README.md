@@ -16,6 +16,8 @@
 | [Flowable 8 Spike 报告](./flowable-8-spike-report.md) | `2026-10-21-flowable-workflow-spike` | Go（有条件）：Flowable 8.0.0 在现有技术栈运行，四项硬门槛通过 | 一次性验证分支，已删除 |
 | [知识图谱 1.4 验证报告](./graph-1.4-report.md) | `2026-10-28-add-knowledge-graph` | Neo4j 5.26.29-community + driver 6.0.2 可用；按需启用 | 无独立代码 |
 | [阶段 2.0 门禁 Spike 报告](./microservice-2-0-spike-report.md) | `2026-10-31-add-microservice-foundation` | Go：Spring Cloud Alibaba 2025.1.0.0 / Nacos 3.1.1 / Sentinel 与跨服务 TraceID 均通过 | `spike/` 下的 gate-a / gate-b，已删除 |
+| [Seata 2.5.0 兼容性 Spike 报告](./seata-2.5-spike-report.md) | `2026-11-10-add-seata-at-leave-quota` | Go：Seata 2.5.0 AT 在 Boot 4 / JDK 25 可用，Druid 自动代理与 undo_log 回滚实测通过 | 已并入 `iboot-system` / `iboot-workflow` |
+| [Seata TCC Spike 报告](./seata-tcc-spike-report.md) | `2026-11-10-add-seata-tcc-quota-transfer` | Go：非代理数据源、TCC over HTTP、协调器回调与单 TCC 分支回滚均通过 | 已并入 `iboot-system` / `iboot-workflow` |
 
 ## 使用约定
 

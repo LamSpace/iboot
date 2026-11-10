@@ -19,6 +19,7 @@ package com.iboot.workflow.interfaces.controller;
 import com.iboot.workflow.application.service.ApprovalApplicationService;
 import com.iboot.workflow.application.service.ApprovalDetail;
 import com.iboot.workflow.application.service.ApprovalItem;
+import com.iboot.workflow.application.service.LeaveQuotaTransferApplicationService;
 import com.iboot.kernel.web.BusinessException;
 import com.iboot.kernel.web.PageResult;
 import com.iboot.kernel.security.JwtSecurityConfig;
@@ -82,6 +83,9 @@ class ApprovalControllerTest {
 
     @MockitoBean
     private ApprovalApplicationService service;
+
+    @MockitoBean
+    private LeaveQuotaTransferApplicationService leaveQuotaTransferApplicationService;
 
     @MockitoBean
     private JwtTokenUtil jwtTokenUtil;
@@ -238,6 +242,50 @@ class ApprovalControllerTest {
                         .content("{\"comment\":\"同意\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(409));
+    }
+
+    /**
+     * 验证额度划转需要专用权限。
+     */
+    @Test
+    void transferRequiresPermission() throws Exception {
+        mockMvc.perform(post("/api/approval/leave/quota/transfer")
+                        .with(authentication(auth("approval:approve")))
+                        .header(VERSION_HEADER, "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fromUserId\":1,\"toUserId\":2,\"year\":2026,\"count\":1}"))
+                .andExpect(status().isForbidden());
+    }
+
+    /**
+     * 验证划转次数必须为正数。
+     */
+    @Test
+    void transferValidatesCount() throws Exception {
+        mockMvc.perform(post("/api/approval/leave/quota/transfer")
+                        .with(authentication(auth("approval:quota:transfer")))
+                        .header(VERSION_HEADER, "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fromUserId\":1,\"toUserId\":2,\"year\":2026,\"count\":0}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    /**
+     * 验证划转成功时返回划转标识与初始状态。
+     */
+    @Test
+    void transferReturnsTransferId() throws Exception {
+        when(leaveQuotaTransferApplicationService.transfer(1L, 2L, 2026, 1)).thenReturn("transfer-1");
+
+        mockMvc.perform(post("/api/approval/leave/quota/transfer")
+                        .with(authentication(auth("approval:quota:transfer")))
+                        .header(VERSION_HEADER, "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fromUserId\":1,\"toUserId\":2,\"year\":2026,\"count\":1}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.code").value(200))
+                .andExpect(jsonPath("$.data.data.transferId").value("transfer-1"))
+                .andExpect(jsonPath("$.data.data.status").value("TRYING"));
     }
 
     private Authentication auth(final String... authorities) {

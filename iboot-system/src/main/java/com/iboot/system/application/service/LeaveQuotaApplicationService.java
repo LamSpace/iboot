@@ -97,7 +97,15 @@ public class LeaveQuotaApplicationService {
         return view(userId, year);
     }
 
-    private int defaultCount() {
+    /**
+     * 解析默认年度额度。
+     *
+     * <p>读取系统配置 {@code leave.quota.default-count}；缺失或非法时回退为 10。
+     * 结果走缓存，读取本身不产生写操作。
+     *
+     * @return 正整数的默认额度
+     */
+    public int defaultCount() {
         String raw = configApplicationService.getConfigValue(DEFAULT_COUNT_KEY);
         if (raw == null || raw.isBlank()) {
             return FALLBACK_DEFAULT_COUNT;

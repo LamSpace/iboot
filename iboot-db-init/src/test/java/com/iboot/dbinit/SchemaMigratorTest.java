@@ -58,12 +58,12 @@ class SchemaMigratorTest {
         MysqlDataSource dataSource = dataSource();
 
         MigrateResult first = migrateWithRetry(dataSource);
-        assertThat(first.migrationsExecuted).isEqualTo(5);
-        assertThat(countTables(dataSource)).isEqualTo(80);
+        assertThat(first.migrationsExecuted).isEqualTo(6);
+        assertThat(countTables(dataSource)).isEqualTo(81);
 
         MigrateResult second = migrateWithRetry(dataSource);
         assertThat(second.migrationsExecuted).isZero();
-        assertThat(countTables(dataSource)).isEqualTo(80);
+        assertThat(countTables(dataSource)).isEqualTo(81);
 
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_user")).isEqualTo(1);
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu")).isGreaterThan(100);
@@ -74,6 +74,14 @@ class SchemaMigratorTest {
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_user_leave_quota")).isZero();
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_leave_quota_log")).isZero();
         assertThat(count(dataSource, "SELECT COUNT(*) FROM undo_log")).isZero();
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_leave_quota_transfer")).isZero();
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu WHERE id = 9105 "
+                + "AND permission = 'approval:quota:transfer'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_role_menu "
+                + "WHERE role_id = 1 AND menu_id = 9105")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM information_schema.statistics "
+                + "WHERE table_schema = 'iboot_test' AND table_name = 'sys_leave_quota_transfer' "
+                + "AND index_name IN ('uk_transfer_id', 'uk_xid')")).isEqualTo(2);
         assertThat(count(dataSource, "SELECT COUNT(*) FROM information_schema.statistics "
                 + "WHERE table_schema = 'iboot_test' AND table_name = 'sys_user_leave_quota' "
                 + "AND index_name = 'uk_user_year'")).isEqualTo(2);

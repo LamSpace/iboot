@@ -18,6 +18,7 @@ package com.iboot.system.infrastructure.repository;
 
 import com.iboot.system.domain.system.model.LeaveQuota;
 import com.iboot.system.domain.system.repository.LeaveQuotaRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -73,9 +74,9 @@ public class LeaveQuotaRepositoryImpl implements LeaveQuotaRepository {
     /**
      * 创建仓储。
      *
-     * @param jdbcTemplate JDBC 模板
+     * @param jdbcTemplate 主 JDBC 模板，必须绑定被 Seata AT 代理的主数据源
      */
-    public LeaveQuotaRepositoryImpl(final JdbcTemplate jdbcTemplate) {
+    public LeaveQuotaRepositoryImpl(@Qualifier("jdbcTemplate") final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 

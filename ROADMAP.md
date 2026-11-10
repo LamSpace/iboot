@@ -60,7 +60,7 @@
 | 国际化 | 前端 vue-i18n + 后端 MessageSource 中英文语言包 | `iboot-portal` + 各服务 | [docs/17](<./docs/17-国际化设计.md>) |
 | 可观测性 | Actuator + Micrometer + Prometheus/Grafana + ELK + Tempo 链路追踪 | 全部服务 | [docs/11](<./docs/11-可观测性设计.md>) |
 | 服务治理 | 网关路由级限流、跨服务熔断降级、Nacos 规则源与 Sentinel Dashboard | `iboot-gateway`、`iboot-workflow`、`iboot-notify` | [docs/23 §13](<./docs/23-微服务底座操作指南.md>) |
-| 分布式事务 | Seata AT：审批通过与请假额度扣减的跨服务原子提交与回滚 | `iboot-workflow`、`iboot-system` | [docs/23 §16](<./docs/23-微服务底座操作指南.md>) |
+| 分布式事务 | Seata AT：审批通过与请假额度扣减的跨服务原子提交与回滚；Seata TCC：管理员额度划转的冻结/确认/取消 | `iboot-workflow`、`iboot-system` | [docs/23 §16/§17](<./docs/23-微服务底座操作指南.md>) |
 | 可靠日志管道 | 服务日志经 Kafka 缓冲（24h）后由 Logstash 写入 ES，索引与字段不变 | 全部服务 | [docs/11 §11.11.1](<./docs/11-可观测性设计.md>)、[docs/23 §15](<./docs/23-微服务底座操作指南.md>) |
 | 运维控制台 | 独立 SBA 控制台，经 Nacos 发现全部实例，支持单实例巡检与运行期日志级别调整 | `iboot-ops` | [docs/11](<./docs/11-可观测性设计.md>) |
 
@@ -79,6 +79,7 @@
 | 项 | 现状 | 复核方式 |
 |---|---|---|
 | Seata 分布式事务 | 已引入 Seata 2.5.0 AT；审批通过 = 流程/申请状态 + 额度扣减的跨服务原子提交，TC 或 system 不可用时 fail-closed | `grep -ri seata --include=pom.xml` 命中 workflow/system；`scripts/regress/seata.sh` 全绿 |
+| Seata TCC（独立实验） | 额度划转：Try 冻结、Confirm 划转、Cancel 解冻；TCC 动作走非代理数据源，全局事务只有 TCC 分支，覆盖幂等、空回滚与悬挂 | `scripts/regress/seata-tcc.sh` 全绿；[spike 报告](<./docs/spike/seata-tcc-spike-report.md>) |
 
 **运维控制面（辅助项，不替代上述判据）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
 发现九个业务实例，提供单实例健康、JVM、环境、配置、Bean、缓存、定时任务、线程巡检与运行期日志
@@ -157,7 +158,7 @@
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
 | R14 | Seata TC 成为审批路径的强依赖；TC 不可用时审批 fail-closed | 全阶段 | 保持 fail-closed，不提供静默降级；seata-server 常驻并设健康检查；审批 5xx 与 TC 存活告警 |
-| R15 | AT 与 TCC 在同一代理数据源混用会产生双分支与双倍补偿 | 阶段 4 / TCC 变更 | TCC 使用非代理数据源并独占全局事务；见 docs/23 §16.7 |
+| R15 | AT 与 TCC 在同一代理数据源混用会产生双分支与双倍补偿 | 阶段 4 / TCC 变更 | TCC 使用非代理数据源（`TccDruidDataSource` 按类名排除）并独占全局事务；见 docs/23 §16.7/§17 |
 
 ---
 
@@ -253,7 +254,7 @@ SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。
 | 需要资源预占或长时间持有 | 业务 TCC / 预占 + 确认 | Try/Confirm/Cancel 的语义比 AT 更贴合 |
 | 旁路通知、审计、事件 | 本地 outbox + MQ | 最终一致即可，失败不应阻断主流程 |
 
-**AT 与 TCC 不能共享同一个被代理的数据源**：Seata 2.5.0 的 `ConnectionProxy.register()` 在全局事务中始终以 `BranchType.AT` 登记分支，TCC 的 Try 若走同一代理数据源会同时产生 AT 分支，回滚时 TCC Cancel 与 AT undo 可能双倍补偿。因此 TCC 实验使用非代理数据源并独占全局事务；这也是把 TCC 放到独立变更、不叠在审批路径上的原因。
+**AT 与 TCC 不能共享同一个被代理的数据源**：Seata 2.5.0 的 `ConnectionProxy.register()` 只在连接上有 undo log（DML）或 lock key 时登记 AT 分支；TCC 的 Try 如果走同一代理数据源并写库，就会同时产生 AT 分支，回滚时 TCC Cancel 与 AT undo 可能双倍补偿。因此额度划转使用 `TccDruidDataSource`（按类名排除 AT 自动代理）并独占全局事务，TM 不写本地库；这也是把 TCC 放到独立变更、不叠在审批路径上的原因。实现与验收见 [docs/23 §17](<./docs/23-微服务底座操作指南.md>)。
 
 ---
 

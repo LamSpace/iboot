@@ -41,16 +41,29 @@ TM 不写本地库是刻意的：如果 workflow 在同一个全局事务里写 
 
 ### D3. 非代理数据源 + 专属事务管理器
 
-system 增加第二个小连接池 `tccDataSource`（同一 `iboot` 库），并在配置中：
+system 增加第二个小连接池 `tccDataSource`（同一 `iboot` 库），使用独立子类
+`TccDruidDataSource`，并在配置中：
 
 ```yaml
 seata:
-  excludes-for-auto-proxying: tccDataSource
+  excludes-for-auto-proxying:
+    - com.iboot.system.infrastructure.config.TccDruidDataSource
 ```
 
-TCC 动作的仓储使用 `@Qualifier("tccDataSource")` 的 `JdbcTemplate`，并通过 `tccTransactionManager`（`DataSourceTransactionManager`）的 `TransactionTemplate` 包住 Try、Confirm、Cancel。主 `dataSource` 仍是 `@Primary` 且继续被 AT 代理，互不影响。
+Spike 实测：Seata 2.5.0 的 `SeataAutoDataSourceProxyCreator.shouldSkip` 用
+`beanClass.getName()` 与排除集合比较，**不是 Bean 名**；主数据源与 TCC 数据源同为
+Druid 连接池，必须用子类区分。另外，Druid starter 的 `@ConditionalOnMissingBean`
+会因为出现第二个 `DataSource` 而退让，因此主数据源改为显式声明并保持 `@Primary`；
+同理，`tccJdbcTemplate` 会让 `JdbcTemplateAutoConfiguration` 整体退让，必须同时显式声明
+`@Primary` 的主 `jdbcTemplate`，否则旧仓储会静默注入 TCC 数据源。
 
-**备选**：关闭自动代理并为两个数据源手工建 `DataSourceProxy`。否决原因：主数据源是 Druid starter 创建的，手工接管会与 `@ConditionalOnMissingBean` 的启动次序耦合；`excludes-for-auto-proxying` 是更小的改动。
+TCC 动作类标注 `@LocalTCC` 与 `@TwoPhaseBusinessAction`：前者是 Seata 识别 TCC 资源、
+登记分支的前提，缺失时全局事务会以零分支提交。TCC 动作的仓储使用
+`@Qualifier("tccDataSource")` 的 `JdbcTemplate`，并通过 `tccTransactionManager`
+（`DataSourceTransactionManager`）的 `TransactionTemplate` 包住 Try、Confirm、Cancel。
+主 `dataSource` 仍是 `@Primary` 且继续被 AT 代理，互不影响。
+
+**备选**：关闭自动代理并为两个数据源手工建 `DataSourceProxy`。否决原因：主数据源是 Druid starter 创建的，手工接管会与 `@ConditionalOnMissingBean` 的启动次序耦合；类名排除是更小的改动。
 
 ### D4. 手工 TCC 状态机，而不是 TCC Fence
 
@@ -119,11 +132,14 @@ POST /api/approval/leave/quota/transfer
 
 回滚：V6 只新增表与权限，向前兼容；回退发布即可。TCC 失败不影响审批主路径。
 
-## Open Questions
+## Spike 结论
 
-以下由 spike 回答，不改变总体方案：
+以下问题已由 `docs/spike/seata-tcc-spike-report.md` 回答：
 
-- `seata.excludes-for-auto-proxying` 在 2.5.0 + Druid 下是否按 bean 名排除第二数据源。
-- TCC Try 通过 HTTP 进入 system 时，`@TwoPhaseBusinessAction` 是否能被 TCC 拦截器织入并登记分支。
-- TC 是否能把 Confirm/Cancel 回调到 system 的 TCC bean（Netty 通道 + 方法签名）。
-- 单 TCC 分支的全局事务在 TC 上的提交/回滚行为是否与 AT 一致。
+- `seata.excludes-for-auto-proxying` 在 2.5.0 里按**数据源类名**匹配，不是 Bean 名；
+  主数据源与 TCC 数据源同为 Druid，因此用 `TccDruidDataSource` 子类区分。
+- TCC Try 通过 HTTP 进入 system 时可以被 TCC 拦截器织入并登记分支，但动作类必须标注
+  `@LocalTCC`；否则全局事务以零分支提交，Confirm 不会执行。
+- TC 能把 Confirm/Cancel 回调到 system 的 TCC Bean，回调在 RM 的 RPC 线程执行。
+- 只含 TCC 分支的全局事务提交/回滚与 AT 一致：`GlobalCommit` / `GlobalRollback` +
+  `PhaseTwo_Rollbacked`，`undo_log` 始终为空。

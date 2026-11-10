@@ -220,6 +220,10 @@ seata:
     type: file
   config:
     type: file
+  # TCC 动作使用独立连接池，必须排除在 AT 自动代理之外。
+  # Seata 2.5.0 按数据源类名匹配，不是 Bean 名；TCC 数据源使用独立子类以区分主数据源。
+  excludes-for-auto-proxying:
+    - com.iboot.system.infrastructure.config.TccDruidDataSource
 
 # SSE 推送配置
 iboot:
@@ -266,6 +270,20 @@ iboot:
   # 请假额度：系统服务独占额度数据，内部端点供审批服务调用
   leave-quota:
     internal-token: ${IBOOT_SYSTEM_INTERNAL_TOKEN:}
+
+  # TCC 专用连接池：只承载额度划转的 Try/Confirm/Cancel，规模刻意保持很小
+  tcc:
+    datasource:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:root}
+      initial-size: 1
+      min-idle: 1
+      max-active: 5
+      max-wait: 5000
+      validation-query: SELECT 1
+      test-while-idle: true
 
   notification:
     # 通知登记：由 iboot-notify 承接，内部端点不经网关
