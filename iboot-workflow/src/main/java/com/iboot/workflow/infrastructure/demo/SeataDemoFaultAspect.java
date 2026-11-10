@@ -40,7 +40,7 @@ public class SeataDemoFaultAspect {
      */
     @AfterReturning("execution(* com.iboot.workflow.application.service.quota.LeaveQuotaPort.deduct(..))")
     public void failAfterRemoteDeduct() {
-        if (SeataDemoFaultContext.isRequested()) {
+        if (SeataDemoFaultContext.isRequested(SeataDemoFaultContext.AFTER_REMOTE)) {
             SeataDemoFaultContext.clear();
             throw new IllegalStateException("seata demo fault after remote deduct");
         }

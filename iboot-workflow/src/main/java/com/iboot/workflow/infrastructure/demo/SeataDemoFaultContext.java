@@ -19,39 +19,54 @@ package com.iboot.workflow.infrastructure.demo;
 /**
  * Seata 演练故障标记。
  *
- * <p>仅由 {@code seata-demo} profile 下的过滤器与切面使用，通过请求头把“在远程扣减
- * 成功后失败”的意图从 HTTP 层传到应用层。默认 profile 不注册相关 Bean，标记始终为假。
+ * <p>仅由测试 profile 下的过滤器与切面使用，通过请求头把“在第几步之后失败”的意图
+ * 从 HTTP 层传到应用层。默认 profile 不注册相关 Bean，标记始终为空。
+ *
+ * <p>标记是线程本地的，请求结束必须清理，避免线程复用造成串扰。
  *
  * @author iBoot Team
  * @since 1.0.0
  */
 public final class SeataDemoFaultContext {
 
-    private static final ThreadLocal<Boolean> REQUESTED = ThreadLocal.withInitial(() -> Boolean.FALSE);
+    /**
+     * 远程额度扣减成功后失败。
+     */
+    public static final String AFTER_REMOTE = "after-remote";
+
+    /**
+     * TCC Try 成功后失败。
+     */
+    public static final String AFTER_TCC_TRY = "after-tcc-try";
+
+    private static final ThreadLocal<String> MODE = new ThreadLocal<>();
 
     private SeataDemoFaultContext() {
     }
 
     /**
-     * 标记当前请求需要在远程扣减后失败。
+     * 标记当前请求的故障模式。
+     *
+     * @param mode 故障模式
      */
-    public static void request() {
-        REQUESTED.set(Boolean.TRUE);
+    public static void request(final String mode) {
+        MODE.set(mode);
     }
 
     /**
-     * 返回当前请求是否标记了故障。
+     * 返回当前请求是否标记了指定故障模式。
      *
-     * @return 是否需要在远程扣减后失败
+     * @param mode 故障模式
+     * @return 模式匹配时返回 {@code true}
      */
-    public static boolean isRequested() {
-        return Boolean.TRUE.equals(REQUESTED.get());
+    public static boolean isRequested(final String mode) {
+        return mode.equals(MODE.get());
     }
 
     /**
      * 清理当前线程的标记。
      */
     public static void clear() {
-        REQUESTED.remove();
+        MODE.remove();
     }
 }

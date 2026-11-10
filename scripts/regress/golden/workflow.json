@@ -240,6 +240,55 @@
         ],
         "type": "object"
       },
+      "LeaveQuotaTransferRequest": {
+        "description": "额度划转请求",
+        "properties": {
+          "count": {
+            "description": "划转次数",
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "fromUserId": {
+            "description": "划出方用户 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "toUserId": {
+            "description": "划入方用户 ID",
+            "format": "int64",
+            "type": "integer"
+          },
+          "year": {
+            "description": "年度",
+            "format": "int32",
+            "maximum": 2100,
+            "minimum": 2000,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count",
+          "fromUserId",
+          "toUserId",
+          "year"
+        ],
+        "type": "object"
+      },
+      "LeaveQuotaTransferResponse": {
+        "description": "额度划转响应",
+        "properties": {
+          "status": {
+            "description": "划转状态",
+            "type": "string"
+          },
+          "transferId": {
+            "description": "划转业务标识",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "LeaveQuotaViewResponse": {
         "properties": {
           "remainingCount": {
@@ -318,6 +367,25 @@
           },
           "data": {
             "$ref": "#/components/schemas/LeaveApplicationResponse"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ResultLeaveQuotaTransferResponse": {
+        "properties": {
+          "code": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LeaveQuotaTransferResponse"
           },
           "message": {
             "type": "string"
@@ -645,6 +713,89 @@
           }
         },
         "summary": "查询本人请假额度",
+        "tags": [
+          "审批中心"
+        ]
+      }
+    },
+    "/api/approval/leave/quota/transfer": {
+      "post": {
+        "operationId": "transfer",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaveQuotaTransferRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultLeaveQuotaTransferResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "额度划转",
         "tags": [
           "审批中心"
         ]

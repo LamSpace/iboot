@@ -29,15 +29,15 @@ import java.io.IOException;
 /**
  * Seata 演练故障过滤器。
  *
- * <p>仅测试 profile 注册。识别 {@code X-Seata-Demo-Fail: after-remote} 请求头，
- * 标记本次请求在远程额度扣减成功后抛出异常，用于验证 AT 回滚已提交分支。
- * 请求结束后清理标记，避免线程复用造成串扰。
+ * <p>仅在 {@code seata-demo} 或 {@code seata-tcc-demo} profile 注册。识别
+ * {@code X-Seata-Demo-Fail} 请求头：AT 演练使用 {@code after-remote}，TCC 演练使用
+ * {@code after-tcc-try}。请求结束后清理标记，避免线程复用造成串扰。
  *
  * @author iBoot Team
  * @since 1.0.0
  */
 @Component
-@Profile("seata-demo")
+@Profile({"seata-demo", "seata-tcc-demo"})
 public class SeataDemoFaultFilter extends OncePerRequestFilter {
 
     /**
@@ -45,16 +45,13 @@ public class SeataDemoFaultFilter extends OncePerRequestFilter {
      */
     public static final String HEADER = "X-Seata-Demo-Fail";
 
-    /**
-     * 远程扣减后失败的标记值。
-     */
-    public static final String AFTER_REMOTE = "after-remote";
-
     @Override
     protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
                                     final FilterChain filterChain) throws ServletException, IOException {
-        if (AFTER_REMOTE.equalsIgnoreCase(request.getHeader(HEADER))) {
-            SeataDemoFaultContext.request();
+        String mode = request.getHeader(HEADER);
+        if (SeataDemoFaultContext.AFTER_REMOTE.equalsIgnoreCase(mode)
+                || SeataDemoFaultContext.AFTER_TCC_TRY.equalsIgnoreCase(mode)) {
+            SeataDemoFaultContext.request(mode.toLowerCase());
         }
         try {
             filterChain.doFilter(request, response);

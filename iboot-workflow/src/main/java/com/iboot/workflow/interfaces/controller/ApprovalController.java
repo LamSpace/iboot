@@ -19,6 +19,7 @@ package com.iboot.workflow.interfaces.controller;
 import com.iboot.workflow.application.service.ApprovalApplicationService;
 import com.iboot.workflow.application.service.ApprovalDetail;
 import com.iboot.workflow.application.service.ApprovalItem;
+import com.iboot.workflow.application.service.LeaveQuotaTransferApplicationService;
 import com.iboot.workflow.application.service.quota.LeaveQuotaSnapshot;
 import com.iboot.kernel.logging.Log;
 import com.iboot.kernel.logging.BusinessTypeEnum;
@@ -31,10 +32,12 @@ import com.iboot.workflow.domain.workflow.model.WorkflowHistoryItem;
 import com.iboot.kernel.security.SecurityUtils;
 import com.iboot.workflow.interfaces.dto.request.ApprovalDecisionRequest;
 import com.iboot.workflow.interfaces.dto.request.LeaveApplyRequest;
+import com.iboot.workflow.interfaces.dto.request.LeaveQuotaTransferRequest;
 import com.iboot.workflow.interfaces.dto.response.ApprovalDetailResponse;
 import com.iboot.workflow.interfaces.dto.response.ApprovalHistoryResponse;
 import com.iboot.workflow.interfaces.dto.response.ApprovalItemResponse;
 import com.iboot.workflow.interfaces.dto.response.LeaveApplicationResponse;
+import com.iboot.workflow.interfaces.dto.response.LeaveQuotaTransferResponse;
 import com.iboot.workflow.interfaces.dto.response.LeaveQuotaViewResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,7 +54,8 @@ import java.time.Year;
  *
  * <p>提供请假发起、待办/已办/我的申请查询、详情与通过/驳回接口。发起与自助查询使用
  * {@code approval:apply}，审批操作使用 {@code approval:approve}，管理员通过
- * {@code approval:list} 或 {@code approval:query} 查看全部数据。
+ * {@code approval:list} 或 {@code approval:query} 查看全部数据；额度划转使用
+ * {@code approval:quota:transfer}。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -68,9 +72,13 @@ public class ApprovalController {
 
     private final ApprovalApplicationService approvalApplicationService;
 
+    private final LeaveQuotaTransferApplicationService leaveQuotaTransferApplicationService;
+
     @SuppressWarnings("all")
-    public ApprovalController(final ApprovalApplicationService approvalApplicationService) {
+    public ApprovalController(final ApprovalApplicationService approvalApplicationService,
+                              final LeaveQuotaTransferApplicationService leaveQuotaTransferApplicationService) {
         this.approvalApplicationService = approvalApplicationService;
+        this.leaveQuotaTransferApplicationService = leaveQuotaTransferApplicationService;
     }
 
     /**
@@ -159,6 +167,24 @@ public class ApprovalController {
         LeaveQuotaSnapshot snapshot = approvalApplicationService.quota(
                 SecurityUtils.getCurrentUserId(), targetYear);
         return Result.success(LeaveQuotaViewResponse.from(snapshot));
+    }
+
+    /**
+     * 把指定年度的额度从划出方转给划入方。
+     *
+     * <p>使用 Seata TCC：本接口只发起 Try，Confirm/Cancel 由协调器回调额度服务。
+     * 接口成功返回时额度已冻结，最终状态以额度服务的划转记录为准。
+     *
+     * @param request 划转请求
+     * @return 划转标识与初始状态
+     */
+    @Operation(summary = "额度划转")
+    @PostMapping(version = "1", value = "/leave/quota/transfer")
+    @PreAuthorize("hasAuthority('approval:quota:transfer')")
+    public Result<LeaveQuotaTransferResponse> transfer(@Valid @RequestBody LeaveQuotaTransferRequest request) {
+        String transferId = leaveQuotaTransferApplicationService.transfer(
+                request.getFromUserId(), request.getToUserId(), request.getYear(), request.getCount());
+        return Result.success(new LeaveQuotaTransferResponse(transferId, "TRYING"));
     }
 
     /**
