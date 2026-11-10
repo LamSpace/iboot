@@ -69,24 +69,16 @@
 ## 3. 未完成路线
 
 ```
-阶段 2 收尾  -. 按需，不阻塞 .->  阶段 3 云原生  -->  阶段 4 深水区
+阶段 2 收尾（已完成）  -. 辅助实验按需 .->  阶段 3 云原生  -->  阶段 4 深水区
 ```
 
-### 阶段 2 收尾
+### 阶段 2 收尾（已完成，仅剩 APM 对比实验）
 
-阶段 2 的五项验收判据已全部达标（TraceID 贯穿、故障隔离、Nacos 配置热更新、前端零改动、Seata 分布式事务）。Seata 以「审批通过 → 扣减请假额度」作为真实跨服务强一致写接入：额度归 `iboot-system`，审批结论归 `iboot-workflow`，两侧在同一个 AT 全局事务内提交，任一步失败可整体回滚。
+阶段 2 的五项验收判据已全部达标（TraceID 贯穿、故障隔离、Nacos 配置热更新、前端零改动、Seata 分布式事务）。Seata 覆盖两条真实链路：审批通过 → 扣减请假额度使用 AT，管理员额度划转使用 TCC；实现与边界见 [§2 能力索引](#2-能力索引) 与 [docs/23 §16/§17](<./docs/23-微服务底座操作指南.md>)，复核脚本为 `scripts/regress/seata.sh` 与 `scripts/regress/seata-tcc.sh`。运维控制台 `iboot-ops` 也已交付（见 §2）。
 
-| 项 | 现状 | 复核方式 |
-|---|---|---|
-| Seata 分布式事务 | 已引入 Seata 2.5.0 AT；审批通过 = 流程/申请状态 + 额度扣减的跨服务原子提交，TC 或 system 不可用时 fail-closed | `grep -ri seata --include=pom.xml` 命中 workflow/system；`scripts/regress/seata.sh` 全绿 |
-| Seata TCC（独立实验） | 额度划转：Try 冻结、Confirm 划转、Cancel 解冻；TCC 动作走非代理数据源，全局事务只有 TCC 分支，覆盖幂等、空回滚与悬挂 | `scripts/regress/seata-tcc.sh` 全绿；[spike 报告](<./docs/spike/seata-tcc-spike-report.md>) |
+本阶段不再有阻塞判据，仅保留下面的辅助对比实验。
 
-**运维控制面（辅助项，不替代上述判据）**：独立 `iboot-ops`（Spring Boot Admin，8089）通过 Nacos
-发现九个业务实例，提供单实例健康、JVM、环境、配置、Bean、缓存、定时任务、线程巡检与运行期日志
-级别调整。它不改变上述判据；验收标准是：
-控制台可独立启停、业务服务零 SBA client 配置、停控制台不影响业务、生产环境不经公网网关暴露。
-
-**APM 对比实验（辅助项，不替代上述判据）**：引入 SkyWalking（OAP + UI + Java Agent）与既有 Tempo 并行观测同一批服务，补齐两条埋点范式的对比：agent 字节码增强的零侵入自动埋点 vs. 现有 SDK 埋点，并体验服务拓扑与方法级慢调用剖析。它不替换 Tempo，也不改变阶段 2 的任何验收判据。验收标准：同一请求在 SkyWalking 与 Tempo 两侧都能还原完整调用链；记录 Java Agent 对启动时间、常驻内存、吞吐的实际影响；产出一页选型结论，说明两者各自适合的场景与代价；停掉 SkyWalking 不影响任何业务，也不影响既有 Tempo 链路。版本为 OAP **11.1.0** + Java Agent **9.8.0**（Agent 9.6.0 起支持 JDK 25，OAP 10.4.0 起支持 JDK 25 与虚拟线程）；存储用默认的 BanyanDB——现有 ES 9.2 不在 SkyWalking 官方支持矩阵（文档上限 8.x），不强行接。代价是本地常驻进程 +3（OAP、UI、BanyanDB），已计入 R4。
+**APM 对比实验（辅助项，不替代任何判据）**：引入 SkyWalking（OAP + UI + Java Agent）与既有 Tempo 并行观测同一批服务，补齐两条埋点范式的对比：agent 字节码增强的零侵入自动埋点 vs. 现有 SDK 埋点，并体验服务拓扑与方法级慢调用剖析。它不替换 Tempo，也不改变阶段 2 的任何验收判据。验收标准：同一请求在 SkyWalking 与 Tempo 两侧都能还原完整调用链；记录 Java Agent 对启动时间、常驻内存、吞吐的实际影响；产出一页选型结论，说明两者各自适合的场景与代价；停掉 SkyWalking 不影响任何业务，也不影响既有 Tempo 链路。版本为 OAP **11.1.0** + Java Agent **9.8.0**（Agent 9.6.0 起支持 JDK 25，OAP 10.4.0 起支持 JDK 25 与虚拟线程）；存储用默认的 BanyanDB——现有 ES 9.2 不在 SkyWalking 官方支持矩阵（文档上限 8.x），不强行接。代价是本地常驻进程 +3（OAP、UI、BanyanDB），已计入 R4。
 
 ### 阶段 3：云原生（ACK + Helm）
 
@@ -158,7 +150,7 @@
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
 | R14 | Seata TC 成为审批路径的强依赖；TC 不可用时审批 fail-closed | 全阶段 | 保持 fail-closed，不提供静默降级；seata-server 常驻并设健康检查；审批 5xx 与 TC 存活告警 |
-| R15 | AT 与 TCC 在同一代理数据源混用会产生双分支与双倍补偿 | 阶段 4 / TCC 变更 | TCC 使用非代理数据源（`TccDruidDataSource` 按类名排除）并独占全局事务；见 docs/23 §16.7/§17 |
+| R15 | AT 与 TCC 在同一代理数据源混用会产生双分支与双倍补偿 | 阶段 4 / 后续 TCC 扩展 | 现有 TCC 使用非代理数据源（`TccDruidDataSource` 按类名排除）并独占全局事务；新增 TCC 动作沿用该约束，见 docs/23 §16.7/§17 |
 
 ---
 
