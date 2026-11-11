@@ -102,7 +102,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | 流程与调度 | Flowable 8.0.0、Quartz（集群模式） |
 | AI | Spring AI 2.0.1、AgentScope Java 2.0.1、Neo4j 5.26.29（驱动 6.0.2）、PDFBox 3.0.5、Apache POI 5.4.1 |
 | 其他 | MapStruct 1.6.3、FastExcel 0.19.0、CloudEvents 4.0.1、Springdoc 3.0.2、Testcontainers 2.0.5 |
-| 可观测 | Actuator + Micrometer、Prometheus / Grafana / Alertmanager / Thanos、ELK、Tempo 链路追踪 |
+| 可观测 | Actuator + Micrometer、Prometheus / Grafana / Alertmanager / Thanos、ELK、Tempo 链路追踪；SkyWalking 作为可选的 APM 对比实验栈 |
 
 **前端**
 
@@ -112,7 +112,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | UI 与状态 | Element Plus 2.6、Pinia 2.1、Vue Router 4.3 |
 | 其他 | vue-i18n 9.14、axios 1.6、markdown-it、DOMPurify、Sass |
 
-**中间件**：`docker/docker-compose.yml` 提供 27 个常驻容器，按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）；Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入。
+**中间件**：`docker/docker-compose.yml` 提供 27 个常驻容器与 3 个可选 SkyWalking 容器（`apm` profile，默认不启动），按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo）；Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入。SkyWalking 对比实验的启停与验收见 [docs/24](<./docs/24-SkyWalking 与 Tempo 对比实验.md>)。
 
 ## 功能清单
 
@@ -293,7 +293,8 @@ scripts/docker-deploy.sh up core
 | [docs/23 微服务底座操作指南](<./docs/23-微服务底座操作指南.md>) | Nacos、网关、链路追踪、Seata AT/TCC 分布式事务与表级只读契约 |
 | [docs/22 AI 工作台操作指南](<./docs/22-AI 工作台操作指南.md>) | 模型配置、RAG、智能体与知识图谱 |
 | [docs/11 可观测性设计](<./docs/11-可观测性设计.md>) | 指标、日志、告警与追踪 |
-| [openspec/specs](openspec/specs) | 25 份能力契约 |
+| [docs/24 SkyWalking 与 Tempo 对比实验](<./docs/24-SkyWalking 与 Tempo 对比实验.md>) | 辅助 APM 栈、双后端验收、开销度量与选型结论 |
+| [openspec/specs](openspec/specs) | 29 份能力契约 |
 | [openspec/changes/archive](openspec/changes/archive) | 历次变更的 proposal / design / tasks |
 
 ## 许可证

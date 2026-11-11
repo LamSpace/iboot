@@ -17,7 +17,9 @@
 # - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo + seata + rocketmq），
 #   不启动 Prometheus、Kibana、Thanos 等观测组件；
 # - 数据库 iboot 与全部表结构由 iboot-db-init 创建，服务不再自带迁移；
-# - 后端日志写入 logs/，进程号写入 logs/<name>.pid。
+# - 后端日志写入 logs/，进程号写入 logs/<name>.pid；
+# - SkyWalking APM 对比实验由 IBOOT_SKYWALKING_ENABLED 控制，默认关闭。
+#   打开前先执行 scripts/apm/fetch-agent.sh，并启动 docker compose --profile apm。
 
 set -uo pipefail
 
@@ -66,6 +68,12 @@ fi
 # 运维控制台：默认开启，可通过 IBOOT_OPS_ENABLED=false 关闭以节省本机内存。
 ops_enabled() { [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; }
 
+# SkyWalking APM 对比实验：默认关闭；打开前需先执行 scripts/apm/fetch-agent.sh
+# 并启动 docker compose --profile apm。只影响启动参数，不改业务代码与依赖。
+SKYWALKING_AGENT="${IBOOT_SKYWALKING_AGENT:-$ROOT/docker/skywalking/agent/skywalking-agent.jar}"
+SKYWALKING_OAP="${IBOOT_SKYWALKING_OAP:-127.0.0.1:11800}"
+skywalking_enabled() { [ "${IBOOT_SKYWALKING_ENABLED:-false}" = "true" ]; }
+
 # RocketMQ 是通知链路的中间件；关闭后审批仍可提交，事件保留在 outbox。
 rocketmq_enabled() { [ "${IBOOT_ROCKETMQ_ENABLED:-true}" = "true" ]; }
 
@@ -101,7 +109,8 @@ service_pid() {
             return 0
         fi
     fi
-    pid="$(pgrep -f "java -jar $name/target/$name-$VERSION.jar" 2>/dev/null | head -1)"
+    # 挂 Agent 时启动命令在 -jar 前多了 -javaagent/-D 参数，不能再用 "java -jar" 作为前缀匹配。
+    pid="$(pgrep -f -- "-jar $name/target/$name-$VERSION.jar" 2>/dev/null | head -1)"
     [ -n "$pid" ] && printf '%s' "$pid"
 }
 
@@ -270,6 +279,11 @@ start_backend() {
     # /actuator/health 拉成 503。本地开发把它排除，健康状态只反映数据库、注册中心等
     # 运行本服务真正需要的东西。
     export MANAGEMENT_HEALTH_MAIL_ENABLED=false
+    if skywalking_enabled; then
+        [ -f "$SKYWALKING_AGENT" ] \
+            || fail "SkyWalking Agent 不存在：$SKYWALKING_AGENT（先执行 scripts/apm/fetch-agent.sh）"
+        log "  SkyWalking Agent 已启用：$SKYWALKING_AGENT -> $SKYWALKING_OAP"
+    fi
     for entry in "${SERVICES[@]}"; do
         name="${entry%%:*}"
         port="${entry##*:}"
@@ -283,7 +297,16 @@ start_backend() {
             echo "$running" > "$pidfile"
             log "  $name 已在运行（pid $running）"
         else
-            nohup java -jar "$name/target/$name-$VERSION.jar" > "$LOG_DIR/$name.log" 2>&1 &
+            local -a java_opts=()
+            if skywalking_enabled && [ "$name" != "iboot-ops" ]; then
+                java_opts=(
+                    "-javaagent:$SKYWALKING_AGENT"
+                    "-Dskywalking.agent.service_name=$name"
+                    "-Dskywalking.collector.backend_service=$SKYWALKING_OAP"
+                    "-Dskywalking.agent.sample_n_per_3_secs=-1"
+                )
+            fi
+            nohup java "${java_opts[@]}" -jar "$name/target/$name-$VERSION.jar" > "$LOG_DIR/$name.log" 2>&1 &
             echo $! > "$pidfile"
             log "  $name 启动中（pid $!，端口 $port）"
         fi

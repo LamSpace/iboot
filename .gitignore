@@ -64,6 +64,9 @@ application-local.properties
 # 本地文件存储目录（冒烟与手工测试产生）
 uploads/
 
+# 本地下载的 SkyWalking Java Agent（scripts/apm/fetch-agent.sh 解压到此）
+docker/skywalking/agent/
+
 # 后端构建产物（Maven）
 target/
 *.class

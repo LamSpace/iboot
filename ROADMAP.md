@@ -72,13 +72,13 @@
 阶段 2 收尾（已完成）  -. 辅助实验按需 .->  阶段 3 云原生  -->  阶段 4 深水区
 ```
 
-### 阶段 2 收尾（已完成，仅剩 APM 对比实验）
+### 阶段 2 收尾（已完成）
 
 阶段 2 的五项验收判据已全部达标（TraceID 贯穿、故障隔离、Nacos 配置热更新、前端零改动、Seata 分布式事务）。Seata 覆盖两条真实链路：审批通过 → 扣减请假额度使用 AT，管理员额度划转使用 TCC；实现与边界见 [§2 能力索引](#2-能力索引) 与 [docs/23 §16/§17](<./docs/23-微服务底座操作指南.md>)，复核脚本为 `scripts/regress/seata.sh` 与 `scripts/regress/seata-tcc.sh`。运维控制台 `iboot-ops` 也已交付（见 §2）。
 
-本阶段不再有阻塞判据，仅保留下面的辅助对比实验。
+本阶段不再有阻塞判据，APM 辅助对比实验已完成。
 
-**APM 对比实验（辅助项，不替代任何判据）**：引入 SkyWalking（OAP + UI + Java Agent）与既有 Tempo 并行观测同一批服务，补齐两条埋点范式的对比：agent 字节码增强的零侵入自动埋点 vs. 现有 SDK 埋点，并体验服务拓扑与方法级慢调用剖析。它不替换 Tempo，也不改变阶段 2 的任何验收判据。验收标准：同一请求在 SkyWalking 与 Tempo 两侧都能还原完整调用链；记录 Java Agent 对启动时间、常驻内存、吞吐的实际影响；产出一页选型结论，说明两者各自适合的场景与代价；停掉 SkyWalking 不影响任何业务，也不影响既有 Tempo 链路。版本为 OAP **11.1.0** + Java Agent **9.8.0**（Agent 9.6.0 起支持 JDK 25，OAP 10.4.0 起支持 JDK 25 与虚拟线程）；存储用默认的 BanyanDB——现有 ES 9.2 不在 SkyWalking 官方支持矩阵（文档上限 8.x），不强行接。代价是本地常驻进程 +3（OAP、UI、BanyanDB），已计入 R4。
+**APM 对比实验（已完成，结论：保留 Tempo 为主链路）**：引入 SkyWalking（OAP + UI + Java Agent）与既有 Tempo 并行观测同一批服务，补齐两条埋点范式的对比：agent 字节码增强的零侵入自动埋点 vs. 现有 SDK 埋点，并体验服务拓扑与方法级慢调用剖析。它不替换 Tempo，也不改变阶段 2 的任何验收判据。功能验收：同一请求在 SkyWalking 与 Tempo 两侧都能还原完整调用链；停掉 SkyWalking 后业务与 Tempo 链路正常；44 项冒烟在辅助栈运行与停止两种状态下均通过。定量结果（样本 `iboot-system`，两轮 6 个样本中位数）：启动到健康 15.8 s → 29.9 s（+90%），常驻 RSS 676 MB → 1 149 MB（+70%），吞吐 61.2 → 49.8 请求/秒（−18.6%），成功率 98.8% → 95.2%；按九个服务估算仅 RSS 就增加约 4.3 GB。结论与原始数据见 [docs/24](<./docs/24-SkyWalking 与 Tempo 对比实验.md>)：SkyWalking 保留为可选、可整体摘除的对比栈，不转正；未来若有零侵入拓扑需求，优先评估阶段 3 的云上托管 APM。版本为 OAP **11.0.0** + Horizon UI **1.0.0** + BanyanDB **0.11.0** + Java Agent **9.8.0**（Agent 9.6.0 起支持 JDK 25，OAP 10.4.0 起支持 JDK 25 与虚拟线程）；镜像站当前可获取的官方配套组合是 11.0.0，11.1.0 组合未同步，升级另起变更。存储用 BanyanDB——现有 ES 9.2 不在 SkyWalking 官方支持矩阵（文档上限 8.x），不强行接。代价是本地常驻进程 +3（OAP、UI、BanyanDB），已计入 R4。
 
 ### 阶段 3：云原生（ACK + Helm）
 
@@ -124,7 +124,7 @@
 | AgentScope Java | 2.0.1（GA） | JDK 25 已 Spike 通过；starter 构建于 Boot 4.0.3 |
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
 | Spring Boot Admin | **4.0.2** | 运维控制台；4.x 对应 Boot 4，勿与 Boot 3 的 3.x 混搭 |
-| SkyWalking | OAP **11.1.0** + Java Agent **9.8.0** | 阶段 2 辅助对比实验；Agent 9.6.0 起支持 JDK 25，OAP 10.4.0 起支持 JDK 25 与虚拟线程；存储用默认 BanyanDB（ES 9.2 不在官方支持矩阵） |
+| SkyWalking | OAP **11.0.0** + Horizon UI **1.0.0** + BanyanDB **0.11.0** + Java Agent **9.8.0** | 阶段 2 辅助对比实验；镜像站可获取的官方配套组合，11.1.0 未同步；OAP 与 BanyanDB 的 server API 精确锁定 0.11，不可混搭；ES 9.2 不在官方支持矩阵 |
 | 对话模型 | **百炼 `qwen3.8-flash`**（备用 `qwen3.7-flash`） | thinking 默认开启，须显式关闭 |
 | DeepSeek（备用） | `deepseek-flash`（OpenAI 兼容端点） | 仅用于故障切换，不默认启用 |
 | Embedding | 百炼 `text-embedding-v4` 或本地 BGE-M3 | 第二供应商必然存在 |
@@ -145,7 +145,7 @@
 | ID | 风险 | 影响阶段 | 处置 |
 |---|---|---|---|
 | R2 | Dubbo 不支持 Boot 4 | 3 / 4 | 服务间 HTTP 先行；延后至出现 Boot 4 兼容版本后重评 |
-| R4 | 本机内存：N×JVM + 27 个常驻中间件容器（含 Sentinel Dashboard、RocketMQ 三组件、Kafka 与 Seata Server；SkyWalking 实验再 +3 共 30 个） | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；RocketMQ Broker 堆 512MB、Proxy/NameServer 256MB，且不参与业务启动依赖；Seata Server 堆上限 512MB、直接内存 256MB；SkyWalking 实验按需启停；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
+| R4 | 本机内存：N×JVM + 27 个常驻中间件容器（含 Sentinel Dashboard、RocketMQ 三组件、Kafka 与 Seata Server；SkyWalking 实验再 +3 共 30 个），且单服务挂 Agent 后 RSS +约 470MB | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；RocketMQ Broker 堆 512MB、Proxy/NameServer 256MB，且不参与业务启动依赖；Seata Server 堆上限 512MB、直接内存 256MB；SkyWalking 实验按需启停（OAP 堆上限 1GB），实验数据见 docs/24；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
 | R6 | LLM token 与云账单失控 | 全阶段 | 配额 + 用量看板 + Alertmanager 告警 |
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
