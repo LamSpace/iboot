@@ -1,0 +1,26 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0.
+#
+# SkyWalking Horizon UI 配置（本地 APM 对比实验专用）。
+# 官方说明：Horizon 的后端地址与登录用户只从本文件读取，没有对应环境变量。
+# 默认账号 skywalking/skywalking 仅限本机开发，禁止暴露到内网以外。
+server:
+  # 绑定全部接口；默认模板的 127.0.0.1 会让容器外部访问 503。
+  host: 0.0.0.0
+  port: 8081
+
+oap:
+  queryUrl: http://skywalking-oap:12800
+  adminUrl: http://skywalking-oap:17128
+  zipkinUrl: http://skywalking-oap:9412/zipkin
+
+auth:
+  backend: local
+  local:
+    users:
+      - username: skywalking
+        # 明文为 skywalking；轮换方式见 docs/24。
+        passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$ulwTy/981LUpNFfSAjmKAg$lpp0WRYPoiGDoWA3Lg2e+CvCffIHE0TDEUsQMnjcwsU"
+        roles: [admin]

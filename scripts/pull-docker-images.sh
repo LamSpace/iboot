@@ -217,6 +217,40 @@ docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/grafana/tempo:2.10
 echo "Tempo 镜像拉取完成！"
 echo ""
 
+# ======================================
+# 阶段 2 收尾：SkyWalking APM 对比实验
+# OAP 11.0.0 + Horizon UI 1.0.0 + BanyanDB 0.11.0 是官方配套组合；
+# OAP 11 只接受 BanyanDB server API 0.11，版本不可自行混搭。
+# 镜像站上暂无 11.1.0 组合，升级需另起变更。
+# ======================================
+
+# 拉取 SkyWalking BanyanDB 镜像
+echo "======================================"
+echo "正在拉取 SkyWalking BanyanDB 镜像..."
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/skywalking-banyandb:0.11.0
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/skywalking-banyandb:0.11.0  docker.io/apache/skywalking-banyandb:0.11.0
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/skywalking-banyandb:0.11.0
+echo "SkyWalking BanyanDB 镜像拉取完成！"
+echo ""
+
+# 拉取 SkyWalking OAP 镜像
+echo "======================================"
+echo "正在拉取 SkyWalking OAP 镜像..."
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/skywalking-oap-server:11.0.0
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/skywalking-oap-server:11.0.0  docker.io/apache/skywalking-oap-server:11.0.0
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/skywalking-oap-server:11.0.0
+echo "SkyWalking OAP 镜像拉取完成！"
+echo ""
+
+# 拉取 SkyWalking Horizon UI 镜像（11.x 起 UI 使用独立的 horizon-* 标签）
+echo "======================================"
+echo "正在拉取 SkyWalking Horizon UI 镜像..."
+docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/skywalking-ui:horizon-1.0.0
+docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/skywalking-ui:horizon-1.0.0  docker.io/apache/skywalking-ui:horizon-1.0.0
+docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/skywalking-ui:horizon-1.0.0
+echo "SkyWalking Horizon UI 镜像拉取完成！"
+echo ""
+
 # 拉取 OpenTelemetry Collector 镜像（可选，应用可直连 Tempo 的 OTLP 端口）
 echo "======================================"
 echo "正在拉取 OpenTelemetry Collector 镜像..."

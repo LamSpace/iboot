@@ -99,6 +99,16 @@ nginx:stable-alpine3.23
 | nacos | 8848/8849/9848/9849 | 注册/配置中心，控制台在 8849 |
 | tempo | 4317/4318/3200 | 链路追踪 |
 
+APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
+
+| 服务 | 端口 | 说明 |
+|---|---|---|
+| skywalking-oap | 11800 / 12800 / 17128 | gRPC 上报 / GraphQL 查询 / admin |
+| skywalking-ui | 18082 | Horizon UI；默认账号仅限本机 |
+| skywalking-banyandb | 17913 | 存储；与 OAP 11.0.0 的 server API 0.11 精确配套 |
+
+> 业务服务的 Agent 不由 compose 注入：当前开发路径是宿主机 `scripts/dev-init.sh` 在 `IBOOT_SKYWALKING_ENABLED=true` 时追加 `-javaagent`。容器化后如何挂载 Agent 留到阶段 3 再评估。
+
 可观测性组件（默认启动；`up core` 可只启动核心）：
 
 | 服务 | 端口 |
@@ -185,6 +195,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 | `auth_keys` | 认证服务 RSA 签名密钥；认证服务重启后旧令牌仍可验证 |
 | `neo4j_data` / `neo4j_logs` | 图数据库 |
 | `tempo_data` | 链路追踪 |
+| `skywalking_banyandb_data` | APM 对比实验的 SkyWalking 存储；随 `apm` profile 删除 |
 
 普通 `down` 不会删除卷；只有 `purge --yes` 会执行 `down -v`。
 
