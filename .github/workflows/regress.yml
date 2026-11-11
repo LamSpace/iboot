@@ -33,8 +33,9 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - name: 构建全部模块（跳过测试）
-        run: mvn -B -DskipTests package
+      # 下一步用 -pl 把 Reactor 裁剪到网关，兄弟模块必须已安装到本地仓库。
+      - name: 构建并安装全部模块（跳过测试）
+        run: mvn -B -DskipTests install
 
       - name: 网关集成测试
         run: mvn -B -pl iboot-gateway test
