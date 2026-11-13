@@ -8,6 +8,10 @@
 # 环境变量：REG_BASE（登录与默认录制源，默认 http://localhost:8080）、
 #           REG_RECORD_BASE（仅 --record 的取数地址；旧实现删除后指向对应服务）、
 #           REG_GATEWAY（重放入口，默认 http://localhost:8088）、REG_USER、REG_PASS
+#
+# 注意：golden 是迁移期快照，依赖录制时的数据库行 ID、时间戳与备份哈希。
+# 日常回归写入新数据后会出现差异，这属于状态漂移，不是接口行为变化；
+# 不要用 --record 覆盖历史基线来消除差异。
 
 set -euo pipefail
 
@@ -62,5 +66,6 @@ if diff -u "$GOLDEN" "$TMP/${SERVICE}-equivalence.json" > "$TMP/${SERVICE}-equiv
     exit 0
 fi
 echo "[FAIL] ${SERVICE} 接口响应与基线不一致："
+echo "注意：等价性基线是迁移期快照；若录制后数据库已有新写入，差异属于状态漂移，不是接口行为变化。"
 head -60 "$TMP/${SERVICE}-equivalence.diff"
 exit 1

@@ -38,13 +38,17 @@ CI 的 PR 任务只跑路由覆盖、构建与网关测试；定时 / 手动任�
 |---|---|
 | `regress/regress.sh` | 总入口：契约快照 → 路径守恒 → 路由覆盖 → 冒烟 → 权限矩阵；`--refresh` 重建基线。 |
 | `regress/api-snapshot.sh` | 导出服务的 OpenAPI 快照并归一化为基线。 |
-| `regress/equivalence.sh` | 只读接口的响应等价性录制与重放比对。 |
+| `regress/equivalence.sh` | 迁移期一次性校验：迁移前从旧实现录制，迁移后经网关重放比对。 |
 | `regress/path-conservation.sh` | 校验服务迁移前后的路径并集守恒。 |
 | `regress/permission-matrix.sh` | 角色 × 接口 × 期望结果的权限边界矩阵。 |
 | `regress/smoke.sh` | 登录、用户、文件、推送、任务、备份、审批的关键链路冒烟。 |
 | `regress/seata.sh` | Seata AT 跨服务验收：正常提交、额度不足、后置失败回滚、TC/RM 不可用、并发与幂等。 |
 | `regress/seata-tcc.sh` | Seata TCC 额度划转验收：正常划转、Try 后取消、空回滚、并发、权限、TC/system 不可用。 |
 | `regress/trace-chain.sh` | 按 TraceID 查询链路并校验期望服务是否出现。 |
+
+> `equivalence.sh` 的 golden 依赖录制时的数据库行 ID、时间戳与备份哈希，只在
+> 「旧实现 → 新实现」的迁移窗口内有效。日常回归会写入新数据，出现差异属于状态漂移；
+> 不要用 `--record` 覆盖历史基线来消除差异。
 
 ## 历史脚本
 
