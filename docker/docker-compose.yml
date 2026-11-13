@@ -416,7 +416,7 @@ services:
 
   # ==================== 基础设施 ====================
   mysql:
-    image: mysql:8.0.45
+    image: mysql:8.4.13
     container_name: iboot-mysql
     ports:
       - "3306:3306"
@@ -441,7 +441,7 @@ services:
       start_period: 60s
 
   redis:
-    image: redis:7.0.14
+    image: redis:8.8.4
     container_name: iboot-redis
     ports:
       - "6379:6379"
@@ -496,7 +496,7 @@ services:
         condition: service_healthy
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.3
+    image: elasticsearch:9.5.5
     container_name: iboot-elasticsearch
     ports:
       - "9200:9200"
@@ -517,7 +517,7 @@ services:
       start_period: 60s
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:9.2.3
+    image: logstash:9.5.5
     container_name: iboot-logstash
     ports:
       - "5044:5044"
@@ -542,7 +542,7 @@ services:
   # ==================== 注册中心与链路追踪 ====================
   # Nacos 3.x 控制台与主端口分离，控制台映射到宿主机 8849。
   nacos:
-    image: nacos/nacos-server:v3.1.1
+    image: nacos/nacos-server:v3.3.0
     container_name: iboot-nacos
     ports:
       - "8848:8848"
@@ -552,6 +552,8 @@ services:
     environment:
       - MODE=standalone
       - NACOS_AUTH_ENABLE=false
+      # Nacos 3.x 的 admin API 认证独立于 server auth；本地开发关闭以便脚本写入基线规则
+      - NACOS_AUTH_ADMIN_ENABLE=false
       - NACOS_AUTH_TOKEN=aWJvb3QtZGV2LW5hY29zLWF1dGgtdG9rZW4tMzJieXRl
       - NACOS_AUTH_IDENTITY_KEY=iboot-dev
       - NACOS_AUTH_IDENTITY_VALUE=iboot-dev
@@ -569,7 +571,7 @@ services:
       start_period: 60s
 
   sentinel-dashboard:
-    image: bladex/sentinel-dashboard:1.8.9
+    image: bladex/sentinel-dashboard:1.8.10
     container_name: iboot-sentinel-dashboard
     ports:
       - "8858:8858"
@@ -592,7 +594,7 @@ services:
 
   # ==================== Seata（AT 全局事务协调器） ====================
   seata-server:
-    image: apache/seata-server:2.5.0
+    image: apache/seata-server:2.6.0
     container_name: iboot-seata-server
     ports:
       - "8091:8091"
@@ -617,7 +619,7 @@ services:
 
   # ==================== RocketMQ（审批通知事件） ====================
   rocketmq-namesrv:
-    image: apache/rocketmq:5.3.1
+    image: apache/rocketmq:5.5.0
     container_name: iboot-rocketmq-namesrv
     command: sh mqnamesrv
     environment:
@@ -635,7 +637,7 @@ services:
 
   # 卷由 root 创建，broker 以 uid 3000 运行；先修正属主再启动。
   rocketmq-store-init:
-    image: apache/rocketmq:5.3.1
+    image: apache/rocketmq:5.5.0
     container_name: iboot-rocketmq-store-init
     user: "0:0"
     command: sh -c "mkdir -p /home/rocketmq/store && chown -R 3000:3000 /home/rocketmq/store"
@@ -646,7 +648,7 @@ services:
       - iboot-network
 
   rocketmq-broker:
-    image: apache/rocketmq:5.3.1
+    image: apache/rocketmq:5.5.0
     container_name: iboot-rocketmq-broker
     command: sh mqbroker -n rocketmq-namesrv:9876
     environment:
@@ -671,7 +673,7 @@ services:
       start_period: 30s
 
   rocketmq-proxy:
-    image: apache/rocketmq:5.3.1
+    image: apache/rocketmq:5.5.0
     container_name: iboot-rocketmq-proxy
     command: sh mqproxy -n rocketmq-namesrv:9876
     environment:
@@ -679,7 +681,7 @@ services:
       NAMESRV_ADDR: rocketmq-namesrv:9876
       JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     volumes:
-      - ./rocketmq/rmq-proxy.json:/home/rocketmq/rocketmq-5.3.1/conf/rmq-proxy.json:ro
+      - ./rocketmq/rmq-proxy.json:/home/rocketmq/rocketmq-5.5.0/conf/rmq-proxy.json:ro
     ports:
       - "18080:8080"
       - "18081:8081"
@@ -699,7 +701,7 @@ services:
       start_period: 20s
 
   rocketmq-init:
-    image: apache/rocketmq:5.3.1
+    image: apache/rocketmq:5.5.0
     container_name: iboot-rocketmq-init
     command: sh /home/rocketmq/init-topics.sh
     environment:
@@ -717,7 +719,7 @@ services:
   # KRaft 单节点，不部署 ZooKeeper；只作 24 小时日志缓冲，不承载业务事件。
   # 双监听：kafka:9092 给容器内服务，localhost:29092 给宿主机进程与 kafka-*.sh 工具。
   kafka:
-    image: apache/kafka:4.1.1
+    image: apache/kafka:4.4.0
     container_name: iboot-kafka
     environment:
       TZ: Asia/Shanghai
@@ -753,7 +755,7 @@ services:
 
   # 一次性建 topic；重复执行幂等，不重建已有 topic。
   kafka-init:
-    image: apache/kafka:4.1.1
+    image: apache/kafka:4.4.0
     container_name: iboot-kafka-init
     entrypoint: ["/bin/sh", "/opt/kafka/init-topics.sh"]
     environment:
@@ -769,7 +771,7 @@ services:
       - iboot-network
 
   tempo:
-    image: grafana/tempo:2.10.8
+    image: grafana/tempo:2.10.9
     container_name: iboot-tempo
     ports:
       - "4317:4317"
@@ -788,7 +790,7 @@ services:
   # OAP 11 只接受 BanyanDB server API 0.11，三个版本不可自行混搭。
   # 三个服务都不加入任何业务服务的 depends_on。
   skywalking-banyandb:
-    image: apache/skywalking-banyandb:0.11.0
+    image: apache/skywalking-banyandb:0.11.2
     container_name: iboot-skywalking-banyandb
     profiles: ["apm"]
     command: standalone --stream-root-path /data/stream --measure-root-path /data/measure
@@ -808,7 +810,7 @@ services:
       retries: 120
 
   skywalking-oap:
-    image: apache/skywalking-oap-server:11.0.0
+    image: apache/skywalking-oap-server:11.1.0
     container_name: iboot-skywalking-oap
     profiles: ["apm"]
     depends_on:
@@ -836,7 +838,7 @@ services:
       start_period: 90s
 
   skywalking-ui:
-    image: apache/skywalking-ui:horizon-1.0.0
+    image: apache/skywalking-ui:horizon-1.1.0
     container_name: iboot-skywalking-ui
     profiles: ["apm"]
     depends_on:
@@ -860,7 +862,7 @@ services:
 
   # ==================== 监控组件（observability profile） ====================
   prometheus:
-    image: prom/prometheus:v2.53.4
+    image: prom/prometheus:v3.16.0
     container_name: iboot-prometheus
     profiles: ["observability"]
     ports:
@@ -885,7 +887,7 @@ services:
       - iboot-network
 
   grafana:
-    image: grafana/grafana:12.2.0
+    image: grafana/grafana:13.2.6
     container_name: iboot-grafana
     profiles: ["observability"]
     ports:
@@ -909,7 +911,7 @@ services:
       - thanos-query
 
   alertmanager:
-    image: prom/alertmanager:v0.29.0
+    image: prom/alertmanager:v0.35.0
     container_name: iboot-alertmanager
     profiles: ["observability"]
     ports:
@@ -927,7 +929,7 @@ services:
       - prometheus
 
   thanos-sidecar:
-    image: thanosio/thanos:v0.36.1
+    image: thanosio/thanos:v0.42.5
     container_name: thanos-sidecar
     profiles: ["observability"]
     ports:
@@ -953,7 +955,7 @@ services:
         condition: service_healthy
 
   thanos-store:
-    image: thanosio/thanos:v0.36.1
+    image: thanosio/thanos:v0.42.5
     container_name: thanos-store
     profiles: ["observability"]
     ports:
@@ -978,7 +980,7 @@ services:
         condition: service_healthy
 
   thanos-query:
-    image: thanosio/thanos:v0.36.1
+    image: thanosio/thanos:v0.42.5
     container_name: thanos-query
     profiles: ["observability"]
     ports:
@@ -987,8 +989,8 @@ services:
       - query
       - '--grpc-address=0.0.0.0:19191'
       - '--http-address=0.0.0.0:19192'
-      - '--store=thanos-sidecar:19191'
-      - '--store=thanos-store:19191'
+      - '--endpoint=thanos-sidecar:19191'
+      - '--endpoint=thanos-store:19191'
       - '--query.replica-label=replica'
       - '--query.timeout=5m'
     restart: unless-stopped
@@ -999,7 +1001,7 @@ services:
       - thanos-store
 
   thanos-compact:
-    image: thanosio/thanos:v0.36.1
+    image: thanosio/thanos:v0.42.5
     container_name: thanos-compact
     profiles: ["observability"]
     ports:
@@ -1025,7 +1027,7 @@ services:
         condition: service_healthy
 
   mysql-exporter:
-    image: prom/mysqld-exporter:v0.15.0
+    image: prom/mysqld-exporter:v0.21.0
     container_name: iboot-mysql-exporter
     profiles: ["observability"]
     ports:
@@ -1042,7 +1044,7 @@ services:
       - mysql
 
   redis-exporter:
-    image: oliver006/redis_exporter:v1.69.0
+    image: oliver006/redis_exporter:v1.97.0
     container_name: iboot-redis-exporter
     profiles: ["observability"]
     ports:
@@ -1056,7 +1058,7 @@ services:
       - redis
 
   node-exporter:
-    image: prom/node-exporter:v1.10.2
+    image: prom/node-exporter:v1.12.1
     container_name: iboot-node-exporter
     profiles: ["observability"]
     ports:
@@ -1075,7 +1077,7 @@ services:
       - iboot-network
 
   elasticsearch-exporter:
-    image: prometheuscommunity/elasticsearch-exporter:v1.5.0
+    image: prometheuscommunity/elasticsearch-exporter:v1.11.0
     container_name: iboot-elasticsearch-exporter
     profiles: ["observability"]
     ports:
@@ -1092,7 +1094,7 @@ services:
         condition: service_healthy
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:9.2.3
+    image: kibana:9.5.5
     container_name: iboot-kibana
     profiles: ["observability"]
     ports:
@@ -1108,7 +1110,7 @@ services:
 
   # ==================== 知识图谱（graph profile） ====================
   neo4j:
-    image: neo4j:5.26.29-community
+    image: neo4j:5.26.33-community
     container_name: iboot-neo4j
     profiles: ["graph"]
     ports:

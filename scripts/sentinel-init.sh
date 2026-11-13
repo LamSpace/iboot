@@ -9,13 +9,16 @@
 # 说明：
 # - Nacos 是规则权威来源；Dashboard 上的临时修改不会写回 Nacos。
 # - 规则文件位于 docker/sentinel/rules/，group 固定为 SENTINEL_GROUP。
-# - 依赖 Nacos 3.x 仍保留的 v1 配置写入接口（见 docs/23 §8）。
+# - 使用 Nacos 3.x 的 v3 admin 写入接口与 v3 client 回读接口；
+#   本地编排通过 NACOS_AUTH_ADMIN_ENABLE=false 关闭 admin API 认证。
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NACOS_ADDR="${NACOS_ADDR:-localhost:8848}"
-NACOS_URL="http://${NACOS_ADDR}/nacos/v1/cs/configs"
+NACOS_URL="http://${NACOS_ADDR}/nacos/v3/admin/cs/config"
+NACOS_READ_URL="http://${NACOS_ADDR}/nacos/v3/client/cs/config"
+NAMESPACE="${NACOS_NAMESPACE:-public}"
 GROUP="${SENTINEL_GROUP:-SENTINEL_GROUP}"
 RULES_DIR="$ROOT/docker/sentinel/rules"
 VERIFY=0
@@ -34,7 +37,8 @@ publish() {
 
     curl -sf -X POST "$NACOS_URL" \
         --data-urlencode "dataId=$data_id" \
-        --data-urlencode "group=$GROUP" \
+        --data-urlencode "groupName=$GROUP" \
+        --data-urlencode "namespaceId=$NAMESPACE" \
         --data-urlencode "content@$file" \
         --data-urlencode "type=json" >/dev/null \
         || fail "写入 Nacos 失败：dataId=$data_id"
@@ -43,14 +47,15 @@ publish() {
         local_content="$(cat "$file")"
         remote=''
         for _ in $(seq 1 10); do
-            remote="$(curl -sf "$NACOS_URL?dataId=$data_id&group=$GROUP" || true)"
+            remote="$(curl -sf "$NACOS_READ_URL?dataId=$data_id&groupName=$GROUP&namespaceId=$NAMESPACE" \
+                | jq -r '.data.content // empty' || true)"
             [ "$remote" = "$local_content" ] && break
             sleep 0.3
         done
         [ "$remote" = "$local_content" ] \
             || fail "回读 Nacos 失败或内容不一致：dataId=$data_id"
     fi
-    log "  已写入 $data_id（group=$GROUP）"
+    log "  已写入 $data_id（group=$GROUP, namespace=$NAMESPACE）"
 }
 
 log '=== Sentinel 基线规则 ==='

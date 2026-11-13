@@ -5,7 +5,7 @@
 # 构建上下文为仓库根目录，示例：
 #   docker build -f docker/Dockerfile.backend --build-arg MODULE=iboot-system -t iboot-system .
 
-FROM eclipse-temurin:25-jre AS runtime
+FROM eclipse-temurin:25.0.5_8-jre AS runtime
 
 ARG MODULE
 ARG PORT=8080

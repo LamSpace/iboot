@@ -4,7 +4,7 @@
 #
 # 该脚本把多阶段构建与 compose 启动串成一条可重复的链路：
 #   1. 停止宿主机的开发进程，避免端口与 fat jar 冲突；
-#   2. 确保构建/运行期基础镜像已从镜像站拉取；
+#   2. 确保构建/运行期基础镜像已从 Docker Hub 拉取；
 #   3. 构建共享 Maven builder 镜像（整个 reactor 只构建一次）；
 #   4. 构建全部运行期镜像；
 #   5. 启动 compose 并等待健康。
@@ -20,7 +20,7 @@
 #   docker-deploy.sh purge --yes        停止并删除数据卷（不可恢复）
 #
 # 说明：
-# - 构建与运行期基础镜像来自 scripts/pull-docker-images.sh 配置的 SWR 镜像站；
+# - 构建与运行期基础镜像来自 scripts/pull-docker-images.sh 配置的 Docker Hub（MinIO 走 aityp/SWR）；
 # - 根目录 .env 会被加载，用于 compose 插值（如 NEO4J_PASSWORD）；
 # - 应用容器的环境变量由 docker-compose.yml 的 env_file 注入。
 
@@ -31,10 +31,10 @@ cd "$ROOT"
 
 COMPOSE=(docker compose -f docker/docker-compose.yml)
 BASE_IMAGES=(
-  "maven:3.9.14-eclipse-temurin-25"
-  "eclipse-temurin:25-jre"
-  "node:22-bookworm-slim"
-  "nginx:stable-alpine3.23"
+  "maven:3.10.0-eclipse-temurin-25"
+  "eclipse-temurin:25.0.5_8-jre"
+  "node:22.23.5-bookworm-slim"
+  "nginx:1.30.6-alpine3.24"
 )
 
 log()  { printf '[docker-deploy] %s\n' "$*"; }
@@ -105,7 +105,7 @@ report_unhealthy() {
   while IFS='|' read -r name service state health; do
     [ -n "$service" ] || continue
     case "$service" in
-      db-init|minio-init) continue ;;
+      db-init|minio-init|rocketmq-store-init|rocketmq-init|kafka-init) continue ;;
     esac
     if [ "$state" != "running" ] || { [ -n "$health" ] && [ "$health" != "healthy" ]; }; then
       printf '\n--- %s（%s，health=%s）最近日志 ---\n' "$name" "$state" "${health:-none}" >&2
@@ -115,7 +115,8 @@ report_unhealthy() {
 }
 
 # 等待常驻服务健康，并确认一次性服务以 0 退出。
-# 不使用 compose up --wait：它会把 db-init / minio-init 这类正常退出的一次性服务判为失败。
+# 不使用 compose up --wait：它会把 db-init / minio-init / rocketmq-*-init / kafka-init
+# 这类正常退出的一次性服务判为失败。
 wait_ready() {
   local timeout="${1:-600}"
   local deadline=$((SECONDS + timeout))
@@ -125,7 +126,7 @@ wait_ready() {
     while IFS='|' read -r name service state health; do
       [ -n "$service" ] || continue
       case "$service" in
-        db-init|minio-init)
+        db-init|minio-init|rocketmq-store-init|rocketmq-init|kafka-init)
           if [ "$state" = "exited" ]; then
             exitcode=$(docker inspect -f '{{.State.ExitCode}}' "$name" 2>/dev/null || echo 1)
             if [ "$exitcode" != "0" ]; then

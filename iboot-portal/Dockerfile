@@ -17,7 +17,7 @@
 
 # 构建阶段：使用国内 npm 镜像，不依赖宿主机 cnpm。
 # 上下文中的 .env 会被 Vite 读取，因此必须保留（见 .dockerignore）。
-FROM node:22-bookworm-slim AS build
+FROM node:22.23.5-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -29,7 +29,7 @@ COPY . .
 RUN npm run build
 
 # 生产运行阶段
-FROM nginx:stable-alpine3.23 AS production
+FROM nginx:1.30.6-alpine3.24 AS production
 
 # 设置时区
 ENV TZ=Asia/Shanghai

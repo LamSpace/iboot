@@ -2,7 +2,7 @@
 # 数据库初始化一次性任务镜像：复用共享 builder 产出的 exec jar。
 # 入口直接执行 jar，不经过 run-java.sh；退出码即迁移结果。
 
-FROM eclipse-temurin:25-jre AS runtime
+FROM eclipse-temurin:25.0.5_8-jre AS runtime
 
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone

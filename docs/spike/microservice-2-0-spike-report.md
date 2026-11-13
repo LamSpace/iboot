@@ -90,6 +90,7 @@
 | Nacos 3.x 移除了 `/nacos/v1/console/health/readiness` | 健康检查恒失败，容器卡在 `health: starting` | 改用控制台的 `/v3/console/health/readiness` |
 | Nacos 3.x 镜像**即使关闭鉴权也要求提供 `NACOS_AUTH_TOKEN`** | 不设置则容器以 255 退出 | compose 中提供开发用令牌 |
 | 配置写入接口 `/nacos/v1/cs/configs` 仍可用，`/v3/admin/cs/config` 需要登录态 | 自动化脚本的选择 | 回归/门禁脚本使用 v1 写配置 |
+| **2026-11-13 更新**：Nacos 3.3.0 已移除 `/nacos/v1/cs/configs` | 旧脚本写入 404 | `scripts/sentinel-init.sh` 改用 `/nacos/v3/admin/cs/config`（`groupName`/`namespaceId`），本地 compose 设 `NACOS_AUTH_ADMIN_ENABLE=false`；回读走 `/nacos/v3/client/cs/config` |
 
 ## 6. 结论
 

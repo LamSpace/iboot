@@ -45,3 +45,7 @@
 /api/monitor/server admin monitor done
 /api/monitor/redis admin monitor done
 /api/monitor/minio admin monitor done
+
+# AI Agent 编排新增的外部接口，不属于服务搬家；以 admin 作为名义来源登记，
+# 使「凭空出现」的检查仍然生效（目标 ai 快照确实有这些路径）。
+/api/ai/agent admin ai done

@@ -9,7 +9,7 @@
 
 set -u
 
-cd "${ROCKETMQ_HOME:-/home/rocketmq/rocketmq-5.3.1}/bin" || exit 1
+cd "${ROCKETMQ_HOME:-/home/rocketmq/rocketmq-5.5.0}/bin" || exit 1
 
 NAMESRV="${NAMESRV_ADDR:-rocketmq-namesrv:9876}"
 TOPIC="${TOPIC:-iboot-notification}"
