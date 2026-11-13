@@ -56,7 +56,7 @@
 
 - [x] 8.1 汇总回归证据：保存每步命令、退出码、`docker compose ps` 与失败日志到 `/tmp/docker-hub-image-refresh/regression.txt`；验证文件包含全部步骤且无未记录的失败。
 - [x] 8.2 若任一步失败：按 Migration Plan 回滚（revert 本次变更 → 按旧矩阵重新 pull → 重建 → 重启），验证旧栈恢复 healthy；在变更说明中记录失败组件与证据。
-- [ ] 8.3 提交变更：在 `feat/docker-hub-image-refresh` 分支提交（含 OpenSpec 工件与代码/脚本修改），推送并用 `gh pr create --base master --head feat/docker-hub-image-refresh` 创建 PR；验证 `gh pr view` 能查到 PR。
+- [x] 8.3 提交变更：在 `feat/docker-hub-image-refresh` 分支提交（含 OpenSpec 工件与代码/脚本修改），推送并用 `gh pr create --base master --head feat/docker-hub-image-refresh` 创建 PR；验证 `gh pr view` 能查到 PR。
 
 ## Workflow follow-up
 
