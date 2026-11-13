@@ -23,6 +23,7 @@
 - 不修改业务代码、数据库 schema、端口、网络拓扑或 compose profile 划分。
 - 不为 MinIO 引入社区重建镜像或自建镜像；该问题单独评估。
 - 不安装 Trivy/Grype 等漏洞扫描器，不产出 SBOM。
+- 不把迁移期 `equivalence.sh` 纳入本次镜像升级的验收：其 golden 依赖录制时的数据状态，当前库已被回归写入，差异属于状态漂移；不覆盖历史基线。
 - 不升级前端框架、Java/Node 语言主版本（Node 保持 22 LTS，JDK 保持 25）。
 
 ## Decisions

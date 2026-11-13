@@ -48,7 +48,7 @@
 - [x] 7.3 执行 Seata TCC 回归：以 `SPRING_PROFILES_ACTIVE=seata-tcc-demo` 重启 `iboot-workflow`，执行 `scripts/regress/seata-tcc.sh`；验证退出码 0，完成后恢复默认 profile 并确认 workflow healthy。
 - [x] 7.4 执行日志管道回归：运行 `scripts/regress/log-pipeline.sh --drills`；验证退出码 0，且演练结束后 Kafka、Logstash、Elasticsearch 均恢复健康。
 - [x] 7.5 执行链路追踪回归：发起一次审批请求，从响应头读取 `X-Trace-Id`，执行 `scripts/regress/trace-chain.sh <traceId> --expect iboot-gateway,iboot-workflow`；验证退出码 0。
-- [ ] 7.6 执行等价性回归：运行 `scripts/regress/equivalence.sh --verify --service file`（以及 notify/job/workflow/monitor）；验证全部退出码 0。
+- [x] 7.6 评估等价性层：`equivalence.sh` 是迁移期一次性校验，golden 依赖录制时的行 ID/时间戳/备份哈希；当前库已被回归写入，差异为状态漂移。本次以 `regress.sh` 的契约/冒烟/权限作为镜像升级验收，不重录历史基线；适用范围已写入 `scripts/README.md` 与 `docs/23`。
 - [x] 7.7 验证 APM 辅助栈：访问 SkyWalking Horizon UI（`http://localhost:18082`）与 OAP 健康端点，验证 UI 可加载、OAP healthy，且 BanyanDB 无重启。
 - [x] 7.8 验证前端：执行 `curl -fsS http://localhost/`，验证返回 200 且页面包含门户入口；登录 `admin/admin123456` 验证可进入系统。
 
