@@ -5,7 +5,7 @@
 # 依赖下载走 docker/maven/settings.xml 中的阿里云 mirror，并通过 BuildKit
 # cache mount 复用本地 Maven 仓库；宿主机带凭据的 settings.xml 不会进入镜像。
 
-FROM maven:3.9.14-eclipse-temurin-25 AS builder
+FROM maven:3.10.0-eclipse-temurin-25 AS builder
 
 WORKDIR /workspace
 

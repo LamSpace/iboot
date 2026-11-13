@@ -15,7 +15,7 @@
 | 脚本 | 用途 |
 |---|---|
 | `docker-deploy.sh` | 全栈 Docker 入口：停止宿主机进程 → 确保基础镜像 → 构建共享 builder → 构建运行期镜像 → Compose 启动并等待健康。支持 `up [core\|observability\|graph\|full]`、`status`、`logs`、`down`、`purge --yes`。 |
-| `pull-docker-images.sh` | 从 SWR 镜像站拉取构建与运行期基础镜像，供 `docker-deploy.sh` 与 Compose 使用。 |
+| `pull-docker-images.sh` | 从 Docker Hub 拉取构建与运行期镜像（MinIO 走 aityp/SWR），供 `docker-deploy.sh` 与 Compose 使用。 |
 
 ## 回归
 
