@@ -110,12 +110,16 @@ class GatewayTracingTest {
     /**
      * 对照组：运维端点请求必须被观测到。
      *
+     * <p>使用 {@code /actuator/info} 而不是 {@code /actuator/health}：后者会聚合 Nacos 等
+     * 外部健康指示器，CI 没有 Nacos 时可能阻塞；{@code /actuator/info} 同样是 actuator 端点，
+     * 足以验证服务端请求观测。
+     *
      * <p>运维端点在追踪后端里能看到 span，若这里断言失败，说明测试装置没接管观测注册表，
      * 后续对转发请求的结论一并失效。
      */
     @Test
     void observesActuatorRequest() {
-        client.get().uri("/actuator/health").exchange().expectStatus().isOk();
+        client.get().uri("/actuator/info").exchange().expectStatus().isOk();
 
         TestObservationRegistryAssert.assertThat(observationRegistry)
                 .hasObservationWithNameEqualTo(SERVER_REQUEST_OBSERVATION);
