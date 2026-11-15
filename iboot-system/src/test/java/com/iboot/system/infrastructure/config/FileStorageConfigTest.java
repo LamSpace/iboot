@@ -23,6 +23,7 @@ import com.iboot.system.infrastructure.storage.SiloFileStorageStrategy;
 import com.iboot.system.infrastructure.storage.OssFileStorageStrategy;
 import com.iboot.system.infrastructure.storage.OssProperties;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +34,8 @@ import static org.mockito.Mockito.when;
 /**
  * 存储提供方选择逻辑测试。
  *
- * <p>验证 {@code sys.file.storageType} 的四个取值分支：local、silo、旧值 minio 与非法值。
+ * <p>验证 {@code sys.file.storageType} 的四个取值分支：local、silo、旧值 minio 与非法值，
+ * 以及 {@code IBOOT_FILE_STORAGE_TYPE} 对数据库值的覆盖优先级。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -70,13 +72,37 @@ class FileStorageConfigTest {
         assertTrue(error.getMessage().contains("minio"));
     }
 
+    @Test
+    void environmentStorageTypeOverridesDatabase() {
+        assertInstanceOf(SiloFileStorageStrategy.class, strategyFor("local", "silo"));
+    }
+
+    @Test
+    void environmentLocalOverridesSiloDefault() {
+        assertInstanceOf(LocalFileStorageStrategy.class, strategyFor("silo", "local"));
+    }
+
+    @Test
+    void rejectsInvalidEnvironmentStorageType() {
+        IllegalStateException error = assertThrows(IllegalStateException.class, () -> strategyFor("silo", "s3"));
+
+        assertTrue(error.getMessage().contains("s3"));
+    }
+
     private FileStorageStrategy strategyFor(String storageType) {
+        return strategyFor(storageType, null);
+    }
+
+    private FileStorageStrategy strategyFor(String storageType, String environmentStorageType) {
         ConfigApplicationService configApplicationService = mock(ConfigApplicationService.class);
         when(configApplicationService.getConfigValue("sys.file.storageType")).thenReturn(storageType);
+        com.iboot.system.infrastructure.storage.SiloProperties siloProperties =
+                new com.iboot.system.infrastructure.storage.SiloProperties(configApplicationService);
+        if (environmentStorageType != null) {
+            ReflectionTestUtils.setField(siloProperties, "storageTypeOverride", environmentStorageType);
+        }
         FileStorageConfig config = new FileStorageConfig(
-                configApplicationService,
-                new com.iboot.system.infrastructure.storage.SiloProperties(configApplicationService),
-                new OssProperties(configApplicationService));
+                configApplicationService, siloProperties, new OssProperties(configApplicationService));
         return config.fileStorageStrategy();
     }
 }

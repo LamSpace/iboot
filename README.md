@@ -120,7 +120,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 
 **认证 `iboot-auth`**：OIDC 发现文档与 JWK 公钥集；浏览器授权码 + PKCE 登录；登出与自助注册；认证服务托管的登录页。
 
-**文件 `iboot-file`**：上传、下载、预览、分类；Silo / 本地 / OSS 三种存储实现按配置切换。
+**文件 `iboot-file`**：上传、下载、预览、分类；Silo / 本地 / OSS 三种存储实现按配置切换。全量 Docker 部署默认使用 Silo：容器内 endpoint 为 `http://silo:9000`，预签名地址为浏览器可达的 `http://localhost:9000`；宿主机开发读取 `sys_config` 中的 `http://localhost:9000`，可在 `.env` 用 `IBOOT_FILE_STORAGE_TYPE=local` 切回本地磁盘。
 
 **消息与通知 `iboot-notify`**：站内消息、公告、消息模板、已读同步；站内 / 邮件 / 钉钉 / 短信四个投递渠道（短信默认关闭）；SSE 单播、组播、广播；公告与消息的全文检索。
 

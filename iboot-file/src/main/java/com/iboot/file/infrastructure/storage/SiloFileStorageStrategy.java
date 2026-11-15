@@ -45,7 +45,11 @@ public class SiloFileStorageStrategy implements FileStorageStrategy {
 
     private final SiloProperties siloProperties;
 
+    /** 内部读写客户端，使用内网 endpoint。 */
     private MinioClient siloClient;
+
+    /** 预签名客户端，使用浏览器可达的对外 endpoint；地址一致时与内部客户端复用。 */
+    private MinioClient presignClient;
 
     @SuppressWarnings("all")
     public SiloFileStorageStrategy(final SiloProperties siloProperties) {
@@ -58,17 +62,42 @@ public class SiloFileStorageStrategy implements FileStorageStrategy {
      */
     public void init() {
         try {
-            this.siloClient = MinioClient.builder()
-                    .endpoint(siloProperties.getEndpoint())
-                    .credentials(siloProperties.getAccessKey(), siloProperties.getSecretKey())
-                    .build();
+            initClients();
             ensureBucketExists();
-            log.info("Silo客户端初始化成功，endpoint: {}, bucket: {}", siloProperties.getEndpoint(),
+            log.info("Silo客户端初始化成功，存储类型: {}, 内网endpoint: {}, 公网endpoint: {}, bucket: {}",
+                    siloProperties.getStorageType(), siloProperties.getEndpoint(), siloProperties.getPublicEndpoint(),
                     siloProperties.getBucketName());
         } catch (Exception e) {
             log.error("Silo客户端初始化失败", e);
             throw new BusinessException("Silo客户端初始化失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 组装内部读写客户端与预签名客户端。
+     *
+     * <p>两个端点一致时复用同一个客户端。
+     */
+    void initClients() {
+        this.siloClient = buildClient(siloProperties.getEndpoint());
+        String publicEndpoint = siloProperties.getPublicEndpoint();
+        this.presignClient = publicEndpoint.equals(siloProperties.getEndpoint())
+                ? siloClient
+                : buildClient(publicEndpoint);
+    }
+
+    /**
+     * 按指定端点创建 MinIO 客户端。
+     *
+     * @param endpoint 客户端连接的服务端点
+     * @return 使用同一凭据的客户端
+     */
+    private MinioClient buildClient(String endpoint) {
+        return MinioClient.builder()
+                .endpoint(endpoint)
+                .region(siloProperties.getRegion())
+                .credentials(siloProperties.getAccessKey(), siloProperties.getSecretKey())
+                .build();
     }
 
     /**
@@ -157,7 +186,7 @@ public class SiloFileStorageStrategy implements FileStorageStrategy {
     public String getFileUrl(String filePath) {
         try {
             int expireSeconds = siloProperties.getUrlExpireSeconds();
-            String url = siloClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+            String url = presignClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .method(Method.GET)
                     .bucket(siloProperties.getBucketName())
                     .object(filePath)

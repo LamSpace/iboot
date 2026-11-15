@@ -19,12 +19,14 @@ package com.iboot.file.infrastructure.storage;
 import com.iboot.file.infrastructure.persistence.SysConfigReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
  * Silo 配置属性。
  *
- * <p>从 {@code sys_config} 动态读取 Silo 端点、凭证、桶名等配置。
+ * <p>从 {@code sys_config} 动态读取 Silo 端点、凭证、桶名等配置；部署环境可用
+ * {@code IBOOT_FILE_*} 环境变量覆盖，环境变量优先于 {@code sys_config}。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -60,6 +62,34 @@ public class SiloProperties {
 
     private final SysConfigReader sysConfigReader;
 
+    /** 部署环境覆盖的存储类型，非空时优先于 sys_config。 */
+    @Value("${iboot.file.storage-type:}")
+    private String storageTypeOverride;
+
+    /** 部署环境覆盖的内网 Silo 端点，非空时优先于 sys_config。 */
+    @Value("${iboot.file.silo.endpoint:}")
+    private String endpointOverride;
+
+    /** 部署环境覆盖的预签名对外端点，未配置时回退到内网端点。 */
+    @Value("${iboot.file.silo.public-endpoint:}")
+    private String publicEndpointOverride;
+
+    /** 对象存储区域，显式指定可避免预签名前的区域查询。 */
+    @Value("${iboot.file.silo.region:us-east-1}")
+    private String region;
+
+    /** 部署环境覆盖的访问密钥，非空时优先于 sys_config。 */
+    @Value("${iboot.file.silo.access-key:}")
+    private String accessKeyOverride;
+
+    /** 部署环境覆盖的秘密密钥，非空时优先于 sys_config。 */
+    @Value("${iboot.file.silo.secret-key:}")
+    private String secretKeyOverride;
+
+    /** 部署环境覆盖的桶名，非空时优先于 sys_config。 */
+    @Value("${iboot.file.silo.bucket:}")
+    private String bucketOverride;
+
     @SuppressWarnings("all")
     public SiloProperties(final SysConfigReader sysConfigReader) {
         this.sysConfigReader = sysConfigReader;
@@ -69,6 +99,9 @@ public class SiloProperties {
      * 获取存储类型
      */
     public String getStorageType() {
+        if (hasText(storageTypeOverride)) {
+            return storageTypeOverride;
+        }
         String value = sysConfigReader.getString(CONFIG_KEY_STORAGE_TYPE);
         return value != null ? value : DEFAULT_STORAGE_TYPE;
     }
@@ -77,14 +110,47 @@ public class SiloProperties {
      * 获取Silo服务端点
      */
     public String getEndpoint() {
+        if (hasText(endpointOverride)) {
+            return endpointOverride;
+        }
         String value = sysConfigReader.getString(CONFIG_KEY_ENDPOINT);
         return value != null ? value : DEFAULT_ENDPOINT;
+    }
+
+    /**
+     * 获取预签名使用的对外端点。
+     *
+     * <p>容器内服务端读写走内网端点，浏览器下载走该对外地址；
+     * 未配置时与内网端点一致。
+     *
+     * @return 浏览器可达的 Silo 地址
+     */
+    public String getPublicEndpoint() {
+        if (hasText(publicEndpointOverride)) {
+            return publicEndpointOverride;
+        }
+        return getEndpoint();
+    }
+
+    /**
+     * 获取对象存储区域。
+     *
+     * <p>显式指定区域后，预签名不再向 endpoint 发起 bucket 区域查询；
+     * 容器内的浏览器侧地址无法访问，这一步必须避免。
+     *
+     * @return 区域标识，默认 {@code us-east-1}
+     */
+    public String getRegion() {
+        return hasText(region) ? region : "us-east-1";
     }
 
     /**
      * 获取Silo访问密钥
      */
     public String getAccessKey() {
+        if (hasText(accessKeyOverride)) {
+            return accessKeyOverride;
+        }
         return sysConfigReader.getString(CONFIG_KEY_ACCESS_KEY);
     }
 
@@ -92,6 +158,9 @@ public class SiloProperties {
      * 获取Silo秘密密钥
      */
     public String getSecretKey() {
+        if (hasText(secretKeyOverride)) {
+            return secretKeyOverride;
+        }
         return sysConfigReader.getString(CONFIG_KEY_SECRET_KEY);
     }
 
@@ -99,6 +168,9 @@ public class SiloProperties {
      * 获取Silo存储桶名称
      */
     public String getBucketName() {
+        if (hasText(bucketOverride)) {
+            return bucketOverride;
+        }
         String value = sysConfigReader.getString(CONFIG_KEY_BUCKET_NAME);
         return value != null ? value : DEFAULT_BUCKET_NAME;
     }
@@ -139,6 +211,16 @@ public class SiloProperties {
     public String getConsoleUrl() {
         String value = sysConfigReader.getString(CONFIG_KEY_CONSOLE_URL);
         return value != null ? value : "http://localhost:9001";
+    }
+
+    /**
+     * 判断覆盖值是否可用。
+     *
+     * @param value 环境变量注入的覆盖值
+     * @return 非空白时返回 {@code true}
+     */
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
 }

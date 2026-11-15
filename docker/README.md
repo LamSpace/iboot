@@ -164,12 +164,18 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - Docker 部署默认关闭 `iboot-job` 备份（`IBOOT_BACKUP_ENABLED=false`），因为运行期镜像没有
   docker CLI，备份自检会失败。需要备份时应另行为该服务挂载 Docker Socket 并安装客户端。
 
-### 切换到 Silo 存储
+### 对象存储与 Silo
 
-默认 `sys.file.storageType=local`，文件写入共享的 `uploads_data` 卷。若在系统配置中改为
-`silo`，还需要把 `sys.file.silo.endpoint` 从种子值 `http://localhost:9000` 改为
-`http://silo:9000`；`sys.silo.console.url` 保持 `http://localhost:9001`，因为它是浏览器
-访问的地址。监控服务的 Silo 检查只在存储类型为 `silo` 时才真正连接。
+全量 Docker 部署默认使用 Silo（`IBOOT_FILE_STORAGE_TYPE=silo`）。Compose 会把容器内的
+`IBOOT_FILE_SILO_ENDPOINT` 固定为 `http://silo:9000`，把预签名地址
+`IBOOT_FILE_SILO_PUBLIC_ENDPOINT` 固定为 `http://localhost:9000`。宿主机开发读取
+`sys_config` 中的 `http://localhost:9000`；如需本地磁盘，在 `.env` 设置
+`IBOOT_FILE_STORAGE_TYPE=local`。
+
+- 切换存储类型后需重启 `iboot-file`、`iboot-system`、`iboot-job`；
+- 既有本地文件不会自动迁移到 Silo；需要保留时先导出，或把类型改回 `local`；
+- `sys.silo.console.url` 保持 `http://localhost:9001`，因为它是浏览器访问地址；
+- 监控服务的 Silo 检查只在存储类型为 `silo` 时真正连接。
 
 ## Sentinel 治理
 

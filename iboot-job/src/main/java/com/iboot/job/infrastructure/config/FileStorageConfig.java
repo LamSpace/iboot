@@ -34,9 +34,9 @@ import java.util.Locale;
 /**
  * 文件存储配置。
  *
- * <p>按 {@code sys.file.storageType} 在启动期选择唯一生效的存储策略：
- * {@code local}、{@code silo} 或 {@code oss}；缺省为 {@code local}，非法值直接
- * 阻止应用启动。切换提供方需要重启应用。
+ * <p>按 {@code sys.file.storageType}（可被 {@code IBOOT_FILE_STORAGE_TYPE} 覆盖）
+ * 在启动期选择唯一生效的存储策略：{@code local}、{@code silo} 或 {@code oss}；
+ * 缺省为 {@code local}，非法值直接阻止应用启动。切换提供方需要重启应用。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -46,8 +46,6 @@ import java.util.Locale;
 public class FileStorageConfig {
 
     private static final Logger log = LoggerFactory.getLogger(FileStorageConfig.class);
-
-    private static final String CONFIG_KEY_STORAGE_TYPE = "sys.file.storageType";
 
     private static final String STORAGE_TYPE_LOCAL = "local";
 
@@ -78,10 +76,7 @@ public class FileStorageConfig {
     @Bean
     @Primary
     public FileStorageStrategy fileStorageStrategy() {
-        String storageType = sysConfigReader.getString(CONFIG_KEY_STORAGE_TYPE);
-        if (storageType == null || storageType.isBlank()) {
-            storageType = STORAGE_TYPE_LOCAL;
-        }
+        String storageType = siloProperties.getStorageType();
         return switch (storageType.toLowerCase(Locale.ROOT)) {
             case STORAGE_TYPE_LOCAL -> {
                 log.info("使用本地文件存储策略");

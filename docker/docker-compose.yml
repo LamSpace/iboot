@@ -31,6 +31,10 @@ x-app-env: &app-env
   IBOOT_NOTIFY_BASE_URL: http://iboot-notify:8084
   IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-proxy:8081
   IBOOT_AI_SILO_ENDPOINT: http://silo:9000
+  # 文件存储默认走 Silo；容器内用服务名读写，预签名地址用浏览器可达的宿主机地址
+  IBOOT_FILE_STORAGE_TYPE: silo
+  IBOOT_FILE_SILO_ENDPOINT: http://silo:9000
+  IBOOT_FILE_SILO_PUBLIC_ENDPOINT: ${IBOOT_FILE_SILO_PUBLIC_ENDPOINT:-http://localhost:9000}
   IBOOT_AI_GRAPH_URI: bolt://neo4j:7687
   MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
 
@@ -108,6 +112,8 @@ services:
       redis:
         condition: service_healthy
       nacos:
+        condition: service_healthy
+      silo:
         condition: service_healthy
       db-init:
         condition: service_completed_successfully
@@ -267,6 +273,8 @@ services:
       redis:
         condition: service_healthy
       nacos:
+        condition: service_healthy
+      silo:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
