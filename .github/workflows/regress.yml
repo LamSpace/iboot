@@ -21,6 +21,7 @@ jobs:
     name: 构建与网关测试
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -38,6 +39,7 @@ jobs:
         run: mvn -B -DskipTests install
 
       - name: 网关集成测试
+        timeout-minutes: 8
         run: mvn -B -pl iboot-gateway test
 
   full-regress:
