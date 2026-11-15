@@ -449,6 +449,7 @@ case "$ACTION" in
             log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，Sentinel Dashboard http://localhost:8858（运维控制台已关闭）'
         fi
         log '登录账号 admin / admin123456'
+        log '服务治理控制台：Nacos http://localhost:8849/next/，Sentinel http://localhost:8858；门户“微服务治理”菜单提供内嵌入口'
         if observability_enabled; then
             log '可观测平台：Grafana http://localhost:3000，Prometheus http://localhost:9090，Kibana http://localhost:5601，Alertmanager http://localhost:9093'
         fi

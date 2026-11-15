@@ -186,6 +186,17 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   （group `SENTINEL_GROUP`）。Dashboard 上的修改只作用于运行期内存，重启或 Nacos 刷新后回到基线。
 - 完整说明见 [docs/23 §13](../docs/23-微服务底座操作指南.md)。
 
+## 微服务治理控制台
+
+门户“微服务治理”菜单提供 Nacos 与 Sentinel 控制台入口。开发环境两个控制台都关闭登录，
+门户直接内嵌；非本地部署在参数配置中把 `sys.nacos.console.embed` 与
+`sys.sentinel.dashboard.embed` 改为 `false`，保持控制台鉴权，门户只提供内网入口跳转。
+
+- Nacos 开发环境经门户同源代理 `/nacos-console/` 内嵌；Vite 代理转发控制台 SPA 与 `/v3` API 并剥离 `X-Frame-Options`，生产 nginx 不配置该代理；
+- `NACOS_AUTH_CONSOLE_ENABLE=false` 只用于本地 compose，不要带到生产；
+- Sentinel 开发环境沿用 `auth.enabled=false`，生产由 `docker-compose.prod.yml` 开启登录；
+- 详细说明见 [docs/23 §8.6](../docs/23-微服务底座操作指南.md)。
+
 ## 卷
 
 | 卷 | 用途 |

@@ -94,7 +94,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 |---|---|
 | 运行时 | Java 25（虚拟线程已启用） |
 | 框架 | Spring Boot 4.0.3、Spring Framework 7、Spring Security 7 |
-| 微服务 | Spring Cloud 2025.1.0、Spring Cloud Alibaba 2025.1.0.0（Nacos 3.1.1、Sentinel 1.8.9、Seata 2.5.0）、Spring Cloud Gateway |
+| 微服务 | Spring Cloud 2025.1.0、Spring Cloud Alibaba 2025.1.0.0（Nacos 3.3.0、Sentinel 1.8.10、Seata 2.5.0）、Spring Cloud Gateway |
 | 持久层 | MyBatis 4.0.1 + PageHelper 2.1.1、Druid 1.2.28、Flyway、MySQL 8.0.45 |
 | 缓存 | Redis 7.0.14 + Caffeine 3.1.8（二级缓存，Pub/Sub 失效广播） |
 | 认证 | OAuth2 / OIDC 授权码 + PKCE（Spring Authorization Server）、JWT、RBAC 与五级数据权限 |
@@ -136,7 +136,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 
 **网关 `iboot-gateway`**：统一路由、跨域、SSE 长连接透传与服务降级。
 
-**服务治理**：网关按路由限流（`429` 统一 JSON），`iboot-notify` 内部端点具备入口流控；规则存 Nacos 并热更新，Sentinel Dashboard（8858）为本地必选组件，治理指标进入 Prometheus。审批 → 通知已改为本地 outbox + RocketMQ，消费失败按重试进入死信队列。
+**服务治理**：网关按路由限流（`429` 统一 JSON），`iboot-notify` 内部端点具备入口流控；规则存 Nacos 并热更新，Sentinel Dashboard（8858）为本地必选组件，治理指标进入 Prometheus。门户“微服务治理”菜单提供 Nacos 与 Sentinel 控制台入口：开发环境经门户同源代理内嵌，生产环境只保留内网跳转。审批 → 通知已改为本地 outbox + RocketMQ，消费失败按重试进入死信队列。
 
 ## 快速开始
 
@@ -206,6 +206,8 @@ MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root \
 - 前端开发地址：<http://localhost:5173>，API 经 Vite 代理到网关 `8088`
 - 网关健康检查：<http://localhost:8088/actuator/health>
 - Sentinel Dashboard：<http://localhost:8858>（本地开发必选，生产需认证）
+- Nacos 控制台：<http://localhost:8849/next/>（本地开发默认关闭控制台登录）
+- 门户“微服务治理”：登录后访问 <http://localhost:5173/dashboard/nacos> 与 <http://localhost:5173/dashboard/sentinel>
 - 默认管理员：`admin` / `admin123456`（baseline 种子数据，首次登录后请立即修改）
 
 ## 目录结构

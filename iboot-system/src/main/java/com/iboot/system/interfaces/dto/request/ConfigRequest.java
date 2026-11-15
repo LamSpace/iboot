@@ -68,6 +68,13 @@ public class ConfigRequest {
     private Integer configType;
 
     /**
+     * 参数分组编码。
+     */
+    @Schema(description = "参数分组编码")
+    @Size(max = 50, message = "参数分组编码长度不能超过50")
+    private String configGroup;
+
+    /**
      * 备注。
      */
     @Schema(description = "备注")
@@ -129,6 +136,16 @@ public class ConfigRequest {
     }
 
     @SuppressWarnings("all")
+    public String getConfigGroup() {
+        return this.configGroup;
+    }
+
+    @SuppressWarnings("all")
+    public void setConfigGroup(final String configGroup) {
+        this.configGroup = configGroup;
+    }
+
+    @SuppressWarnings("all")
     public String getRemark() {
         return this.remark;
     }
@@ -155,6 +172,10 @@ public class ConfigRequest {
         final java.lang.Object this$configType = this.getConfigType();
         final java.lang.Object other$configType = other.getConfigType();
         if (this$configType == null ? other$configType != null : !this$configType.equals(other$configType))
+            return false;
+        final java.lang.Object this$configGroup = this.getConfigGroup();
+        final java.lang.Object other$configGroup = other.getConfigGroup();
+        if (this$configGroup == null ? other$configGroup != null : !this$configGroup.equals(other$configGroup))
             return false;
         final java.lang.Object this$configName = this.getConfigName();
         final java.lang.Object other$configName = other.getConfigName();
@@ -189,6 +210,8 @@ public class ConfigRequest {
         result = result * PRIME + ($id == null ? 43 : $id.hashCode());
         final java.lang.Object $configType = this.getConfigType();
         result = result * PRIME + ($configType == null ? 43 : $configType.hashCode());
+        final java.lang.Object $configGroup = this.getConfigGroup();
+        result = result * PRIME + ($configGroup == null ? 43 : $configGroup.hashCode());
         final java.lang.Object $configName = this.getConfigName();
         result = result * PRIME + ($configName == null ? 43 : $configName.hashCode());
         final java.lang.Object $configKey = this.getConfigKey();
@@ -205,7 +228,8 @@ public class ConfigRequest {
     public java.lang.String toString() {
         return "ConfigRequest(id=" + this.getId() + ", configName=" + this.getConfigName() + ", configKey="
                 + this.getConfigKey() + ", configValue=" + this.getConfigValue() + ", configType="
-                + this.getConfigType() + ", remark=" + this.getRemark() + ")";
+                + this.getConfigType() + ", configGroup=" + this.getConfigGroup() + ", remark=" + this.getRemark()
+                + ")";
     }
 
 }

@@ -8,6 +8,7 @@
         <result property="configKey" column="config_key"/>
         <result property="configValue" column="config_value"/>
         <result property="configType" column="config_type"/>
+        <result property="configGroup" column="config_group"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>
@@ -18,9 +19,10 @@
 
     <insert id="insert" parameterType="com.iboot.system.infrastructure.persistence.po.ConfigPO" useGeneratedKeys="true"
             keyProperty="id">
-        INSERT INTO sys_config (config_name, config_key, config_value, config_type, create_by, create_time, deleted,
-                                remark)
-        VALUES (#{configName}, #{configKey}, #{configValue}, #{configType}, #{createBy}, #{createTime}, 0, #{remark})
+        INSERT INTO sys_config (config_name, config_key, config_value, config_type, config_group, create_by,
+                                create_time, deleted, remark)
+        VALUES (#{configName}, #{configKey}, #{configValue}, #{configType}, #{configGroup}, #{createBy},
+                #{createTime}, 0, #{remark})
     </insert>
 
     <update id="update" parameterType="com.iboot.system.infrastructure.persistence.po.ConfigPO">
@@ -30,6 +32,7 @@
             <if test="configKey != null">config_key = #{configKey},</if>
             <if test="configValue != null">config_value = #{configValue},</if>
             <if test="configType != null">config_type = #{configType},</if>
+            <if test="configGroup != null">config_group = #{configGroup},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="remark != null">remark = #{remark},</if>
             update_time = NOW()
@@ -93,6 +96,9 @@
             <if test="configType != null">
                 AND config_type = #{configType}
             </if>
+            <if test="configGroup != null and configGroup != ''">
+                AND config_group = #{configGroup}
+            </if>
         </where>
         ORDER BY create_time DESC
         LIMIT #{offset}, #{limit}
@@ -112,6 +118,9 @@
             <if test="configType != null">
                 AND config_type = #{configType}
             </if>
+            <if test="configGroup != null and configGroup != ''">
+                AND config_group = #{configGroup}
+            </if>
         </where>
     </select>
 
@@ -128,6 +137,9 @@
             </if>
             <if test="configType != null">
                 AND config_type = #{configType}
+            </if>
+            <if test="configGroup != null and configGroup != ''">
+                AND config_group = #{configGroup}
             </if>
         </where>
         ORDER BY create_time DESC

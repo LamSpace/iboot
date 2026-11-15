@@ -59,7 +59,7 @@
 | 知识图谱 | 组织与 RBAC 入图、多跳查询与名称解析 | `iboot-ai` | [docs/22](<./docs/22-AI 工作台操作指南.md>) |
 | 国际化 | 前端 vue-i18n + 后端 MessageSource 中英文语言包 | `iboot-portal` + 各服务 | [docs/17](<./docs/17-国际化设计.md>) |
 | 可观测性 | Actuator + Micrometer + Prometheus/Grafana + ELK + Tempo 链路追踪 | 全部服务 | [docs/11](<./docs/11-可观测性设计.md>) |
-| 服务治理 | 网关路由级限流、跨服务熔断降级、Nacos 规则源与 Sentinel Dashboard | `iboot-gateway`、`iboot-workflow`、`iboot-notify` | [docs/23 §13](<./docs/23-微服务底座操作指南.md>) |
+| 服务治理 | 网关路由级限流、跨服务熔断降级、Nacos 规则源、Sentinel Dashboard 与门户“微服务治理”控制台入口 | `iboot-gateway`、`iboot-workflow`、`iboot-notify` | [docs/23 §13](<./docs/23-微服务底座操作指南.md>) |
 | 分布式事务 | Seata AT：审批通过与请假额度扣减的跨服务原子提交与回滚；Seata TCC：管理员额度划转的冻结/确认/取消 | `iboot-workflow`、`iboot-system` | [docs/23 §16/§17](<./docs/23-微服务底座操作指南.md>) |
 | 可靠日志管道 | 服务日志经 Kafka 缓冲（24h）后由 Logstash 写入 ES，索引与字段不变 | 全部服务 | [docs/11 §11.11.1](<./docs/11-可观测性设计.md>)、[docs/23 §15](<./docs/23-微服务底座操作指南.md>) |
 | 运维控制台 | 独立 SBA 控制台，经 Nacos 发现全部实例，支持单实例巡检与运行期日志级别调整 | `iboot-ops` | [docs/11](<./docs/11-可观测性设计.md>) |
@@ -108,8 +108,8 @@
 | Java | 25 | 现状 |
 | Spring Boot | **4.0.x（锁死，不升 4.1）** | SCA 对 Boot 4.1 适配仍在进行（#4339 / #4358） |
 | Spring Cloud / SCA | 2025.1.x / **2025.1.0.0** | SCA 首个支持 Boot 4.0.x 的版本线 |
-| Nacos | 3.1.1+（client/server） | bootstrap 方式已移除，必须用 `spring.config.import` |
-| Sentinel / Seata | 1.8.9 / **2.5.0**（`org.apache.seata`） | 随 SCA 2025.1.0.0 BOM；客户端支持 Boot 4 / JDK 25 |
+| Nacos | 3.3.0（client/server） | bootstrap 方式已移除，必须用 `spring.config.import`；控制台鉴权独立于客户端/管理端鉴权 |
+| Sentinel / Seata | 1.8.10 / **2.5.0**（`org.apache.seata`） | 随 SCA 2025.1.0.0 BOM；客户端支持 Boot 4 / JDK 25 |
 | Kafka | **4.1.x（KRaft，无 ZK）** | Boot 4.0.3 托管 kafka-clients 4.1.1 / spring-kafka 4.0.3；4.0 起移除 ZooKeeper |
 | RocketMQ | **5.3.1（服务端）/ 5.2.2（`rocketmq-client-java`）** | 阶段 2 收尾：审批通知 outbox；Spring Boot Starter 仍停留在 Boot 2.7，不使用 |
 | Spring AI | **2.0.1（GA）** | Boot 4 必需；1.1.x 仅到 Boot 3.5 |

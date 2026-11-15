@@ -11,6 +11,8 @@
   "configKey": "配置键",
   "configValue": "配置值",
   "configType": "配置类型",
+  "configGroup": "参数分组",
+  "groupAll": "全部",
   "type": "类型",
   "sort": "排序",
   "remark": "备注",

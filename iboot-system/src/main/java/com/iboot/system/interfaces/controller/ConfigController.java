@@ -17,6 +17,7 @@
 package com.iboot.system.interfaces.controller;
 
 import com.iboot.system.application.service.ConfigApplicationService;
+import com.iboot.system.application.service.DictApplicationService;
 import com.iboot.kernel.logging.Log;
 import com.iboot.kernel.logging.BusinessTypeEnum;
 import com.iboot.kernel.web.PageResult;
@@ -25,6 +26,7 @@ import com.iboot.system.common.util.ExcelExportUtil;
 import com.iboot.system.domain.system.model.Config;
 import com.iboot.system.interfaces.dto.export.ConfigExportVO;
 import com.iboot.system.interfaces.dto.request.ConfigRequest;
+import com.iboot.system.interfaces.dto.response.ConfigGroupStatResponse;
 import com.iboot.system.interfaces.dto.response.ConfigResponse;
 import com.iboot.system.interfaces.dto.response.PublicConfigResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +38,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -61,9 +64,13 @@ public class ConfigController {
 
     private final ConfigApplicationService configApplicationService;
 
+    private final DictApplicationService dictApplicationService;
+
     @SuppressWarnings("all")
-    public ConfigController(final ConfigApplicationService configApplicationService) {
+    public ConfigController(final ConfigApplicationService configApplicationService,
+                            final DictApplicationService dictApplicationService) {
         this.configApplicationService = configApplicationService;
+        this.dictApplicationService = dictApplicationService;
     }
 
     /**
@@ -92,6 +99,7 @@ public class ConfigController {
      * @param configName 配置名称关键字，可为 {@code null}
      * @param configKey 配置键关键字，可为 {@code null}
      * @param configType 配置类型：0-默认，1-系统内置；可为 {@code null}
+     * @param configGroup 参数分组编码，可为 {@code null}
      * @return 配置分页结果
      */
     @Operation(summary = "查询参数配置列表")
@@ -101,13 +109,14 @@ public class ConfigController {
                                                    @RequestParam(defaultValue = "10") Integer pageSize,
                                                    @RequestParam(required = false) String configName,
                                                    @RequestParam(required = false) String configKey,
-                                                   @RequestParam(required = false) Integer configType) {
+                                                   @RequestParam(required = false) Integer configType,
+                                                   @RequestParam(required = false) String configGroup) {
         List<Config> configs;
         long total;
-        if (configName != null || configKey != null || configType != null) {
-            configs = configApplicationService.getConfigPageByCondition(configName, configKey, configType, pageNum,
-                    pageSize);
-            total = configApplicationService.countConfigsByCondition(configName, configKey, configType);
+        if (configName != null || configKey != null || configType != null || configGroup != null) {
+            configs = configApplicationService.getConfigPageByCondition(configName, configKey, configType,
+                    configGroup, pageNum, pageSize);
+            total = configApplicationService.countConfigsByCondition(configName, configKey, configType, configGroup);
         } else {
             configs = configApplicationService.getConfigPage(pageNum, pageSize);
             total = configApplicationService.countConfigs();
@@ -115,6 +124,23 @@ public class ConfigController {
         List<ConfigResponse> responses = configs.stream().map(this::convertToResponse).collect(Collectors.toList());
         PageResult<ConfigResponse> pageResult = new PageResult<>(responses, total, pageNum, pageSize);
         return Result.success(pageResult);
+    }
+
+    /**
+     * 查询各分组的参数配置数量。
+     *
+     * @return 分组编码与配置数量；没有配置的分组不会出现在结果中
+     */
+    @Operation(summary = "查询参数分组统计")
+    @GetMapping(version = "1", value = "/group-stats")
+    @PreAuthorize("hasAuthority('config:list')")
+    public Result<List<ConfigGroupStatResponse>> groupStats() {
+        Map<String, Long> counts = configApplicationService.getGroupCounts();
+        List<ConfigGroupStatResponse> responses = counts.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new ConfigGroupStatResponse(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+        return Result.success(responses);
     }
 
     /**
@@ -230,6 +256,7 @@ public class ConfigController {
      * @param configName 配置名称关键字，可为 {@code null}
      * @param configKey 配置键关键字，可为 {@code null}
      * @param configType 配置类型：0-默认，1-系统内置；可为 {@code null}
+     * @param configGroup 参数分组编码，可为 {@code null}
      * @throws IOException 写入响应流失败时抛出
      */
     @Operation(summary = "导出配置列表")
@@ -238,11 +265,13 @@ public class ConfigController {
     @Log(title = "参数配置", businessType = BusinessTypeEnum.EXPORT)
     public void export(HttpServletResponse response, @RequestParam(required = false) String configName,
                        @RequestParam(required = false) String configKey,
-                       @RequestParam(required = false) Integer configType)
+                       @RequestParam(required = false) Integer configType,
+                       @RequestParam(required = false) String configGroup)
             throws IOException {
         List<Config> configs;
-        if (configName != null || configKey != null || configType != null) {
-            configs = configApplicationService.getAllConfigsByCondition(configName, configKey, configType);
+        if (configName != null || configKey != null || configType != null || configGroup != null) {
+            configs = configApplicationService.getAllConfigsByCondition(configName, configKey, configType,
+                    configGroup);
         } else {
             configs = configApplicationService.getAllConfigs();
         }
@@ -257,9 +286,19 @@ public class ConfigController {
                 .configKey(config.getConfigKey())
                 .configValue(config.getConfigValue())
                 .configType(config.getConfigType())
+                .configGroup(config.getConfigGroup())
+                .configGroupName(resolveGroupName(config.getConfigGroup()))
                 .remark(config.getRemark())
                 .createTime(config.getCreateTime())
                 .build();
+    }
+
+    private String resolveGroupName(String configGroup) {
+        if (configGroup == null || configGroup.isBlank()) {
+            return "";
+        }
+        String label = dictApplicationService.getDictLabel("sys_config_group", configGroup);
+        return label == null || label.isBlank() ? configGroup : label;
     }
 
     private Config convertToEntity(ConfigRequest request) {
@@ -268,6 +307,7 @@ public class ConfigController {
                 .configKey(request.getConfigKey())
                 .configValue(request.getConfigValue())
                 .configType(request.getConfigType())
+                .configGroup(request.getConfigGroup())
                 .remark(request.getRemark())
                 .build();
     }
@@ -279,6 +319,7 @@ public class ConfigController {
                 .configKey(config.getConfigKey())
                 .configValue(config.getConfigValue())
                 .configType(config.getConfigType())
+                .configGroup(config.getConfigGroup())
                 .remark(config.getRemark())
                 .createTime(config.getCreateTime())
                 .build();

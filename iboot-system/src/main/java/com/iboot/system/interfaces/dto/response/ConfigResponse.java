@@ -62,6 +62,12 @@ public class ConfigResponse {
     private Integer configType;
 
     /**
+     * 参数分组编码。
+     */
+    @Schema(description = "参数分组编码")
+    private String configGroup;
+
+    /**
      * 备注。
      */
     @Schema(description = "备注")
@@ -79,12 +85,14 @@ public class ConfigResponse {
 
     @SuppressWarnings("all")
     public ConfigResponse(final Long id, final String configName, final String configKey, final String configValue,
-                          final Integer configType, final String remark, final LocalDateTime createTime) {
+                          final Integer configType, final String configGroup, final String remark,
+                          final LocalDateTime createTime) {
         this.id = id;
         this.configName = configName;
         this.configKey = configKey;
         this.configValue = configValue;
         this.configType = configType;
+        this.configGroup = configGroup;
         this.remark = remark;
         this.createTime = createTime;
     }
@@ -145,6 +153,16 @@ public class ConfigResponse {
     }
 
     @SuppressWarnings("all")
+    public String getConfigGroup() {
+        return this.configGroup;
+    }
+
+    @SuppressWarnings("all")
+    public void setConfigGroup(final String configGroup) {
+        this.configGroup = configGroup;
+    }
+
+    @SuppressWarnings("all")
     public String getRemark() {
         return this.remark;
     }
@@ -181,6 +199,10 @@ public class ConfigResponse {
         final java.lang.Object this$configType = this.getConfigType();
         final java.lang.Object other$configType = other.getConfigType();
         if (this$configType == null ? other$configType != null : !this$configType.equals(other$configType))
+            return false;
+        final java.lang.Object this$configGroup = this.getConfigGroup();
+        final java.lang.Object other$configGroup = other.getConfigGroup();
+        if (this$configGroup == null ? other$configGroup != null : !this$configGroup.equals(other$configGroup))
             return false;
         final java.lang.Object this$configName = this.getConfigName();
         final java.lang.Object other$configName = other.getConfigName();
@@ -219,6 +241,8 @@ public class ConfigResponse {
         result = result * PRIME + ($id == null ? 43 : $id.hashCode());
         final java.lang.Object $configType = this.getConfigType();
         result = result * PRIME + ($configType == null ? 43 : $configType.hashCode());
+        final java.lang.Object $configGroup = this.getConfigGroup();
+        result = result * PRIME + ($configGroup == null ? 43 : $configGroup.hashCode());
         final java.lang.Object $configName = this.getConfigName();
         result = result * PRIME + ($configName == null ? 43 : $configName.hashCode());
         final java.lang.Object $configKey = this.getConfigKey();
@@ -237,7 +261,8 @@ public class ConfigResponse {
     public java.lang.String toString() {
         return "ConfigResponse(id=" + this.getId() + ", configName=" + this.getConfigName() + ", configKey="
                 + this.getConfigKey() + ", configValue=" + this.getConfigValue() + ", configType="
-                + this.getConfigType() + ", remark=" + this.getRemark() + ", createTime=" + this.getCreateTime() + ")";
+                + this.getConfigType() + ", configGroup=" + this.getConfigGroup() + ", remark=" + this.getRemark()
+                + ", createTime=" + this.getCreateTime() + ")";
     }
 
     @SuppressWarnings("all")
@@ -257,6 +282,9 @@ public class ConfigResponse {
 
         @SuppressWarnings("all")
         private Integer configType;
+
+        @SuppressWarnings("all")
+        private String configGroup;
 
         @SuppressWarnings("all")
         private String remark;
@@ -317,6 +345,15 @@ public class ConfigResponse {
          * @return {@code this}.
          */
         @SuppressWarnings("all")
+        public ConfigResponse.ConfigResponseBuilder configGroup(final String configGroup) {
+            this.configGroup = configGroup;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
         public ConfigResponse.ConfigResponseBuilder remark(final String remark) {
             this.remark = remark;
             return this;
@@ -334,7 +371,7 @@ public class ConfigResponse {
         @SuppressWarnings("all")
         public ConfigResponse build() {
             return new ConfigResponse(this.id, this.configName, this.configKey, this.configValue, this.configType,
-                    this.remark, this.createTime);
+                    this.configGroup, this.remark, this.createTime);
         }
 
         @java.lang.Override
@@ -342,7 +379,8 @@ public class ConfigResponse {
         public java.lang.String toString() {
             return "ConfigResponse.ConfigResponseBuilder(id=" + this.id + ", configName=" + this.configName
                     + ", configKey=" + this.configKey + ", configValue=" + this.configValue + ", configType="
-                    + this.configType + ", remark=" + this.remark + ", createTime=" + this.createTime + ")";
+                    + this.configType + ", configGroup=" + this.configGroup + ", remark=" + this.remark
+                    + ", createTime=" + this.createTime + ")";
         }
 
     }

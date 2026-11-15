@@ -29,6 +29,22 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/iboot\/ai/, '/api/ai')
       },
+      // Nacos 控制台只在本地开发内嵌：代理到控制台 SPA 与 /v3 API，
+      // 并删除 X-Frame-Options（Nacos 的 GET 文档响应带 DENY）。
+      '/nacos-console': {
+        target: 'http://localhost:8849',
+        changeOrigin: true,
+        ws: true,
+        rewrite: (path) =>
+          path
+            .replace(/^\/nacos-console\/v3/, '/v3')
+            .replace(/^\/nacos-console/, '/next'),
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            delete proxyRes.headers['x-frame-options']
+          })
+        }
+      },
       '/sba': {
         target: 'http://localhost:8089', // 运维控制台（Spring Boot Admin）
         // 必须保留原始 Host：SBA 用请求 Host 生成页面 base href。

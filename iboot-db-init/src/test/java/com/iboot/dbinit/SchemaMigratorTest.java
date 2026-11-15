@@ -60,7 +60,7 @@ class SchemaMigratorTest {
         MysqlDataSource dataSource = dataSource();
 
         MigrateResult first = migrateWithRetry(dataSource);
-        assertThat(first.migrationsExecuted).isEqualTo(9);
+        assertThat(first.migrationsExecuted).isEqualTo(12);
         assertThat(countTables(dataSource)).isEqualTo(81);
 
         MigrateResult second = migrateWithRetry(dataSource);
@@ -97,6 +97,56 @@ class SchemaMigratorTest {
                 + "WHERE role_id = 1 AND menu_id IN (712, 7121)")).isEqualTo(2);
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_role_menu "
                 + "WHERE role_id = 2 AND menu_id IN (712, 7121)")).isZero();
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu "
+                + "WHERE id = 9600 AND parent_id = 0 AND path = '/governance' "
+                + "AND menu_type = 'M'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu "
+                + "WHERE id = 9601 AND parent_id = 9600 AND path = '/governance/nacos' "
+                + "AND permission = 'governance:nacos'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu "
+                + "WHERE id = 9602 AND parent_id = 9600 AND path = '/governance/sentinel' "
+                + "AND permission = 'governance:sentinel'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_role_menu "
+                + "WHERE role_id = 1 AND menu_id IN (9600, 9601, 9602)")).isEqualTo(3);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.nacos.console.url' "
+                + "AND config_value = '/nacos-console/'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.nacos.console.embed' AND config_value = 'true'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.sentinel.dashboard.url' "
+                + "AND config_value = 'http://localhost:8858'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.sentinel.dashboard.embed' AND config_value = 'true'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM information_schema.columns "
+                + "WHERE table_schema = 'iboot_test' AND table_name = 'sys_config' "
+                + "AND column_name = 'config_group'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_dict_type "
+                + "WHERE dict_type = 'sys_config_group' AND deleted = 0")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_dict_data "
+                + "WHERE dict_type = 'sys_config_group' AND deleted = 0")).isEqualTo(6);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE deleted = 0 AND config_group = 'basic'")).isEqualTo(8);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE deleted = 0 AND config_group = 'message'")).isEqualTo(4);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE deleted = 0 AND config_group = 'storage'")).isEqualTo(13);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE deleted = 0 AND config_group = 'monitor'")).isEqualTo(13);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE deleted = 0 AND config_group = 'console'")).isEqualTo(15);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE deleted = 0 AND config_group = 'other'")).isZero();
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.nacos.console.url' AND config_group = 'console'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.sentinel.dashboard.url' AND config_group = 'console'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.file.storageType' AND config_group = 'storage'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'monitor.cpu.warn.threshold' AND config_group = 'monitor'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.grafana.monitor.url' AND config_group = 'console'")).isEqualTo(1);
         assertThat(count(dataSource, "SELECT COUNT(*) FROM biz_notification_outbox")).isZero();
         assertThat(count(dataSource, "SELECT COUNT(*) FROM information_schema.statistics "
                 + "WHERE table_schema = 'iboot_test' AND table_name = 'biz_notification_outbox' "

@@ -31,6 +31,21 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item :label="t('system.config.configGroup')">
+          <el-select
+            v-model="queryParams.configGroup"
+            :placeholder="t('system.config.groupAll')"
+            clearable
+            @change="handleSearch"
+          >
+            <el-option
+              v-for="item in groupOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">{{
             t("system.config.search")
@@ -64,19 +79,37 @@
         <el-table-column
           prop="configName"
           :label="t('system.config.configName')"
-          min-width="150"
+          min-width="140"
           show-overflow-tooltip
         />
         <el-table-column
+          prop="configGroup"
+          :label="t('system.config.configGroup')"
+          width="130"
+          align="center"
+        >
+          <template #default="{ row }">
+            <el-tag
+              :type="
+                dictStore.getDictListClass('sys_config_group', row.configGroup)
+              "
+            >
+              {{
+                dictStore.getDictLabel("sys_config_group", row.configGroup)
+              }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
           prop="configKey"
           :label="t('system.config.configKey')"
-          min-width="180"
+          min-width="160"
           show-overflow-tooltip
         />
         <el-table-column
           prop="configValue"
           :label="t('system.config.configValue')"
-          min-width="150"
+          min-width="120"
           show-overflow-tooltip
         />
         <el-table-column
@@ -98,7 +131,7 @@
         <el-table-column
           prop="remark"
           :label="t('system.config.remark')"
-          min-width="150"
+          min-width="120"
           show-overflow-tooltip
         />
         <el-table-column
@@ -109,7 +142,7 @@
         />
         <el-table-column
           :label="t('system.config.action')"
-          width="300"
+          width="220"
           fixed="right"
         >
           <template #default="{ row }">
@@ -178,6 +211,20 @@
             >
           </el-radio-group>
         </el-form-item>
+        <el-form-item :label="t('system.config.configGroup')" prop="configGroup">
+          <el-select
+            v-model="form.configGroup"
+            :placeholder="t('system.config.please_select')"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in dictStore.getDict('sys_config_group')"
+              :key="item.dictValue"
+              :label="item.dictLabel"
+              :value="item.dictValue"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item :label="t('system.config.remark')">
           <el-input
             v-model="form.remark"
@@ -199,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
+import { computed, ref, reactive, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   ElMessage,
@@ -209,12 +256,14 @@ import {
 } from "element-plus";
 import {
   getConfigList,
+  getConfigGroupStats,
   addConfig,
   updateConfig,
   deleteConfig,
   refreshConfigCache,
   exportConfigList,
   type Config,
+  type ConfigGroupStat,
 } from "@/api/system";
 import { useDictStore } from "@/stores/dict";
 import { useExport } from "@/composables/useExport";
@@ -236,17 +285,37 @@ const handleExport = () => {
         configName: queryParams.configName,
         configKey: queryParams.configKey,
         configType: queryParams.configType,
+        configGroup: queryParams.configGroup,
       }),
     t("system.config.title"),
   );
 };
 
+interface GroupOption {
+  value: string;
+  label: string;
+}
+
 const loading = ref(false);
 const configList = ref<Config[]>([]);
 const total = ref(0);
+const groupStats = ref<ConfigGroupStat[]>([]);
 const dialogVisible = ref(false);
 const dialogTitle = ref("");
 const formRef = ref<FormInstance>();
+
+const groupOptions = computed<GroupOption[]>(() => {
+  const counts = new Map(
+    groupStats.value.map((item) => [item.configGroup, item.count]),
+  );
+  return dictStore.getDict("sys_config_group").map((item) => {
+    const count = counts.get(item.dictValue) ?? 0;
+    return {
+      value: item.dictValue,
+      label: `${item.dictLabel} (${count})`,
+    };
+  });
+});
 
 const queryParams = reactive({
   pageNum: 1,
@@ -254,6 +323,7 @@ const queryParams = reactive({
   configName: undefined as string | undefined,
   configKey: undefined as string | undefined,
   configType: undefined as number | undefined,
+  configGroup: undefined as string | undefined,
 });
 
 const defaultForm: Config = {
@@ -261,6 +331,7 @@ const defaultForm: Config = {
   configKey: "",
   configValue: "",
   configType: 0,
+  configGroup: "other",
   remark: "",
 };
 
@@ -303,6 +374,17 @@ const loadData = async () => {
   }
 };
 
+const loadGroupStats = async () => {
+  const res = await getConfigGroupStats();
+  if (res.code === 200) {
+    groupStats.value = res.data ?? [];
+  }
+};
+
+const refreshAll = async () => {
+  await Promise.all([loadData(), loadGroupStats()]);
+};
+
 const handleSearch = () => {
   queryParams.pageNum = 1;
   loadData();
@@ -312,6 +394,7 @@ const handleReset = () => {
   queryParams.configName = undefined;
   queryParams.configKey = undefined;
   queryParams.configType = undefined;
+  queryParams.configGroup = undefined;
   handleSearch();
 };
 
@@ -322,6 +405,7 @@ const resetForm = () => {
 
 const handleAdd = () => {
   resetForm();
+  form.configGroup = queryParams.configGroup || "other";
   dialogTitle.value = t("system.config.add");
   dialogVisible.value = true;
 };
@@ -343,7 +427,7 @@ const handleSubmit = async () => {
     ElMessage.success(t("system.config.add_success"));
   }
   dialogVisible.value = false;
-  loadData();
+  await refreshAll();
 };
 
 const handleDelete = (row: Config) => {
@@ -355,7 +439,7 @@ const handleDelete = (row: Config) => {
     .then(async () => {
       await deleteConfig(row.id!);
       ElMessage.success(t("system.config.delete_success"));
-      loadData();
+      await refreshAll();
     })
     .catch(() => {});
 };
@@ -365,9 +449,9 @@ const handleRefreshCache = async () => {
   ElMessage.success(t("system.config.refresh_cache_success"));
 };
 
-onMounted(() => {
-  dictStore.loadDicts("sys_config_type");
-  loadData();
+onMounted(async () => {
+  await dictStore.loadDicts("sys_config_type", "sys_config_group");
+  await Promise.all([loadData(), loadGroupStats()]);
 });
 </script>
 

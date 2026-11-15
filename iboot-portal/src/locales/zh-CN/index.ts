@@ -37,6 +37,8 @@ import monitorThanos from "./monitor/thanos.json";
 import monitorSilo from "./monitor/silo.json";
 import monitorNotificationDelivery from "./monitor/notification-delivery.json";
 import monitorBackup from "./monitor/backup.json";
+import monitorNacos from "./monitor/nacos.json";
+import monitorSentinel from "./monitor/sentinel.json";
 
 // Message module
 import messageNotice from "./message/notice.json";
@@ -94,6 +96,8 @@ export default {
     silo: monitorSilo,
     notificationDelivery: monitorNotificationDelivery,
     backup: monitorBackup,
+    nacos: monitorNacos,
+    sentinel: monitorSentinel,
   },
   message: {
     notice: messageNotice,
