@@ -21,7 +21,7 @@ import com.iboot.system.domain.system.service.FileStorageStrategy;
 /**
  * 内存存储策略契约测试。
  *
- * <p>内存实现只用于测试，必须与本地、MinIO、OSS 实现满足同一套行为契约。
+ * <p>内存实现只用于测试，必须与本地、Silo、OSS 实现满足同一套行为契约。
  *
  * @author iBoot Team
  * @since 1.0.0

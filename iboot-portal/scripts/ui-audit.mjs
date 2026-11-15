@@ -39,7 +39,7 @@ const ROUTES = [
   "/dashboard/server-monitor",
   "/dashboard/redis-monitor",
   "/dashboard/sql-monitor",
-  "/dashboard/minio-monitor",
+  "/dashboard/silo-monitor",
   "/dashboard/swagger",
   "/dashboard/performance",
   "/dashboard/job",

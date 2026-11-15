@@ -26,7 +26,7 @@ scripts/docker-deploy.sh up
 2. 检查并拉取构建/运行期基础镜像；
 3. 构建共享 Maven builder 镜像（整个 reactor 只构建一次）；
 4. 构建全部后端与前端运行期镜像；
-5. `docker compose up -d` 启动，然后由脚本轮询健康状态；`db-init`、`minio-init`
+5. `docker compose up -d` 启动，然后由脚本轮询健康状态；`db-init`、`silo-init`
    这类一次性服务以退出码 0 视为完成；
 6. 调用 `scripts/sentinel-init.sh --verify` 把 Sentinel 基线规则写入 Nacos。
 
@@ -92,7 +92,7 @@ nginx:stable-alpine3.23
 | seata-server | 8091 | Seata TC（AT 全局事务）；file store，本地镜像无 7091 控制台 |
 | mysql | 3306 | MySQL 8.0 |
 | redis | 6379 | Redis 7 |
-| minio | 9000/9001 | 对象存储与控制台 |
+| silo | 9000/9001 | 对象存储与控制台 |
 | elasticsearch | 9200 | 检索 |
 | kafka | 9092 / 29092 | 日志缓冲（KRaft 单节点；宿主机用 29092） |
 | logstash | 5044 | 集中日志处理，输入来自 Kafka |
@@ -133,7 +133,7 @@ mysql (healthy)
               └─> iboot-ops
 
 redis / nacos ──> 所有后端服务
-minio ──> iboot-file / iboot-ai
+silo ──> iboot-file / iboot-ai
 elasticsearch ──> iboot-notify / iboot-monitor / iboot-ai
 kafka ──> logstash ──> 旁路，不作为启动依赖；kafka-init 一次性建 iboot-logs
 sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影响业务
@@ -164,12 +164,12 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - Docker 部署默认关闭 `iboot-job` 备份（`IBOOT_BACKUP_ENABLED=false`），因为运行期镜像没有
   docker CLI，备份自检会失败。需要备份时应另行为该服务挂载 Docker Socket 并安装客户端。
 
-### 切换到 MinIO 存储
+### 切换到 Silo 存储
 
 默认 `sys.file.storageType=local`，文件写入共享的 `uploads_data` 卷。若在系统配置中改为
-`minio`，还需要把 `sys.file.minio.endpoint` 从种子值 `http://localhost:9000` 改为
-`http://minio:9000`；`sys.minio.console.url` 保持 `http://localhost:9001`，因为它是浏览器
-访问的地址。监控服务的 MinIO 检查只在存储类型为 `minio` 时才真正连接。
+`silo`，还需要把 `sys.file.silo.endpoint` 从种子值 `http://localhost:9000` 改为
+`http://silo:9000`；`sys.silo.console.url` 保持 `http://localhost:9001`，因为它是浏览器
+访问的地址。监控服务的 Silo 检查只在存储类型为 `silo` 时才真正连接。
 
 ## Sentinel 治理
 
@@ -186,7 +186,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 |---|---|
 | `mysql_data` | MySQL 数据 |
 | `redis_data` | Redis 数据 |
-| `minio_data` | 对象存储 |
+| `silo_data` | 对象存储 |
 | `es_data` | Elasticsearch 数据 |
 | `prometheus_data` / `grafana_data` / `alertmanager_data` | 监控数据 |
 | `thanos_store_data` / `thanos_compact_data` | Thanos 长期存储 |

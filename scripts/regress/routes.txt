@@ -25,7 +25,7 @@
 /api/online iboot-monitor
 /api/monitor/server iboot-monitor
 /api/monitor/redis iboot-monitor
-/api/monitor/minio iboot-monitor
+/api/monitor/silo iboot-monitor
 # 调度服务：定时任务与数据备份。
 /api/monitor/backup iboot-job
 /api/job iboot-job

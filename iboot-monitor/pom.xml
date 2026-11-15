@@ -103,7 +103,7 @@
             <artifactId>oshi-core</artifactId>
         </dependency>
 
-        <!-- 对象存储检查：MinIO 管理与统计 -->
+        <!-- 对象存储检查：Silo 管理与统计 -->
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>

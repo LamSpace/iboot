@@ -51,7 +51,7 @@ class BackupRecordTest {
     void marksSuccess() {
         BackupRecord record = BackupRecord.start("B1", BackupTriggerType.MANUAL, "iboot_admin", "admin", START);
 
-        record.markSuccess("minio", "backup/iboot_admin/2026/10/24/B1.sql.enc", 128L, 96L,
+        record.markSuccess("silo", "backup/iboot_admin/2026/10/24/B1.sql.enc", 128L, 96L,
                 "abc", Map.of("sys_user", 3L), START.plusSeconds(5));
 
         assertThat(record.getStatus()).isEqualTo(BackupStatus.SUCCESS);

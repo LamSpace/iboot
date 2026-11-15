@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
  * 文件信息实体。
  *
  * <p>记录上传文件的元数据，包括原始文件名、存储路径、大小、MIME 类型和分类。
- * 实际文件内容由存储策略（本地或 MinIO）保存，本实体只保存索引信息。
+ * 实际文件内容由存储策略（本地或 Silo）保存，本实体只保存索引信息。
  *
  * @author iBoot Team
  * @since 1.0.0

@@ -3,10 +3,8 @@
 # 拉取 Docker 镜像脚本
 # 用于拉取 docker-compose.yml 与 Dockerfile 中定义的镜像到本地。
 #
-# 来源约定：
-# - 除 MinIO 外，全部镜像直接来自 Docker Hub 官方仓库；
-# - MinIO 上游已停止发布官方容器镜像，继续使用 docker.aityp.com 展示的
-#   SWR 镜像路径，拉取后重打为 docker.io/minio/minio:<tag>。
+# 来源约定：全部镜像直接来自 Docker Hub 官方仓库。
+# 对象存储使用 pgsty/silo（MinIO 兼容的社区 fork），固定 RELEASE.* 标签。
 
 set -e
 
@@ -30,13 +28,11 @@ docker pull docker.io/library/redis:8.8.4
 echo "Redis 镜像拉取完成！"
 echo ""
 
-# 拉取 MinIO 镜像（Docker Hub 官方仓库已不可用，走 aityp/SWR）
+# 拉取 Silo 镜像（MinIO 兼容的社区 fork，直接来自 Docker Hub）
 echo "======================================"
-echo "正在拉取 MinIO 镜像..."
-docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
-docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z  docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
-docker rmi swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z || true
-echo "MinIO 镜像拉取完成！"
+echo "正在拉取 Silo 镜像..."
+docker pull docker.io/pgsty/silo:RELEASE.2026-11-12T00-00-00Z
+echo "Silo 镜像拉取完成！"
 echo ""
 
 # 拉取 Neo4j 镜像

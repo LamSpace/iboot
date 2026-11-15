@@ -58,7 +58,7 @@ class SchemaMigratorTest {
         MysqlDataSource dataSource = dataSource();
 
         MigrateResult first = migrateWithRetry(dataSource);
-        assertThat(first.migrationsExecuted).isEqualTo(6);
+        assertThat(first.migrationsExecuted).isEqualTo(7);
         assertThat(countTables(dataSource)).isEqualTo(81);
 
         MigrateResult second = migrateWithRetry(dataSource);
@@ -67,6 +67,21 @@ class SchemaMigratorTest {
 
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_user")).isEqualTo(1);
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu")).isGreaterThan(100);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.file.silo.endpoint'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key LIKE 'sys.file.silo.%'")).isZero();
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_key = 'sys.silo.console.url'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_name = 'Silo服务端点'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_config "
+                + "WHERE config_name LIKE '%Silo%' OR remark LIKE '%Silo%'")).isZero();
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu "
+                + "WHERE id = 706 AND path = '/monitor/silo-monitor' "
+                + "AND permission = 'monitor:silo'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu "
+                + "WHERE id = 7061 AND permission = 'silo:query'")).isEqualTo(1);
         assertThat(count(dataSource, "SELECT COUNT(*) FROM biz_notification_outbox")).isZero();
         assertThat(count(dataSource, "SELECT COUNT(*) FROM information_schema.statistics "
                 + "WHERE table_schema = 'iboot_test' AND table_name = 'biz_notification_outbox' "

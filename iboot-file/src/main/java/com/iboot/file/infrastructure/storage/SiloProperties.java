@@ -22,33 +22,33 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * MinIO 配置属性。
+ * Silo 配置属性。
  *
- * <p>从 {@code sys_config} 动态读取 MinIO 端点、凭证、桶名等配置。
+ * <p>从 {@code sys_config} 动态读取 Silo 端点、凭证、桶名等配置。
  *
  * @author iBoot Team
  * @since 1.0.0
  */
 @Component
-public class MinioProperties {
+public class SiloProperties {
 
-    private static final Logger log = LoggerFactory.getLogger(MinioProperties.class);
+    private static final Logger log = LoggerFactory.getLogger(SiloProperties.class);
 
     private static final String CONFIG_KEY_STORAGE_TYPE = "sys.file.storageType";
 
-    private static final String CONFIG_KEY_ENDPOINT = "sys.file.minio.endpoint";
+    private static final String CONFIG_KEY_ENDPOINT = "sys.file.silo.endpoint";
 
-    private static final String CONFIG_KEY_ACCESS_KEY = "sys.file.minio.accessKey";
+    private static final String CONFIG_KEY_ACCESS_KEY = "sys.file.silo.accessKey";
 
-    private static final String CONFIG_KEY_SECRET_KEY = "sys.file.minio.secretKey";
+    private static final String CONFIG_KEY_SECRET_KEY = "sys.file.silo.secretKey";
 
-    private static final String CONFIG_KEY_BUCKET_NAME = "sys.file.minio.bucketName";
+    private static final String CONFIG_KEY_BUCKET_NAME = "sys.file.silo.bucketName";
 
-    private static final String CONFIG_KEY_URL_EXPIRE_SECONDS = "sys.file.minio.urlExpireSeconds";
+    private static final String CONFIG_KEY_URL_EXPIRE_SECONDS = "sys.file.silo.urlExpireSeconds";
 
-    private static final String CONFIG_KEY_MONITOR_ENABLED = "sys.minio.monitor.enabled";
+    private static final String CONFIG_KEY_MONITOR_ENABLED = "sys.silo.monitor.enabled";
 
-    private static final String CONFIG_KEY_CONSOLE_URL = "sys.minio.console.url";
+    private static final String CONFIG_KEY_CONSOLE_URL = "sys.silo.console.url";
 
     private static final String DEFAULT_STORAGE_TYPE = "local";
 
@@ -61,7 +61,7 @@ public class MinioProperties {
     private final SysConfigReader sysConfigReader;
 
     @SuppressWarnings("all")
-    public MinioProperties(final SysConfigReader sysConfigReader) {
+    public SiloProperties(final SysConfigReader sysConfigReader) {
         this.sysConfigReader = sysConfigReader;
     }
 
@@ -74,7 +74,7 @@ public class MinioProperties {
     }
 
     /**
-     * 获取MinIO服务端点
+     * 获取Silo服务端点
      */
     public String getEndpoint() {
         String value = sysConfigReader.getString(CONFIG_KEY_ENDPOINT);
@@ -82,21 +82,21 @@ public class MinioProperties {
     }
 
     /**
-     * 获取MinIO访问密钥
+     * 获取Silo访问密钥
      */
     public String getAccessKey() {
         return sysConfigReader.getString(CONFIG_KEY_ACCESS_KEY);
     }
 
     /**
-     * 获取MinIO秘密密钥
+     * 获取Silo秘密密钥
      */
     public String getSecretKey() {
         return sysConfigReader.getString(CONFIG_KEY_SECRET_KEY);
     }
 
     /**
-     * 获取MinIO存储桶名称
+     * 获取Silo存储桶名称
      */
     public String getBucketName() {
         String value = sysConfigReader.getString(CONFIG_KEY_BUCKET_NAME);
@@ -119,14 +119,14 @@ public class MinioProperties {
     }
 
     /**
-     * 判断是否使用MinIO存储
+     * 判断是否使用Silo存储
      */
-    public boolean isMinioEnabled() {
-        return "minio".equalsIgnoreCase(getStorageType());
+    public boolean isSiloEnabled() {
+        return "silo".equalsIgnoreCase(getStorageType());
     }
 
     /**
-     * 获取MinIO监控是否启用
+     * 获取Silo监控是否启用
      */
     public boolean isMonitorEnabled() {
         String value = sysConfigReader.getString(CONFIG_KEY_MONITOR_ENABLED);
@@ -134,7 +134,7 @@ public class MinioProperties {
     }
 
     /**
-     * 获取MinIO控制台URL
+     * 获取Silo控制台URL
      */
     public String getConsoleUrl() {
         String value = sysConfigReader.getString(CONFIG_KEY_CONSOLE_URL);

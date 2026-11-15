@@ -27,17 +27,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * MinIO 存储策略契约测试。
+ * Silo 存储策略契约测试。
  *
- * <p>使用 Testcontainers 启动真实 MinIO 容器，验证对象存储实现满足通用契约。
+ * <p>使用 Testcontainers 启动真实 Silo 容器，验证对象存储实现满足通用契约。
  * 运行环境必须提供 Docker，缺少 Docker 时测试失败而不是跳过。
  *
  * @author iBoot Team
  * @since 1.0.0
- * @see MinioFileStorageStrategy
+ * @see SiloFileStorageStrategy
  */
 @Testcontainers
-class MinioFileStorageStrategyContractTest extends FileStorageStrategyContractTest {
+class SiloFileStorageStrategyContractTest extends FileStorageStrategyContractTest {
 
     private static final String ACCESS_KEY = "minioadmin";
 
@@ -46,22 +46,22 @@ class MinioFileStorageStrategyContractTest extends FileStorageStrategyContractTe
     private static final String BUCKET = "iboot-test";
 
     @Container
-    static final GenericContainer<?> MINIO = new GenericContainer<>(
-            "minio/minio:RELEASE.2025-09-07T16-13-09Z")
+    static final GenericContainer<?> SILO = new GenericContainer<>(
+            "pgsty/silo:RELEASE.2026-11-12T00-00-00Z")
             .withExposedPorts(9000)
             .withEnv("MINIO_ROOT_USER", ACCESS_KEY)
             .withEnv("MINIO_ROOT_PASSWORD", SECRET_KEY)
-            .withCommand("server /data");
+            .withCommand("server", "/data");
 
     @Override
     protected FileStorageStrategy createStrategy() {
-        MinioProperties properties = mock(MinioProperties.class);
+        SiloProperties properties = mock(SiloProperties.class);
         when(properties.getEndpoint()).thenReturn(endpoint());
         when(properties.getAccessKey()).thenReturn(ACCESS_KEY);
         when(properties.getSecretKey()).thenReturn(SECRET_KEY);
         when(properties.getBucketName()).thenReturn(BUCKET);
         when(properties.getUrlExpireSeconds()).thenReturn(3600);
-        MinioFileStorageStrategy strategy = new MinioFileStorageStrategy(properties);
+        SiloFileStorageStrategy strategy = new SiloFileStorageStrategy(properties);
         strategy.init();
         return strategy;
     }
@@ -73,10 +73,10 @@ class MinioFileStorageStrategyContractTest extends FileStorageStrategyContractTe
 
     @Test
     void containerIsReachable() {
-        assertTrue(MINIO.isRunning());
+        assertTrue(SILO.isRunning());
     }
 
     private String endpoint() {
-        return "http://" + MINIO.getHost() + ":" + MINIO.getMappedPort(9000);
+        return "http://" + SILO.getHost() + ":" + SILO.getMappedPort(9000);
     }
 }

@@ -311,7 +311,7 @@ public class RagProperties {
     public static class Storage {
 
         /**
-         * MinIO 端点。
+         * Silo 端点。
          */
         private String endpoint = "http://localhost:9000";
 

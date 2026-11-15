@@ -23,7 +23,7 @@ import java.io.IOException;
 /**
  * 文件存储策略接口。
  *
- * <p>抽象文件保存、读取、删除和 URL 生成等操作，由本地存储、MinIO、阿里云 OSS
+ * <p>抽象文件保存、读取、删除和 URL 生成等操作，由本地存储、Silo、阿里云 OSS
  * 及测试用内存存储分别实现。上层服务通过该接口屏蔽具体存储介质，不感知提供方差异。
  *
  * @author iBoot Team
@@ -84,7 +84,7 @@ public interface FileStorageStrategy {
     /**
      * 获取存储类型标识。
      *
-     * @return 存储类型（如 {@code local}、{@code minio} 或 {@code oss}）
+     * @return 存储类型（如 {@code local}、{@code silo} 或 {@code oss}）
      */
     String getStorageType();
 

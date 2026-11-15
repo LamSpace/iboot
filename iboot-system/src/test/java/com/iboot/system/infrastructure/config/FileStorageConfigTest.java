@@ -19,7 +19,7 @@ package com.iboot.system.infrastructure.config;
 import com.iboot.system.application.service.ConfigApplicationService;
 import com.iboot.system.domain.system.service.FileStorageStrategy;
 import com.iboot.system.infrastructure.storage.LocalFileStorageStrategy;
-import com.iboot.system.infrastructure.storage.MinioFileStorageStrategy;
+import com.iboot.system.infrastructure.storage.SiloFileStorageStrategy;
 import com.iboot.system.infrastructure.storage.OssFileStorageStrategy;
 import com.iboot.system.infrastructure.storage.OssProperties;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 /**
  * 存储提供方选择逻辑测试。
  *
- * <p>验证 {@code sys.file.storageType} 的四个取值分支：local、minio、oss 与非法值。
+ * <p>验证 {@code sys.file.storageType} 的四个取值分支：local、silo、旧值 minio 与非法值。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -47,8 +47,8 @@ class FileStorageConfigTest {
     }
 
     @Test
-    void selectsMinioStrategy() {
-        assertInstanceOf(MinioFileStorageStrategy.class, strategyFor("minio"));
+    void selectsSiloStrategy() {
+        assertInstanceOf(SiloFileStorageStrategy.class, strategyFor("silo"));
     }
 
     @Test
@@ -63,12 +63,19 @@ class FileStorageConfigTest {
         assertTrue(error.getMessage().contains("s3"));
     }
 
+    @Test
+    void rejectsLegacyMinioStorageType() {
+        IllegalStateException error = assertThrows(IllegalStateException.class, () -> strategyFor("minio"));
+
+        assertTrue(error.getMessage().contains("minio"));
+    }
+
     private FileStorageStrategy strategyFor(String storageType) {
         ConfigApplicationService configApplicationService = mock(ConfigApplicationService.class);
         when(configApplicationService.getConfigValue("sys.file.storageType")).thenReturn(storageType);
         FileStorageConfig config = new FileStorageConfig(
                 configApplicationService,
-                new com.iboot.system.infrastructure.storage.MinioProperties(configApplicationService),
+                new com.iboot.system.infrastructure.storage.SiloProperties(configApplicationService),
                 new OssProperties(configApplicationService));
         return config.fileStorageStrategy();
     }

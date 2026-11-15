@@ -202,7 +202,7 @@ iboot:
         daily-page-limit: ${IBOOT_AI_OCR_DAILY_PAGE_LIMIT:200}
         timeout-seconds: ${IBOOT_AI_OCR_TIMEOUT_SECONDS:60}
       storage:
-        endpoint: ${IBOOT_AI_MINIO_ENDPOINT:http://localhost:9000}
-        access-key: ${IBOOT_AI_MINIO_ACCESS_KEY:minioadmin}
-        secret-key: ${IBOOT_AI_MINIO_SECRET_KEY:minioadmin}
-        bucket: ${IBOOT_AI_MINIO_BUCKET:iboot-ai}
+        endpoint: ${IBOOT_AI_SILO_ENDPOINT:http://localhost:9000}
+        access-key: ${IBOOT_AI_SILO_ACCESS_KEY:minioadmin}
+        secret-key: ${IBOOT_AI_SILO_SECRET_KEY:minioadmin}
+        bucket: ${IBOOT_AI_SILO_BUCKET:iboot-ai}

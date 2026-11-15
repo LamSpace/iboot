@@ -49,7 +49,7 @@ spring:
               uri: ${IBOOT_MONITOR_URI:http://localhost:8087}
               order: 27
               predicates:
-                - Path=/api/log/**,/api/online/**,/api/monitor/server/**,/api/monitor/redis/**,/api/monitor/minio/**
+                - Path=/api/log/**,/api/online/**,/api/monitor/server/**,/api/monitor/redis/**,/api/monitor/silo/**
 
             # 调度服务：定时任务与数据备份。
             - id: job

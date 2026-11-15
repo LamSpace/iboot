@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * 文件管理应用服务
  * <p>
- * 负责文件上传、下载、删除、更新和查询等业务逻辑处理。 支持多种存储策略（本地存储/MinIO），通过 FileStorageStrategy 接口实现存储方式切换。 文件大小和允许的类型通过 sys_config
+ * 负责文件上传、下载、删除、更新和查询等业务逻辑处理。 支持多种存储策略（本地存储/Silo），通过 FileStorageStrategy 接口实现存储方式切换。 文件大小和允许的类型通过 sys_config
  * 参数配置动态读取，支持自动推断文件分类。
  * </p>
  *
@@ -148,7 +148,7 @@ public class FileApplicationService {
     /**
      * 获取文件下载 URL
      * <p>
-     * 对于 MinIO 存储返回预签名 URL，对于本地存储返回相对路径。
+     * 对于 Silo 存储返回预签名 URL，对于本地存储返回相对路径。
      * </p>
      *
      * @param fileId 文件 ID
@@ -183,7 +183,7 @@ public class FileApplicationService {
     /**
      * 获取当前存储类型。
      *
-     * @return 存储类型标识，如 {@code local}、{@code minio} 或 {@code oss}
+     * @return 存储类型标识，如 {@code local}、{@code silo} 或 {@code oss}
      */
     public String getStorageType() {
         return fileStorageStrategy.getStorageType();

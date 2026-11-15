@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * 文件存储策略行为契约。
  *
- * <p>所有实现（本地、MinIO、OSS、内存）都必须通过同一组用例，以保证存储介质可替换而行为一致。
+ * <p>所有实现（本地、Silo、OSS、内存）都必须通过同一组用例，以保证存储介质可替换而行为一致。
  * 子类负责提供具体实现与对象存储语义标识。
  *
  * @author iBoot Team

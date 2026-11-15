@@ -20,7 +20,7 @@
 #   docker-deploy.sh purge --yes        停止并删除数据卷（不可恢复）
 #
 # 说明：
-# - 构建与运行期基础镜像来自 scripts/pull-docker-images.sh 配置的 Docker Hub（MinIO 走 aityp/SWR）；
+# - 构建与运行期基础镜像来自 scripts/pull-docker-images.sh 配置的 Docker Hub；
 # - 根目录 .env 会被加载，用于 compose 插值（如 NEO4J_PASSWORD）；
 # - 应用容器的环境变量由 docker-compose.yml 的 env_file 注入。
 
@@ -105,7 +105,7 @@ report_unhealthy() {
   while IFS='|' read -r name service state health; do
     [ -n "$service" ] || continue
     case "$service" in
-      db-init|minio-init|rocketmq-store-init|rocketmq-init|kafka-init) continue ;;
+      db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init) continue ;;
     esac
     if [ "$state" != "running" ] || { [ -n "$health" ] && [ "$health" != "healthy" ]; }; then
       printf '\n--- %s（%s，health=%s）最近日志 ---\n' "$name" "$state" "${health:-none}" >&2
@@ -115,7 +115,7 @@ report_unhealthy() {
 }
 
 # 等待常驻服务健康，并确认一次性服务以 0 退出。
-# 不使用 compose up --wait：它会把 db-init / minio-init / rocketmq-*-init / kafka-init
+# 不使用 compose up --wait：它会把 db-init / silo-init / rocketmq-*-init / kafka-init
 # 这类正常退出的一次性服务判为失败。
 wait_ready() {
   local timeout="${1:-600}"
@@ -126,7 +126,7 @@ wait_ready() {
     while IFS='|' read -r name service state health; do
       [ -n "$service" ] || continue
       case "$service" in
-        db-init|minio-init|rocketmq-store-init|rocketmq-init|kafka-init)
+        db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init)
           if [ "$state" = "exited" ]; then
             exitcode=$(docker inspect -f '{{.State.ExitCode}}' "$name" 2>/dev/null || echo 1)
             if [ "$exitcode" != "0" ]; then

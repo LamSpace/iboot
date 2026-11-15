@@ -15,7 +15,7 @@
  */
 
 /**
- * 本地文件系统与 MinIO 对象存储策略。
+ * 本地文件系统与 Silo 对象存储策略。
  *
  * @author iBoot Team
  * @since 1.0.0

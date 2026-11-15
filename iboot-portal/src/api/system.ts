@@ -1577,17 +1577,17 @@ export function exportFileList(params?: {
   });
 }
 
-// ==================== MinIO监控 ====================
+// ==================== Silo监控 ====================
 
-export interface MinioBucketStats {
+export interface SiloBucketStats {
   objectCount: number;
   totalSize: number;
 }
 
-export interface MinioStatus {
+export interface SiloStatus {
   monitorEnabled: boolean;
   storageType: string;
-  minioEnabled: boolean;
+  siloEnabled: boolean;
   consoleUrl: string;
   endpoint: string;
   bucketName: string;
@@ -1597,18 +1597,18 @@ export interface MinioStatus {
   version?: string;
   platform?: string;
   memory?: any;
-  buckets?: Record<string, MinioBucketStats>;
+  buckets?: Record<string, SiloBucketStats>;
   totalBuckets?: number;
   totalSize?: number;
   totalObjects?: number;
 }
 
-export function getMinioStatus(): Promise<ApiResponse<MinioStatus>> {
-  return request({ url: "/monitor/minio", method: "get" });
+export function getSiloStatus(): Promise<ApiResponse<SiloStatus>> {
+  return request({ url: "/monitor/silo", method: "get" });
 }
 
-export function pingMinio(): Promise<ApiResponse<boolean>> {
-  return request({ url: "/monitor/minio/ping", method: "get" });
+export function pingSilo(): Promise<ApiResponse<boolean>> {
+  return request({ url: "/monitor/silo/ping", method: "get" });
 }
 
 // ==================== 消息推送 ====================

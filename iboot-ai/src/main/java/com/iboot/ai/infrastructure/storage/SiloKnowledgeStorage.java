@@ -33,7 +33,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 基于 MinIO 的知识库原文件存储实现。
+ * 基于 Silo 的知识库原文件存储实现。
  *
  * <p>不隐式创建 bucket；bucket 缺失时在首次读写时抛出明确错误。仅在知识库能力启用时装配。
  *
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @ConditionalOnProperty(prefix = "iboot.ai.rag", name = "enabled", havingValue = "true", matchIfMissing = true)
-public class MinioKnowledgeStorage implements KnowledgeStorage {
+public class SiloKnowledgeStorage implements KnowledgeStorage {
 
     private final MinioClient client;
 
@@ -53,7 +53,7 @@ public class MinioKnowledgeStorage implements KnowledgeStorage {
      *
      * @param properties 知识库配置
      */
-    public MinioKnowledgeStorage(RagProperties properties) {
+    public SiloKnowledgeStorage(RagProperties properties) {
         RagProperties.Storage storage = properties.getStorage();
         this.bucket = storage.getBucket();
         this.client = MinioClient.builder()
@@ -72,7 +72,7 @@ public class MinioKnowledgeStorage implements KnowledgeStorage {
                     .contentType(contentType == null ? "application/octet-stream" : contentType)
                     .build());
         } catch (Exception e) {
-            throw new IllegalStateException("写入 MinIO 失败：" + key, e);
+            throw new IllegalStateException("写入 Silo 失败：" + key, e);
         }
     }
 
@@ -81,7 +81,7 @@ public class MinioKnowledgeStorage implements KnowledgeStorage {
         try (var stream = client.getObject(GetObjectArgs.builder().bucket(bucket).object(key).build())) {
             return stream.readAllBytes();
         } catch (Exception e) {
-            throw new IllegalStateException("读取 MinIO 失败：" + key, e);
+            throw new IllegalStateException("读取 Silo 失败：" + key, e);
         }
     }
 
@@ -90,7 +90,7 @@ public class MinioKnowledgeStorage implements KnowledgeStorage {
         try {
             client.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(key).build());
         } catch (Exception e) {
-            throw new IllegalStateException("删除 MinIO 对象失败：" + key, e);
+            throw new IllegalStateException("删除 Silo 对象失败：" + key, e);
         }
     }
 
@@ -104,7 +104,7 @@ public class MinioKnowledgeStorage implements KnowledgeStorage {
                     .expiry((int) ttl.toSeconds(), TimeUnit.SECONDS)
                     .build());
         } catch (Exception e) {
-            throw new IllegalStateException("生成 MinIO 下载地址失败：" + key, e);
+            throw new IllegalStateException("生成 Silo 下载地址失败：" + key, e);
         }
     }
 
@@ -117,7 +117,7 @@ public class MinioKnowledgeStorage implements KnowledgeStorage {
         try {
             return client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
         } catch (Exception e) {
-            throw new IllegalStateException("检查 MinIO bucket 失败：" + bucket, e);
+            throw new IllegalStateException("检查 Silo bucket 失败：" + bucket, e);
         }
     }
 }

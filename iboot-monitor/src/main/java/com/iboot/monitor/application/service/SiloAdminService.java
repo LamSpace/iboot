@@ -16,7 +16,7 @@
 
 package com.iboot.monitor.application.service;
 
-import com.iboot.monitor.infrastructure.storage.MinioProperties;
+import com.iboot.monitor.infrastructure.storage.SiloProperties;
 import io.minio.ListBucketsArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
@@ -35,57 +35,57 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MinIO 管理服务
+ * Silo 管理服务
  * <p>
- * 提供 MinIO 集群监控、存储桶管理等功能的接口。 支持检查 MinIO 服务在线状态、获取存储桶统计信息（对象数量、总大小）等监控功能。 MinIO 配置通过 MinioProperties 注入，支持动态启用/禁用监控。
+ * 提供 Silo 集群监控、存储桶管理等功能的接口。 支持检查 Silo 服务在线状态、获取存储桶统计信息（对象数量、总大小）等监控功能。 Silo 配置通过 SiloProperties 注入，支持动态启用/禁用监控。
  * </p>
  *
  * @author iBoot Team
  * @since 1.0.0
  */
 @Service
-public class MinioAdminService {
+public class SiloAdminService {
 
-    private static final Logger log = LoggerFactory.getLogger(MinioAdminService.class);
+    private static final Logger log = LoggerFactory.getLogger(SiloAdminService.class);
 
-    private final MinioProperties minioProperties;
+    private final SiloProperties siloProperties;
 
     @SuppressWarnings("all")
-    public MinioAdminService(final MinioProperties minioProperties) {
-        this.minioProperties = minioProperties;
+    public SiloAdminService(final SiloProperties siloProperties) {
+        this.siloProperties = siloProperties;
     }
 
     /**
-     * 获取 MinIO 监控数据
+     * 获取 Silo 监控数据
      * <p>
-     * 检查 MinIO 服务状态，获取存储桶列表及统计信息。 返回数据包括：服务状态、存储桶数量、对象总数、总大小等。
+     * 检查 Silo 服务状态，获取存储桶列表及统计信息。 返回数据包括：服务状态、存储桶数量、对象总数、总大小等。
      * </p>
      *
-     * @return MinIO 监控数据 Map，包含状态、存储桶统计等信息
+     * @return Silo 监控数据 Map，包含状态、存储桶统计等信息
      */
-    public Map<String, Object> getMinioStatus() {
+    public Map<String, Object> getSiloStatus() {
         Map<String, Object> result = new HashMap<>();
-        // 检查是否启用 MinIO 监控
-        result.put("monitorEnabled", minioProperties.isMonitorEnabled());
+        // 检查是否启用 Silo 监控
+        result.put("monitorEnabled", siloProperties.isMonitorEnabled());
         // 检查存储类型
-        result.put("storageType", minioProperties.getStorageType());
-        result.put("minioEnabled", minioProperties.isMinioEnabled());
+        result.put("storageType", siloProperties.getStorageType());
+        result.put("siloEnabled", siloProperties.isSiloEnabled());
         // 获取控制台 URL
-        result.put("consoleUrl", minioProperties.getConsoleUrl());
-        // 获取 MinIO 连接信息
-        result.put("endpoint", minioProperties.getEndpoint());
-        result.put("bucketName", minioProperties.getBucketName());
-        if (!minioProperties.isMinioEnabled()) {
+        result.put("consoleUrl", siloProperties.getConsoleUrl());
+        // 获取 Silo 连接信息
+        result.put("endpoint", siloProperties.getEndpoint());
+        result.put("bucketName", siloProperties.getBucketName());
+        if (!siloProperties.isSiloEnabled()) {
             result.put("status", "disabled");
-            result.put("message", "当前未启用 MinIO 存储");
+            result.put("message", "当前未启用 Silo 存储");
             return result;
         }
         try {
             // 检查服务是否在线
-            boolean isOnline = checkMinioOnline();
+            boolean isOnline = checkSiloOnline();
             if (!isOnline) {
                 result.put("status", "offline");
-                result.put("message", "MinIO 服务无响应");
+                result.put("message", "Silo 服务无响应");
                 return result;
             }
             result.put("status", "online");
@@ -105,46 +105,47 @@ public class MinioAdminService {
             }
             result.put("totalObjects", totalObjects);
             result.put("totalSize", totalSize);
-            log.info("MinIO 监控数据获取成功：{} 个存储桶，{} 个对象，{} 字节", buckets.size(), totalObjects, totalSize);
+            log.info("Silo 监控数据获取成功：{} 个存储桶，{} 个对象，{} 字节", buckets.size(), totalObjects, totalSize);
         } catch (Exception e) {
-            log.error("获取 MinIO 监控数据失败", e);
+            log.error("获取 Silo 监控数据失败", e);
             result.put("status", "error");
-            result.put("message", "连接 MinIO 服务器失败：" + e.getMessage());
+            result.put("message", "连接 Silo 服务器失败：" + e.getMessage());
         }
         return result;
     }
 
     /**
-     * 检查 MinIO 服务是否在线
+     * 检查 Silo 服务是否在线
      * <p>
-     * 仅当 MinIO 存储启用时才执行检查。
+     * 仅当 Silo 存储启用时才执行检查。
      * </p>
      *
-     * @return MinIO 是否在线
+     * @return Silo 是否在线
      */
-    public boolean pingMinio() {
-        if (!minioProperties.isMinioEnabled()) {
+    public boolean pingSilo() {
+        if (!siloProperties.isSiloEnabled()) {
             return false;
         }
-        return checkMinioOnline();
+        return checkSiloOnline();
     }
 
     /**
-     * 检查 MinIO 服务是否在线
+     * 检查 Silo 服务是否在线
      * <p>
-     * 通过访问 MinIO 健康检查接口判断服务状态。
+     * 通过访问 Silo 健康检查接口判断服务状态。
      * </p>
      *
-     * @return MinIO 是否在线
+     * @return Silo 是否在线
      */
-    private boolean checkMinioOnline() {
+    private boolean checkSiloOnline() {
         try {
-            String apiUrl = minioProperties.getEndpoint() + "/minio/health/live";
+            // Silo 保留 MinIO 的 /minio/health/live 兼容路由，因此路径保持不变
+            String apiUrl = siloProperties.getEndpoint() + "/minio/health/live";
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<String> response = restTemplate.getForEntity(apiUrl, String.class);
             return response.getStatusCode() == HttpStatus.OK;
         } catch (Exception e) {
-            log.warn("MinIO 服务在线检查失败：{}", e.getMessage());
+            log.warn("Silo 服务在线检查失败：{}", e.getMessage());
             return false;
         }
     }
@@ -160,19 +161,19 @@ public class MinioAdminService {
     private Map<String, Map<String, Long>> fetchBucketStats() {
         Map<String, Map<String, Long>> bucketStatsMap = new HashMap<>();
         try {
-            MinioClient minioClient = MinioClient.builder()
-                    .endpoint(minioProperties.getEndpoint())
-                    .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey())
+            MinioClient siloClient = MinioClient.builder()
+                    .endpoint(siloProperties.getEndpoint())
+                    .credentials(siloProperties.getAccessKey(), siloProperties.getSecretKey())
                     .build();
             // 获取存储桶列表
-            List<Bucket> buckets = minioClient.listBuckets(ListBucketsArgs.builder().build());
+            List<Bucket> buckets = siloClient.listBuckets(ListBucketsArgs.builder().build());
             for (Bucket bucket : buckets) {
                 Map<String, Long> stats = new HashMap<>();
                 stats.put("objectCount", 0L);
                 stats.put("totalSize", 0L);
                 // 遍历存储桶中的对象获取统计信息
                 try {
-                    Iterable<Result<Item>> objects = minioClient
+                    Iterable<Result<Item>> objects = siloClient
                             .listObjects(ListObjectsArgs.builder().bucket(bucket.name()).recursive(true).build());
                     for (Result<Item> result : objects) {
                         try {

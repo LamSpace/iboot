@@ -365,9 +365,9 @@ public final class CloudEventTypes {
     public static final String MONITOR_REDIS_INFO = "com.iboot.monitor.redis.info";
 
     /**
-     * MinIO 信息获取
+     * Silo 信息获取
      */
-    public static final String MONITOR_MINIO_INFO = "com.iboot.monitor.minio.info";
+    public static final String MONITOR_SILO_INFO = "com.iboot.monitor.silo.info";
 
     /**
      * 统计信息获取

@@ -259,7 +259,7 @@ public final class CloudEventTypes {
     // ==================== 系统监控事件 ====================
     public static final String MONITOR_SERVER_INFO = "com.iboot.monitor.server.info";
     public static final String MONITOR_REDIS_INFO = "com.iboot.monitor.redis.info";
-    public static final String MONITOR_MINIO_INFO = "com.iboot.monitor.minio.info";
+    public static final String MONITOR_SILO_INFO = "com.iboot.monitor.silo.info";
     public static final String STATISTICS_INFO = "com.iboot.statistics.info";
     public static final String DASHBOARD_INFO = "com.iboot.dashboard.info";
 }
@@ -272,7 +272,7 @@ public final class CloudEventTypes {
 - **角色/部门/岗位/菜单事件** (各 3-4 个)：各自 CRUD 操作
 - **字典/配置/公告/消息事件** (各 3-6 个)：各自业务操作
 - **任务/文件/日志事件** (各 2-8 个)：定时任务、文件管理、日志记录
-- **监控事件** (5 个)：服务器、Redis、MinIO、统计、仪表板
+- **监控事件** (5 个)：服务器、Redis、Silo、统计、仪表板
 
 **完整事件类型列表** 共 **50+ 个事件**，详见 [事件类型详细清单](#事件类型详细清单)。
 
@@ -688,7 +688,7 @@ console.log('[CloudEvent]', {
 | 服务监控 | ServerMonitorController | /api/monitor/server | 1 | `com.iboot.monitor.server.*` |
 | Redis 监控 | RedisMonitorController | /api/monitor/redis | 5 | `com.iboot.monitor.redis.*` |
 | 统计分析 | StatisticsController | /api/statistics | 2 | `com.iboot.statistics.*` |
-| MinIO 监控 | MinioMonitorController | /api/monitor/minio | 2 | `com.iboot.monitor.minio.*` |
+| Silo 监控 | SiloMonitorController | /api/monitor/silo | 2 | `com.iboot.monitor.silo.*` |
 | 仪表板 | DashboardController | /api/dashboard | 1 | `com.iboot.dashboard.*` |
 | **总计** | **20 Controllers** | - | **143** | **50+ 事件类型** |
 
@@ -810,7 +810,7 @@ console.log('[CloudEvent]', {
 |----------|------|
 | `com.iboot.monitor.server.info` | 服务器信息 |
 | `com.iboot.monitor.redis.info` | Redis 信息 |
-| `com.iboot.monitor.minio.info` | MinIO 信息 |
+| `com.iboot.monitor.silo.info` | Silo 信息 |
 | `com.iboot.statistics.info` | 统计信息 |
 | `com.iboot.dashboard.info` | 仪表板信息 |
 

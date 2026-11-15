@@ -1,15 +1,15 @@
 <template>
-  <div class="minio-monitor-wrapper">
+  <div class="silo-monitor-wrapper">
     <div class="monitor-toolbar">
       <div class="toolbar-left">
         <el-icon :size="18"><Box /></el-icon>
-        <span class="toolbar-title">{{ t("monitor.minio.title") }}</span>
+        <span class="toolbar-title">{{ t("monitor.silo.title") }}</span>
         <el-tag :type="statusTagType" size="small" effect="plain">{{
           statusText
         }}</el-tag>
       </div>
       <div class="toolbar-right">
-        <el-tooltip :content="t('monitor.minio.open_in_new')" placement="top">
+        <el-tooltip :content="t('monitor.silo.open_in_new')" placement="top">
           <el-button
             :icon="TopRight"
             circle
@@ -17,7 +17,7 @@
             @click="openConsole"
           />
         </el-tooltip>
-        <el-tooltip :content="t('monitor.minio.refresh')" placement="top">
+        <el-tooltip :content="t('monitor.silo.refresh')" placement="top">
           <el-button
             :icon="Refresh"
             circle
@@ -29,16 +29,16 @@
       </div>
     </div>
 
-    <!-- MinIO 未启用状态 -->
-    <el-card v-if="!minioStatus.minioEnabled" class="info-card">
+    <!-- Silo 未启用状态 -->
+    <el-card v-if="!siloStatus.siloEnabled" class="info-card">
       <el-result
         icon="info"
-        :title="t('monitor.minio.messages.minio_disabled')"
-        :sub-title="t('monitor.minio.messages.minio_disabled_subtitle')"
+        :title="t('monitor.silo.messages.silo_disabled')"
+        :sub-title="t('monitor.silo.messages.silo_disabled_subtitle')"
       >
         <template #extra>
           <el-button type="primary" @click="openConsole">{{
-            t("monitor.minio.messages.open_console")
+            t("monitor.silo.messages.open_console")
           }}</el-button>
         </template>
       </el-result>
@@ -54,10 +54,10 @@
               <el-icon :size="32" color="var(--ib-color-success-text)"><Box /></el-icon>
               <div class="stat-info">
                 <div class="stat-value">
-                  {{ minioStatus.totalBuckets || 0 }}
+                  {{ siloStatus.totalBuckets || 0 }}
                 </div>
                 <div class="stat-label">
-                  {{ t("monitor.minio.stats.buckets") }}
+                  {{ t("monitor.silo.stats.buckets") }}
                 </div>
               </div>
             </div>
@@ -68,9 +68,9 @@
             <div class="stat-item">
               <el-icon :size="32" color="var(--ib-color-warning-text)"><Cpu /></el-icon>
               <div class="stat-info">
-                <div class="stat-value">{{ minioStatus.uptime || "-" }}</div>
+                <div class="stat-value">{{ siloStatus.uptime || "-" }}</div>
                 <div class="stat-label">
-                  {{ t("monitor.minio.stats.uptime") }}
+                  {{ t("monitor.silo.stats.uptime") }}
                 </div>
               </div>
             </div>
@@ -84,14 +84,14 @@
                 <div class="stat-value">
                   <el-link
                     type="primary"
-                    :href="minioStatus.consoleUrl"
+                    :href="siloStatus.consoleUrl"
                     target="_blank"
                   >
-                    {{ t("monitor.minio.actions.open_console") }}
+                    {{ t("monitor.silo.actions.open_console") }}
                   </el-link>
                 </div>
                 <div class="stat-label">
-                  {{ t("monitor.minio.stats.console") }}
+                  {{ t("monitor.silo.stats.console") }}
                 </div>
               </div>
             </div>
@@ -105,42 +105,42 @@
           <el-card shadow="hover">
             <template #header>
               <div class="card-header">
-                <span>{{ t("monitor.minio.service_info.title") }}</span>
+                <span>{{ t("monitor.silo.service_info.title") }}</span>
               </div>
             </template>
             <el-descriptions :column="1" border>
               <el-descriptions-item
-                :label="t('monitor.minio.service_info.status')"
+                :label="t('monitor.silo.service_info.status')"
               >
                 <el-tag
-                  :type="minioStatus.status === 'online' ? 'success' : 'danger'"
+                  :type="siloStatus.status === 'online' ? 'success' : 'danger'"
                   size="small"
                 >
                   {{
-                    minioStatus.status === "online"
-                      ? t("monitor.minio.status.online")
-                      : t("monitor.minio.status.offline")
+                    siloStatus.status === "online"
+                      ? t("monitor.silo.status.online")
+                      : t("monitor.silo.status.offline")
                   }}
                 </el-tag>
               </el-descriptions-item>
               <el-descriptions-item
-                :label="t('monitor.minio.service_info.endpoint')"
-                >{{ minioStatus.endpoint }}</el-descriptions-item
+                :label="t('monitor.silo.service_info.endpoint')"
+                >{{ siloStatus.endpoint }}</el-descriptions-item
               >
               <el-descriptions-item
-                :label="t('monitor.minio.service_info.console_url')"
+                :label="t('monitor.silo.service_info.console_url')"
               >
                 <el-link
                   type="primary"
-                  :href="minioStatus.consoleUrl"
+                  :href="siloStatus.consoleUrl"
                   target="_blank"
                 >
-                  {{ minioStatus.consoleUrl }}
+                  {{ siloStatus.consoleUrl }}
                 </el-link>
               </el-descriptions-item>
               <el-descriptions-item
-                :label="t('monitor.minio.service_info.version')"
-                >{{ minioStatus.version || "-" }}</el-descriptions-item
+                :label="t('monitor.silo.service_info.version')"
+                >{{ siloStatus.version || "-" }}</el-descriptions-item
               >
             </el-descriptions>
           </el-card>
@@ -149,21 +149,21 @@
           <el-card shadow="hover">
             <template #header>
               <div class="card-header">
-                <span>{{ t("monitor.minio.bucket_list.title") }}</span>
+                <span>{{ t("monitor.silo.bucket_list.title") }}</span>
                 <el-tag size="small"
-                  >{{ minioStatus.buckets?.length || 0 }}
-                  {{ t("monitor.minio.bucket_list.count") }}</el-tag
+                  >{{ siloStatus.buckets?.length || 0 }}
+                  {{ t("monitor.silo.bucket_list.count") }}</el-tag
                 >
               </div>
             </template>
             <el-table :data="bucketList" size="small" max-height="200">
               <el-table-column
                 prop="name"
-                :label="t('monitor.minio.bucket_list.name')"
+                :label="t('monitor.silo.bucket_list.name')"
               />
               <el-table-column
                 prop="objectCount"
-                :label="t('monitor.minio.bucket_list.object_count')"
+                :label="t('monitor.silo.bucket_list.object_count')"
                 width="100"
                 align="center"
               >
@@ -173,7 +173,7 @@
               </el-table-column>
               <el-table-column
                 prop="totalSize"
-                :label="t('monitor.minio.bucket_list.size')"
+                :label="t('monitor.silo.bucket_list.size')"
                 width="100"
                 align="right"
               >
@@ -190,10 +190,10 @@
       <el-card shadow="hover" class="action-card">
         <div class="action-buttons">
           <el-button type="primary" :icon="Link" @click="openConsole">
-            {{ t("monitor.minio.actions.open_console") }}
+            {{ t("monitor.silo.actions.open_console") }}
           </el-button>
           <el-button :icon="Setting" @click="openConfig">
-            {{ t("monitor.minio.actions.config") }}
+            {{ t("monitor.silo.actions.config") }}
           </el-button>
         </div>
       </el-card>
@@ -201,9 +201,9 @@
 
     <!-- 错误提示 -->
     <el-alert
-      v-if="minioStatus.status === 'error'"
+      v-if="siloStatus.status === 'error'"
       :title="
-        minioStatus.message || t('monitor.minio.messages.connection_error')
+        siloStatus.message || t('monitor.silo.messages.connection_error')
       "
       type="error"
       show-icon
@@ -226,17 +226,17 @@ import {
   Link,
   Setting,
 } from "@element-plus/icons-vue";
-import { getMinioStatus, type MinioStatus } from "@/api/system";
+import { getSiloStatus, type SiloStatus } from "@/api/system";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
 
 const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
-const minioStatus = ref<MinioStatus>({
+const siloStatus = ref<SiloStatus>({
   monitorEnabled: true,
   storageType: "local",
-  minioEnabled: false,
+  siloEnabled: false,
   consoleUrl: "http://localhost:9001",
   endpoint: "",
   bucketName: "",
@@ -244,21 +244,21 @@ const minioStatus = ref<MinioStatus>({
 });
 
 const statusTagType = computed(() => {
-  if (!minioStatus.value.minioEnabled) return "info";
-  return minioStatus.value.status === "online" ? "success" : "danger";
+  if (!siloStatus.value.siloEnabled) return "info";
+  return siloStatus.value.status === "online" ? "success" : "danger";
 });
 
 const statusText = computed(() => {
-  if (!minioStatus.value.minioEnabled)
-    return t("monitor.minio.status.disabled");
-  return minioStatus.value.status === "online"
-    ? t("monitor.minio.status.enabled")
-    : t("monitor.minio.status.offline");
+  if (!siloStatus.value.siloEnabled)
+    return t("monitor.silo.status.disabled");
+  return siloStatus.value.status === "online"
+    ? t("monitor.silo.status.enabled")
+    : t("monitor.silo.status.offline");
 });
 
 // 将 buckets 对象转换为数组
 const bucketList = computed(() => {
-  const buckets = minioStatus.value.buckets;
+  const buckets = siloStatus.value.buckets;
   if (!buckets) return [];
   return Object.entries(buckets).map(([name, stats]: [string, any]) => ({
     name,
@@ -270,19 +270,19 @@ const bucketList = computed(() => {
 async function loadData() {
   loading.value = true;
   try {
-    const res = await getMinioStatus();
+    const res = await getSiloStatus();
     if (res.code === 200 && res.data) {
-      minioStatus.value = res.data;
+      siloStatus.value = res.data;
     }
   } catch (error) {
-    ElMessage.error(t("monitor.minio.messages.connection_error"));
+    ElMessage.error(t("monitor.silo.messages.connection_error"));
   } finally {
     loading.value = false;
   }
 }
 
 function openConsole() {
-  window.open(minioStatus.value.consoleUrl, "_blank");
+  window.open(siloStatus.value.consoleUrl, "_blank");
 }
 
 function openConfig() {
@@ -312,7 +312,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.minio-monitor-wrapper {
+.silo-monitor-wrapper {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 60px);
