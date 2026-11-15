@@ -47,7 +47,7 @@
   },
   "storageTypes": {
     "local": "Local",
-    "minio": "MinIO",
+    "silo": "Silo",
     "oss": "OSS",
     "memory": "Memory"
   },

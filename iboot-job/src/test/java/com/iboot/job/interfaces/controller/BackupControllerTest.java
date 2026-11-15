@@ -101,7 +101,7 @@ class BackupControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.data.total").value(1))
                 .andExpect(jsonPath("$.data.data.data[0].status").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.data.data[0].storageType").value("minio"));
+                .andExpect(jsonPath("$.data.data.data[0].storageType").value("silo"));
     }
 
     /**
@@ -193,7 +193,7 @@ class BackupControllerTest {
         BackupRecord record = BackupRecord.start("B1", BackupTriggerType.SCHEDULED, "iboot_admin", "system",
                 LocalDateTime.now());
         record.setId(1L);
-        record.markSuccess("minio", "backup/iboot_admin/2026/10/24/B1.sql.enc", 100L, 80L, "abc",
+        record.markSuccess("silo", "backup/iboot_admin/2026/10/24/B1.sql.enc", 100L, 80L, "abc",
                 Map.of("sys_user", 3L), LocalDateTime.now());
         return record;
     }

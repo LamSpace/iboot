@@ -19,8 +19,8 @@ package com.iboot.system.infrastructure.config;
 import com.iboot.system.application.service.ConfigApplicationService;
 import com.iboot.system.domain.system.service.FileStorageStrategy;
 import com.iboot.system.infrastructure.storage.LocalFileStorageStrategy;
-import com.iboot.system.infrastructure.storage.MinioFileStorageStrategy;
-import com.iboot.system.infrastructure.storage.MinioProperties;
+import com.iboot.system.infrastructure.storage.SiloFileStorageStrategy;
+import com.iboot.system.infrastructure.storage.SiloProperties;
 import com.iboot.system.infrastructure.storage.OssFileStorageStrategy;
 import com.iboot.system.infrastructure.storage.OssProperties;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ import java.util.Locale;
  * 文件存储配置。
  *
  * <p>按 {@code sys.file.storageType} 在启动期选择唯一生效的存储策略：
- * {@code local}、{@code minio} 或 {@code oss}；缺省为 {@code local}，非法值直接
+ * {@code local}、{@code silo} 或 {@code oss}；缺省为 {@code local}，非法值直接
  * 阻止应用启动。切换提供方需要重启应用。
  *
  * @author iBoot Team
@@ -51,21 +51,21 @@ public class FileStorageConfig {
 
     private static final String STORAGE_TYPE_LOCAL = "local";
 
-    private static final String STORAGE_TYPE_MINIO = "minio";
+    private static final String STORAGE_TYPE_SILO = "silo";
 
     private static final String STORAGE_TYPE_OSS = "oss";
 
     private final ConfigApplicationService configApplicationService;
 
-    private final MinioProperties minioProperties;
+    private final SiloProperties siloProperties;
 
     private final OssProperties ossProperties;
 
     @SuppressWarnings("all")
     public FileStorageConfig(final ConfigApplicationService configApplicationService,
-                             final MinioProperties minioProperties, final OssProperties ossProperties) {
+                             final SiloProperties siloProperties, final OssProperties ossProperties) {
         this.configApplicationService = configApplicationService;
-        this.minioProperties = minioProperties;
+        this.siloProperties = siloProperties;
         this.ossProperties = ossProperties;
     }
 
@@ -87,16 +87,16 @@ public class FileStorageConfig {
                 log.info("使用本地文件存储策略");
                 yield new LocalFileStorageStrategy(configApplicationService);
             }
-            case STORAGE_TYPE_MINIO -> {
-                log.info("使用 MinIO 对象存储策略");
-                yield new MinioFileStorageStrategy(minioProperties);
+            case STORAGE_TYPE_SILO -> {
+                log.info("使用 Silo 对象存储策略");
+                yield new SiloFileStorageStrategy(siloProperties);
             }
             case STORAGE_TYPE_OSS -> {
                 log.info("使用阿里云 OSS 对象存储策略");
                 yield new OssFileStorageStrategy(ossProperties);
             }
             default -> throw new IllegalStateException("不支持的存储类型: " + storageType
-                    + "，可选值: local、minio、oss");
+                    + "，可选值: local、silo、oss");
         };
     }
 

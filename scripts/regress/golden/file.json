@@ -276,7 +276,7 @@
     },
     "/api/file/download-url/{id}": {
       "get": {
-        "description": "MinIO模式返回预签名URL，本地模式返回下载接口路径",
+        "description": "Silo模式返回预签名URL，本地模式返回下载接口路径",
         "operationId": "getDownloadUrl",
         "parameters": [
           {

@@ -30,7 +30,7 @@ x-app-env: &app-env
   JWT_JWK_SET_URI: http://iboot-auth:8083/oauth2/jwks
   IBOOT_NOTIFY_BASE_URL: http://iboot-notify:8084
   IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-proxy:8081
-  IBOOT_AI_MINIO_ENDPOINT: http://minio:9000
+  IBOOT_AI_SILO_ENDPOINT: http://silo:9000
   IBOOT_AI_GRAPH_URI: bolt://neo4j:7687
   MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
 
@@ -138,7 +138,7 @@ services:
         condition: service_healthy
       nacos:
         condition: service_healthy
-      minio:
+      silo:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
@@ -171,7 +171,7 @@ services:
         condition: service_healthy
       nacos:
         condition: service_healthy
-      minio:
+      silo:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
@@ -457,42 +457,43 @@ services:
       retries: 5
       start_period: 10s
 
-  minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
-    container_name: iboot-minio
+  silo:
+    image: pgsty/silo:RELEASE.2026-11-12T00-00-00Z
+    container_name: iboot-silo
     ports:
       - "9000:9000"
       - "9001:9001"
     environment:
+      # Silo 保留 MinIO 的 MINIO_* 服务端变量契约
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     volumes:
-      - minio_data:/data
+      - silo_data:/data
     command: server /data --console-address ":9001"
     restart: unless-stopped
     networks:
       - iboot-network
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "mcli", "ready", "local"]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 20s
 
-  minio-init:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
-    container_name: minio-init
+  silo-init:
+    image: pgsty/silo:RELEASE.2026-11-12T00-00-00Z
+    container_name: silo-init
     entrypoint: >
       /bin/sh -c "
       sleep 5;
-      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      /usr/bin/mc mb --ignore-existing myminio/thanos;
+      mcli alias set mysilo http://silo:9000 minioadmin minioadmin;
+      mcli mb --ignore-existing mysilo/thanos;
       exit 0;
       "
     networks:
       - iboot-network
     depends_on:
-      minio:
+      silo:
         condition: service_healthy
 
   elasticsearch:
@@ -951,7 +952,7 @@ services:
     depends_on:
       prometheus:
         condition: service_started
-      minio:
+      silo:
         condition: service_healthy
 
   thanos-store:
@@ -976,7 +977,7 @@ services:
     networks:
       - iboot-network
     depends_on:
-      minio:
+      silo:
         condition: service_healthy
 
   thanos-query:
@@ -1023,7 +1024,7 @@ services:
     networks:
       - iboot-network
     depends_on:
-      minio:
+      silo:
         condition: service_healthy
 
   mysql-exporter:
@@ -1142,7 +1143,8 @@ networks:
 volumes:
   mysql_data:
   redis_data:
-  minio_data:
+  silo_data:
+    name: ${IBOOT_SILO_DATA_VOLUME:-docker_minio_data}
   prometheus_data:
   grafana_data:
   alertmanager_data:

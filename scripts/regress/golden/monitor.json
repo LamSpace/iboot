@@ -2020,154 +2020,6 @@
         ]
       }
     },
-    "/api/monitor/minio": {
-      "get": {
-        "description": "获取MinIO集群状态、存储桶列表、存储使用情况等",
-        "operationId": "getMinioStatus",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "Accept-Version",
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultMapStringObject"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "获取MinIO监控信息",
-        "tags": [
-          "MinIO监控"
-        ]
-      }
-    },
-    "/api/monitor/minio/ping": {
-      "get": {
-        "description": "检查MinIO服务是否在线",
-        "operationId": "pingMinio",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "Accept-Version",
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultBoolean"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "500": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResultVoid"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "检查MinIO服务状态",
-        "tags": [
-          "MinIO监控"
-        ]
-      }
-    },
     "/api/monitor/redis": {
       "get": {
         "description": "获取Redis服务器信息、内存、统计、键空间、命令统计等监控数据",
@@ -2641,6 +2493,154 @@
         ]
       }
     },
+    "/api/monitor/silo": {
+      "get": {
+        "description": "获取Silo集群状态、存储桶列表、存储使用情况等",
+        "operationId": "getSiloStatus",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultMapStringObject"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "获取Silo监控信息",
+        "tags": [
+          "Silo监控"
+        ]
+      }
+    },
+    "/api/monitor/silo/ping": {
+      "get": {
+        "description": "检查Silo服务是否在线",
+        "operationId": "pingSilo",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultBoolean"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "检查Silo服务状态",
+        "tags": [
+          "Silo监控"
+        ]
+      }
+    },
     "/api/online/count": {
       "get": {
         "operationId": "count",
@@ -3005,8 +3005,8 @@
       "name": "Redis缓存监控"
     },
     {
-      "description": "MinIO对象存储监控信息接口",
-      "name": "MinIO监控"
+      "description": "Silo对象存储监控信息接口",
+      "name": "Silo监控"
     }
   ]
 }

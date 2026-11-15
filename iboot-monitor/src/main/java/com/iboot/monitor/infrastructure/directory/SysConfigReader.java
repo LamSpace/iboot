@@ -25,7 +25,7 @@ import java.util.List;
  * 只读的系统参数访问器。
  *
  * <p>直接读取管理端 schema 的 {@code sys_config}：监控阈值、Spring Boot Admin
- * 地址、MinIO 连接信息等仍由管理端的「参数配置」页维护。显式限定库名，为后续收敛预留。
+ * 地址、Silo 连接信息等仍由管理端的「参数配置」页维护。显式限定库名，为后续收敛预留。
  *
  * <p>退出条件：{@code iboot-system} 拆分时改为调用系统服务的配置查询接口。
  *

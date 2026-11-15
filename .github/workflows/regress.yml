@@ -84,4 +84,4 @@ jobs:
           tail -100 logs/*.log 2>/dev/null || true
           echo '===== 中间件状态 ====='
           docker compose -f docker/docker-compose.yml --profile platform ps || true
-          docker compose -f docker/docker-compose.yml --profile platform logs --tail=100 mysql redis minio elasticsearch nacos 2>/dev/null || true
+          docker compose -f docker/docker-compose.yml --profile platform logs --tail=100 mysql redis silo elasticsearch nacos 2>/dev/null || true

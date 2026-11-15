@@ -8,11 +8,11 @@
 
 ### Requirement: 干净检出可完成全栈构建
 
-部署 SHALL 只依赖容器运行时、编排工具与 Docker Hub（MinIO 除外），从干净检出完成全部镜像构建与启动。
+部署 SHALL 只依赖容器运行时、编排工具与 Docker Hub，从干净检出完成全部镜像构建与启动。
 
 - 构建 MUST NOT 要求宿主机预先生成 jar、`dist` 或安装 Maven、Node.js、cnpm。
-- 除 MinIO 外，基础镜像与运行期镜像 MUST 从 Docker Hub 官方仓库获取，并使用固定的版本标签；MUST NOT 使用浮动标签。
-- MinIO MUST 从 `https://docker.aityp.com/` 展示的 SWR 镜像路径获取，并重打为编排引用的标签；MUST NOT 依赖已不可用的 Docker Hub `minio/minio` 仓库。
+- 基础镜像与运行期镜像 MUST 从 Docker Hub 官方仓库获取，并使用固定的版本标签；MUST NOT 使用浮动标签。
+- 对象存储镜像 MUST 使用 Docker Hub 的 `pgsty/silo` 仓库及固定的 `RELEASE.*` 标签；MUST NOT 依赖已不可用的 `minio/minio` 仓库或第三方镜像代理。
 - Maven 与 npm 依赖 MUST 通过项目登记的内部镜像地址获取；重复构建 SHALL 复用构建缓存，不重复下载未变化的依赖。
 - 构建失败时 MUST 明确指出失败的阶段与镜像，不得静默回退到宿主机构建或其它镜像源。
 
@@ -24,7 +24,7 @@
 
 #### Scenario: 基础镜像不可用时明确失败
 
-- **WHEN** Docker Hub 或 MinIO 的 aityp/SWR 镜像源不可达，且本地没有所需镜像
+- **WHEN** Docker Hub 不可达，且本地没有所需的对象存储或基础镜像
 - **THEN** 构建在拉取阶段失败并指出缺失的镜像
 - **AND** 不会改去其它镜像源拉取后继续
 
@@ -53,7 +53,7 @@
 
 编排 SHALL 用依赖健康状态表达启动顺序，而不是依赖固定的等待时间。
 
-- MySQL、Redis、MinIO、Elasticsearch 与 Nacos MUST 在健康后才允许依赖它们的服务启动。
+- MySQL、Redis、Silo、Elasticsearch 与 Nacos MUST 在健康后才允许依赖它们的服务启动。
 - 数据库初始化执行者 MUST 在全部后端服务之前启动，并 MUST 以 0 退出后，后端服务才允许启动。
 - 系统服务 MUST 健康后，其余后端服务才允许启动，因为这些服务启动时要读取共享库中的配置。
 - 网关 MUST 健康后，门户才允许启动，因为门户的 nginx 在启动时解析网关上游地址。
@@ -104,7 +104,7 @@
 
 容器内的服务间地址 SHALL 使用编排网络中的服务名，外部可见地址 SHALL 使用浏览器可达的地址。
 
-- 数据库、Redis、Elasticsearch、MinIO、Nacos、Tempo、Logstash 与认证公钥集地址 MUST 使用服务名或编排网络地址。
+- 数据库、Redis、Elasticsearch、Silo、Nacos、Tempo、Logstash 与认证公钥集地址 MUST 使用服务名或编排网络地址。
 - 容器 MUST NOT 继承宿主机配置文件中的 `localhost` 默认值。
 - 面向浏览器的授权服务器地址与登录回调地址 MUST 使用外部可达地址，而不是容器内部地址。
 - 密钥与凭据 MUST 通过环境变量或编排密钥注入，MUST NOT 写入镜像层或提交到仓库。
@@ -169,11 +169,12 @@
 
 有状态组件 SHALL 使用命名卷持久化数据，需要写文件的业务目录 SHALL 在容器内可写。
 
-- MySQL、Redis、MinIO、Elasticsearch、Prometheus、Grafana、Alertmanager、Neo4j 与 Tempo 的数据 MUST 使用命名卷持久化。
+- MySQL、Redis、Silo、Elasticsearch、Prometheus、Grafana、Alertmanager、Neo4j 与 Tempo 的数据 MUST 使用命名卷持久化。
 - 所有服务 MUST 能写入各自的日志目录；日志文件名 MUST 按应用名区分，多个服务共享日志卷时不得互相覆盖。
 - 系统、文件与调度服务使用的本地上传目录 MUST 通过共享卷保持一致。
 - 非 root 运行的用户 MUST 对日志目录与上传目录具有写权限。
 - 数据卷的删除 MUST 只在显式执行清理命令时发生，普通停止或重启 MUST NOT 删除数据。
+- 从 MinIO 迁移到 Silo 时，逻辑卷名可变，但既有数据卷的物理名 MUST 通过显式映射继续挂载，MUST NOT 因改名产生新的空卷。
 
 #### Scenario: 重启保留数据
 
@@ -234,8 +235,8 @@
 镜像拉取 SHALL 覆盖编排与 Dockerfile 使用的全部基础镜像，并使用固定标签。
 
 - 拉取清单 MUST 包含构建阶段与运行期阶段使用的全部基础镜像。
-- 除 MinIO 外，镜像 MUST 从 Docker Hub 官方仓库拉取，标签 MUST 固定到明确版本，MUST NOT 使用 `latest` 或浮动标签。
-- MinIO MUST 从 `https://docker.aityp.com/` 展示的 SWR 镜像路径拉取，并重打为编排引用的标签。
+- 所有镜像 MUST 从 Docker Hub 官方仓库拉取，标签 MUST 固定到明确版本，MUST NOT 使用 `latest` 或浮动标签。
+- 对象存储镜像 MUST 使用 Docker Hub `pgsty/silo` 的固定 `RELEASE.*` 标签，MUST NOT 从 aityp/SWR 或其它镜像代理重打标签。
 - 拉取后的本地标签 MUST 与 Dockerfile 及编排中引用的镜像名一致。
 - 重复执行拉取 MUST 是幂等的，已存在的镜像不得导致失败。
 
@@ -342,22 +343,3 @@
 - **THEN** 从已提交位点继续消费
 - **AND** 无需重建 topic 或重新初始化
 
-### Requirement: MinIO 镜像来源例外
-
-MinIO SHALL 通过 aityp/SWR 镜像路径获取，因为上游已停止发布官方容器镜像。
-
-- 拉取脚本 MUST 使用 `https://docker.aityp.com/` 展示的 `minio/minio` SWR 路径，并在拉取后重打为 `docker.io/minio/minio:<tag>`。
-- 版本 MUST 固定为 aityp 上可用的最后一个官方发布标签，MUST NOT 回退到 Docker Hub 或 Quay 的不可访问仓库。
-- 若 aityp/SWR 缺失目标标签，拉取 MUST 明确失败，MUST NOT 静默使用其它 MinIO 镜像替代。
-
-#### Scenario: 拉取 MinIO 并重打标签
-
-- **WHEN** 执行项目镜像拉取脚本
-- **THEN** MinIO 从 aityp/SWR 路径拉取成功
-- **AND** 本地存在与编排引用一致的 `docker.io/minio/minio:<tag>` 标签
-
-#### Scenario: MinIO 标签不可用
-
-- **WHEN** aityp/SWR 上不存在脚本指定的 MinIO 标签
-- **THEN** 拉取以非零状态失败并输出缺失的镜像
-- **AND** 不会改用其它来源或版本继续

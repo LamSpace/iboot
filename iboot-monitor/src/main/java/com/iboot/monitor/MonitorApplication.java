@@ -23,7 +23,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * 监控与日志服务启动类。
  *
  * <p>承载 {@code /api/log/**}、{@code /api/online/**} 与
- * {@code /api/monitor/{server,redis,minio}/**}：登录、操作、运行日志的查询与清理，
+ * {@code /api/monitor/{server,redis,silo}/**}：登录、操作、运行日志的查询与清理，
  * 在线会话的查看与强制下线，以及服务与中间件资源检查。鉴权、响应信封与操作日志
  * 复用 {@code iboot-kernel}。
  *

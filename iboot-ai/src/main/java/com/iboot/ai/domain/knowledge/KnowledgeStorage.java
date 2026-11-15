@@ -21,7 +21,7 @@ import java.time.Duration;
 /**
  * 知识库原文件存储端口。
  *
- * <p>生产实现使用 MinIO，测试使用内存实现；调用方只依赖该接口，不感知具体存储。
+ * <p>生产实现使用 Silo，测试使用内存实现；调用方只依赖该接口，不感知具体存储。
  *
  * @author iBoot Team
  * @since 1.0.0

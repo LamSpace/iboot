@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.iboot.system.infrastructure.storage;
+package com.iboot.job.infrastructure.storage;
 
 import com.iboot.kernel.web.BusinessException;
-import com.iboot.system.domain.system.model.StorageObject;
-import com.iboot.system.domain.system.service.FileStorageStrategy;
+import com.iboot.job.domain.system.model.StorageObject;
+import com.iboot.job.domain.system.service.FileStorageStrategy;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;
@@ -31,43 +31,43 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 /**
- * MinIO 对象存储策略。
+ * Silo 对象存储策略。
  *
- * <p>把文件保存到 MinIO，并返回预签名访问 URL；桶不存在时按配置自动创建。
+ * <p>把文件保存到 Silo，并返回预签名访问 URL；桶不存在时按配置自动创建。
  *
  * @author iBoot Team
  * @since 1.0.0
- * @see com.iboot.system.domain.system.service.FileStorageStrategy
+ * @see com.iboot.job.domain.system.service.FileStorageStrategy
  */
-public class MinioFileStorageStrategy implements FileStorageStrategy {
+public class SiloFileStorageStrategy implements FileStorageStrategy {
 
-    private static final Logger log = LoggerFactory.getLogger(MinioFileStorageStrategy.class);
+    private static final Logger log = LoggerFactory.getLogger(SiloFileStorageStrategy.class);
 
-    private final MinioProperties minioProperties;
+    private final SiloProperties siloProperties;
 
-    private MinioClient minioClient;
+    private MinioClient siloClient;
 
     @SuppressWarnings("all")
-    public MinioFileStorageStrategy(final MinioProperties minioProperties) {
-        this.minioProperties = minioProperties;
+    public SiloFileStorageStrategy(final SiloProperties siloProperties) {
+        this.siloProperties = siloProperties;
     }
 
     @PostConstruct
     /**
-     * 初始化 MinIO 客户端并确保桶存在。
+     * 初始化 Silo 客户端并确保桶存在。
      */
     public void init() {
         try {
-            this.minioClient = MinioClient.builder()
-                    .endpoint(minioProperties.getEndpoint())
-                    .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey())
+            this.siloClient = MinioClient.builder()
+                    .endpoint(siloProperties.getEndpoint())
+                    .credentials(siloProperties.getAccessKey(), siloProperties.getSecretKey())
                     .build();
             ensureBucketExists();
-            log.info("MinIO客户端初始化成功，endpoint: {}, bucket: {}", minioProperties.getEndpoint(),
-                    minioProperties.getBucketName());
+            log.info("Silo客户端初始化成功，endpoint: {}, bucket: {}", siloProperties.getEndpoint(),
+                    siloProperties.getBucketName());
         } catch (Exception e) {
-            log.error("MinIO客户端初始化失败", e);
-            throw new BusinessException("MinIO客户端初始化失败: " + e.getMessage());
+            log.error("Silo客户端初始化失败", e);
+            throw new BusinessException("Silo客户端初始化失败: " + e.getMessage());
         }
     }
 
@@ -76,20 +76,20 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
      */
     private void ensureBucketExists() {
         try {
-            String bucketName = minioProperties.getBucketName();
-            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+            String bucketName = siloProperties.getBucketName();
+            boolean exists = siloClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
             if (!exists) {
-                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
-                log.info("MinIO存储桶已创建: {}", bucketName);
+                siloClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+                log.info("Silo存储桶已创建: {}", bucketName);
             }
         } catch (Exception e) {
-            throw new BusinessException("检查/创建MinIO存储桶失败: " + e.getMessage());
+            throw new BusinessException("检查/创建Silo存储桶失败: " + e.getMessage());
         }
     }
 
     @Override
     /**
-     * 保存文件到 MinIO。
+     * 保存文件到 Silo。
      *
      * @param source 待保存的内容与元数据
      * @param relativePath 对象键的相对路径
@@ -98,13 +98,13 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
      */
     public String save(StorageObject source, String relativePath) throws IOException {
         try {
-            String bucketName = minioProperties.getBucketName();
+            String bucketName = siloProperties.getBucketName();
             String contentType = source.getContentType();
             if (contentType == null) {
                 contentType = "application/octet-stream";
             }
             long fileSize = source.getSize();
-            log.info("准备上传文件到 MinIO: bucket={}, object={}, size={}, contentType={}", bucketName, relativePath, fileSize,
+            log.info("准备上传文件到 Silo: bucket={}, object={}, size={}, contentType={}", bucketName, relativePath, fileSize,
                     contentType);
             // 验证文件大小
             if (fileSize <= 0) {
@@ -116,7 +116,7 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
             // 包装为带缓冲的流，确保数据完整读取
             java.io.BufferedInputStream bufferedStream = new java.io.BufferedInputStream(inputStream);
             // 上传文件（流会在上传完成后关闭）
-            minioClient.putObject(PutObjectArgs.builder()
+            siloClient.putObject(PutObjectArgs.builder()
                     .bucket(bucketName)
                     .object(relativePath)
                     .stream(bufferedStream, fileSize, -1)
@@ -134,7 +134,7 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
             }
             // 验证文件大小
             try {
-                var stat = minioClient
+                var stat = siloClient
                         .statObject(StatObjectArgs.builder().bucket(bucketName).object(relativePath).build());
                 log.info("文件验证成功：bucket={}, object={}, statSize={}", bucketName, relativePath, stat.size());
             } catch (Exception e) {
@@ -142,8 +142,8 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
             }
             return relativePath;
         } catch (Exception e) {
-            log.error("上传文件到 MinIO 失败：{}, relativePath={}", e.getMessage(), relativePath, e);
-            throw new IOException("上传文件到 MinIO 失败：" + e.getMessage(), e);
+            log.error("上传文件到 Silo 失败：{}, relativePath={}", e.getMessage(), relativePath, e);
+            throw new IOException("上传文件到 Silo 失败：" + e.getMessage(), e);
         }
     }
 
@@ -156,17 +156,17 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
      */
     public String getFileUrl(String filePath) {
         try {
-            int expireSeconds = minioProperties.getUrlExpireSeconds();
-            String url = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+            int expireSeconds = siloProperties.getUrlExpireSeconds();
+            String url = siloClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .method(Method.GET)
-                    .bucket(minioProperties.getBucketName())
+                    .bucket(siloProperties.getBucketName())
                     .object(filePath)
                     .expiry(expireSeconds, TimeUnit.SECONDS)
                     .build());
-            log.debug("生成MinIO预签名URL: {}, 有效期: {}秒", filePath, expireSeconds);
+            log.debug("生成Silo预签名URL: {}, 有效期: {}秒", filePath, expireSeconds);
             return url;
         } catch (Exception e) {
-            log.error("生成MinIO预签名URL失败: {}", filePath, e);
+            log.error("生成Silo预签名URL失败: {}", filePath, e);
             throw new BusinessException("生成文件访问URL失败: " + e.getMessage());
         }
     }
@@ -181,12 +181,12 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
      */
     public StorageObject getFileStream(String filePath) throws IOException {
         try {
-            String bucketName = minioProperties.getBucketName();
+            String bucketName = siloProperties.getBucketName();
             // 获取对象信息
-            StatObjectResponse stat = minioClient
+            StatObjectResponse stat = siloClient
                     .statObject(StatObjectArgs.builder().bucket(bucketName).object(filePath).build());
             // 获取对象流
-            InputStream inputStream = minioClient
+            InputStream inputStream = siloClient
                     .getObject(GetObjectArgs.builder().bucket(bucketName).object(filePath).build());
             return StorageObject.builder()
                     .inputStream(inputStream)
@@ -198,10 +198,10 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
             if ("NoSuchKey".equals(e.errorResponse().code())) {
                 throw new BusinessException("文件不存在: " + filePath);
             }
-            throw new IOException("获取MinIO文件失败: " + e.getMessage(), e);
+            throw new IOException("获取Silo文件失败: " + e.getMessage(), e);
         } catch (Exception e) {
-            log.error("获取MinIO文件流失败: {}", filePath, e);
-            throw new IOException("获取MinIO文件失败: " + e.getMessage(), e);
+            log.error("获取Silo文件流失败: {}", filePath, e);
+            throw new IOException("获取Silo文件失败: " + e.getMessage(), e);
         }
     }
 
@@ -215,15 +215,15 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     public boolean delete(String filePath) {
         try {
             if (!exists(filePath)) {
-                log.debug("MinIO文件不存在，跳过删除: {}", filePath);
+                log.debug("Silo文件不存在，跳过删除: {}", filePath);
                 return false;
             }
-            minioClient.removeObject(
-                    RemoveObjectArgs.builder().bucket(minioProperties.getBucketName()).object(filePath).build());
-            log.debug("MinIO文件已删除: {}", filePath);
+            siloClient.removeObject(
+                    RemoveObjectArgs.builder().bucket(siloProperties.getBucketName()).object(filePath).build());
+            log.debug("Silo文件已删除: {}", filePath);
             return true;
         } catch (Exception e) {
-            log.warn("删除MinIO文件失败: {}", filePath, e);
+            log.warn("删除Silo文件失败: {}", filePath, e);
             return false;
         }
     }
@@ -237,17 +237,17 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
      */
     public boolean exists(String filePath) {
         try {
-            minioClient
-                    .statObject(StatObjectArgs.builder().bucket(minioProperties.getBucketName()).object(filePath).build());
+            siloClient
+                    .statObject(StatObjectArgs.builder().bucket(siloProperties.getBucketName()).object(filePath).build());
             return true;
         } catch (ErrorResponseException e) {
             if ("NoSuchKey".equals(e.errorResponse().code())) {
                 return false;
             }
-            log.warn("检查MinIO文件存在性失败: {}", filePath, e);
+            log.warn("检查Silo文件存在性失败: {}", filePath, e);
             return false;
         } catch (Exception e) {
-            log.warn("检查MinIO文件存在性失败: {}", filePath, e);
+            log.warn("检查Silo文件存在性失败: {}", filePath, e);
             return false;
         }
     }
@@ -256,14 +256,14 @@ public class MinioFileStorageStrategy implements FileStorageStrategy {
     /**
      * 获取存储类型标识。
      *
-     * @return 固定返回 {@code minio}
+     * @return 固定返回 {@code silo}
      */
     public String getStorageType() {
-        return "minio";
+        return "silo";
     }
 
     /**
-     * MinIO 属于对象存储语义。
+     * Silo 属于对象存储语义。
      *
      * @return 固定返回 {@code true}
      */

@@ -47,7 +47,7 @@ spring:
               uri: lb://iboot-monitor
               order: 27
               predicates:
-                - Path=/api/log/**,/api/online/**,/api/monitor/server/**,/api/monitor/redis/**,/api/monitor/minio/**
+                - Path=/api/log/**,/api/online/**,/api/monitor/server/**,/api/monitor/redis/**,/api/monitor/silo/**
 
             # 调度服务：定时任务与数据备份（备份路径按路径级登记，见 local profile 的说明）
             - id: job

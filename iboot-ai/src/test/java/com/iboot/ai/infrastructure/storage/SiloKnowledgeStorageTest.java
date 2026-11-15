@@ -33,36 +33,36 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * {@link MinioKnowledgeStorage} 的集成测试。
+ * {@link SiloKnowledgeStorage} 的集成测试。
  *
- * <p>使用 Testcontainers MinIO 验证保存、读取、删除与预签名地址。
+ * <p>使用 Testcontainers Silo 验证保存、读取、删除与预签名地址。
  *
  * @author iBoot Team
  * @since 1.0.0
  */
 @Testcontainers(disabledWithoutDocker = true)
-class MinioKnowledgeStorageTest {
+class SiloKnowledgeStorageTest {
 
-    private static final int MINIO_PORT = 9000;
+    private static final int SILO_PORT = 9000;
 
     private static final String BUCKET = "iboot-ai-test";
 
     @Container
-    static final GenericContainer<?> MINIO = new GenericContainer<>(
-            "minio/minio:RELEASE.2025-09-07T16-13-09Z")
-            .withExposedPorts(MINIO_PORT)
+    static final GenericContainer<?> SILO = new GenericContainer<>(
+            "pgsty/silo:RELEASE.2026-11-12T00-00-00Z")
+            .withExposedPorts(SILO_PORT)
             .withEnv("MINIO_ROOT_USER", "minioadmin")
             .withEnv("MINIO_ROOT_PASSWORD", "minioadmin")
             .withCommand("server", "/data")
             .waitingFor(Wait.forHttp("/minio/health/live")
-                    .forPort(MINIO_PORT)
+                    .forPort(SILO_PORT)
                     .withStartupTimeout(Duration.ofMinutes(3)));
 
-    private static MinioKnowledgeStorage storage;
+    private static SiloKnowledgeStorage storage;
 
     @BeforeAll
     static void setUp() throws Exception {
-        String endpoint = "http://" + MINIO.getHost() + ":" + MINIO.getMappedPort(MINIO_PORT);
+        String endpoint = "http://" + SILO.getHost() + ":" + SILO.getMappedPort(SILO_PORT);
         MinioClient client = MinioClient.builder()
                 .endpoint(endpoint)
                 .credentials("minioadmin", "minioadmin")
@@ -75,7 +75,7 @@ class MinioKnowledgeStorageTest {
         properties.getStorage().setAccessKey("minioadmin");
         properties.getStorage().setSecretKey("minioadmin");
         properties.getStorage().setBucket(BUCKET);
-        storage = new MinioKnowledgeStorage(properties);
+        storage = new SiloKnowledgeStorage(properties);
     }
 
     /**

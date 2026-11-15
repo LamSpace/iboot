@@ -16,7 +16,7 @@
 
 package com.iboot.monitor.interfaces.controller;
 
-import com.iboot.monitor.application.service.MinioAdminService;
+import com.iboot.monitor.application.service.SiloAdminService;
 import com.iboot.kernel.web.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,50 +28,50 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * MinIO 监控控制器。
+ * Silo 监控控制器。
  *
- * <p>提供 MinIO 集群状态、存储桶列表和存储使用情况查询接口，
- * 需要 {@code minio:query} 权限。
+ * <p>提供 Silo 集群状态、存储桶列表和存储使用情况查询接口，
+ * 需要 {@code silo:query} 权限。
  *
  * @author iBoot Team
  * @since 1.0.0
- * @see MinioAdminService
+ * @see SiloAdminService
  */
-@Tag(name = "MinIO监控", description = "MinIO对象存储监控信息接口")
+@Tag(name = "Silo监控", description = "Silo对象存储监控信息接口")
 @RestController
-@RequestMapping("/api/monitor/minio")
-public class MinioMonitorController {
+@RequestMapping("/api/monitor/silo")
+public class SiloMonitorController {
 
-    private final MinioAdminService minioAdminService;
+    private final SiloAdminService siloAdminService;
 
     @SuppressWarnings("all")
-    public MinioMonitorController(final MinioAdminService minioAdminService) {
-        this.minioAdminService = minioAdminService;
+    public SiloMonitorController(final SiloAdminService siloAdminService) {
+        this.siloAdminService = siloAdminService;
     }
 
     /**
-     * 查询 MinIO 监控信息。
+     * 查询 Silo 监控信息。
      *
      * @return 集群状态、存储桶列表和存储使用情况
      */
-    @Operation(summary = "获取MinIO监控信息", description = "获取MinIO集群状态、存储桶列表、存储使用情况等")
+    @Operation(summary = "获取Silo监控信息", description = "获取Silo集群状态、存储桶列表、存储使用情况等")
     @GetMapping(version = "1")
-    @PreAuthorize("hasAuthority('minio:query')")
-    public Result<Map<String, Object>> getMinioStatus() {
-        Map<String, Object> status = minioAdminService.getMinioStatus();
+    @PreAuthorize("hasAuthority('silo:query')")
+    public Result<Map<String, Object>> getSiloStatus() {
+        Map<String, Object> status = siloAdminService.getSiloStatus();
         return Result.success(status);
     }
 
     /**
-     * 检查 MinIO 服务是否在线。
+     * 检查 Silo 服务是否在线。
      *
      * @return 在线返回 {@code true}，否则返回 {@code false}
      */
-    @Operation(summary = "检查MinIO服务状态", description = "检查MinIO服务是否在线")
+    @Operation(summary = "检查Silo服务状态", description = "检查Silo服务是否在线")
     @GetMapping(version = "1", value = "/ping")
-    @PreAuthorize("hasAuthority('minio:query')")
-    public Result<Boolean> pingMinio() {
-        boolean online = minioAdminService.pingMinio();
+    @PreAuthorize("hasAuthority('silo:query')")
+    public Result<Boolean> pingSilo() {
+        boolean online = siloAdminService.pingSilo();
         return Result.success(online);
     }
 

@@ -98,7 +98,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | 持久层 | MyBatis 4.0.1 + PageHelper 2.1.1、Druid 1.2.28、Flyway、MySQL 8.0.45 |
 | 缓存 | Redis 7.0.14 + Caffeine 3.1.8（二级缓存，Pub/Sub 失效广播） |
 | 认证 | OAuth2 / OIDC 授权码 + PKCE（Spring Authorization Server）、JWT、RBAC 与五级数据权限 |
-| 文件与检索 | MinIO 8.5.7（另有本地与 OSS 实现）、Elasticsearch 9.2.3（客户端 9.2.5） |
+| 文件与检索 | Silo（MinIO 兼容，io.minio 8.5.7 客户端；另有本地与 OSS 实现）、Elasticsearch 9.2.3（客户端 9.2.5） |
 | 流程与调度 | Flowable 8.0.0、Quartz（集群模式） |
 | AI | Spring AI 2.0.1、AgentScope Java 2.0.1、Neo4j 5.26.29（驱动 6.0.2）、PDFBox 3.0.5、Apache POI 5.4.1 |
 | 其他 | MapStruct 1.6.3、FastExcel 0.19.0、CloudEvents 4.0.1、Springdoc 3.0.2、Testcontainers 2.0.5 |
@@ -120,15 +120,15 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 
 **认证 `iboot-auth`**：OIDC 发现文档与 JWK 公钥集；浏览器授权码 + PKCE 登录；登出与自助注册；认证服务托管的登录页。
 
-**文件 `iboot-file`**：上传、下载、预览、分类；MinIO / 本地 / OSS 三种存储实现按配置切换。
+**文件 `iboot-file`**：上传、下载、预览、分类；Silo / 本地 / OSS 三种存储实现按配置切换。
 
 **消息与通知 `iboot-notify`**：站内消息、公告、消息模板、已读同步；站内 / 邮件 / 钉钉 / 短信四个投递渠道（短信默认关闭）；SSE 单播、组播、广播；公告与消息的全文检索。
 
-**定时任务与备份 `iboot-job`**：在管理端维护定时任务、启停并查看执行日志；发起备份、查看备份记录、执行恢复演练，产物加密后落到 MinIO / 本地 / OSS。
+**定时任务与备份 `iboot-job`**：在管理端维护定时任务、启停并查看执行日志；发起备份、查看备份记录、执行恢复演练，产物加密后落到 Silo / 本地 / OSS。
 
 **审批 `iboot-workflow`**：请假申请、审批中心、驳回与归档；审批待办事件经本地 outbox 与 RocketMQ 可靠投递。
 
-**监控 `iboot-monitor`**：登录日志、操作日志、运行日志；在线会话与强制下线；服务资源、Redis、MinIO、SQL 监控入口。
+**监控 `iboot-monitor`**：登录日志、操作日志、运行日志；在线会话与强制下线；服务资源、Redis、Silo、SQL 监控入口。
 
 **运维控制台 `iboot-ops`**：通过注册中心自动发现全部业务实例，提供健康、JVM、环境、配置、Bean、缓存、定时任务与线程巡检，并可在不重启的情况下调整日志级别。开发环境从门户的服务器监控页进入，`dev-init.sh` 默认关闭控制台认证以便 iframe 直接打开；生产环境保持认证开启且仅限内网访问。
 
@@ -177,7 +177,7 @@ bash scripts/dev-init.sh --frontend
 
 ```bash
 # 中间件：开发必需的一组
-docker compose -f docker/docker-compose.yml up -d mysql redis minio elasticsearch \
+docker compose -f docker/docker-compose.yml up -d mysql redis silo elasticsearch \
   rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init
 
 # 可选：集中日志链路

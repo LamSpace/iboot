@@ -164,9 +164,9 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
       {
-        path: "minio-monitor",
-        name: "MinioMonitor",
-        component: () => import("../views/monitor/MinioMonitorView.vue"),
+        path: "silo-monitor",
+        name: "SiloMonitor",
+        component: () => import("../views/monitor/SiloMonitorView.vue"),
         meta: { requiresAuth: true },
       },
       {

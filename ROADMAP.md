@@ -29,7 +29,7 @@
 
 1. **验收判据优先**：无判据的条目不写。写代码前先定义「什么算完成」。
 2. **YAGNI**：与主线弱相关、或职责与已选方案重叠的条目，显式剔除而非长期挂账。
-3. **复用既有基础设施优先**：已有 ES、MinIO、Redis、Quartz、SSE、CloudEvents、二级缓存、可观测栈——先榨干存量，再引入新中间件。
+3. **复用既有基础设施优先**：已有 ES、Silo、Redis、Quartz、SSE、CloudEvents、二级缓存、可观测栈——先榨干存量，再引入新中间件。
 4. **不破坏 DDD 边界**：新增能力必须待在既有四层结构内，否则后续拆分成本被推高。
 5. **前端契约稳定**：portal 只访问网关 `/api/**`，接口归属变化只改路由表。
 6. **不为练手而降级主线**：工程已站在 Boot 4.0.3 上，不为了迁就旧版生态而退回已 EOL 的 Boot 3.5。
@@ -47,7 +47,7 @@
 | 系统与组织 | 用户、角色、菜单、字典、参数，以及部门树、岗位与组织架构图 | `iboot-system` | — |
 | 消息与推送 | 站内消息、公告、模板、多渠道投递，SSE 单播/组播/广播与集群广播 | `iboot-notify` | [docs/20](<./docs/20-多渠道通知操作指南.md>)、[docs/15](<./docs/15-SSE 推送集成.md>) |
 | 可靠事件投递 | 审批待办事件经本地 outbox 与 RocketMQ 可靠投递，消费幂等、失败重试与死信可查 | `iboot-workflow`、`iboot-notify` | [docs/23 §14](<./docs/23-微服务底座操作指南.md>) |
-| 文件管理 | 上传、下载、预览、分类，MinIO / 本地 / OSS 存储抽象 | `iboot-file` | — |
+| 文件管理 | 上传、下载、预览、分类，Silo / 本地 / OSS 存储抽象 | `iboot-file` | — |
 | 定时任务 | Quartz 集群任务 CRUD、启停与执行日志 | `iboot-job` | — |
 | 数据备份 | 全量逻辑备份、AES-256-GCM 加密、独立演练库恢复校验 | `iboot-job` | [docs/21](<./docs/21-数据备份与恢复操作指南.md>) |
 | 审批工作流 | Flowable 8 请假流程、审批中心与通知登记 | `iboot-workflow` | — |
@@ -79,7 +79,7 @@
 | 3.1 | 镜像工程 | 每服务 Dockerfile + 非 root 运行 + 推 **ACR** | 九个业务服务、`iboot-ops` 与前端均已有 Dockerfile；基础镜像需与 GraalVM/native 路线兼容 | 每服务镜像可构建、可启动 |
 | 3.2 | Helm 组织 | **Helmfile + 一个通用 library chart** | 避免 9 份重复 chart 样板 | `helmfile sync` 幂等 |
 | 3.3 | K8s 清单 | Deployment / Service / ConfigMap / Secret / HPA / PDB / NetworkPolicy / Ingress(ALB) / 命名空间(dev, prod) | Secret 走 KMS 或 ACK Secret 管理，不入仓 | 滚动升级零 5xx；删 Pod 自愈 |
-| 3.4 | 中间件分层混合 | 本地 Kind 全自建（MySQL/Redis/ES/Nacos/RocketMQ）练手；云上数据层用 RDS MySQL / Tair / 阿里云 ES / **OSS（替 MinIO）** / MSE Nacos / 云 RocketMQ | 云上跑有状态中间件的学习收益 < 运维成本；MinIO→OSS 依赖 `FileStorageStrategy` 抽象 | 本地与云上同一份镜像、不同 values 可跑 |
+| 3.4 | 中间件分层混合 | 本地 Kind 全自建（MySQL/Redis/ES/Nacos/RocketMQ）练手；云上数据层用 RDS MySQL / Tair / 阿里云 ES / **OSS（替 Silo）** / MSE Nacos / 云 RocketMQ | 云上跑有状态中间件的学习收益 < 运维成本；Silo→OSS 依赖 `FileStorageStrategy` 抽象 | 本地与云上同一份镜像、不同 values 可跑 |
 | 3.5 | 可观测上云 | 指标：ARMS 托管 Prometheus 或 kube-prometheus-stack；日志：Logtail→SLS（本地 ELK 保留）；追踪：Tempo / ARMS | SLS 按量计费需设采集白名单；Thanos 在云上可被托管方案替代 | 云上 Grafana 看到同一套业务面板 |
 | 3.6 | CI/CD | GitHub Actions 或云效 Flow：构建 → 镜像推 ACR → `helmfile sync` → dev 晋升 prod → `helm rollback` | 密钥走 CI Secrets，不入仓 | 一次提交自动完成 dev 发布与回滚演练 |
 | 3.7 | 弹性与成本 | request/limit 调优、HPA 按 CPU + 自定义 QPS 指标、突发负载用 ECI/ASK | 常驻资源是主要账单 | 压测触发 HPA 扩容且账单可观测 |
@@ -89,7 +89,7 @@
 | 条目 | 内容 | 约束 / 前置 |
 |---|---|---|
 | **服务网格零信任** | ACK ASM 或 Istio，mTLS 全链路 + 服务间授权策略 | 改变运维模型，必须在服务稳定后；sidecar 开销与虚拟线程 / native 路线需一并评估 |
-| **GraalVM Native** | 先对 `iboot-gateway`（WebFlux、无 MyBatis、反射面最小）做可行性验证；真实动机是缓解 N×JVM 内存与冷启动 | Boot 4 native 要求 GraalVM **25** 工具链；Druid / MyBatis / ES / MinIO / Quartz 的反射与代理风险清单依然成立 |
+| **GraalVM Native** | 先对 `iboot-gateway`（WebFlux、无 MyBatis、反射面最小）做可行性验证；真实动机是缓解 N×JVM 内存与冷启动 | Boot 4 native 要求 GraalVM **25** 工具链；Druid / MyBatis / ES / MinIO 客户端 / Quartz 的反射与代理风险清单依然成立 |
 | **分库分表** | ShardingSphere-JDBC | 服务边界与表级所有权是其前置；× Boot 4 兼容需验证 |
 | **Dubbo RPC** | 内网热点调用替换 | 等待 Boot 4 兼容版本（见 §5 R2） |
 | **Spring Batch** | 批处理（报表、备份、对账） | 与 Quartz 职责划清 |
@@ -121,7 +121,7 @@
 | DeepSeek（备用） | `deepseek-flash`（OpenAI 兼容端点） | 仅用于故障切换，不默认启用 |
 | Embedding | 百炼 `text-embedding-v4` 或本地 BGE-M3 | 第二供应商必然存在 |
 | OCR 模型 | 百炼 `qwen3.5-ocr`（可回退 `qwen-vl-ocr-2025-11-20`） | 默认关闭 |
-| MySQL / Redis / ES / MinIO | 8.0.45 / 7.0.14 / 9.2.3 / RELEASE.2025-09；ES 客户端 **9.2.5**（Boot 托管） | 客户端与服务端同属 9.2.x |
+| MySQL / Redis / ES / Silo | 8.0.45 / 7.0.14 / 9.2.3 / RELEASE.2026-11；ES 客户端 **9.2.5**（Boot 托管） | 客户端与服务端同属 9.2.x |
 | Flowable / Neo4j | **8.0.0** / **5.26.29-community**（驱动 6.0.2） | Flowable 8 是唯一支持 Boot 4 的版本线；Neo4j 5.26 为 5.x LTS |
 | Apache Dubbo | **阻塞** | 无 Boot 4 支持 |
 | GraalVM（若做 native） | 工具链必须 **25** | Boot 4 native 构建要求 |
@@ -157,7 +157,7 @@
 
 本地开发策略：
 
-- 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / minio / es / nacos / tempo / sentinel-dashboard / seata-server；集中日志链路（kafka / kafka-init / logstash）按需单独启动；阶段 3 起本地增加 Kind 集群。
+- 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / silo / es / nacos / tempo / sentinel-dashboard / seata-server；集中日志链路（kafka / kafka-init / logstash）按需单独启动；阶段 3 起本地增加 Kind 集群。
 - 分布式事务：审批通过依赖 `seata-server`（8091），`dev-init.sh` 等待其健康后再拉起 workflow/system；内部令牌由 `.env` 的 `IBOOT_SYSTEM_INTERNAL_TOKEN` 注入，缺省使用本地开发值。
 - 应用：`scripts/dev-init.sh` 一键拉起九个业务服务与运维控制台并按依赖顺序等待健康；也可单独 `mvn spring-boot:run` 调试。
 - 运维控制台：默认随开发环境启动，`IBOOT_OPS_ENABLED=false` 可跳过；生产环境不经公网网关暴露。
@@ -171,7 +171,7 @@
 
 原 `graalvm-native-image-plan.md` 以 iboot-admin 全量 native 化为目标。其**风险判断依然成立**，其**构建方法已过期**。
 
-仍然有效的部分：Druid（反射 + 动态代理）、MyBatis（XML + 反射）、ES Client、MinIO（OkHttp 代理）、Quartz、jjwt、Logstash Encoder 属于高风险依赖；`RedisConfig`、`SecurityConfig`、`JwtAuthenticationFilter`、`TwoLevelCacheManager`、`LogAspect`、`DataScopeInterceptor` 是代码层风险点；构建期内存大、编译慢 5–10 倍、跨平台分别编译、调试困难；回滚原则是保留 JVM 部署路径。
+仍然有效的部分：Druid（反射 + 动态代理）、MyBatis（XML + 反射）、ES Client、MinIO 客户端（OkHttp 代理）、Quartz、jjwt、Logstash Encoder 属于高风险依赖；`RedisConfig`、`SecurityConfig`、`JwtAuthenticationFilter`、`TwoLevelCacheManager`、`LogAspect`、`DataScopeInterceptor` 是代码层风险点；构建期内存大、编译慢 5–10 倍、跨平台分别编译、调试困难；回滚原则是保留 JVM 部署路径。
 
 勘误（照原样执行会失败）：
 

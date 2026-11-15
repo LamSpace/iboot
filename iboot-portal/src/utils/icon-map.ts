@@ -115,7 +115,7 @@ const iconMap: Record<string, Component> = {
   "magic-stick": MagicStick,
   // 对象存储
   box: Box,
-  minio: Box,
+  silo: Box,
   // 可观测性
   prometheus: TrendCharts,
   grafana: Histogram,

@@ -1,7 +1,7 @@
 type: s3
 config:
   bucket: thanos
-  endpoint: minio:9000
+  endpoint: silo:9000
   access_key: minioadmin
   secret_key: minioadmin
   insecure: true

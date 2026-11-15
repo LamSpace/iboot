@@ -34,7 +34,7 @@ import monitorGrafana from "./monitor/grafana.json";
 import monitorKibana from "./monitor/kibana.json";
 import monitorAlertmanager from "./monitor/alertmanager.json";
 import monitorThanos from "./monitor/thanos.json";
-import monitorMinio from "./monitor/minio.json";
+import monitorSilo from "./monitor/silo.json";
 import monitorNotificationDelivery from "./monitor/notification-delivery.json";
 import monitorBackup from "./monitor/backup.json";
 
@@ -91,7 +91,7 @@ export default {
     kibana: monitorKibana,
     alertmanager: monitorAlertmanager,
     thanos: monitorThanos,
-    minio: monitorMinio,
+    silo: monitorSilo,
     notificationDelivery: monitorNotificationDelivery,
     backup: monitorBackup,
   },

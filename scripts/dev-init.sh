@@ -14,7 +14,7 @@
 # 与 README 里 `set -a; source .env; set +a` 的既有约定一致；脚本会自动加载。
 #
 # 说明：
-# - 中间件只启动开发必需的一组（mysql/redis/minio/es + nacos/tempo + seata + rocketmq），
+# - 中间件只启动开发必需的一组（mysql/redis/silo/es + nacos/tempo + seata + rocketmq），
 #   不启动 Prometheus、Kibana、Thanos 等观测组件；
 # - 数据库 iboot 与全部表结构由 iboot-db-init 创建，服务不再自带迁移；
 # - 后端日志写入 logs/，进程号写入 logs/<name>.pid；
@@ -194,7 +194,7 @@ wait_healthy() {
 
 start_middleware() {
     log '=== 1. 中间件 ==='
-    local infra=(mysql redis minio minio-init elasticsearch seata-server)
+    local infra=(mysql redis silo silo-init elasticsearch seata-server)
     if rocketmq_enabled; then
         infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init)
     fi
@@ -213,7 +213,7 @@ start_middleware() {
     # 建库与建表统一由 iboot-db-init 完成，服务不再自带迁移。
 
     wait_http 'Elasticsearch' 'http://localhost:9200' 180 || fail 'Elasticsearch 未就绪'
-    wait_http 'MinIO' 'http://localhost:9000/minio/health/live' 120 || fail 'MinIO 未就绪'
+    wait_http 'Silo' 'http://localhost:9000/minio/health/live' 120 || fail 'Silo 未就绪'
     # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。
     # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。
     wait_http 'Nacos' 'http://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'

@@ -145,7 +145,7 @@ public class FileController {
      * @param id 文件 ID
      * @return 下载 URL 和存储类型；本地模式返回下载接口路径
      */
-    @Operation(summary = "获取文件下载URL", description = "MinIO模式返回预签名URL，本地模式返回下载接口路径")
+    @Operation(summary = "获取文件下载URL", description = "Silo模式返回预签名URL，本地模式返回下载接口路径")
     @GetMapping(version = "1", value = "/download-url/{id}")
     @PreAuthorize("hasAuthority('file:download')")
     public Result<Map<String, String>> getDownloadUrl(@PathVariable Long id) {
