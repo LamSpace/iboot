@@ -151,27 +151,46 @@ async function main() {
     source: `try { localStorage.setItem("theme", ${JSON.stringify(args.theme)}); } catch (e) {}`,
   });
 
+  // 门户 /login 会自动跳转到认证服务的登录页；登录走 OIDC 授权码 + PKCE，
+  // 不再有 /api/auth/login 接口。在真实登录表单上填账号并提交，让浏览器完成
+  // authorize → login → callback → token 的完整链路。
   await navigate(cdp, `${args.base}/login`);
-  const login = await cdp.send("Runtime.evaluate", {
+  const fill = await cdp.send("Runtime.evaluate", {
     awaitPromise: true,
     returnByValue: true,
     expression: `(async () => {
-      const response = await fetch("/iboot/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "admin", password: "admin123456" }),
-      });
-      const payload = await response.json();
-      const inner = payload && payload.data && payload.data.code !== undefined ? payload.data : payload;
-      const token = inner && inner.data && inner.data.token;
-      if (!token) return { ok: false, payload };
-      localStorage.setItem("token", token);
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      for (let i = 0; i < 40 && !document.querySelector("#loginForm"); i += 1) {
+        await wait(250);
+      }
+      const form = document.querySelector("#loginForm");
+      const username = document.querySelector("#username");
+      const password = document.querySelector("#password");
+      if (!form || !username || !password) {
+        return { ok: false, reason: "login form not found", url: location.href };
+      }
+      username.value = "admin";
+      password.value = "admin123456";
+      form.submit();
       return { ok: true };
     })()`,
   });
-  const loginResult = login.result?.value;
-  if (!loginResult?.ok) {
-    throw new Error(`Login failed: ${JSON.stringify(loginResult)}`);
+  const fillResult = fill.result?.value;
+  if (!fillResult?.ok) {
+    throw new Error(`Login failed: ${JSON.stringify(fillResult)}`);
+  }
+
+  let token = "";
+  for (let i = 0; i < 30 && !token; i += 1) {
+    await sleep(500);
+    const probe = await cdp.send("Runtime.evaluate", {
+      returnByValue: true,
+      expression: 'localStorage.getItem("token") || ""',
+    });
+    token = probe.result?.value || "";
+  }
+  if (!token) {
+    throw new Error("Login failed: token not stored after OIDC callback");
   }
 
   const failures = [];

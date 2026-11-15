@@ -148,6 +148,7 @@
         />
         <el-table-column
           prop="operTime"
+          :formatter="dateTimeColumnFormatter"
           :label="t('security.operateLog.operTime')"
           width="180"
         />
@@ -246,7 +247,7 @@
         <el-descriptions-item
           :label="t('security.operateLog.operTime')"
           :span="2"
-          >{{ currentLog?.operTime }}</el-descriptions-item
+          >{{ formatDateTime(currentLog?.operTime) }}</el-descriptions-item
         >
         <el-descriptions-item
           v-if="currentLog?.errorMsg"
@@ -279,6 +280,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import TableToolbar from "@/components/TableToolbar.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import { dateTimeColumnFormatter, formatDateTime } from "@/utils/datetime";
 
 const { t } = useI18n();
 const dictStore = useDictStore();

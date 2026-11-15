@@ -126,6 +126,7 @@ import {
   type UserMessage,
 } from "@/api/system";
 import { useDictStore } from "@/stores/dict";
+import { formatDateTime } from "@/utils/datetime";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -149,20 +150,7 @@ const pageSize = 10;
 const totalMsg = ref(0);
 
 const formatMessageTime = (value?: string | number[]) => {
-  if (!value) {
-    return "";
-  }
-  const date = Array.isArray(value)
-    ? new Date(
-        value[0] ?? 1970,
-        (value[1] ?? 1) - 1,
-        value[2] ?? 1,
-        value[3] ?? 0,
-        value[4] ?? 0,
-        value[5] ?? 0,
-      )
-    : new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+  return formatDateTime(value);
 };
 
 const loadMessages = async () => {

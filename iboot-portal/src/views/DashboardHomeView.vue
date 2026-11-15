@@ -150,6 +150,7 @@
           </el-table-column>
           <el-table-column
             prop="loginTime"
+            :formatter="dateTimeColumnFormatter"
             :label="t('dashboard.time')"
             min-width="160"
           />
@@ -212,6 +213,7 @@
           </el-table-column>
           <el-table-column
             prop="operTime"
+            :formatter="dateTimeColumnFormatter"
             :label="t('dashboard.time')"
             min-width="160"
           />
@@ -276,6 +278,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import MetricCard from "@/components/MetricCard.vue";
 import StatusTag from "@/components/StatusTag.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import { dateTimeColumnFormatter } from "@/utils/datetime";
 
 const router = useRouter();
 const { t } = useI18n();

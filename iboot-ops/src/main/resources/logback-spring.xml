@@ -62,7 +62,7 @@
         <ringBufferSize>8192</ringBufferSize>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"app":"${APP_NAME}"}</customFields>
-            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS</timestampPattern>
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</timestampPattern>
         </encoder>
     </appender>
 

@@ -42,7 +42,7 @@
           </div>
           <div class="notice-meta">
             <span class="notice-author">{{ notice.createBy }}</span>
-            <span class="notice-time">{{ notice.createTime }}</span>
+            <span class="notice-time">{{ formatDateTime(notice.createTime) }}</span>
           </div>
         </div>
         <div v-if="expandedId === notice.id" class="notice-content">
@@ -72,6 +72,7 @@ import {
   type PublishedNotice,
 } from "@/api/system";
 import { useDictStore } from "@/stores/dict";
+import { formatDateTime } from "@/utils/datetime";
 
 const { t } = useI18n();
 const dictStore = useDictStore();

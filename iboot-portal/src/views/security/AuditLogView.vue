@@ -76,6 +76,7 @@
           prop="timestamp"
           :label="t('security.auditLog.timestamp')"
           width="180"
+          :formatter="dateTimeColumnFormatter"
         />
         <el-table-column
           prop="level"
@@ -147,7 +148,7 @@
     >
       <el-descriptions :column="2" border>
         <el-descriptions-item :label="t('security.auditLog.timestamp')">{{
-          currentLog?.timestamp
+          formatDateTime(currentLog?.timestamp)
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('security.auditLog.level')">
           <el-tag :type="getLevelTagType(currentLog?.level)" size="small">{{
@@ -176,6 +177,7 @@
 import { ref, reactive, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { getRunLogList, type RunLog, type RunLogQuery } from "@/api/system";
+import { dateTimeColumnFormatter, formatDateTime } from "@/utils/datetime";
 
 import PageHeader from "@/components/PageHeader.vue";
 import FilterBar from "@/components/FilterBar.vue";

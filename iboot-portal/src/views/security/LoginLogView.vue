@@ -117,6 +117,7 @@
         />
         <el-table-column
           prop="loginTime"
+          :formatter="dateTimeColumnFormatter"
           :label="t('security.loginLog.loginTime')"
           width="180"
         />
@@ -157,6 +158,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import TableToolbar from "@/components/TableToolbar.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import { dateTimeColumnFormatter } from "@/utils/datetime";
 
 const { t } = useI18n();
 const dictStore = useDictStore();
