@@ -57,6 +57,11 @@ public class ConfigPO {
     private Integer configType;
 
     /**
+     * 参数分组编码
+     */
+    private String configGroup;
+
+    /**
      * 创建人
      */
     private String createBy;
@@ -168,6 +173,22 @@ public class ConfigPO {
     @SuppressWarnings("all")
     public void setConfigType(final Integer configType) {
         this.configType = configType;
+    }
+
+    /**
+     * 参数分组编码
+     */
+    @SuppressWarnings("all")
+    public String getConfigGroup() {
+        return this.configGroup;
+    }
+
+    /**
+     * 参数分组编码
+     */
+    @SuppressWarnings("all")
+    public void setConfigGroup(final String configGroup) {
+        this.configGroup = configGroup;
     }
 
     /**
@@ -284,6 +305,10 @@ public class ConfigPO {
         final java.lang.Object other$configType = other.getConfigType();
         if (this$configType == null ? other$configType != null : !this$configType.equals(other$configType))
             return false;
+        final java.lang.Object this$configGroup = this.getConfigGroup();
+        final java.lang.Object other$configGroup = other.getConfigGroup();
+        if (this$configGroup == null ? other$configGroup != null : !this$configGroup.equals(other$configGroup))
+            return false;
         final java.lang.Object this$deleted = this.getDeleted();
         final java.lang.Object other$deleted = other.getDeleted();
         if (this$deleted == null ? other$deleted != null : !this$deleted.equals(other$deleted))
@@ -337,6 +362,8 @@ public class ConfigPO {
         result = result * PRIME + ($id == null ? 43 : $id.hashCode());
         final java.lang.Object $configType = this.getConfigType();
         result = result * PRIME + ($configType == null ? 43 : $configType.hashCode());
+        final java.lang.Object $configGroup = this.getConfigGroup();
+        result = result * PRIME + ($configGroup == null ? 43 : $configGroup.hashCode());
         final java.lang.Object $deleted = this.getDeleted();
         result = result * PRIME + ($deleted == null ? 43 : $deleted.hashCode());
         final java.lang.Object $configName = this.getConfigName();
@@ -363,7 +390,8 @@ public class ConfigPO {
     public java.lang.String toString() {
         return "ConfigPO(id=" + this.getId() + ", configName=" + this.getConfigName() + ", configKey="
                 + this.getConfigKey() + ", configValue=" + this.getConfigValue() + ", configType="
-                + this.getConfigType() + ", createBy=" + this.getCreateBy() + ", createTime=" + this.getCreateTime()
+                + this.getConfigType() + ", configGroup=" + this.getConfigGroup() + ", createBy=" + this.getCreateBy()
+                + ", createTime=" + this.getCreateTime()
                 + ", updateBy=" + this.getUpdateBy() + ", updateTime=" + this.getUpdateTime() + ", deleted="
                 + this.getDeleted() + ", remark=" + this.getRemark() + ")";
     }

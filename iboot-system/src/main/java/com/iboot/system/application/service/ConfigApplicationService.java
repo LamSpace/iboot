@@ -28,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 系统配置应用服务
@@ -45,6 +47,11 @@ public class ConfigApplicationService {
      * 缓存名称，用于 Spring Cache 管理
      */
     public static final String CACHE_NAME = "sys_config";
+
+    /**
+     * 未分组配置的分组编码
+     */
+    private static final String DEFAULT_GROUP = "other";
 
     private static final Logger log = LoggerFactory.getLogger(ConfigApplicationService.class);
 
@@ -75,6 +82,9 @@ public class ConfigApplicationService {
         }
         // 清理同键名已删除配置记录（解决逻辑删除与唯一索引冲突问题）
         configRepository.removeDeletedByConfigKey(config.getConfigKey());
+        if (config.getConfigGroup() == null || config.getConfigGroup().isBlank()) {
+            config.setConfigGroup(DEFAULT_GROUP);
+        }
         config.setCreateTime(LocalDateTime.now());
         return configRepository.save(config);
     }
@@ -205,43 +215,63 @@ public class ConfigApplicationService {
     /**
      * 按条件分页获取系统配置
      *
-     * @param configName 配置名称（可选）
-     * @param configKey  配置键（可选）
-     * @param configType 配置类型（可选）
-     * @param pageNum    页码，从 1 开始
-     * @param pageSize   每页数量
+     * @param configName  配置名称（可选）
+     * @param configKey   配置键（可选）
+     * @param configType  配置类型（可选）
+     * @param configGroup 参数分组编码（可选）
+     * @param pageNum     页码，从 1 开始
+     * @param pageSize    每页数量
      *
      * @return 系统配置列表
      */
-    public List<Config> getConfigPageByCondition(String configName, String configKey, Integer configType, int pageNum,
-                                                 int pageSize) {
-        return configRepository.findPageByCondition(configName, configKey, configType, pageNum, pageSize);
+    public List<Config> getConfigPageByCondition(String configName, String configKey, Integer configType,
+                                                 String configGroup, int pageNum, int pageSize) {
+        return configRepository.findPageByCondition(configName, configKey, configType, configGroup, pageNum, pageSize);
     }
 
     /**
      * 按条件统计系统配置总数
      *
-     * @param configName 配置名称（可选）
-     * @param configKey  配置键（可选）
-     * @param configType 配置类型（可选）
+     * @param configName  配置名称（可选）
+     * @param configKey   配置键（可选）
+     * @param configType  配置类型（可选）
+     * @param configGroup 参数分组编码（可选）
      *
      * @return 系统配置总数
      */
-    public long countConfigsByCondition(String configName, String configKey, Integer configType) {
-        return configRepository.countByCondition(configName, configKey, configType);
+    public long countConfigsByCondition(String configName, String configKey, Integer configType, String configGroup) {
+        return configRepository.countByCondition(configName, configKey, configType, configGroup);
     }
 
     /**
      * 按条件获取所有系统配置（不分页，用于导出）
      *
-     * @param configName 配置名称（可选）
-     * @param configKey  配置键（可选）
-     * @param configType 配置类型（可选）
+     * @param configName  配置名称（可选）
+     * @param configKey   配置键（可选）
+     * @param configType  配置类型（可选）
+     * @param configGroup 参数分组编码（可选）
      *
      * @return 系统配置列表
      */
-    public List<Config> getAllConfigsByCondition(String configName, String configKey, Integer configType) {
-        return configRepository.findAllByCondition(configName, configKey, configType);
+    public List<Config> getAllConfigsByCondition(String configName, String configKey, Integer configType,
+                                                 String configGroup) {
+        return configRepository.findAllByCondition(configName, configKey, configType, configGroup);
+    }
+
+    /**
+     * 统计各分组的配置数量。
+     *
+     * <p>当前配置量很小，直接基于全量配置聚合，避免为计数新增 Mapper 查询；
+     * 如果配置表显著增长，可下沉为 SQL 聚合，接口保持不变。
+     *
+     * @return 分组编码到配置数量的映射；没有配置的分组不会出现在结果中
+     */
+    public Map<String, Long> getGroupCounts() {
+        return configRepository.findAll().stream()
+                .collect(Collectors.groupingBy(
+                        config -> config.getConfigGroup() == null || config.getConfigGroup().isBlank()
+                                ? DEFAULT_GROUP : config.getConfigGroup(),
+                        Collectors.counting()));
     }
 
     /**

@@ -11,6 +11,8 @@
   "configKey": "Config Key",
   "configValue": "Config Value",
   "configType": "Config Type",
+  "configGroup": "Config Group",
+  "groupAll": "All",
   "type": "Type",
   "sort": "Sort Order",
   "remark": "Remark",

@@ -160,19 +160,20 @@ public class ConfigRepositoryImpl implements ConfigRepository {
     /**
      * 按条件分页查询系统配置
      *
-     * @param configName 配置名称（可选）
-     * @param configKey  配置键（可选）
-     * @param configType 配置类型（可选）
-     * @param pageNum    页码
-     * @param pageSize   每页数量
+     * @param configName  配置名称（可选）
+     * @param configKey   配置键（可选）
+     * @param configType  配置类型（可选）
+     * @param configGroup 参数分组编码（可选）
+     * @param pageNum     页码
+     * @param pageSize    每页数量
      *
      * @return 系统配置列表
      */
     @Override
-    public List<Config> findPageByCondition(String configName, String configKey, Integer configType, int pageNum,
-                                            int pageSize) {
+    public List<Config> findPageByCondition(String configName, String configKey, Integer configType, String configGroup,
+                                            int pageNum, int pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        return configMapper.selectPageByCondition(configName, configKey, configType, offset, pageSize)
+        return configMapper.selectPageByCondition(configName, configKey, configType, configGroup, offset, pageSize)
                 .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
@@ -181,29 +182,32 @@ public class ConfigRepositoryImpl implements ConfigRepository {
     /**
      * 按条件统计系统配置总数
      *
-     * @param configName 配置名称（可选）
-     * @param configKey  配置键（可选）
-     * @param configType 配置类型（可选）
+     * @param configName  配置名称（可选）
+     * @param configKey   配置键（可选）
+     * @param configType  配置类型（可选）
+     * @param configGroup 参数分组编码（可选）
      *
      * @return 系统配置总数
      */
     @Override
-    public long countByCondition(String configName, String configKey, Integer configType) {
-        return configMapper.countByCondition(configName, configKey, configType);
+    public long countByCondition(String configName, String configKey, Integer configType, String configGroup) {
+        return configMapper.countByCondition(configName, configKey, configType, configGroup);
     }
 
     /**
      * 按条件查询所有系统配置（不分页，用于导出）
      *
-     * @param configName 配置名称（可选）
-     * @param configKey  配置键（可选）
-     * @param configType 配置类型（可选）
+     * @param configName  配置名称（可选）
+     * @param configKey   配置键（可选）
+     * @param configType  配置类型（可选）
+     * @param configGroup 参数分组编码（可选）
      *
      * @return 系统配置列表
      */
     @Override
-    public List<Config> findAllByCondition(String configName, String configKey, Integer configType) {
-        return configMapper.selectAllByCondition(configName, configKey, configType)
+    public List<Config> findAllByCondition(String configName, String configKey, Integer configType,
+                                           String configGroup) {
+        return configMapper.selectAllByCondition(configName, configKey, configType, configGroup)
                 .stream()
                 .map(this::convertToDomain)
                 .collect(Collectors.toList());
@@ -247,6 +251,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
         po.setConfigKey(config.getConfigKey());
         po.setConfigValue(config.getConfigValue());
         po.setConfigType(config.getConfigType());
+        po.setConfigGroup(config.getConfigGroup());
         po.setCreateBy(config.getCreateBy());
         po.setCreateTime(config.getCreateTime());
         po.setUpdateBy(config.getUpdateBy());
@@ -270,6 +275,7 @@ public class ConfigRepositoryImpl implements ConfigRepository {
                 .configKey(po.getConfigKey())
                 .configValue(po.getConfigValue())
                 .configType(po.getConfigType())
+                .configGroup(po.getConfigGroup())
                 .createBy(po.getCreateBy())
                 .createTime(po.getCreateTime())
                 .updateBy(po.getUpdateBy())

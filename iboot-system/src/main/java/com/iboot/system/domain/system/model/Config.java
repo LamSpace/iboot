@@ -56,6 +56,11 @@ public class Config {
     private Integer configType;
 
     /**
+     * 参数分组编码
+     */
+    private String configGroup;
+
+    /**
      * 创建人
      */
     private String createBy;
@@ -97,6 +102,7 @@ public class Config {
      * @param configKey   配置键
      * @param configValue 配置值
      * @param configType  配置类型：0-默认，1-系统内置
+     * @param configGroup 参数分组编码
      * @param createBy    创建人
      * @param createTime  创建时间
      * @param updateBy    更新人
@@ -106,13 +112,15 @@ public class Config {
      */
     @SuppressWarnings("all")
     public Config(final Long id, final String configName, final String configKey, final String configValue,
-                  final Integer configType, final String createBy, final LocalDateTime createTime, final String updateBy,
+                  final Integer configType, final String configGroup, final String createBy,
+                  final LocalDateTime createTime, final String updateBy,
                   final LocalDateTime updateTime, final Integer deleted, final String remark) {
         this.id = id;
         this.configName = configName;
         this.configKey = configKey;
         this.configValue = configValue;
         this.configType = configType;
+        this.configGroup = configGroup;
         this.createBy = createBy;
         this.createTime = createTime;
         this.updateBy = updateBy;
@@ -224,6 +232,22 @@ public class Config {
     @SuppressWarnings("all")
     public void setConfigType(final Integer configType) {
         this.configType = configType;
+    }
+
+    /**
+     * 参数分组编码
+     */
+    @SuppressWarnings("all")
+    public String getConfigGroup() {
+        return this.configGroup;
+    }
+
+    /**
+     * 参数分组编码
+     */
+    @SuppressWarnings("all")
+    public void setConfigGroup(final String configGroup) {
+        this.configGroup = configGroup;
     }
 
     /**
@@ -340,6 +364,10 @@ public class Config {
         final java.lang.Object other$configType = other.getConfigType();
         if (this$configType == null ? other$configType != null : !this$configType.equals(other$configType))
             return false;
+        final java.lang.Object this$configGroup = this.getConfigGroup();
+        final java.lang.Object other$configGroup = other.getConfigGroup();
+        if (this$configGroup == null ? other$configGroup != null : !this$configGroup.equals(other$configGroup))
+            return false;
         final java.lang.Object this$deleted = this.getDeleted();
         final java.lang.Object other$deleted = other.getDeleted();
         if (this$deleted == null ? other$deleted != null : !this$deleted.equals(other$deleted))
@@ -393,6 +421,8 @@ public class Config {
         result = result * PRIME + ($id == null ? 43 : $id.hashCode());
         final java.lang.Object $configType = this.getConfigType();
         result = result * PRIME + ($configType == null ? 43 : $configType.hashCode());
+        final java.lang.Object $configGroup = this.getConfigGroup();
+        result = result * PRIME + ($configGroup == null ? 43 : $configGroup.hashCode());
         final java.lang.Object $deleted = this.getDeleted();
         result = result * PRIME + ($deleted == null ? 43 : $deleted.hashCode());
         final java.lang.Object $configName = this.getConfigName();
@@ -419,7 +449,8 @@ public class Config {
     public java.lang.String toString() {
         return "Config(id=" + this.getId() + ", configName=" + this.getConfigName() + ", configKey="
                 + this.getConfigKey() + ", configValue=" + this.getConfigValue() + ", configType="
-                + this.getConfigType() + ", createBy=" + this.getCreateBy() + ", createTime=" + this.getCreateTime()
+                + this.getConfigType() + ", configGroup=" + this.getConfigGroup() + ", createBy=" + this.getCreateBy()
+                + ", createTime=" + this.getCreateTime()
                 + ", updateBy=" + this.getUpdateBy() + ", updateTime=" + this.getUpdateTime() + ", deleted="
                 + this.getDeleted() + ", remark=" + this.getRemark() + ")";
     }
@@ -441,6 +472,9 @@ public class Config {
 
         @SuppressWarnings("all")
         private Integer configType;
+
+        @SuppressWarnings("all")
+        private String configGroup;
 
         @SuppressWarnings("all")
         private String createBy;
@@ -520,6 +554,17 @@ public class Config {
         }
 
         /**
+         * 参数分组编码
+         *
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public Config.ConfigBuilder configGroup(final String configGroup) {
+            this.configGroup = configGroup;
+            return this;
+        }
+
+        /**
          * 创建人
          *
          * @return {@code this}.
@@ -588,7 +633,8 @@ public class Config {
         @SuppressWarnings("all")
         public Config build() {
             return new Config(this.id, this.configName, this.configKey, this.configValue, this.configType,
-                    this.createBy, this.createTime, this.updateBy, this.updateTime, this.deleted, this.remark);
+                    this.configGroup, this.createBy, this.createTime, this.updateBy, this.updateTime, this.deleted,
+                    this.remark);
         }
 
         @java.lang.Override
@@ -596,7 +642,8 @@ public class Config {
         public java.lang.String toString() {
             return "Config.ConfigBuilder(id=" + this.id + ", configName=" + this.configName + ", configKey="
                     + this.configKey + ", configValue=" + this.configValue + ", configType=" + this.configType
-                    + ", createBy=" + this.createBy + ", createTime=" + this.createTime + ", updateBy=" + this.updateBy
+                    + ", configGroup=" + this.configGroup + ", createBy=" + this.createBy + ", createTime="
+                    + this.createTime + ", updateBy=" + this.updateBy
                     + ", updateTime=" + this.updateTime + ", deleted=" + this.deleted + ", remark=" + this.remark + ")";
         }
 

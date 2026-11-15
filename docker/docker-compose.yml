@@ -563,6 +563,8 @@ services:
       - NACOS_AUTH_ENABLE=false
       # Nacos 3.x 的 admin API 认证独立于 server auth；本地开发关闭以便脚本写入基线规则
       - NACOS_AUTH_ADMIN_ENABLE=false
+      # Nacos 3.x 的控制台认证又独立于 server/admin auth；本地开发关闭以便门户内嵌
+      - NACOS_AUTH_CONSOLE_ENABLE=false
       - NACOS_AUTH_TOKEN=aWJvb3QtZGV2LW5hY29zLWF1dGgtdG9rZW4tMzJieXRl
       - NACOS_AUTH_IDENTITY_KEY=iboot-dev
       - NACOS_AUTH_IDENTITY_VALUE=iboot-dev

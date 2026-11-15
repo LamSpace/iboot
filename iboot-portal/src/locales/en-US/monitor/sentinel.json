@@ -1,0 +1,9 @@
+{
+  "title": "Sentinel Console",
+  "sentinel": "Sentinel",
+  "open_in_new": "Open in new window",
+  "refresh": "Refresh console",
+  "embed_disabled": "Console is in link-out mode",
+  "embed_disabled_subtitle": "The console requires authentication outside local development. Sign in on the console page.",
+  "open_console": "Open Sentinel Console"
+}

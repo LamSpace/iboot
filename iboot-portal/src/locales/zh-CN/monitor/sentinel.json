@@ -1,0 +1,9 @@
+{
+  "title": "Sentinel 控制台",
+  "sentinel": "Sentinel",
+  "open_in_new": "在新窗口中打开",
+  "refresh": "刷新控制台",
+  "embed_disabled": "控制台已启用跳转模式",
+  "embed_disabled_subtitle": "生产环境保持控制台鉴权，请在控制台中完成登录。",
+  "open_console": "打开 Sentinel 控制台"
+}

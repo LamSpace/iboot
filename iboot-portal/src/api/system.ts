@@ -115,8 +115,14 @@ export interface Config {
   configKey: string;
   configValue: string;
   configType?: number;
+  configGroup?: string;
   remark?: string;
   createTime?: string;
+}
+
+export interface ConfigGroupStat {
+  configGroup: string;
+  count: number;
 }
 
 // 登录日志
@@ -388,12 +394,19 @@ export interface ConfigQuery {
   configName?: string;
   configKey?: string;
   configType?: number;
+  configGroup?: string;
 }
 
 export function getConfigList(
   params: ConfigQuery,
 ): Promise<ApiResponse<PageResult<Config>>> {
   return request({ url: "/config/list", method: "get", params });
+}
+
+export function getConfigGroupStats(): Promise<
+  ApiResponse<ConfigGroupStat[]>
+> {
+  return request({ url: "/config/group-stats", method: "get" });
 }
 
 export function getAllConfigs(): Promise<ApiResponse<Config[]>> {

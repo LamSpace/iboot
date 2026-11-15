@@ -107,38 +107,41 @@ public interface ConfigRepository {
     /**
      * 按条件分页查询配置
      *
-     * @param configName 配置名称（可选）
-     * @param configKey  配置键（可选）
-     * @param configType 配置类型（可选）
-     * @param pageNum    页码
-     * @param pageSize   每页数量
+     * @param configName  配置名称（可选）
+     * @param configKey   配置键（可选）
+     * @param configType  配置类型（可选）
+     * @param configGroup 参数分组编码（可选）
+     * @param pageNum     页码
+     * @param pageSize    每页数量
      *
      * @return 配置列表
      */
-    List<Config> findPageByCondition(String configName, String configKey, Integer configType, int pageNum,
-                                     int pageSize);
+    List<Config> findPageByCondition(String configName, String configKey, Integer configType, String configGroup,
+                                     int pageNum, int pageSize);
 
     /**
      * 按条件统计配置总数
      *
-     * @param configName 配置名称（可选）
-     * @param configKey  配置键（可选）
-     * @param configType 配置类型（可选）
+     * @param configName  配置名称（可选）
+     * @param configKey   配置键（可选）
+     * @param configType  配置类型（可选）
+     * @param configGroup 参数分组编码（可选）
      *
      * @return 配置总数
      */
-    long countByCondition(String configName, String configKey, Integer configType);
+    long countByCondition(String configName, String configKey, Integer configType, String configGroup);
 
     /**
      * 按条件查询所有配置（导出用）
      *
-     * @param configName 配置名称（可选）
-     * @param configKey  配置键（可选）
-     * @param configType 配置类型（可选）
+     * @param configName  配置名称（可选）
+     * @param configKey   配置键（可选）
+     * @param configType  配置类型（可选）
+     * @param configGroup 参数分组编码（可选）
      *
      * @return 配置列表
      */
-    List<Config> findAllByCondition(String configName, String configKey, Integer configType);
+    List<Config> findAllByCondition(String configName, String configKey, Integer configType, String configGroup);
 
     /**
      * 检查配置键是否存在

@@ -61,15 +61,27 @@ public class ConfigExportVO {
     private Integer configType;
 
     /**
+     * 导出列：分组编码。
+     */
+    @ExcelColumn(name = "分组编码", order = 6, width = 15)
+    private String configGroup;
+
+    /**
+     * 导出列：分组名称。
+     */
+    @ExcelColumn(name = "分组", order = 7, width = 20)
+    private String configGroupName;
+
+    /**
      * 导出列：备注。
      */
-    @ExcelColumn(name = "备注", order = 6, width = 30)
+    @ExcelColumn(name = "备注", order = 8, width = 30)
     private String remark;
 
     /**
      * 导出列：创建时间。
      */
-    @ExcelColumn(name = "创建时间", order = 7, width = 20)
+    @ExcelColumn(name = "创建时间", order = 9, width = 20)
     private LocalDateTime createTime;
 
     @SuppressWarnings("all")
@@ -78,12 +90,15 @@ public class ConfigExportVO {
 
     @SuppressWarnings("all")
     public ConfigExportVO(final Long id, final String configName, final String configKey, final String configValue,
-                          final Integer configType, final String remark, final LocalDateTime createTime) {
+                          final Integer configType, final String configGroup, final String configGroupName,
+                          final String remark, final LocalDateTime createTime) {
         this.id = id;
         this.configName = configName;
         this.configKey = configKey;
         this.configValue = configValue;
         this.configType = configType;
+        this.configGroup = configGroup;
+        this.configGroupName = configGroupName;
         this.remark = remark;
         this.createTime = createTime;
     }
@@ -144,6 +159,26 @@ public class ConfigExportVO {
     }
 
     @SuppressWarnings("all")
+    public String getConfigGroup() {
+        return this.configGroup;
+    }
+
+    @SuppressWarnings("all")
+    public void setConfigGroup(final String configGroup) {
+        this.configGroup = configGroup;
+    }
+
+    @SuppressWarnings("all")
+    public String getConfigGroupName() {
+        return this.configGroupName;
+    }
+
+    @SuppressWarnings("all")
+    public void setConfigGroupName(final String configGroupName) {
+        this.configGroupName = configGroupName;
+    }
+
+    @SuppressWarnings("all")
     public String getRemark() {
         return this.remark;
     }
@@ -180,6 +215,15 @@ public class ConfigExportVO {
         final java.lang.Object this$configType = this.getConfigType();
         final java.lang.Object other$configType = other.getConfigType();
         if (this$configType == null ? other$configType != null : !this$configType.equals(other$configType))
+            return false;
+        final java.lang.Object this$configGroup = this.getConfigGroup();
+        final java.lang.Object other$configGroup = other.getConfigGroup();
+        if (this$configGroup == null ? other$configGroup != null : !this$configGroup.equals(other$configGroup))
+            return false;
+        final java.lang.Object this$configGroupName = this.getConfigGroupName();
+        final java.lang.Object other$configGroupName = other.getConfigGroupName();
+        if (this$configGroupName == null ? other$configGroupName != null
+                : !this$configGroupName.equals(other$configGroupName))
             return false;
         final java.lang.Object this$configName = this.getConfigName();
         final java.lang.Object other$configName = other.getConfigName();
@@ -218,6 +262,10 @@ public class ConfigExportVO {
         result = result * PRIME + ($id == null ? 43 : $id.hashCode());
         final java.lang.Object $configType = this.getConfigType();
         result = result * PRIME + ($configType == null ? 43 : $configType.hashCode());
+        final java.lang.Object $configGroup = this.getConfigGroup();
+        result = result * PRIME + ($configGroup == null ? 43 : $configGroup.hashCode());
+        final java.lang.Object $configGroupName = this.getConfigGroupName();
+        result = result * PRIME + ($configGroupName == null ? 43 : $configGroupName.hashCode());
         final java.lang.Object $configName = this.getConfigName();
         result = result * PRIME + ($configName == null ? 43 : $configName.hashCode());
         final java.lang.Object $configKey = this.getConfigKey();
@@ -236,7 +284,9 @@ public class ConfigExportVO {
     public java.lang.String toString() {
         return "ConfigExportVO(id=" + this.getId() + ", configName=" + this.getConfigName() + ", configKey="
                 + this.getConfigKey() + ", configValue=" + this.getConfigValue() + ", configType="
-                + this.getConfigType() + ", remark=" + this.getRemark() + ", createTime=" + this.getCreateTime() + ")";
+                + this.getConfigType() + ", configGroup=" + this.getConfigGroup() + ", configGroupName="
+                + this.getConfigGroupName() + ", remark=" + this.getRemark() + ", createTime="
+                + this.getCreateTime() + ")";
     }
 
     @SuppressWarnings("all")
@@ -256,6 +306,12 @@ public class ConfigExportVO {
 
         @SuppressWarnings("all")
         private Integer configType;
+
+        @SuppressWarnings("all")
+        private String configGroup;
+
+        @SuppressWarnings("all")
+        private String configGroupName;
 
         @SuppressWarnings("all")
         private String remark;
@@ -316,6 +372,24 @@ public class ConfigExportVO {
          * @return {@code this}.
          */
         @SuppressWarnings("all")
+        public ConfigExportVO.ConfigExportVOBuilder configGroup(final String configGroup) {
+            this.configGroup = configGroup;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public ConfigExportVO.ConfigExportVOBuilder configGroupName(final String configGroupName) {
+            this.configGroupName = configGroupName;
+            return this;
+        }
+
+        /**
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
         public ConfigExportVO.ConfigExportVOBuilder remark(final String remark) {
             this.remark = remark;
             return this;
@@ -333,7 +407,7 @@ public class ConfigExportVO {
         @SuppressWarnings("all")
         public ConfigExportVO build() {
             return new ConfigExportVO(this.id, this.configName, this.configKey, this.configValue, this.configType,
-                    this.remark, this.createTime);
+                    this.configGroup, this.configGroupName, this.remark, this.createTime);
         }
 
         @java.lang.Override
@@ -341,7 +415,8 @@ public class ConfigExportVO {
         public java.lang.String toString() {
             return "ConfigExportVO.ConfigExportVOBuilder(id=" + this.id + ", configName=" + this.configName
                     + ", configKey=" + this.configKey + ", configValue=" + this.configValue + ", configType="
-                    + this.configType + ", remark=" + this.remark + ", createTime=" + this.createTime + ")";
+                    + this.configType + ", configGroup=" + this.configGroup + ", configGroupName=" + this.configGroupName
+                    + ", remark=" + this.remark + ", createTime=" + this.createTime + ")";
         }
 
     }

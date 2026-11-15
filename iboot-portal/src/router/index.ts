@@ -236,6 +236,18 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
       {
+        path: "nacos",
+        name: "NacosConsole",
+        component: () => import("../views/monitor/NacosConsoleView.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: "sentinel",
+        name: "SentinelDashboard",
+        component: () => import("../views/monitor/SentinelDashboardView.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
         path: "chat",
         name: "AiChat",
         component: () => import("../views/ai/ChatView.vue"),
