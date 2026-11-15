@@ -218,6 +218,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
       {
+        path: "tempo-monitor",
+        name: "TempoMonitor",
+        component: () => import("../views/monitor/TempoMonitorView.vue"),
+        meta: { requiresAuth: true },
+      },
+      {
         path: "kibana-monitor",
         name: "KibanaMonitor",
         component: () => import("../views/monitor/KibanaMonitorView.vue"),

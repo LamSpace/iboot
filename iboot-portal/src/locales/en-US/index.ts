@@ -31,6 +31,7 @@ import monitorSwagger from "./monitor/swagger.json";
 import monitorPerformance from "./monitor/performance.json";
 import monitorPrometheus from "./monitor/prometheus.json";
 import monitorGrafana from "./monitor/grafana.json";
+import monitorTempo from "./monitor/tempo.json";
 import monitorKibana from "./monitor/kibana.json";
 import monitorAlertmanager from "./monitor/alertmanager.json";
 import monitorThanos from "./monitor/thanos.json";
@@ -88,6 +89,7 @@ export default {
     performance: monitorPerformance,
     prometheus: monitorPrometheus,
     grafana: monitorGrafana,
+    tempo: monitorTempo,
     kibana: monitorKibana,
     alertmanager: monitorAlertmanager,
     thanos: monitorThanos,
