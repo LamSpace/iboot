@@ -213,6 +213,7 @@ import {
 import PageHeader from "@/components/PageHeader.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import { formatDateTime } from "@/utils/datetime";
 
 const { t } = useI18n();
 
@@ -284,18 +285,7 @@ const statusType = (status: string) => {
 };
 
 const formatTime = (value?: DateTimeValue | null) => {
-  if (!value) return "-";
-  const date = Array.isArray(value)
-    ? new Date(
-        value[0] ?? 1970,
-        (value[1] ?? 1) - 1,
-        value[2] ?? 1,
-        value[3] ?? 0,
-        value[4] ?? 0,
-        value[5] ?? 0,
-      )
-    : new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+  return formatDateTime(value);
 };
 
 onMounted(loadData);

@@ -14,8 +14,10 @@
 # 与 README 里 `set -a; source .env; set +a` 的既有约定一致；脚本会自动加载。
 #
 # 说明：
-# - 中间件只启动开发必需的一组（mysql/redis/silo/es + nacos/tempo + seata + rocketmq），
-#   不启动 Prometheus、Kibana、Thanos 等观测组件；
+# - 中间件默认启动开发必需的一组（mysql/redis/silo/es + nacos/tempo + seata + rocketmq），
+#   并随环境启动集中日志（kafka/logstash）与可观测平台（Prometheus/Grafana/Kibana/
+#   Alertmanager/Thanos 及 exporter）；资源紧张时用 IBOOT_OBSERVABILITY_ENABLED=false
+#   或 IBOOT_LOGGING_KAFKA_ENABLED=false 关闭；
 # - 数据库 iboot 与全部表结构由 iboot-db-init 创建，服务不再自带迁移；
 # - 后端日志写入 logs/，进程号写入 logs/<name>.pid；
 # - SkyWalking APM 对比实验由 IBOOT_SKYWALKING_ENABLED 控制，默认关闭。
@@ -77,6 +79,12 @@ skywalking_enabled() { [ "${IBOOT_SKYWALKING_ENABLED:-false}" = "true" ]; }
 # RocketMQ 是通知链路的中间件；关闭后审批仍可提交，事件保留在 outbox。
 rocketmq_enabled() { [ "${IBOOT_ROCKETMQ_ENABLED:-true}" = "true" ]; }
 
+# 集中日志（Kafka → Logstash → ES）：默认开启，运行日志页面依赖该链路。
+logging_enabled() { [ "${IBOOT_LOGGING_KAFKA_ENABLED:-true}" = "true" ]; }
+
+# 可观测平台：默认随开发环境启动；资源紧张时可关闭。
+observability_enabled() { [ "${IBOOT_OBSERVABILITY_ENABLED:-true}" = "true" ]; }
+
 # 控制台密码在生产环境必须由密钥管理注入；本地开发使用固定默认值。
 export IBOOT_OPS_USER="${IBOOT_OPS_USER:-ops}"
 export IBOOT_OPS_PASSWORD="${IBOOT_OPS_PASSWORD:-ops123}"
@@ -137,7 +145,7 @@ frontend_pids() {
         pid="$(cat "$pidfile")"
         kill -0 "$pid" 2>/dev/null && pids="$pid"
     fi
-    pids="$(printf '%s\n%s\n' "$pids" "$(pgrep -f 'iboot-portal/node_modules/.bin/vite' 2>/dev/null)" \
+    pids="$(printf '%s\n%s\n' "$pids" "$(pgrep -f 'iboot-portal/node_modules/.*vite/bin/vite\.js' 2>/dev/null)" \
         | grep -v '^$' | sort -u | tr '\n' ' ')"
     printf '%s' "$pids"
 }
@@ -198,9 +206,20 @@ start_middleware() {
     if rocketmq_enabled; then
         infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init)
     fi
+    if logging_enabled; then
+        infra+=(kafka kafka-init logstash)
+    fi
     "${COMPOSE[@]}" up -d "${infra[@]}" > /dev/null || fail '中间件启动失败'
     "${COMPOSE[@]}" --profile platform up -d nacos tempo sentinel-dashboard > /dev/null \
         || fail 'nacos/tempo/sentinel-dashboard 启动失败'
+    if observability_enabled; then
+        # 显式列出 observability profile 中的服务，避免 compose 一并拉起应用容器与宿主机端口冲突。
+        local observability=(prometheus grafana alertmanager thanos-sidecar thanos-store \
+            thanos-query thanos-compact mysql-exporter redis-exporter node-exporter \
+            elasticsearch-exporter kibana)
+        "${COMPOSE[@]}" --profile observability up -d "${observability[@]}" > /dev/null \
+            || fail '可观测平台启动失败'
+    fi
 
     local i
     for i in $(seq 1 90); do
@@ -227,6 +246,15 @@ start_middleware() {
         wait_healthy 'RocketMQ Proxy' iboot-rocketmq-proxy 60 || fail 'RocketMQ Proxy 未就绪'
     else
         log '  RocketMQ 已关闭（IBOOT_ROCKETMQ_ENABLED=false）'
+    fi
+    if logging_enabled; then
+        wait_healthy 'Kafka' iboot-kafka 120 || fail 'Kafka 未就绪'
+        # 日志链路是辅助能力，未就绪时只提示，不阻塞业务服务启动。
+        wait_healthy 'Logstash' iboot-logstash 240 || log '  Logstash 未在预期时间内就绪（运行日志可能暂时为空）'
+    fi
+    if observability_enabled; then
+        # Kibana 首次启动较慢；未就绪只提示，不影响后端。
+        wait_http 'Kibana' 'http://localhost:5601/api/status' 180 || log '  Kibana 未在预期时间内就绪（可稍后重试页面）'
     fi
     log '  中间件就绪'
 }
@@ -279,6 +307,11 @@ start_backend() {
     # /actuator/health 拉成 503。本地开发把它排除，健康状态只反映数据库、注册中心等
     # 运行本服务真正需要的东西。
     export MANAGEMENT_HEALTH_MAIL_ENABLED=false
+    # 宿主机进程通过映射端口连容器内的 Kafka；关闭时应用不会创建生产者。
+    if logging_enabled; then
+        export IBOOT_LOGGING_KAFKA_ENABLED=true
+        export IBOOT_LOGGING_KAFKA_BOOTSTRAP_SERVERS="${IBOOT_LOGGING_KAFKA_BOOTSTRAP_SERVERS:-localhost:29092}"
+    fi
     if skywalking_enabled; then
         [ -f "$SKYWALKING_AGENT" ] \
             || fail "SkyWalking Agent 不存在：$SKYWALKING_AGENT（先执行 scripts/apm/fetch-agent.sh）"
@@ -351,7 +384,7 @@ start_frontend() {
 show_status() {
     local entry name port pid state health
     log '=== 中间件 ==='
-    "${COMPOSE[@]}" --profile platform ps --format '  {{.Name}}\t{{.Status}}' 2>/dev/null || true
+    "${COMPOSE[@]}" --profile platform --profile observability ps --format '  {{.Name}}\t{{.Status}}' 2>/dev/null || true
     log '=== 后端 ==='
     for entry in "${SERVICES[@]}"; do
         name="${entry%%:*}"
@@ -387,13 +420,13 @@ case "$ACTION" in
     down)
         log '=== 停止并移除 ==='
         stop_all_services
-        "${COMPOSE[@]}" --profile platform down --remove-orphans > /dev/null 2>&1 || true
+        "${COMPOSE[@]}" --profile platform --profile observability down --remove-orphans > /dev/null 2>&1 || true
         log '后端、前端与中间件已停止，数据卷保留'
         ;;
     purge)
         log '=== 停止并清除数据 ==='
         stop_all_services
-        "${COMPOSE[@]}" --profile platform down -v --remove-orphans > /dev/null 2>&1 || true
+        "${COMPOSE[@]}" --profile platform --profile observability down -v --remove-orphans > /dev/null 2>&1 || true
         log '后端、前端、中间件与数据卷均已移除'
         ;;
     up)
@@ -416,5 +449,8 @@ case "$ACTION" in
             log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，Sentinel Dashboard http://localhost:8858（运维控制台已关闭）'
         fi
         log '登录账号 admin / admin123456'
+        if observability_enabled; then
+            log '可观测平台：Grafana http://localhost:3000，Prometheus http://localhost:9090，Kibana http://localhost:5601，Alertmanager http://localhost:9093'
+        fi
         ;;
 esac

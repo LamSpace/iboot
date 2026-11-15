@@ -188,6 +188,7 @@ import { useDictStore } from "@/stores/dict";
 import { useExport } from "@/composables/useExport";
 
 import PageHeader from "@/components/PageHeader.vue";
+import { formatDateTime } from "@/utils/datetime";
 
 const { t } = useI18n();
 const dictStore = useDictStore();
@@ -258,9 +259,7 @@ const handleForceLogout = (row: OnlineUser) => {
 };
 
 const formatTime = (timeStr?: string) => {
-  if (!timeStr) return "";
-  // ISO format: 2024-01-01T12:00:00 -> 2024-01-01 12:00:00
-  return timeStr.replace("T", " ").substring(0, 19);
+  return formatDateTime(timeStr);
 };
 
 const toggleAutoRefresh = (val: boolean | string | number) => {

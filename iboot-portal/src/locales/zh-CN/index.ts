@@ -28,7 +28,6 @@ import monitorServer from "./monitor/server.json";
 import monitorRedis from "./monitor/redis.json";
 import monitorSql from "./monitor/sql.json";
 import monitorSwagger from "./monitor/swagger.json";
-import monitorPerformance from "./monitor/performance.json";
 import monitorPrometheus from "./monitor/prometheus.json";
 import monitorGrafana from "./monitor/grafana.json";
 import monitorTempo from "./monitor/tempo.json";
@@ -86,7 +85,6 @@ export default {
     redis: monitorRedis,
     sql: monitorSql,
     swagger: monitorSwagger,
-    performance: monitorPerformance,
     prometheus: monitorPrometheus,
     grafana: monitorGrafana,
     tempo: monitorTempo,

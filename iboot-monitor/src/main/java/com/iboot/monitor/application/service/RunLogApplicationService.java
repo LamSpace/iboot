@@ -252,7 +252,8 @@ public class RunLogApplicationService {
      */
     private String getTextValue(ObjectNode node, String field) {
         var value = node.get(field);
-        return value != null && !value.isNull() ? value.toString() : null;
+        // toString() 会带 JSON 引号；asText() 才是字段的原始文本。
+        return value != null && !value.isNull() ? value.asText() : null;
     }
 
 }

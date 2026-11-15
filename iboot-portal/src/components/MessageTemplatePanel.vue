@@ -112,6 +112,7 @@
         prop="createTime"
         :label="t('message.messageCenter.table.create_time')"
         width="180"
+        :formatter="dateTimeColumnFormatter"
       />
       <el-table-column
         :label="t('message.messageCenter.table.actions')"
@@ -255,6 +256,7 @@ import {
   type MessageTemplateQuery,
 } from "@/api/system";
 import { useDictStore } from "@/stores/dict";
+import { dateTimeColumnFormatter } from "@/utils/datetime";
 
 const { t } = useI18n();
 const dictStore = useDictStore();

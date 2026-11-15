@@ -165,7 +165,7 @@
           <el-input :value="profileForm.roleNames?.join(', ')" disabled />
         </el-form-item>
         <el-form-item :label="t('common.create_time')">
-          <el-input v-model="profileForm.createTime" disabled />
+          <el-input :value="formatDateTime(profileForm.createTime)" disabled />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -263,6 +263,7 @@ import { useUserStore } from "@/stores/user";
 import { usePermissionStore } from "@/stores/permission";
 import { useAppStore } from "@/stores/app";
 import { beginLogout } from "@/utils/oidc";
+import { formatDateTime } from "@/utils/datetime";
 import { getIconComponent } from "@/utils/icon-map";
 import NoticePopup from "@/components/NoticePopup.vue";
 import NotificationCenter from "@/components/Notification/NotificationCenter.vue";

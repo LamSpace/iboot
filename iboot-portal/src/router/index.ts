@@ -176,12 +176,6 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
       {
-        path: "performance",
-        name: "Performance",
-        component: () => import("../views/monitor/PerformanceView.vue"),
-        meta: { requiresAuth: true },
-      },
-      {
         path: "job",
         name: "Job",
         component: () => import("../views/monitor/JobView.vue"),

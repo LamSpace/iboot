@@ -143,6 +143,8 @@
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
 | R14 | Seata TC 成为审批路径的强依赖；TC 不可用时审批 fail-closed | 全阶段 | 保持 fail-closed，不提供静默降级；seata-server 常驻并设健康检查；审批 5xx 与 TC 存活告警 |
 | R15 | AT 与 TCC 在同一代理数据源混用会产生双分支与双倍补偿 | 阶段 4 / 后续 TCC 扩展 | 现有 TCC 使用非代理数据源（`TccDruidDataSource` 按类名排除）并独占全局事务；新增 TCC 动作沿用该约束，见 docs/23 §16.7/§17 |
+| R16 | 数据库监控（Druid）在多模块拆分后只能展示单个服务的连接池：iframe 直连 `iboot-system` 的 `:8080/druid`，开发环境跨源被 `X-Frame-Options` 拦截（新窗口不受限），且 Druid 没有跨模块聚合视图 | 阶段 4 | 菜单暂保留；后续用统一代理或指标聚合方案替代，见 docs/23「已知限制」 |
+| R17 | Swagger UI 同样只聚合单模块接口：多模块拆分后无法在一个页面看到全部服务的 API | 阶段 4 | 菜单暂保留；后续用 springdoc 聚合（gateway 或独立文档服务）解决，见 docs/23「已知限制」 |
 
 ---
 
@@ -157,7 +159,7 @@
 
 本地开发策略：
 
-- 中间件：`docker/docker-compose.yml`，开发默认只起 mysql / redis / silo / es / nacos / tempo / sentinel-dashboard / seata-server；集中日志链路（kafka / kafka-init / logstash）按需单独启动；阶段 3 起本地增加 Kind 集群。
+- 中间件：`docker/docker-compose.yml`，`dev-init.sh` 默认启动 mysql / redis / silo / es / nacos / tempo / sentinel-dashboard / seata-server、集中日志链路（kafka / kafka-init / logstash）以及 observability profile（Prometheus / Grafana / Kibana / Alertmanager / Thanos 与 exporter）；资源紧张时用 `IBOOT_OBSERVABILITY_ENABLED=false`、`IBOOT_LOGGING_KAFKA_ENABLED=false` 裁剪；阶段 3 起本地增加 Kind 集群。
 - 分布式事务：审批通过依赖 `seata-server`（8091），`dev-init.sh` 等待其健康后再拉起 workflow/system；内部令牌由 `.env` 的 `IBOOT_SYSTEM_INTERNAL_TOKEN` 注入，缺省使用本地开发值。
 - 应用：`scripts/dev-init.sh` 一键拉起九个业务服务与运维控制台并按依赖顺序等待健康；也可单独 `mvn spring-boot:run` 调试。
 - 运维控制台：默认随开发环境启动，`IBOOT_OPS_ENABLED=false` 可跳过；生产环境不经公网网关暴露。
