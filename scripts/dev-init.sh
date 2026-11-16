@@ -362,7 +362,7 @@ wait_backend() {
         fi
         if ! wait_http "$name" "http://localhost:$port/actuator/health" 240; then
             printf '  最近日志（logs/%s.log）：\n' "$name" >&2
-            tail -20 "$LOG_DIR/$name.log" 2>/dev/null >&2
+            tail -20 "$LOG_DIR/$name.log" >&2 2>/dev/null
             return 1
         fi
     done

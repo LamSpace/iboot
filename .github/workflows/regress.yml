@@ -64,12 +64,15 @@ jobs:
           # AI 启动校验要求 key 非空；回归不调用真实模型，用占位值即可。
           DASHSCOPE_CHAT_API_KEY: ci-placeholder
           DASHSCOPE_EMBEDDING_API_KEY: ci-placeholder
+          # 与 .env.example 的开发默认值一致；关闭会使 /api/ai/agent/** 不注册，契约快照漂移。
+          IBOOT_AI_AGENT_ENABLED: 'true'
           # 回归不覆盖运维控制台；关闭以节省 runner 内存。
           IBOOT_OPS_ENABLED: 'false'
           # 不依赖 Tempo；备份链路由冒烟覆盖。
           IBOOT_TRACING_ENABLED: 'false'
           IBOOT_BACKUP_ENABLED: 'true'
-          IBOOT_BACKUP_ENCRYPTION_KEY: 'ci-only-key-do-not-use-in-prod'
+          # 必须是 Base64 编码的 32 字节密钥，否则 iboot-job 启动时校验失败直接退出。
+          IBOOT_BACKUP_ENCRYPTION_KEY: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY='
           # mail host 为空时，默认 health 指标会把服务拉成 DOWN。
           MANAGEMENT_HEALTH_MAIL_ENABLED: 'false'
           # 九个服务同时运行，限制堆避免超出标准 runner 内存。
@@ -83,7 +86,19 @@ jobs:
         if: failure()
         run: |
           echo '===== 后端日志 ====='
+          ls -la logs/ 2>/dev/null || true
           tail -100 logs/*.log 2>/dev/null || true
           echo '===== 中间件状态 ====='
           docker compose -f docker/docker-compose.yml --profile platform ps || true
           docker compose -f docker/docker-compose.yml --profile platform logs --tail=100 mysql redis silo elasticsearch nacos 2>/dev/null || true
+
+      # 快照与 diff 是契约漂移的唯一完整证据，失败时下载后可直接刷新 golden 基线。
+      - name: 上传回归快照
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regress-snapshots
+          path: scripts/regress/.tmp
+          # 快照目录以点开头，默认会被 upload-artifact 当作隐藏文件跳过。
+          include-hidden-files: true
+          if-no-files-found: ignore
