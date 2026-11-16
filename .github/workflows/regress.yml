@@ -64,6 +64,8 @@ jobs:
           # AI 启动校验要求 key 非空；回归不调用真实模型，用占位值即可。
           DASHSCOPE_CHAT_API_KEY: ci-placeholder
           DASHSCOPE_EMBEDDING_API_KEY: ci-placeholder
+          # 与 .env.example 的开发默认值一致；关闭会使 /api/ai/agent/** 不注册，契约快照漂移。
+          IBOOT_AI_AGENT_ENABLED: 'true'
           # 回归不覆盖运维控制台；关闭以节省 runner 内存。
           IBOOT_OPS_ENABLED: 'false'
           # 不依赖 Tempo；备份链路由冒烟覆盖。
@@ -89,3 +91,12 @@ jobs:
           echo '===== 中间件状态 ====='
           docker compose -f docker/docker-compose.yml --profile platform ps || true
           docker compose -f docker/docker-compose.yml --profile platform logs --tail=100 mysql redis silo elasticsearch nacos 2>/dev/null || true
+
+      # 快照与 diff 是契约漂移的唯一完整证据，失败时下载后可直接刷新 golden 基线。
+      - name: 上传回归快照
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regress-snapshots
+          path: scripts/regress/.tmp
+          if-no-files-found: ignore
