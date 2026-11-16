@@ -51,9 +51,30 @@
         },
         "type": "object"
       },
+      "ConfigGroupStatResponse": {
+        "description": "参数分组统计",
+        "properties": {
+          "configGroup": {
+            "description": "分组编码",
+            "type": "string"
+          },
+          "count": {
+            "description": "配置数量",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "ConfigRequest": {
         "description": "配置请求",
         "properties": {
+          "configGroup": {
+            "description": "参数分组编码",
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
           "configKey": {
             "description": "配置键",
             "maxLength": 100,
@@ -99,6 +120,10 @@
       "ConfigResponse": {
         "description": "配置响应",
         "properties": {
+          "configGroup": {
+            "description": "参数分组编码",
+            "type": "string"
+          },
           "configKey": {
             "description": "配置键",
             "type": "string"
@@ -1492,6 +1517,28 @@
         },
         "type": "object"
       },
+      "ResultListConfigGroupStatResponse": {
+        "properties": {
+          "code": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ConfigGroupStatResponse"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "ResultListConfigResponse": {
         "properties": {
           "code": {
@@ -2810,6 +2857,14 @@
             }
           },
           {
+            "in": "query",
+            "name": "configGroup",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "Accept-Version",
             "schema": {
@@ -2866,6 +2921,79 @@
           }
         },
         "summary": "导出配置列表",
+        "tags": [
+          "参数配置"
+        ]
+      }
+    },
+    "/api/config/group-stats": {
+      "get": {
+        "operationId": "groupStats",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept-Version",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultListConfigGroupStatResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultVoid"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "查询参数分组统计",
         "tags": [
           "参数配置"
         ]
@@ -2999,6 +3127,14 @@
             "schema": {
               "format": "int32",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "configGroup",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
