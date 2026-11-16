@@ -99,4 +99,6 @@ jobs:
         with:
           name: regress-snapshots
           path: scripts/regress/.tmp
+          # 快照目录以点开头，默认会被 upload-artifact 当作隐藏文件跳过。
+          include-hidden-files: true
           if-no-files-found: ignore
