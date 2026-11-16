@@ -49,6 +49,53 @@ public class AiMetrics {
     public AiMetrics(MeterRegistry registry, @Value("${spring.ai.openai.chat.options.model}") String model) {
         this.registry = registry;
         this.model = model;
+        registerInitialSeries();
+    }
+
+    /**
+     * 预注册标签集合可枚举的计数器。
+     *
+     * <p>Micrometer 计数器在首次递增时才出现在指标端点中；无流量时看板会显示 No Data。
+     * 对标签取值固定的核心指标在启动时注册零值序列，使看板在空闲期也能展示 0。
+     * 工具名、错误原因等高基数或动态标签仍按需注册。
+     */
+    private void registerInitialSeries() {
+        for (String outcome : new String[]{"success", "error"}) {
+            Counter.builder("iboot.ai.chat.requests").tag("model", model).tag("outcome", outcome).register(registry);
+        }
+        for (String type : new String[]{"prompt", "completion"}) {
+            Counter.builder("iboot.ai.tokens").tag("type", type).register(registry);
+        }
+        for (String outcome : new String[]{"success", "error", "no_hit"}) {
+            for (String degraded : new String[]{"true", "false"}) {
+                Counter.builder("iboot.ai.rag.requests")
+                        .tag("outcome", outcome)
+                        .tag("degraded", degraded)
+                        .register(registry);
+            }
+        }
+        Counter.builder("iboot.ai.rag.empty_results").register(registry);
+        Counter.builder("iboot.ai.rag.ocr.quota_rejected").register(registry);
+        for (String outcome : new String[]{"success", "failed"}) {
+            Counter.builder("iboot.ai.rag.ocr.pages").tag("outcome", outcome).register(registry);
+        }
+        for (String stage : new String[]{"document", "query"}) {
+            Counter.builder("iboot.ai.rag.embedding.tokens").tag("stage", stage).register(registry);
+        }
+        for (String scope : new String[]{"global", "user"}) {
+            Counter.builder("iboot.ai.quota.rejected").tag("scope", scope).register(registry);
+        }
+        for (String outcome : new String[]{"completed", "pending", "error"}) {
+            Counter.builder("iboot.ai.agent.runs").tag("outcome", outcome).register(registry);
+        }
+        for (String decision : new String[]{"approved", "rejected"}) {
+            Counter.builder("iboot.ai.agent.approvals").tag("decision", decision).register(registry);
+        }
+        Counter.builder("iboot.ai.agent.approval.bypass.blocked").register(registry);
+        Counter.builder("iboot.ai.agent.steps").register(registry);
+        for (String outcome : new String[]{"success", "failure"}) {
+            Counter.builder("iboot.ai.graph.sync").tag("outcome", outcome).register(registry);
+        }
     }
 
     /**

@@ -11,5 +11,5 @@ datasources:
     jsonData:
       httpMethod: GET
       serviceMap:
-        datasourceUid: prometheus
+        datasourceUid: PBFA97CFB590B2093
     editable: true

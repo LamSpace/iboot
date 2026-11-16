@@ -182,6 +182,7 @@ management:
         http.server.requests: true
         jdbc.connections.usage: true
         cache.requests: true
+        business_process_duration: true
       percentiles:
         http.server.requests: 0.5, 0.95, 0.99
     enable:

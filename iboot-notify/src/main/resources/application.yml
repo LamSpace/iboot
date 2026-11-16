@@ -203,6 +203,10 @@ management:
   endpoint:
     health:
       show-details: always
+  metrics:
+    tags:
+      application: iboot-notify
+      namespace: default
 
 logging:
   level:

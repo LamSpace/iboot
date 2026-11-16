@@ -1021,18 +1021,23 @@ if (success) {
 
 ### 6.3 Prometheus 配置
 
+应用指标由 `docker/scripts/prometheus/prometheus.yml` 统一采集；每个后端模块一个 job，
+目标为 `host.docker.internal:<port>`，宿主机开发与容器部署两种方式共用：
+
 ```yaml
-# prometheus.yml
+# prometheus.yml（节选）
 scrape_configs:
-  - job_name: 'iboot-system'
+  - job_name: 'iboot-notify'
     static_configs:
-      - targets: ['host.docker.internal:8080']
+      - targets: ['host.docker.internal:8084']
     metrics_path: '/actuator/prometheus'
 ```
 
 ### 6.4 Grafana 面板
 
-可在 `iboot-monitoring-dashboard.json` 中添加 SSE 推送监控面板：
+SSE 推送指标目前没有预置面板，可在 `docker/scripts/grafana/provisioning/dashboards/custom/`
+下的自定义看板 JSON 中新增面板（例如「iBoot 后端服务总览」或「iBoot 业务监控仪表板」）。
+改动必须落到 JSON 文件，图形界面的修改会被 provisioning 覆盖：
 
 ```json
 {

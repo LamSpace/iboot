@@ -1,0 +1,16 @@
+apiVersion: 1
+
+# 集中日志数据源：与门户“运行日志”页面共用同一份 Elasticsearch 索引。
+datasources:
+  - name: Elasticsearch
+    uid: iboot-elasticsearch
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    isDefault: false
+    jsonData:
+      index: iboot-logs-*
+      timeField: "@timestamp"
+      logMessageField: message
+      logLevelField: level
+    editable: true

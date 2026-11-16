@@ -51,6 +51,16 @@ public class BusinessMetricsService {
     private DistributionSummary fileUploadSizeSummary;
 
     /**
+     * 缓存命中次数计数器，供缓存看板按时间窗口统计。
+     */
+    private Counter cacheHitCounter;
+
+    /**
+     * 缓存未命中次数计数器，供缓存看板按时间窗口统计。
+     */
+    private Counter cacheMissCounter;
+
+    /**
      * 初始化业务监控指标
      * <p>
      * 在 Spring 容器启动后自动执行，注册各类指标到 MeterRegistry。 指标名称遵循 Grafana 仪表板期望的命名规范。
@@ -81,6 +91,14 @@ public class BusinessMetricsService {
                 .description("缓存命中率")
                 .tag("application", "iboot-system")
                 .baseUnit(BaseUnits.PERCENT)
+                .register(meterRegistry);
+        cacheHitCounter = Counter.builder("cache_hits")
+                .description("缓存命中次数")
+                .tag("application", "iboot-system")
+                .register(meterRegistry);
+        cacheMissCounter = Counter.builder("cache_misses")
+                .description("缓存未命中次数")
+                .tag("application", "iboot-system")
                 .register(meterRegistry);
         // 文件操作指标
         fileUploadCounter = Counter.builder("file_upload_count")
@@ -154,6 +172,7 @@ public class BusinessMetricsService {
     public void recordCacheHit() {
         cacheHitCount.incrementAndGet();
         cacheTotalCount.incrementAndGet();
+        cacheHitCounter.increment();
     }
 
     /**
@@ -164,6 +183,7 @@ public class BusinessMetricsService {
      */
     public void recordCacheMiss() {
         cacheTotalCount.incrementAndGet();
+        cacheMissCounter.increment();
     }
 
     /**

@@ -62,3 +62,7 @@ management:
   endpoint:
     health:
       show-details: always
+  metrics:
+    tags:
+      application: iboot-gateway
+      namespace: default
