@@ -130,7 +130,7 @@
         <el-table-column
           prop="loginTime"
           :label="t('monitor.onlineUser.loginTime')"
-          width="180"
+          min-width="180"
         >
           <template #default="{ row }">
             {{ formatTime(row.loginTime) }}

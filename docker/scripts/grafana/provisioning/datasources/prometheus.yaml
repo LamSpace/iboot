@@ -11,6 +11,8 @@ datasources:
     editable: true
 
   - name: Prometheus
+    # 显式声明 uid：看板按该 uid 引用数据源，避免重新供给后 uid 漂移导致面板失效。
+    uid: PBFA97CFB590B2093
     type: prometheus
     access: proxy
     url: http://prometheus:9090

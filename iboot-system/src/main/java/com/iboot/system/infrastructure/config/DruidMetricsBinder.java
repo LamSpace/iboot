@@ -8,7 +8,6 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-@ConditionalOnBean(DruidDataSource.class)
 public class DruidMetricsBinder implements MeterBinder {
 
     private static final Logger log = LoggerFactory.getLogger(DruidMetricsBinder.class);

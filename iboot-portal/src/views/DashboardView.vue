@@ -127,41 +127,41 @@
         :rules="profileRules"
         label-width="80px"
       >
-        <el-form-item :label="t('user.username')">
+        <el-form-item :label="t('system.user.username')">
           <el-input v-model="profileForm.username" disabled />
         </el-form-item>
-        <el-form-item :label="t('user.nickname')" prop="nickname">
+        <el-form-item :label="t('system.user.nickname')" prop="nickname">
           <el-input
             v-model="profileForm.nickname"
-            :placeholder="t('user.placeholder.nickname')"
+            :placeholder="t('system.user.placeholder.nickname')"
           />
         </el-form-item>
-        <el-form-item :label="t('user.email')" prop="email">
+        <el-form-item :label="t('system.user.email')" prop="email">
           <el-input
             v-model="profileForm.email"
-            :placeholder="t('user.placeholder.email')"
+            :placeholder="t('system.user.placeholder.email')"
           />
         </el-form-item>
-        <el-form-item :label="t('user.phone')" prop="phone">
+        <el-form-item :label="t('system.user.phone')" prop="phone">
           <el-input
             v-model="profileForm.phone"
-            :placeholder="t('user.placeholder.phone')"
+            :placeholder="t('system.user.placeholder.phone')"
           />
         </el-form-item>
-        <el-form-item :label="t('user.gender')">
+        <el-form-item :label="t('system.user.gender')">
           <el-radio-group v-model="profileForm.gender">
-            <el-radio :value="1">{{ t("user.male") }}</el-radio>
-            <el-radio :value="2">{{ t("user.female") }}</el-radio>
-            <el-radio :value="0">{{ t("user.unknown") }}</el-radio>
+            <el-radio :value="1">{{ t("system.user.male") }}</el-radio>
+            <el-radio :value="2">{{ t("system.user.female") }}</el-radio>
+            <el-radio :value="0">{{ t("system.user.unknown") }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item :label="t('user.dept')">
+        <el-form-item :label="t('system.user.dept')">
           <el-input v-model="profileForm.deptName" disabled />
         </el-form-item>
-        <el-form-item :label="t('user.post')">
+        <el-form-item :label="t('system.user.post')">
           <el-input :value="profileForm.postNames?.join(', ')" disabled />
         </el-form-item>
-        <el-form-item :label="t('user.role')">
+        <el-form-item :label="t('system.user.role')">
           <el-input :value="profileForm.roleNames?.join(', ')" disabled />
         </el-form-item>
         <el-form-item :label="t('common.create_time')">
@@ -409,11 +409,11 @@ const profileForm = reactive<UserProfile>({
   createTime: "",
 });
 const profileRules: FormRules = {
-  email: [{ type: "email", message: t("user.email_invalid"), trigger: "blur" }],
+  email: [{ type: "email", message: t("system.user.validation.email_invalid"), trigger: "blur" }],
   phone: [
     {
       pattern: /^1[3-9]\d{9}$/,
-      message: t("user.phone_invalid"),
+      message: t("system.user.validation.phone_invalid"),
       trigger: "blur",
     },
   ],

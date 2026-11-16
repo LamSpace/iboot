@@ -19,11 +19,12 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
+  # 后端服务：宿主机进程与容器部署都会发布这些端口，统一经宿主网关抓取。
+  # 保留既有 job 名，使告警规则与看板查询不随采集方式变化。
   - job_name: 'iboot-system'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      # 服务运行在同一个 compose 网络中，按服务名抓取
-      - targets: ['iboot-system:8080']
+      - targets: ['host.docker.internal:8080']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
@@ -32,47 +33,83 @@ scrape_configs:
   - job_name: 'iboot-ai'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['iboot-ai:8081']
+      - targets: ['host.docker.internal:8081']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
         replacement: 'iboot-ai:8081'
 
-  - job_name: 'iboot-ops'
+  - job_name: 'iboot-file'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['iboot-ops:8089']
+      - targets: ['host.docker.internal:8082']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'iboot-ops:8089'
+        replacement: 'iboot-file:8082'
 
-  - job_name: 'iboot-gateway'
+  - job_name: 'iboot-auth'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['iboot-gateway:8088']
+      - targets: ['host.docker.internal:8083']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'iboot-gateway:8088'
+        replacement: 'iboot-auth:8083'
+
+  - job_name: 'iboot-notify'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8084']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'iboot-notify:8084'
+
+  - job_name: 'iboot-job'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8085']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'iboot-job:8085'
 
   - job_name: 'iboot-workflow'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['iboot-workflow:8086']
+      - targets: ['host.docker.internal:8086']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
         replacement: 'iboot-workflow:8086'
 
-  - job_name: 'iboot-notify'
+  - job_name: 'iboot-monitor'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['iboot-notify:8084']
+      - targets: ['host.docker.internal:8087']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'iboot-notify:8084'
+        replacement: 'iboot-monitor:8087'
+
+  - job_name: 'iboot-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8088']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'iboot-gateway:8088'
+
+  - job_name: 'iboot-ops'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8089']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'iboot-ops:8089'
 
   - job_name: 'mysql-exporter'
     static_configs:

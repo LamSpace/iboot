@@ -51,6 +51,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- 指标导出：/actuator/prometheus，按 application 标签区分模块 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
 
         <!-- 数据库迁移：文件服务拥有自己的 schema，表结构由 Flyway 版本化 -->
         <dependency>
