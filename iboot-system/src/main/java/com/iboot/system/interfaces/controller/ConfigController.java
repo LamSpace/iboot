@@ -33,11 +33,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.core.env.Environment;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -66,11 +68,22 @@ public class ConfigController {
 
     private final DictApplicationService dictApplicationService;
 
+    private final Environment environment;
+
+    /**
+     * 创建参数配置控制器。
+     *
+     * @param configApplicationService 参数配置应用服务
+     * @param dictApplicationService   字典应用服务
+     * @param environment              部署环境，用于读取配置键对应的环境变量覆盖值
+     */
     @SuppressWarnings("all")
     public ConfigController(final ConfigApplicationService configApplicationService,
-                            final DictApplicationService dictApplicationService) {
+                            final DictApplicationService dictApplicationService,
+                            final Environment environment) {
         this.configApplicationService = configApplicationService;
         this.dictApplicationService = dictApplicationService;
+        this.environment = environment;
     }
 
     /**
@@ -175,14 +188,32 @@ public class ConfigController {
     /**
      * 根据配置键查询配置值。
      *
+     * <p>同名环境变量优先于数据库配置：配置键转大写，并把 {@code .}、{@code -} 替换为
+     * {@code _}，例如 {@code sys.nacos.console.url} 对应 {@code SYS_NACOS_CONSOLE_URL}。
+     * 环境变量未设置或为空白时回退到 {@code sys_config}。
+     *
      * @param configKey 配置键
      * @return 配置值；配置不存在时为 {@code null}
      */
     @Operation(summary = "根据配置键查询配置值")
     @GetMapping(version = "1", value = "/key/{configKey}")
     public Result<String> getByKey(@PathVariable String configKey) {
-        String value = configApplicationService.getConfigValue(configKey);
-        return Result.success(value);
+        return Result.success(resolveConfigValue(configKey));
+    }
+
+    /**
+     * 解析配置值，环境变量优先于数据库。
+     *
+     * @param configKey 配置键
+     * @return 环境变量覆盖值或数据库配置值
+     */
+    private String resolveConfigValue(String configKey) {
+        String envName = configKey.toUpperCase(Locale.ROOT).replace('.', '_').replace('-', '_');
+        String override = environment.getProperty(envName);
+        if (override != null && !override.isBlank()) {
+            return override;
+        }
+        return configApplicationService.getConfigValue(configKey);
     }
 
     /**

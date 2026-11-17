@@ -99,6 +99,10 @@ services:
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms512m -Xmx1024m --enable-native-access=ALL-UNNAMED"
+      # 门户 nginx 不代理 Nacos 控制台，容器部署固定为跳转模式；地址取浏览器可达的宿主机端口。
+      # 这两个环境变量覆盖 sys_config 中的开发默认值，宿主机 Vite 开发不受影响。
+      SYS_NACOS_CONSOLE_URL: ${SYS_NACOS_CONSOLE_URL:-http://localhost:8849}
+      SYS_NACOS_CONSOLE_EMBED: ${SYS_NACOS_CONSOLE_EMBED:-false}
     volumes:
       - admin_logs:/app/logs
       - uploads_data:/app/uploads
