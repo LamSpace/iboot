@@ -188,9 +188,17 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 
 ## 微服务治理控制台
 
-门户“微服务治理”菜单提供 Nacos 与 Sentinel 控制台入口。开发环境两个控制台都关闭登录，
-门户直接内嵌；非本地部署在参数配置中把 `sys.nacos.console.embed` 与
-`sys.sentinel.dashboard.embed` 改为 `false`，保持控制台鉴权，门户只提供内网入口跳转。
+门户“微服务治理”菜单提供 Nacos 与 Sentinel 控制台入口。
+
+- **宿主机 Vite 开发**：两个控制台都关闭登录，门户直接内嵌；Nacos 经 Vite 的
+  `/nacos-console` 代理访问。
+- **Docker 全栈**：门户由 nginx 提供，不代理 Nacos 控制台，因此 compose 用
+  `SYS_NACOS_CONSOLE_URL=http://localhost:8849` 与 `SYS_NACOS_CONSOLE_EMBED=false`
+  覆盖 `sys_config` 中的开发默认值，页面显示说明卡并跳转到 `http://localhost:8849`。
+  这两个值可在根目录 `.env` 中用同名变量覆盖。
+- **非本地部署**：保持控制台鉴权，在参数配置中把 `sys.nacos.console.embed` 与
+  `sys.sentinel.dashboard.embed` 改为 `false`，Nacos 地址改为内网绝对地址；生产
+  nginx 不添加 `/nacos-console` 代理。
 
 - Nacos 开发环境经门户同源代理 `/nacos-console/` 内嵌；Vite 代理转发控制台 SPA 与 `/v3` API 并剥离 `X-Frame-Options`，生产 nginx 不配置该代理；
 - `NACOS_AUTH_CONSOLE_ENABLE=false` 只用于本地 compose，不要带到生产；

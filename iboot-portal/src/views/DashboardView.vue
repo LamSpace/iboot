@@ -148,7 +148,7 @@
             :placeholder="t('system.user.placeholder.phone')"
           />
         </el-form-item>
-        <el-form-item :label="t('system.user.gender')">
+        <el-form-item :label="t('system.user.sex')">
           <el-radio-group v-model="profileForm.gender">
             <el-radio :value="1">{{ t("system.user.male") }}</el-radio>
             <el-radio :value="2">{{ t("system.user.female") }}</el-radio>
