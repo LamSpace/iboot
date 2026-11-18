@@ -63,6 +63,7 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -173,23 +174,36 @@ public class AuthorizationServerConfig {
     }
 
     /**
-     * 门户客户端的登记信息。
+     * 公共客户端登记信息。
      *
-     * <p>公共客户端，强制 PKCE，不签发客户端密钥；启用刷新令牌轮换，便于多标签页与静默续期。
+     * <p>门户与开发者 CLI 都是公共客户端，强制 PKCE、不签发客户端密钥；启用刷新令牌
+     * 轮换，便于多标签页与 CLI 静默续期。CLI 只登记 loopback 回调，不登记登出跳转。
      *
      * @param properties 授权服务器配置
      * @return 客户端仓库
      */
     @Bean
     public RegisteredClientRepository registeredClientRepository(AuthServerProperties properties) {
-        RegisteredClient portal = RegisteredClient.withId(properties.getClientId())
-                .clientId(properties.getClientId())
-                .clientName(properties.getClientName())
+        RegisteredClient portal = publicClientBuilder(properties.getClientId(),
+                properties.getClientName(), properties.getRedirectUris(), properties)
+                .postLogoutRedirectUris(uris -> uris.addAll(properties.getPostLogoutRedirectUris()))
+                .build();
+        RegisteredClient cli = publicClientBuilder(properties.getCliClientId(),
+                properties.getCliClientName(), properties.getCliRedirectUris(), properties)
+                .build();
+        return new InMemoryRegisteredClientRepository(portal, cli);
+    }
+
+    private RegisteredClient.Builder publicClientBuilder(String clientId, String clientName,
+                                                         List<String> redirectUris,
+                                                         AuthServerProperties properties) {
+        return RegisteredClient.withId(clientId)
+                .clientId(clientId)
+                .clientName(clientName)
                 .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUris(uris -> uris.addAll(properties.getRedirectUris()))
-                .postLogoutRedirectUris(uris -> uris.addAll(properties.getPostLogoutRedirectUris()))
+                .redirectUris(uris -> uris.addAll(redirectUris))
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
                 .scope("api")
@@ -201,9 +215,7 @@ public class AuthorizationServerConfig {
                         .accessTokenTimeToLive(Duration.ofMinutes(properties.getAccessTokenMinutes()))
                         .refreshTokenTimeToLive(Duration.ofMinutes(properties.getRefreshTokenMinutes()))
                         .reuseRefreshTokens(false)
-                        .build())
-                .build();
-        return new InMemoryRegisteredClientRepository(portal);
+                        .build());
     }
 
     /**

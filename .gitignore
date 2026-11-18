@@ -94,7 +94,9 @@ build/
 out/
 dist/
 dist-ssr/
-bin/
+# 构建输出目录；仅保留开发者 CLI 启动脚本
+bin/*
+!bin/iboot
 .vite/
 
 # 前端依赖

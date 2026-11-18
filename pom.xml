@@ -49,6 +49,7 @@
         <module>iboot-system</module>
         <module>iboot-ai</module>
         <module>iboot-gateway</module>
+        <module>iboot-cli</module>
     </modules>
 
     <properties>
@@ -106,6 +107,9 @@
 
         <!-- AgentScope Java（阶段 1.3 智能体编排） -->
         <agentscope.version>2.0.1</agentscope.version>
+
+        <!-- 开发者 CLI：命令行解析 -->
+        <picocli.version>4.7.7</picocli.version>
 
         <!-- Document parsing -->
         <pdfbox.version>3.0.5</pdfbox.version>

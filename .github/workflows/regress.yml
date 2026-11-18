@@ -42,6 +42,10 @@ jobs:
         timeout-minutes: 8
         run: mvn -B -pl iboot-gateway test
 
+      - name: 开发者 CLI 单元测试
+        timeout-minutes: 5
+        run: mvn -B -pl iboot-cli test
+
   full-regress:
     name: 全栈回归
     if: github.event_name != 'pull_request'
@@ -81,6 +85,10 @@ jobs:
 
       - name: 回归检查
         run: bash scripts/regress/regress.sh
+
+      - name: 开发者 CLI 回归
+        timeout-minutes: 10
+        run: bash scripts/regress/cli.sh
 
       - name: 失败时输出日志
         if: failure()

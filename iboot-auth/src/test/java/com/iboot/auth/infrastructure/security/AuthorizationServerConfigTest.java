@@ -74,6 +74,25 @@ class AuthorizationServerConfigTest {
     }
 
     /**
+     * 开发者 CLI 客户端同样是公共客户端，只登记 loopback 回调。
+     */
+    @Test
+    void cliClientUsesLoopbackRedirectAndProofKey() {
+        RegisteredClientRepository repository = config.registeredClientRepository(properties);
+        RegisteredClient client = repository.findByClientId(properties.getCliClientId());
+
+        assertThat(client).isNotNull();
+        assertThat(client.getClientAuthenticationMethods())
+                .containsExactly(ClientAuthenticationMethod.NONE);
+        assertThat(client.getClientSettings().isRequireProofKey()).isTrue();
+        assertThat(client.getClientSettings().isRequireAuthorizationConsent()).isFalse();
+        assertThat(client.getAuthorizationGrantTypes())
+                .contains(AuthorizationGrantType.AUTHORIZATION_CODE, AuthorizationGrantType.REFRESH_TOKEN);
+        assertThat(client.getRedirectUris()).containsExactlyElementsOf(properties.getCliRedirectUris());
+        assertThat(client.getPostLogoutRedirectUris()).isEmpty();
+    }
+
+    /**
      * 签发者取自配置。
      */
     @Test

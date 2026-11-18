@@ -208,6 +208,12 @@ GET /api/users?page=1&size=20&sort=createTime&order=desc
      │◄──────────────│               │               │
 ```
 
+### 6.5.1 开发者 CLI
+
+命令行客户端 `iboot-cli` 使用授权码 + PKCE，经网关调用 `/api/**`，并携带
+`Accept-Version: 1`。CLI 不复制功能权限或数据范围判断，二者仍由服务端执行；安装、登录与
+命令清单见 [25-开发者 CLI 操作指南](<./25-开发者 CLI 操作指南.md>)。
+
 ### 6.6 Token 格式
 
 **请求头格式：**
