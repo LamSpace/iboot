@@ -66,4 +66,31 @@ class MainCommandTest {
         assertThat(commandLine().execute("api", "DELETE", "/api/user/1", "--dry-run"))
                 .isZero();
     }
+
+    @Test
+    void opsWriteCommandsRequireConfirmation() {
+        assertThat(commandLine().execute("job", "run", "1"))
+                .isEqualTo(ExitCode.CONFIRM);
+        assertThat(commandLine().execute("backup", "trigger"))
+                .isEqualTo(ExitCode.CONFIRM);
+        assertThat(commandLine().execute("online", "kick", "abc"))
+                .isEqualTo(ExitCode.CONFIRM);
+    }
+
+    @Test
+    void opsWriteCommandsDryRunSucceed() {
+        assertThat(commandLine().execute("job", "run", "1", "--dry-run")).isZero();
+        assertThat(commandLine().execute("backup", "trigger", "--dry-run")).isZero();
+        assertThat(commandLine().execute("online", "kick", "abc", "--dry-run")).isZero();
+    }
+
+    @Test
+    void configAddUseAndRemoveContext() {
+        assertThat(commandLine().execute("config", "add", "staging",
+                "--base-url", "https://staging.example.com", "--use")).isZero();
+        assertThat(commandLine().execute("config", "remove", "staging"))
+                .isEqualTo(ExitCode.USAGE);
+        assertThat(commandLine().execute("config", "use", "dev")).isZero();
+        assertThat(commandLine().execute("config", "remove", "staging")).isZero();
+    }
 }

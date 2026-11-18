@@ -75,4 +75,22 @@ class ConfigStoreTest {
                 .isInstanceOf(CliException.class)
                 .hasMessageContaining("context 不存在");
     }
+
+    @Test
+    void removesNonCurrentContext() {
+        ConfigStore store = store();
+        store.put(new Context("prod", "https://iboot.example.com", null, null, null), false);
+
+        store.remove("prod");
+
+        assertThat(store().load().find("prod")).isEmpty();
+        assertThat(store().current().name()).isEqualTo("dev");
+    }
+
+    @Test
+    void rejectsRemovingCurrentContext() {
+        assertThatThrownBy(() -> store().remove("dev"))
+                .isInstanceOf(CliException.class)
+                .hasMessageContaining("当前 context");
+    }
 }

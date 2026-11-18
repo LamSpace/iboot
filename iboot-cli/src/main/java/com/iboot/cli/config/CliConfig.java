@@ -106,4 +106,27 @@ public record CliConfig(List<Context> contexts, String currentContext) {
         updated.add(context);
         return new CliConfig(updated, select ? context.name() : currentContext);
     }
+
+    /**
+     * 删除指定上下文。
+     *
+     * @param name 上下文名称
+     * @return 删除后的配置
+     * @throws IllegalArgumentException 上下文不存在或为当前上下文时抛出
+     */
+    public CliConfig withoutContext(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("context 名称不能为空");
+        }
+        if (name.equals(currentContext)) {
+            throw new IllegalArgumentException("不能删除当前 context：" + name + "，请先切换到其他 context");
+        }
+        if (find(name).isEmpty()) {
+            throw new IllegalArgumentException("context 不存在：" + name);
+        }
+        List<Context> remaining = contexts.stream()
+                .filter(context -> !context.name().equals(name))
+                .toList();
+        return new CliConfig(remaining, currentContext);
+    }
 }

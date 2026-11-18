@@ -133,4 +133,20 @@ public class ConfigStore {
     public void put(Context context, boolean select) {
         save(load().withContext(context, select));
     }
+
+    /**
+     * 删除指定上下文。
+     *
+     * @param name 上下文名称
+     * @throws CliException 上下文不存在或为当前上下文时抛出
+     */
+    public void remove(String name) {
+        CliConfig updated;
+        try {
+            updated = load().withoutContext(name);
+        } catch (IllegalArgumentException e) {
+            throw new CliException(ExitCode.USAGE, e.getMessage());
+        }
+        save(updated);
+    }
 }

@@ -50,7 +50,14 @@ mvn -pl iboot-cli package
 ./bin/iboot config list
 ./bin/iboot config use dev
 ./bin/iboot config show
+
+# 新增/删除 context；--issuer 省略时使用 base URL
+./bin/iboot config add staging --base-url https://staging.example.com --use
+./bin/iboot config remove staging
 ```
+
+新增 context 可用 `--issuer`、`--client-id`、`--redirect-uri` 覆盖默认值；删除当前
+context 会被拒绝，需先切换到其他 context。删除 context 时同时清理该 context 的本地凭据。
 
 `credentials.json` 权限为 `0600`，按 context 隔离；切换 context 不会复用其他环境的令牌。
 
@@ -72,6 +79,23 @@ mvn -pl iboot-cli package
 
 所有查询命令支持 `-p/--page`、`-s/--size`；`--json` 输出解包后的业务数据，`--raw`
 输出原始响应（含 CloudEvents 信封）。
+
+### 运维写命令
+
+| 命令 | 说明 |
+|---|---|
+| `iboot job run <id> --yes` | 立即执行一次定时任务；结果用 `job logs --job-id <id>` 查看 |
+| `iboot job logs --job-id <id>` | 按任务过滤执行日志 |
+| `iboot backup trigger --yes` | 手动触发一次备份 |
+| `iboot backup trigger --wait --yes` | 触发并轮询到 `SUCCESS`/`FAILED` |
+| `iboot online kick <tokenId> --yes` | 强制下线 `online list` 中的会话 |
+
+写命令默认拒绝执行，必须带 `--yes`；`--dry-run` 只打印方法、路径和请求体，不发送请求。
+`backup trigger --wait` 默认每 2 秒轮询、最多等待 300 秒，可用 `--interval` / `--timeout`
+覆盖；等待失败或超时以业务错误退出码结束，不会删除或修改备份记录。
+
+写操作由服务端 `@Log` 记录，可用 `iboot log operate` 查看；Docker 全量部署默认关闭备份，
+`backup trigger` 会返回“备份功能未启用”的业务错误，这是预期行为。
 
 ## 5. 输出与退出码
 
