@@ -16,9 +16,13 @@
 
 package com.iboot.cli.command;
 
+import com.iboot.cli.CliException;
+import com.iboot.cli.ExitCode;
+import com.iboot.cli.http.ApiResponse;
 import com.iboot.cli.output.Output;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
 
 import java.util.Map;
 
@@ -28,13 +32,13 @@ import java.util.Map;
  * @author iBoot Team
  * @since 1.0.0
  */
-@Command(name = "online", description = "查询在线会话",
-        subcommands = {OnlineCommand.ListCommand.class})
+@Command(name = "online", description = "查询在线会话与强制下线",
+        subcommands = {OnlineCommand.ListCommand.class, OnlineCommand.KickCommand.class})
 public class OnlineCommand extends BaseCommand {
 
     @Override
     public void run() {
-        Output.message("用法：iboot online [list]");
+        Output.message("用法：iboot online [list|kick]");
     }
 
     /**
@@ -51,6 +55,32 @@ public class OnlineCommand extends BaseCommand {
             print(get("/api/online/list", Map.of(
                     "pageNum", String.valueOf(page.page),
                     "pageSize", String.valueOf(page.size))));
+        }
+    }
+
+    /**
+     * 强制下线在线会话。
+     */
+    @Command(name = "kick", description = "强制下线指定在线会话")
+    public static class KickCommand extends BaseCommand {
+
+        @Parameters(index = "0", paramLabel = "<tokenId>", description = "online list 返回的脱敏 tokenId")
+        String tokenId;
+
+        @Override
+        public void run() {
+            if (tokenId == null || tokenId.isBlank()) {
+                throw new CliException(ExitCode.USAGE, "tokenId 不能为空");
+            }
+            ApiResponse response = write("DELETE", "/api/online/" + tokenId, null);
+            if (response == null) {
+                return;
+            }
+            if (options.json || options.raw) {
+                print(response);
+            } else {
+                Output.message("已强制下线：" + tokenId);
+            }
         }
     }
 }

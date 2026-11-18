@@ -2,7 +2,7 @@
 # 开发者 CLI 端到端回归。
 #
 # 覆盖：浏览器授权码登录、user list 与网关数据一致、数据范围、403 退出码、
-# --dry-run、logout 撤销与凭据权限。
+# 运维写命令（任务/备份/在线强退）、context 增删、--dry-run、logout 撤销与凭据权限。
 #
 # 前置：九个业务服务与网关已启动；CLI jar 已构建（mvn -pl iboot-cli package）。
 # 环境变量：REG_BASE、REG_GATEWAY、REG_USER、REG_PASS、IBOOT_CLI。
@@ -20,8 +20,10 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
 CLI="${IBOOT_CLI:-$ROOT/bin/iboot}"
 CLI_CONFIG_DIR="$(mktemp -d)"
+CONFIG_TEST_DIR="$(mktemp -d)"
 REG_CLI_ROLE_ID=""
 REG_CLI_USER_ID=""
+REG_CLI_JOB_ID=""
 CLI_COOKIE_JAR="$CLI_CONFIG_DIR/cookies.jar"
 CLI_LOGIN_LOG="$CLI_CONFIG_DIR/login.log"
 USER_NAME="regress_cli"
@@ -32,9 +34,13 @@ export IBOOT_CONFIG_DIR="$CLI_CONFIG_DIR"
 
 cleanup() {
     reg_login >/dev/null 2>&1 || true
+    if [ -n "$REG_CLI_JOB_ID" ]; then
+        curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+            "$REG_GATEWAY/api/job/$REG_CLI_JOB_ID" >/dev/null 2>&1 || true
+    fi
     if [ -n "$REG_CLI_USER_ID" ]; then reg_del "/api/user/$REG_CLI_USER_ID" >/dev/null 2>&1 || true; fi
     if [ -n "$REG_CLI_ROLE_ID" ]; then reg_del "/api/role/$REG_CLI_ROLE_ID" >/dev/null 2>&1 || true; fi
-    rm -rf "$CLI_CONFIG_DIR"
+    rm -rf "$CLI_CONFIG_DIR" "$CONFIG_TEST_DIR"
 }
 trap cleanup EXIT
 
@@ -160,6 +166,86 @@ else
 fi
 mv "$backup" "$credentials"
 
+reg_log "== 运维写命令：任务 =="
+job_body='{"jobName":"CLI回归任务","jobGroup":"DEFAULT","invokeTarget":"sampleTask.noParams","cronExpression":"0 0 3 * * ?","status":0,"remark":"CLI regress"}'
+job_created="$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+    -d "$job_body" "$REG_GATEWAY/api/job" | reg_unwrap)"
+REG_CLI_JOB_ID="$(printf '%s' "$job_created" | jq -r '.data.id // empty')"
+[ -n "$REG_CLI_JOB_ID" ] || reg_die "创建 CLI 回归任务失败：$job_created"
+cli_run job run "$REG_CLI_JOB_ID" --dry-run >/dev/null || reg_fail "job run --dry-run 失败"
+cli_run job run "$REG_CLI_JOB_ID" --yes >/dev/null || reg_fail "job run --yes 失败"
+job_log_found=0
+for _ in $(seq 1 15); do
+    job_logs="$(cli_run job logs --job-id "$REG_CLI_JOB_ID" --json --size 10)"
+    if printf '%s' "$job_logs" | jq -e --arg id "$REG_CLI_JOB_ID" \
+        '[.data[]? | select((.jobId|tostring)==$id)] | length > 0' >/dev/null 2>&1; then
+        job_log_found=1
+        break
+    fi
+    sleep 1
+done
+if [ "$job_log_found" -eq 1 ]; then
+    reg_pass "job run 后可按 job-id 查到执行日志"
+else
+    reg_fail "job logs --job-id 未查到执行日志"
+fi
+curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/job/$REG_CLI_JOB_ID" >/dev/null || true
+REG_CLI_JOB_ID=""
+job_audit_found=0
+for _ in $(seq 1 10); do
+    audit_logs="$(cli_run log operate --json --size 50)"
+    if printf '%s' "$audit_logs" | jq -e \
+        '[.data[]? | select((.operUrl // "") | contains("/api/job/"))] | length > 0' >/dev/null 2>&1; then
+        job_audit_found=1
+        break
+    fi
+    sleep 1
+done
+if [ "$job_audit_found" -eq 1 ]; then
+    reg_pass "任务写操作进入操作日志"
+else
+    reg_fail "操作日志未找到任务写操作"
+fi
+
+reg_log "== 运维写命令：备份 =="
+set +e
+backup_output="$(cli_run backup trigger --wait --json --yes --timeout 120 --interval 2)"
+backup_code=$?
+set -e
+if [ "$backup_code" -eq 6 ] && printf '%s' "$backup_output" | grep -q "备份功能未启用"; then
+    reg_pass "备份禁用映射为业务错误"
+elif [ "$backup_code" -eq 0 ] && printf '%s' "$backup_output" | jq -e '.status == "SUCCESS"' >/dev/null 2>&1; then
+    reg_pass "备份触发并等待到 SUCCESS"
+else
+    reg_fail "备份触发/等待失败（exit=$backup_code, output=$(printf '%s' "$backup_output" | head -c 200)）"
+fi
+
+reg_log "== context 增删 =="
+config_cli() {
+    IBOOT_CONFIG_DIR="$CONFIG_TEST_DIR" cli_exec "$@"
+}
+config_cli config add staging --base-url https://staging.example.com --use >/dev/null \
+    || reg_fail "config add 失败"
+config_json="$(config_cli config list --json)"
+if printf '%s' "$config_json" | jq -e '.[]? | select(.name=="staging")' >/dev/null 2>&1; then
+    reg_pass "config add 写入新 context"
+else
+    reg_fail "config add 后列表中没有新 context"
+fi
+set +e
+config_cli config remove staging >/dev/null 2>&1
+remove_current_status=$?
+set -e
+if [ "$remove_current_status" -eq 2 ]; then
+    reg_pass "拒绝删除当前 context"
+else
+    reg_fail "删除当前 context 退出码为 $remove_current_status，期望 2"
+fi
+config_cli config use dev >/dev/null || reg_fail "config use dev 失败"
+config_cli config remove staging >/dev/null || reg_fail "config remove 非当前 context 失败"
+reg_pass "非当前 context 删除成功"
+
 reg_log "== 数据范围与越权 =="
 reg_login "$USER_NAME" "$USER_PASS"
 scope_json="$(IBOOT_TOKEN="$REG_TOKEN" "$CLI" user list --json --size 10 2>/dev/null)" || reg_fail "受限用户 CLI 查询失败"
@@ -177,6 +263,41 @@ if [ "$denied_status" -eq 4 ]; then
     reg_pass "无备份权限时退出码为 4（越权）"
 else
     reg_fail "无备份权限时退出码为 $denied_status，期望 4"
+fi
+
+reg_log "== 在线会话强退 =="
+reg_login "$USER_NAME" "$USER_PASS"
+restricted_token="$REG_TOKEN"
+online_list="$(cli_run online list --json --size 100)"
+token_id="$(printf '%s' "$online_list" | jq -r --arg u "$USER_NAME" \
+    '.data[]? | select(.username==$u) | .tokenId' | head -1)"
+if [ -n "$token_id" ]; then
+    cli_run online kick "$token_id" --yes >/dev/null || reg_fail "online kick 失败"
+    kicked_status="$(curl -sS -o /dev/null -w '%{http_code}' \
+        -H "Authorization: Bearer $restricted_token" \
+        "$REG_GATEWAY/api/user/list?pageNum=1&pageSize=1")"
+    if [ "$kicked_status" = "401" ]; then
+        reg_pass "online kick 后受限用户令牌被拒绝"
+    else
+        reg_fail "online kick 后受限用户令牌仍可用（HTTP $kicked_status）"
+    fi
+    online_audit_found=0
+    for _ in $(seq 1 10); do
+        online_audit="$(cli_run log operate --json --size 50)"
+        if printf '%s' "$online_audit" | jq -e \
+            '[.data[]? | select((.operUrl // "") | contains("/api/online/"))] | length > 0' >/dev/null 2>&1; then
+            online_audit_found=1
+            break
+        fi
+        sleep 1
+    done
+    if [ "$online_audit_found" -eq 1 ]; then
+        reg_pass "在线强退进入操作日志"
+    else
+        reg_fail "操作日志未找到在线强退记录"
+    fi
+else
+    reg_fail "在线列表未找到受限用户会话"
 fi
 
 reg_log "== 写保护与登出 =="

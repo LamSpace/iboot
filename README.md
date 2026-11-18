@@ -136,8 +136,9 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 
 **网关 `iboot-gateway`**：统一路由、跨域、SSE 长连接透传与服务降级。
 
-**开发者 CLI `iboot-cli`**：授权码 + PKCE 登录、多 context、只读查询与 `iboot api` 逃生口；
-复用现有权限、数据范围与审计，不直连数据库。详见 [docs/25](<./docs/25-开发者 CLI 操作指南.md>)。
+**开发者 CLI `iboot-cli`**：授权码 + PKCE 登录、多 context、只读查询、运维写命令
+（任务/备份/在线强退）与 `iboot api` 逃生口；复用现有权限、数据范围与审计，不直连数据库。
+详见 [docs/25](<./docs/25-开发者 CLI 操作指南.md>)。
 
 **服务治理**：网关按路由限流（`429` 统一 JSON），`iboot-notify` 内部端点具备入口流控；规则存 Nacos 并热更新，Sentinel Dashboard（8858）为本地必选组件，治理指标进入 Prometheus。门户“微服务治理”菜单提供 Nacos 与 Sentinel 控制台入口：开发环境经门户同源代理内嵌，生产环境只保留内网跳转。审批 → 通知已改为本地 outbox + RocketMQ，消费失败按重试进入死信队列。
 
@@ -305,7 +306,7 @@ scripts/docker-deploy.sh up core
 | [docs/22 AI 工作台操作指南](<./docs/22-AI 工作台操作指南.md>) | 模型配置、RAG、智能体与知识图谱 |
 | [docs/11 可观测性设计](<./docs/11-可观测性设计.md>) | 指标、日志、告警与追踪 |
 | [docs/24 SkyWalking 与 Tempo 对比实验](<./docs/24-SkyWalking 与 Tempo 对比实验.md>) | 辅助 APM 栈、双后端验收、开销度量与选型结论 |
-| [docs/25 开发者 CLI 操作指南](<./docs/25-开发者 CLI 操作指南.md>) | CLI 安装、登录、context、只读命令与安全边界 |
+| [docs/25 开发者 CLI 操作指南](<./docs/25-开发者 CLI 操作指南.md>) | CLI 安装、登录、context、只读/写命令与安全边界 |
 | [openspec/specs](openspec/specs) | 能力契约与变更记录 |
 | [openspec/changes/archive](openspec/changes/archive) | 历次变更的 proposal / design / tasks |
 

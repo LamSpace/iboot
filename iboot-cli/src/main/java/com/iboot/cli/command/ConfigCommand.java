@@ -16,10 +16,13 @@
 
 package com.iboot.cli.command;
 
+import com.iboot.cli.CliException;
+import com.iboot.cli.ExitCode;
 import com.iboot.cli.config.Context;
 import com.iboot.cli.http.ApiResponse;
 import com.iboot.cli.output.Output;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -36,14 +39,15 @@ import tools.jackson.databind.node.ObjectNode;
  */
 @Command(name = "config", description = "管理 context",
         subcommands = {ConfigCommand.ListCommand.class, ConfigCommand.UseCommand.class,
-                ConfigCommand.ShowCommand.class})
+                ConfigCommand.ShowCommand.class, ConfigCommand.AddCommand.class,
+                ConfigCommand.RemoveCommand.class})
 public class ConfigCommand extends BaseCommand {
 
     private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
     @Override
     public void run() {
-        Output.message("用法：iboot config [list|use|show]");
+        Output.message("用法：iboot config [list|use|show|add|remove]");
     }
 
     /**
@@ -95,6 +99,60 @@ public class ConfigCommand extends BaseCommand {
             Context context = context();
             Output.print(new ApiResponse(200, null, MAPPER.valueToTree(context),
                     MAPPER.valueToTree(context).toString()), options.json, false);
+        }
+    }
+
+    /**
+     * 新增或替换上下文。
+     */
+    @Command(name = "add", description = "新增或替换 context")
+    public static class AddCommand extends BaseCommand {
+
+        @Parameters(index = "0", paramLabel = "<name>", description = "context 名称")
+        String name;
+
+        @Option(names = "--base-url", required = true, description = "网关基址")
+        String baseUrl;
+
+        @Option(names = "--issuer", description = "OIDC 签发者；省略时使用 base URL")
+        String issuer;
+
+        @Option(names = "--client-id", description = "OAuth2 客户端标识")
+        String clientId;
+
+        @Option(names = "--redirect-uri", description = "loopback 回调地址")
+        String redirectUri;
+
+        @Option(names = "--use", description = "新增后切换为当前 context")
+        boolean use;
+
+        @Override
+        public void run() {
+            Context context;
+            try {
+                context = new Context(name, baseUrl, issuer, clientId, redirectUri);
+            } catch (IllegalArgumentException e) {
+                throw new CliException(ExitCode.USAGE, e.getMessage());
+            }
+            app().configStore().put(context, use);
+            Output.message("已新增 context：" + context.name() + "（" + context.baseUrl() + "）");
+        }
+    }
+
+    /**
+     * 删除上下文。
+     */
+    @Command(name = "remove", description = "删除 context")
+    public static class RemoveCommand extends BaseCommand {
+
+        @Parameters(index = "0", paramLabel = "<name>", description = "context 名称")
+        String name;
+
+        @Override
+        public void run() {
+            app().configStore().remove(name);
+            app().credentialStore().delete(name);
+            Output.message("已删除 context：" + name);
         }
     }
 }
