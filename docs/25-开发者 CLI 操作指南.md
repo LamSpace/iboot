@@ -207,7 +207,20 @@ CLI 会话在 `add-multi-client-sessions` 落地前**不写入在线名单**：
 | 连接失败 | 确认 `http://localhost:8088/actuator/health` 可访问；Docker 环境先执行 `scripts/docker-deploy.sh status` |
 | OIDC 发现失败 | 确认 `/.well-known/openid-configuration` 经网关可达 |
 
-## 8. 相关文档
+## 8. 能力边界与后续
+
+CLI 已覆盖登录、只读查询、运维写命令、PAT 与 CI 自动化；功能面到此为止，不设新版本号，
+后续由真实使用驱动。
+
+- 可选的体验打磨：shell completion、预构建 jar/安装脚本、`iboot api -d @file`、
+  `token list --expiring-in`、`job logs --follow`；不单独立项。
+- 属于其他能力域：门户 PAT 管理页、管理员查看/撤销他人 PAT、scope 预设、PAT 权限实时同步。
+- 明确不做：管理类 CRUD、`backup restore` 等破坏性操作、消息/审批/AI 命令、MCP 通道与
+  多客户端会话。
+
+路线、非目标与已登记的过渡期限制见 [ROADMAP](../ROADMAP.md)。
+
+## 9. 相关文档
 
 - [06-API 集成](<./06-API 集成.md>)
 - [10-后端配置详解](<./10-后端配置详解.md>)（OAuth2 客户端配置）
