@@ -47,7 +47,8 @@ public class StatusCommand extends BaseCommand {
         Context context = context();
         TokenSet tokens = app().tokens(context.name());
         JwtPayload payload = tokens == null ? null : JwtPayload.parse(tokens.accessToken());
-        String source = System.getenv("IBOOT_TOKEN") == null ? "credentials" : "IBOOT_TOKEN";
+        String source = app().hasTokenOverride() ? "stdin"
+                : System.getenv("IBOOT_TOKEN") == null ? "credentials" : "IBOOT_TOKEN";
         if (options.json) {
             ObjectNode node = JsonNodeFactory.instance.objectNode();
             node.put("context", context.name());

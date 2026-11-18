@@ -29,6 +29,7 @@ import com.iboot.cli.command.OnlineCommand;
 import com.iboot.cli.command.ParamCommand;
 import com.iboot.cli.command.RoleCommand;
 import com.iboot.cli.command.StatusCommand;
+import com.iboot.cli.command.TokenCommand;
 import com.iboot.cli.command.UserCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -62,6 +63,7 @@ import picocli.CommandLine.Command;
                 BackupCommand.class,
                 LogCommand.class,
                 OnlineCommand.class,
+                TokenCommand.class,
                 ApiCommand.class
         }
 )

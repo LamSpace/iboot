@@ -136,6 +136,21 @@ public class Constants {
     public static final String ONLINE_TOKEN_KEY = "online_token:";
 
     /**
+     * 个人访问令牌撤销记录 Redis Key 前缀（jti -> 会话快照）
+     */
+    public static final String PAT_TOKEN_KEY = "pat_tokens:";
+
+    /**
+     * 个人访问令牌最近使用时间 Redis Key 前缀（jti -> 时间）
+     */
+    public static final String PAT_LAST_USED_KEY = "pat_last_used:";
+
+    /**
+     * 个人访问令牌的声明键；声明为 {@code true} 时走独立验证分支
+     */
+    public static final String PAT_CLAIM = "pat";
+
+    /**
      * 安全上下文中的部门 ID 键。
      */
     public static final String DEPT_ID = "deptId";

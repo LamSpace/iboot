@@ -22,6 +22,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,5 +95,35 @@ class MainCommandTest {
                 .isEqualTo(ExitCode.USAGE);
         assertThat(commandLine().execute("config", "use", "dev")).isZero();
         assertThat(commandLine().execute("config", "remove", "staging")).isZero();
+    }
+
+    @Test
+    void tokenCommandsRequireConfirmation() {
+        assertThat(commandLine().execute("token", "create", "ci"))
+                .isEqualTo(ExitCode.CONFIRM);
+        assertThat(commandLine().execute("token", "revoke", "1"))
+                .isEqualTo(ExitCode.CONFIRM);
+    }
+
+    @Test
+    void tokenCommandsDryRunSucceed() {
+        assertThat(commandLine().execute("token", "create", "ci", "--dry-run")).isZero();
+        assertThat(commandLine().execute("token", "revoke", "1", "--dry-run")).isZero();
+    }
+
+    @Test
+    void tokenHelpSucceeds() {
+        assertThat(commandLine().execute("token", "--help")).isZero();
+    }
+
+    @Test
+    void tokenStdinIsUsedForStatus() {
+        InputStream original = System.in;
+        try {
+            System.setIn(new ByteArrayInputStream("  stdin-token  ".getBytes(StandardCharsets.UTF_8)));
+            assertThat(commandLine().execute("status", "--token-stdin", "--json")).isZero();
+        } finally {
+            System.setIn(original);
+        }
     }
 }

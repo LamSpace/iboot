@@ -102,23 +102,22 @@
 独立模块 `iboot-cli`，只经网关调用既有接口，复用现有权限、数据范围与审计；不进入
 Docker/Helm 部署清单。
 
-v0–v2 已完成：登录与只读查询（v1）、运维写命令（v2，含任务执行、备份触发/等待、
-在线强退与 context 增删），命令与判据见 [docs/25](<./docs/25-开发者 CLI 操作指南.md>)。
-
-剩余：
-
-| 版本 | 内容 | 判据 |
-|---|---|---|
-| v3 | PAT、CI 示例、本地 SKILL.md | 无浏览器环境完成一次备份触发 |
+v0–v3 已完成：登录与只读查询（v1）、运维写命令（v2，含任务执行、备份触发/等待、
+在线强退与 context 增删）、个人访问令牌与 CI 自动化（v3，含 PAT、GitHub Actions 示例、
+本地 SKILL.md）。判据“无浏览器环境完成一次备份触发”已由 `token create` +
+`--token-stdin` 满足。命令见 [docs/25](<./docs/25-开发者 CLI 操作指南.md>)，CI 示例见
+[docs/26](<./docs/26-CI 与个人访问令牌.md>)。
 
 **非目标**：不做门户替代；不做 Web 智能体的执行通道；不覆盖全部 206 个接口；不做离线缓存；
 不引入密码授权。
 
-**过渡期限制（已知限制，暂不改造）**：CLI 会话不写入在线名单，管理员按用户强制下线不覆盖
-CLI 会话。当前阶段保留该限制，不启动 `add-multi-client-sessions`；需要管理员强制下线覆盖
-CLI 会话，或需要多客户端会话管理时再单独立项。契约见
-`openspec/specs/auth-service/spec.md`，变更记录见
-`openspec/changes/archive/2026-11-18-add-developer-cli/`。
+**过渡期限制（已知限制，暂不改造）**：CLI 会话与 PAT 都不写入在线名单，管理员按用户
+强制下线不覆盖它们。PAT 通过 `token revoke` 或用户停用/删除撤销。当前阶段保留该限制，
+不启动 `add-multi-client-sessions`；需要管理员强制下线覆盖 CLI/PAT，或需要多客户端会话
+管理时再单独立项。契约见 `openspec/specs/auth-service/spec.md` 与
+`openspec/specs/personal-access-token/spec.md`，变更记录见
+`openspec/changes/archive/2026-11-18-add-developer-cli/` 与
+`openspec/changes/add-personal-access-token/`。
 
 ---
 

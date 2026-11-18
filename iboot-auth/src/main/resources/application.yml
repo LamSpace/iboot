@@ -89,6 +89,11 @@ iboot:
       refresh-token-minutes: ${IBOOT_AUTH_REFRESH_TOKEN_MINUTES:30}
       jwk-key-file: ${IBOOT_AUTH_JWK_FILE:}
       brand-name: ${IBOOT_BRAND_NAME:iBoot}
+    # 个人访问令牌策略：有效期默认 30 天、上限 90 天，每用户最多 10 个活动令牌
+    pat:
+      default-days: ${IBOOT_AUTH_PAT_DEFAULT_DAYS:30}
+      max-days: ${IBOOT_AUTH_PAT_MAX_DAYS:90}
+      max-per-user: ${IBOOT_AUTH_PAT_MAX_PER_USER:10}
   security:
     whitelist:
       # 根路径只做一次到门户的重定向，没有业务含义

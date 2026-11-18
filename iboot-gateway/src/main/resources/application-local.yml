@@ -58,14 +58,14 @@ spring:
               predicates:
                 - Path=/api/monitor/backup/**,/api/job/**
 
-            # 认证服务：旧的登录/登出/注册 + OAuth2/OIDC 标准端点与登录页。
+            # 认证服务：旧的登录/登出/注册 + OAuth2/OIDC 标准端点与登录页 + 个人访问令牌。
             # GET /api/auth/scope 返回数据权限范围，属于系统域，由系统服务承载，
             # 因此认证相关路径必须逐条列出而不是 /api/auth/**。
             - id: auth
               uri: ${IBOOT_AUTH_URI:http://localhost:8083}
               order: 30
               predicates:
-                - Path=/api/auth/login,/api/auth/logout,/api/auth/register,/oauth2/**,/.well-known/**,/connect/**,/login
+                - Path=/api/auth/login,/api/auth/logout,/api/auth/register,/api/auth/tokens/**,/oauth2/**,/.well-known/**,/connect/**,/login
               filters:
                 # 认证服务按请求 Host 拼登录页地址；保留原始 Host 才不会把内部端口暴露给浏览器
                 - PreserveHostHeader

@@ -118,6 +118,21 @@ public class SecurityUtils {
     }
 
     /**
+     * 判断当前请求是否使用个人访问令牌认证。
+     *
+     * <p>PAT 不能用于管理令牌自身；控制器据此拒绝签发与撤销请求。
+     *
+     * @return 主体带有 {@code pat=true} 时返回 {@code true}
+     */
+    public static boolean isPersonalAccessToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof Map<?, ?> principal)) {
+            return false;
+        }
+        return Boolean.TRUE.equals(principal.get(Constants.PAT_CLAIM));
+    }
+
+    /**
      * 获取当前认证信息
      *
      * @return 认证信息

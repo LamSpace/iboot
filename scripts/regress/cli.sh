@@ -2,7 +2,9 @@
 # 开发者 CLI 端到端回归。
 #
 # 覆盖：浏览器授权码登录、user list 与网关数据一致、数据范围、403 退出码、
-# 运维写命令（任务/备份/在线强退）、context 增删、--dry-run、logout 撤销与凭据权限。
+# 运维写命令（任务/备份/在线强退）、context 增删、--dry-run、logout 撤销与凭据权限，
+# 以及个人访问令牌（签发、标准输入注入、在线名单隔离、撤销、PAT 不能管理 PAT、
+# 用户停用后失效与重新启用不恢复）。
 #
 # 前置：九个业务服务与网关已启动；CLI jar 已构建（mvn -pl iboot-cli package）。
 # 环境变量：REG_BASE、REG_GATEWAY、REG_USER、REG_PASS、IBOOT_CLI。
@@ -298,6 +300,121 @@ if [ -n "$token_id" ]; then
     fi
 else
     reg_fail "在线列表未找到受限用户会话"
+fi
+
+reg_log "== 个人访问令牌 =="
+reg_login
+online_before="$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/online/count" | reg_unwrap | jq -r '.data // 0')"
+pat_json="$(cli_run token create regress-pat --expires-days 1 --yes --json)" \
+    || reg_fail "token create 失败"
+pat_token="$(printf '%s' "$pat_json" | jq -r '.token // empty')"
+pat_id="$(printf '%s' "$pat_json" | jq -r '.id // empty')"
+if [ -n "$pat_token" ] && [ -n "$pat_id" ]; then
+    reg_pass "签发 PAT 并返回一次明文"
+else
+    reg_fail "签发 PAT 未返回明文或 ID：$(printf '%s' "$pat_json" | head -c 200)"
+fi
+
+pat_list="$(cli_run token list --json)"
+if printf '%s' "$pat_list" | grep -Fq "$pat_token"; then
+    reg_fail "token list 返回了令牌明文"
+else
+    reg_pass "token list 只返回元数据"
+fi
+
+if IBOOT_TOKEN="$pat_token" cli_exec user list --json --size 1 >/dev/null 2>&1; then
+    reg_pass "PAT 可调用只读接口"
+else
+    reg_fail "PAT 调用只读接口失败"
+fi
+
+if printf '%s' "$pat_token" | cli_exec user list --json --size 1 --token-stdin >/dev/null 2>&1; then
+    reg_pass "PAT 可从标准输入注入"
+else
+    reg_fail "PAT 标准输入注入失败"
+fi
+
+online_after="$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    "$REG_GATEWAY/api/online/count" | reg_unwrap | jq -r '.data // 0')"
+if [ "$online_before" = "$online_after" ]; then
+    reg_pass "PAT 不进入在线名单"
+else
+    reg_fail "PAT 改变了在线数量（$online_before -> $online_after）"
+fi
+
+set +e
+IBOOT_TOKEN="$pat_token" cli_exec token create not-allowed --yes >/dev/null 2>&1
+pat_manage_status=$?
+set -e
+if [ "$pat_manage_status" -eq 4 ]; then
+    reg_pass "PAT 不能签发 PAT（403）"
+else
+    reg_fail "PAT 签发 PAT 退出码为 $pat_manage_status，期望 4"
+fi
+
+pat_audit_found=0
+for _ in $(seq 1 10); do
+    pat_audit="$(cli_run log operate --json --size 50)"
+    if printf '%s' "$pat_audit" | jq -e \
+        '[.data[]? | select((.operUrl // "") | contains("/api/auth/tokens"))] | length > 0' \
+        >/dev/null 2>&1; then
+        pat_audit_found=1
+        break
+    fi
+    sleep 1
+done
+if [ "$pat_audit_found" -eq 1 ]; then
+    reg_pass "PAT 签发进入操作日志"
+else
+    reg_fail "操作日志未找到 PAT 签发记录"
+fi
+if printf '%s' "$pat_audit" | grep -Fq "$pat_token"; then
+    reg_fail "操作日志包含令牌明文"
+else
+    reg_pass "操作日志不含令牌明文"
+fi
+
+cli_run token revoke "$pat_id" --yes >/dev/null || reg_fail "token revoke 失败"
+set +e
+IBOOT_TOKEN="$pat_token" cli_exec user list --json --size 1 >/dev/null 2>&1
+pat_revoked_status=$?
+set -e
+if [ "$pat_revoked_status" -eq 3 ]; then
+    reg_pass "撤销后 PAT 立即失效"
+else
+    reg_fail "撤销后 PAT 退出码为 $pat_revoked_status，期望 3"
+fi
+
+reg_log "== PAT 与用户停用 =="
+reg_login "$USER_NAME" "$USER_PASS"
+user_pat_json="$(IBOOT_TOKEN="$REG_TOKEN" cli_exec token create regress-disable \
+    --expires-days 1 --yes --json)" || reg_fail "受限用户签发 PAT 失败"
+user_pat="$(printf '%s' "$user_pat_json" | jq -r '.token // empty')"
+[ -n "$user_pat" ] || reg_fail "受限用户 PAT 未返回明文"
+
+reg_login
+disable_resp="$(reg_put "/api/user/changeStatus?id=$REG_CLI_USER_ID&status=0")"
+reg_expect_ok "停用用户" "$disable_resp"
+set +e
+IBOOT_TOKEN="$user_pat" cli_exec user list --json --size 1 >/dev/null 2>&1
+disabled_pat_status=$?
+set -e
+if [ "$disabled_pat_status" -eq 3 ]; then
+    reg_pass "停用用户后其 PAT 立即失效"
+else
+    reg_fail "停用用户后 PAT 退出码为 $disabled_pat_status，期望 3"
+fi
+
+reg_put "/api/user/changeStatus?id=$REG_CLI_USER_ID&status=1" >/dev/null || true
+set +e
+IBOOT_TOKEN="$user_pat" cli_exec user list --json --size 1 >/dev/null 2>&1
+reenabled_pat_status=$?
+set -e
+if [ "$reenabled_pat_status" -eq 3 ]; then
+    reg_pass "重新启用不恢复旧 PAT"
+else
+    reg_fail "重新启用后旧 PAT 退出码为 $reenabled_pat_status，期望 3"
 fi
 
 reg_log "== 写保护与登出 =="

@@ -57,4 +57,12 @@ public class GlobalOptions {
      */
     @Option(names = "--dry-run", description = "只打印将要发送的请求")
     public boolean dryRun;
+
+    /**
+     * 从标准输入读取访问令牌。
+     *
+     * <p>用于 CI 注入 PAT，避免令牌出现在命令行参数与 shell 历史中。
+     */
+    @Option(names = "--token-stdin", description = "从标准输入读取访问令牌（优先于 IBOOT_TOKEN）")
+    public boolean tokenStdin;
 }
