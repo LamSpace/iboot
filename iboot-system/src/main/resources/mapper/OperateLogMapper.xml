@@ -21,6 +21,7 @@
         <result property="errorMsg" column="error_msg"/>
         <result property="operateTime" column="operate_time"/>
         <result property="costTime" column="cost_time"/>
+        <result property="authType" column="auth_type"/>
         <result property="deleted" column="deleted"/>
     </resultMap>
 

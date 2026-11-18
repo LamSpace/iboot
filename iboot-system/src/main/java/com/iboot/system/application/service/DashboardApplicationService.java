@@ -160,6 +160,7 @@ public class DashboardApplicationService {
                 .errorMsg(log.getErrorMsg())
                 .costTime(log.getCostTime())
                 .operTime(log.getOperateTime())
+                .authType(log.getAuthType())
                 .build();
     }
 

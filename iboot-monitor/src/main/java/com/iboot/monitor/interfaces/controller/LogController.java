@@ -361,6 +361,7 @@ public class LogController {
                 .errorMsg(log.getErrorMsg())
                 .costTime(log.getCostTime())
                 .operTime(log.getOperateTime())
+                .authType(log.getAuthType())
                 .build();
     }
 
@@ -392,6 +393,7 @@ public class LogController {
                 .status(log.getStatus())
                 .costTime(log.getCostTime())
                 .operTime(log.getOperateTime())
+                .authType(log.getAuthType())
                 .build();
     }
 

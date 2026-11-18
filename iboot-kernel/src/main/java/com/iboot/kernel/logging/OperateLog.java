@@ -114,6 +114,11 @@ public class OperateLog {
      */
     private Long costTime;
 
+    /**
+     * 认证方式：SESSION-交互式会话，PAT-个人访问令牌
+     */
+    private String authType;
+
     @SuppressWarnings("all")
     public OperateLog() {
     }
@@ -138,12 +143,14 @@ public class OperateLog {
      * @param errorMsg      错误消息
      * @param operateTime   操作时间
      * @param costTime      耗时（毫秒）
+     * @param authType      认证方式：SESSION-交互式会话，PAT-个人访问令牌
      */
     @SuppressWarnings("all")
     public OperateLog(final Long id, final String title, final Integer businessType, final String method,
                       final String requestMethod, final Integer operatorType, final String operatorName, final String deptName,
                       final String url, final String ip, final String location, final String param, final String result,
-                      final Integer status, final String errorMsg, final LocalDateTime operateTime, final Long costTime) {
+                      final Integer status, final String errorMsg, final LocalDateTime operateTime, final Long costTime,
+                      final String authType) {
         this.id = id;
         this.title = title;
         this.businessType = businessType;
@@ -161,6 +168,7 @@ public class OperateLog {
         this.errorMsg = errorMsg;
         this.operateTime = operateTime;
         this.costTime = costTime;
+        this.authType = authType;
     }
 
     @SuppressWarnings("all")
@@ -449,6 +457,22 @@ public class OperateLog {
         this.costTime = costTime;
     }
 
+    /**
+     * 认证方式：SESSION-交互式会话，PAT-个人访问令牌
+     */
+    @SuppressWarnings("all")
+    public String getAuthType() {
+        return this.authType;
+    }
+
+    /**
+     * 认证方式：SESSION-交互式会话，PAT-个人访问令牌
+     */
+    @SuppressWarnings("all")
+    public void setAuthType(final String authType) {
+        this.authType = authType;
+    }
+
     @java.lang.Override
     @SuppressWarnings("all")
     public boolean equals(final java.lang.Object o) {
@@ -644,6 +668,9 @@ public class OperateLog {
         private Long costTime;
 
         @SuppressWarnings("all")
+        private String authType;
+
+        @SuppressWarnings("all")
         OperateLogBuilder() {
         }
 
@@ -834,11 +861,22 @@ public class OperateLog {
             return this;
         }
 
+        /**
+         * 认证方式：SESSION-交互式会话，PAT-个人访问令牌
+         *
+         * @return {@code this}.
+         */
+        @SuppressWarnings("all")
+        public OperateLog.OperateLogBuilder authType(final String authType) {
+            this.authType = authType;
+            return this;
+        }
+
         @SuppressWarnings("all")
         public OperateLog build() {
             return new OperateLog(this.id, this.title, this.businessType, this.method, this.requestMethod,
                     this.operatorType, this.operatorName, this.deptName, this.url, this.ip, this.location, this.param,
-                    this.result, this.status, this.errorMsg, this.operateTime, this.costTime);
+                    this.result, this.status, this.errorMsg, this.operateTime, this.costTime, this.authType);
         }
 
         @java.lang.Override

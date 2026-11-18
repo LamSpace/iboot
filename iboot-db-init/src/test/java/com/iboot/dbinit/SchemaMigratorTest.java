@@ -60,7 +60,7 @@ class SchemaMigratorTest {
         MysqlDataSource dataSource = dataSource();
 
         MigrateResult first = migrateWithRetry(dataSource);
-        assertThat(first.migrationsExecuted).isEqualTo(13);
+        assertThat(first.migrationsExecuted).isEqualTo(15);
         assertThat(countTables(dataSource)).isEqualTo(82);
 
         MigrateResult second = migrateWithRetry(dataSource);
@@ -72,6 +72,12 @@ class SchemaMigratorTest {
         assertThat(count(dataSource, "SELECT COUNT(*) FROM information_schema.statistics "
                 + "WHERE table_schema = 'iboot_test' AND table_name = 'sys_user_pat' "
                 + "AND index_name IN ('uk_pat_token_id', 'idx_pat_user')")).isEqualTo(3);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM information_schema.columns "
+                + "WHERE table_schema = 'iboot_test' AND table_name = 'sys_user_pat' "
+                + "AND column_name = 'scopes'")).isEqualTo(1);
+        assertThat(count(dataSource, "SELECT COUNT(*) FROM information_schema.columns "
+                + "WHERE table_schema = 'iboot_test' AND table_name = 'sys_operate_log' "
+                + "AND column_name = 'auth_type' AND column_default = 'SESSION'")).isEqualTo(1);
 
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_user")).isEqualTo(1);
         assertThat(count(dataSource, "SELECT COUNT(*) FROM sys_menu")).isGreaterThan(100);

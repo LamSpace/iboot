@@ -9,6 +9,7 @@
   "businessType": "业务类型",
   "requestMethod": "请求方式",
   "operatorName": "操作人员",
+  "authType": "认证方式",
   "operIp": "操作 IP",
   "status": "状态",
   "costTime": "耗时 (ms)",

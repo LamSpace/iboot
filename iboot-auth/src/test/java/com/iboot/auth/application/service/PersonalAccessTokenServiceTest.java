@@ -29,12 +29,14 @@ import com.iboot.kernel.web.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -44,12 +46,14 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -110,18 +114,81 @@ class PersonalAccessTokenServiceTest {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         LocalDateTime expires = LocalDateTime.ofInstant(NOW.plus(Duration.ofDays(30)), ZoneOffset.UTC);
         when(repository.findByTokenId(anyString())).thenReturn(Optional.of(
-                new PersonalAccessTokenRecord(42L, 7L, "ci", "jti",
+                new PersonalAccessTokenRecord(42L, 7L, "ci", "jti", List.of(),
                         expires, false, null, LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))));
 
-        PersonalAccessTokenCreated created = service.create(7L, "  ci  ", 30L);
+        PersonalAccessTokenCreated created = service.create(7L, "  ci  ", 30L, List.of());
 
         assertThat(created.id()).isEqualTo(42L);
         assertThat(created.name()).isEqualTo("ci");
+        assertThat(created.scopes()).isEmpty();
         assertThat(created.token()).isEqualTo("jwt-token");
         assertThat(created.expiresAt()).isEqualTo(expires);
         verify(valueOperations).set(startsWith(Constants.PAT_TOKEN_KEY), any(),
                 eq(Duration.ofDays(30)));
-        verify(repository).insert(eq(7L), eq("ci"), anyString(), eq(expires));
+        verify(repository).insert(eq(7L), eq("ci"), anyString(), isNull(), eq(expires));
+    }
+
+    /**
+     * 指定 scope 时只授予 scope，去重后写入元数据与声明。
+     */
+    @Test
+    void restrictsTokenToRequestedScopes() {
+        AuthUser user = user();
+        when(authDirectory.findUserById(7L)).thenReturn(Optional.of(user));
+        when(repository.countActive(eq(7L), any(LocalDateTime.class))).thenReturn(0);
+        when(authDirectory.findRoleCodesByRoleIds(List.of(2L))).thenReturn(List.of("ROLE_USER"));
+        when(authDirectory.findPermissionsByRoleIds(List.of(2L)))
+                .thenReturn(Set.of("user:list", "user:add"));
+        when(jwtEncoder.encode(any())).thenReturn(
+                Jwt.withTokenValue("jwt-token").header("alg", "RS256").claim("sub", "7").build());
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        LocalDateTime expires = LocalDateTime.ofInstant(NOW.plus(Duration.ofDays(30)), ZoneOffset.UTC);
+        when(repository.findByTokenId(anyString())).thenReturn(Optional.of(
+                new PersonalAccessTokenRecord(42L, 7L, "ci", "jti", List.of("user:list"),
+                        expires, false, null, LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))));
+        ArgumentCaptor<JwtEncoderParameters> captor =
+                ArgumentCaptor.forClass(JwtEncoderParameters.class);
+
+        service.create(7L, "ci", 30L, List.of("user:list", "user:list"));
+
+        verify(jwtEncoder).encode(captor.capture());
+        Object permissionsClaim = captor.getValue().getClaims().getClaim(Constants.PERMISSIONS);
+        Object scopesClaim = captor.getValue().getClaims().getClaim(Constants.PAT_SCOPES_CLAIM);
+        assertThat(permissionsClaim).isEqualTo(List.of("user:list"));
+        assertThat(scopesClaim).isEqualTo(List.of("user:list"));
+        verify(repository).insert(eq(7L), eq("ci"), anyString(), eq("user:list"), eq(expires));
+    }
+
+    /**
+     * scope 超出用户当前权限时应拒绝签发。
+     */
+    @Test
+    void rejectsScopeNotGranted() {
+        when(authDirectory.findUserById(7L)).thenReturn(Optional.of(user()));
+        when(repository.countActive(eq(7L), any(LocalDateTime.class))).thenReturn(0);
+        when(authDirectory.findPermissionsByRoleIds(List.of(2L))).thenReturn(Set.of("user:list"));
+
+        assertThatThrownBy(() -> service.create(7L, "ci", 30L, List.of("user:delete")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("scope");
+    }
+
+    /**
+     * scope 数量超过上限时应拒绝签发。
+     */
+    @Test
+    void rejectsTooManyScopes() {
+        Set<String> permissions = IntStream.range(0, 51)
+                .mapToObj(index -> "perm:" + index)
+                .collect(java.util.stream.Collectors.toSet());
+        when(authDirectory.findUserById(7L)).thenReturn(Optional.of(user()));
+        when(repository.countActive(eq(7L), any(LocalDateTime.class))).thenReturn(0);
+        when(authDirectory.findPermissionsByRoleIds(List.of(2L))).thenReturn(permissions);
+
+        assertThatThrownBy(() -> service.create(7L, "ci", 30L, List.copyOf(permissions)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("scope");
     }
 
     /**
@@ -129,11 +196,11 @@ class PersonalAccessTokenServiceTest {
      */
     @Test
     void rejectsInvalidNameAndExpiry() {
-        assertThatThrownBy(() -> service.create(7L, "  ", 30L))
+        assertThatThrownBy(() -> service.create(7L, "  ", 30L, List.of()))
                 .isInstanceOf(BusinessException.class);
-        assertThatThrownBy(() -> service.create(7L, "ci", 91L))
+        assertThatThrownBy(() -> service.create(7L, "ci", 91L, List.of()))
                 .isInstanceOf(BusinessException.class);
-        assertThatThrownBy(() -> service.create(7L, "ci", 0L))
+        assertThatThrownBy(() -> service.create(7L, "ci", 0L, List.of()))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -145,7 +212,7 @@ class PersonalAccessTokenServiceTest {
         when(authDirectory.findUserById(7L)).thenReturn(Optional.of(user()));
         when(repository.countActive(eq(7L), any(LocalDateTime.class))).thenReturn(10);
 
-        assertThatThrownBy(() -> service.create(7L, "ci", 30L))
+        assertThatThrownBy(() -> service.create(7L, "ci", 30L, List.of()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("上限");
     }
@@ -159,9 +226,12 @@ class PersonalAccessTokenServiceTest {
         LocalDateTime past = LocalDateTime.ofInstant(NOW.minus(Duration.ofDays(1)), ZoneOffset.UTC);
         LocalDateTime created = LocalDateTime.ofInstant(NOW.minus(Duration.ofDays(2)), ZoneOffset.UTC);
         when(repository.findByUserId(7L)).thenReturn(List.of(
-                new PersonalAccessTokenRecord(1L, 7L, "active", "jti-active", future, false, null, created),
-                new PersonalAccessTokenRecord(2L, 7L, "revoked", "jti-revoked", future, true, past, created),
-                new PersonalAccessTokenRecord(3L, 7L, "expired", "jti-expired", past, false, null, created)));
+                new PersonalAccessTokenRecord(1L, 7L, "active", "jti-active", List.of("user:list"),
+                        future, false, null, created),
+                new PersonalAccessTokenRecord(2L, 7L, "revoked", "jti-revoked", List.of(),
+                        future, true, past, created),
+                new PersonalAccessTokenRecord(3L, 7L, "expired", "jti-expired", List.of(),
+                        past, false, null, created)));
         when(redisTemplate.hasKey(Constants.PAT_TOKEN_KEY + "jti-active")).thenReturn(true);
         when(redisTemplate.hasKey(Constants.PAT_TOKEN_KEY + "jti-revoked")).thenReturn(false);
         when(redisTemplate.hasKey(Constants.PAT_TOKEN_KEY + "jti-expired")).thenReturn(true);
@@ -186,7 +256,7 @@ class PersonalAccessTokenServiceTest {
     void revokeDeletesSharedRecordAndMarksMetadata() {
         LocalDateTime expires = LocalDateTime.ofInstant(NOW.plus(Duration.ofDays(1)), ZoneOffset.UTC);
         when(repository.findByIdAndUserId(11L, 7L)).thenReturn(Optional.of(
-                new PersonalAccessTokenRecord(11L, 7L, "ci", "jti-11", expires, false, null,
+                new PersonalAccessTokenRecord(11L, 7L, "ci", "jti-11", List.of(), expires, false, null,
                         LocalDateTime.ofInstant(NOW, ZoneOffset.UTC))));
 
         service.revoke(7L, 11L);

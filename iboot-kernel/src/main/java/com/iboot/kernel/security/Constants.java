@@ -151,6 +151,21 @@ public class Constants {
     public static final String PAT_CLAIM = "pat";
 
     /**
+     * 个人访问令牌的权限范围声明键；缺省表示继承用户全部权限
+     */
+    public static final String PAT_SCOPES_CLAIM = "scopes";
+
+    /**
+     * 审计认证方式：交互式会话
+     */
+    public static final String AUTH_TYPE_SESSION = "SESSION";
+
+    /**
+     * 审计认证方式：个人访问令牌
+     */
+    public static final String AUTH_TYPE_PAT = "PAT";
+
+    /**
      * 安全上下文中的部门 ID 键。
      */
     public static final String DEPT_ID = "deptId";

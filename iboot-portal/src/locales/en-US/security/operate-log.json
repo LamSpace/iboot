@@ -9,6 +9,7 @@
   "businessType": "Business Type",
   "requestMethod": "Request Method",
   "operatorName": "Operator",
+  "authType": "Auth Type",
   "operIp": "Operation IP",
   "status": "Status",
   "costTime": "Cost Time (ms)",

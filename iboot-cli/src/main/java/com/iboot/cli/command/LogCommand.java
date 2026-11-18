@@ -48,9 +48,7 @@ public class LogCommand extends BaseCommand {
 
         @Override
         public void run() {
-            print(get("/api/log/login/list", Map.of(
-                    "pageNum", String.valueOf(page.page),
-                    "pageSize", String.valueOf(page.size))));
+            print(getPaged("/api/log/login/list", page, Map.of()));
         }
     }
 
@@ -65,9 +63,7 @@ public class LogCommand extends BaseCommand {
 
         @Override
         public void run() {
-            print(get("/api/log/operate/list", Map.of(
-                    "pageNum", String.valueOf(page.page),
-                    "pageSize", String.valueOf(page.size))));
+            print(getPaged("/api/log/operate/list", page, Map.of()));
         }
     }
 }

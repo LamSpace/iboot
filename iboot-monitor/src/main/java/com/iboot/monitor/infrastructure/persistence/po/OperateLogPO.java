@@ -122,6 +122,11 @@ public class OperateLogPO {
     private Long costTime;
 
     /**
+     * 认证方式：SESSION-交互式会话，PAT-个人访问令牌
+     */
+    private String authType;
+
+    /**
      * 逻辑删除：0-未删除，1-已删除
      */
     private Integer deleted;
@@ -416,6 +421,22 @@ public class OperateLogPO {
     @SuppressWarnings("all")
     public void setCostTime(final Long costTime) {
         this.costTime = costTime;
+    }
+
+    /**
+     * 认证方式：SESSION-交互式会话，PAT-个人访问令牌
+     */
+    @SuppressWarnings("all")
+    public String getAuthType() {
+        return this.authType;
+    }
+
+    /**
+     * 认证方式：SESSION-交互式会话，PAT-个人访问令牌
+     */
+    @SuppressWarnings("all")
+    public void setAuthType(final String authType) {
+        this.authType = authType;
     }
 
     /**

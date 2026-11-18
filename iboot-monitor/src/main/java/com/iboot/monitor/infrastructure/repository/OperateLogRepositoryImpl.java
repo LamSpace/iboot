@@ -205,6 +205,7 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
         po.setErrorMsg(operateLog.getErrorMsg());
         po.setOperateTime(operateLog.getOperateTime());
         po.setCostTime(operateLog.getCostTime());
+        po.setAuthType(operateLog.getAuthType());
         return po;
     }
 
@@ -234,6 +235,7 @@ public class OperateLogRepositoryImpl implements OperateLogRepository {
                 .errorMsg(po.getErrorMsg())
                 .operateTime(po.getOperateTime())
                 .costTime(po.getCostTime())
+                .authType(po.getAuthType())
                 .build();
     }
 

@@ -24,9 +24,14 @@ import com.iboot.cli.config.Context;
 import com.iboot.cli.http.ApiResponse;
 import com.iboot.cli.output.Output;
 import picocli.CommandLine.Mixin;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.Model.CommandSpec;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,6 +47,10 @@ import java.util.Set;
 public abstract class BaseCommand implements Runnable {
 
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
+
+    private static final int ALL_PAGE_SIZE = 100;
+
+    private static final long ALL_MAX_RECORDS = 10_000L;
 
     @Spec
     private CommandSpec spec;
@@ -83,6 +92,72 @@ public abstract class BaseCommand implements Runnable {
      */
     protected ApiResponse get(String path, Map<String, String> query) {
         return app().request(context(), "GET", path, null, query, options.raw);
+    }
+
+    /**
+     * 发送分页 GET 请求；{@code --all} 时自动翻页并合并结果。
+     *
+     * <p>合并后的数据保持 {@code total} 与 {@code data} 的结构；固定每页 100 条，
+     * 忽略 {@code --page}，超过安全上限时以用法错误结束。
+     *
+     * @param path 接口路径
+     * @param page 分页选项
+     * @param query 其他查询参数
+     * @return 响应；合并模式下 {@code data} 为包含全部记录的对象
+     */
+    protected ApiResponse getPaged(String path, PageOptions page, Map<String, String> query) {
+        Map<String, String> params = new LinkedHashMap<>(query);
+        if (!page.all) {
+            params.put("pageNum", String.valueOf(page.page));
+            params.put("pageSize", String.valueOf(page.size));
+            return get(path, params);
+        }
+        if (options.raw) {
+            throw new CliException(ExitCode.USAGE, "--all 不能与 --raw 一起使用");
+        }
+        params.put("pageNum", "1");
+        params.put("pageSize", String.valueOf(ALL_PAGE_SIZE));
+        ApiResponse first = get(path, params);
+        JsonNode pageData = first.data();
+        if (!isPage(pageData)) {
+            throw new CliException(ExitCode.USAGE, "该命令不支持 --all：响应不是分页结构");
+        }
+        long total = pageData.get("total").asLong();
+        if (total > ALL_MAX_RECORDS) {
+            throw new CliException(ExitCode.USAGE,
+                    "--all 结果超过 " + ALL_MAX_RECORDS + " 条，请增加筛选条件");
+        }
+        ArrayNode merged = JsonNodeFactory.instance.arrayNode();
+        append(merged, pageData.get("data"));
+        int pages = (int) ((total + ALL_PAGE_SIZE - 1) / ALL_PAGE_SIZE);
+        for (int pageNum = 2; pageNum <= pages; pageNum++) {
+            params.put("pageNum", String.valueOf(pageNum));
+            ApiResponse next = get(path, params);
+            JsonNode data = next.data();
+            if (data == null || !data.has("data") || !data.get("data").isArray()
+                    || data.get("data").size() == 0) {
+                break;
+            }
+            append(merged, data.get("data"));
+        }
+        ObjectNode result = JsonNodeFactory.instance.objectNode();
+        result.put("total", total);
+        result.put("pageNum", 1);
+        result.put("pageSize", ALL_PAGE_SIZE);
+        result.set("data", merged);
+        return new ApiResponse(200, first.message(), result, null);
+    }
+
+    private boolean isPage(JsonNode data) {
+        return data != null && data.isObject()
+                && data.has("total") && data.get("total").isNumber()
+                && data.has("data") && data.get("data").isArray();
+    }
+
+    private void append(ArrayNode target, JsonNode source) {
+        for (int i = 0; i < source.size(); i++) {
+            target.add(source.get(i));
+        }
     }
 
     /**

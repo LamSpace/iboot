@@ -23,6 +23,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,7 +43,8 @@ import java.util.Optional;
 public class PersonalAccessTokenRepository {
 
     private static final String SELECT_COLUMNS =
-            "SELECT id, user_id, name, token_id, expires_at, revoked, revoked_at, create_time FROM sys_user_pat ";
+            "SELECT id, user_id, name, token_id, scopes, expires_at, revoked, revoked_at, create_time "
+                    + "FROM sys_user_pat ";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -61,13 +63,14 @@ public class PersonalAccessTokenRepository {
      * @param userId 所属用户 ID
      * @param name 令牌名称
      * @param tokenId 令牌唯一标识
+     * @param scopes 权限码范围（逗号分隔）；{@code null} 表示继承全部权限
      * @param expiresAt 过期时间
      */
-    public void insert(Long userId, String name, String tokenId, LocalDateTime expiresAt) {
+    public void insert(Long userId, String name, String tokenId, String scopes, LocalDateTime expiresAt) {
         jdbcTemplate.update(
-                "INSERT INTO sys_user_pat (user_id, name, token_id, expires_at, revoked, create_time) "
-                        + "VALUES (?, ?, ?, ?, 0, NOW())",
-                userId, name, tokenId, expiresAt);
+                "INSERT INTO sys_user_pat (user_id, name, token_id, scopes, expires_at, revoked, create_time) "
+                        + "VALUES (?, ?, ?, ?, ?, 0, NOW())",
+                userId, name, tokenId, scopes, expiresAt);
     }
 
     /**
@@ -150,9 +153,26 @@ public class PersonalAccessTokenRepository {
                 rs.getLong("user_id"),
                 rs.getString("name"),
                 rs.getString("token_id"),
+                parseScopes(rs.getString("scopes")),
                 rs.getTimestamp("expires_at").toLocalDateTime(),
                 rs.getBoolean("revoked"),
                 rs.getTimestamp("revoked_at") == null ? null : rs.getTimestamp("revoked_at").toLocalDateTime(),
                 rs.getTimestamp("create_time").toLocalDateTime());
+    }
+
+    /**
+     * 把逗号分隔的权限范围解析为列表。
+     *
+     * @param scopes 数据库列值
+     * @return 权限码列表；空白时返回空列表
+     */
+    private List<String> parseScopes(String scopes) {
+        if (scopes == null || scopes.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(scopes.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .toList();
     }
 }

@@ -17,6 +17,7 @@
 package com.iboot.auth.domain.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 个人访问令牌的列表视图。
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
  *
  * @param id 记录 ID
  * @param name 令牌名称
+ * @param scopes 权限码范围；空列表表示继承用户全部权限
  * @param status 当前状态
  * @param createdAt 创建时间
  * @param expiresAt 过期时间
@@ -33,7 +35,7 @@ import java.time.LocalDateTime;
  * @author iBoot Team
  * @since 1.0.0
  */
-public record PersonalAccessTokenSummary(Long id, String name, String status,
+public record PersonalAccessTokenSummary(Long id, String name, List<String> scopes, String status,
                                         LocalDateTime createdAt, LocalDateTime expiresAt,
                                         LocalDateTime lastUsedAt) {
 }

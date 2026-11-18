@@ -16,6 +16,7 @@
 
 package com.iboot.kernel.logging;
 
+import com.iboot.kernel.security.Constants;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -152,7 +153,10 @@ public class OperateLogRecorder {
                         operateLog.getStatus(),
                         operateLog.getErrorMsg(),
                         operateLog.getOperateTime(),
-                        operateLog.getCostTime());
+                        operateLog.getCostTime(),
+                        operateLog.getAuthType() == null
+                                ? Constants.AUTH_TYPE_SESSION
+                                : operateLog.getAuthType());
             } catch (Exception e) {
                 if (failedCounter != null) {
                     failedCounter.increment();
@@ -186,7 +190,7 @@ public class OperateLogRecorder {
     private static String buildInsertSql(String tableName) {
         return "INSERT INTO " + tableName + " (title, business_type, method, request_method, operator_type,"
                 + " operator_name, dept_name, url, ip, location, param, result,"
-                + " status, error_msg, operate_time, cost_time)"
-                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + " status, error_msg, operate_time, cost_time, auth_type)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     }
 }
