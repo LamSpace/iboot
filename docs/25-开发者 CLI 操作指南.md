@@ -100,7 +100,7 @@ mvn -pl iboot-cli package
 - `IBOOT_TOKEN` 仅用于 CI/测试，优先级高于本地凭据；不要在交互式终端或共享环境中使用。
 - 认证服务重启会使内存中的授权记录失效；由于没有刷新令牌，重新 `login` 即可。
 
-### 过渡期会话限制
+### 过渡期会话限制（已知限制）
 
 CLI 会话在 `add-multi-client-sessions` 落地前**不写入在线名单**：
 
@@ -108,7 +108,12 @@ CLI 会话在 `add-multi-client-sessions` 落地前**不写入在线名单**：
 - CLI 会话不出现在“在线用户”列表；
 - 管理员按用户执行强制下线时，不会撤销 CLI 会话。
 
-该限制已在 OpenSpec 的 `auth-service` 契约中登记，后续多客户端会话变更会移除。
+> **状态标注（2026-11-18）**：以上两项为已登记的已知限制。当前阶段保留该限制，
+> 不启动 `add-multi-client-sessions` 变更；需要管理员强制下线覆盖 CLI 会话，或需要
+> 门户/小程序/CLI 多客户端并存时，再单独立项。CLI 自身的 `logout` 仍可撤销当前会话。
+
+该限制已在 `openspec/specs/auth-service/spec.md` 与 `openspec/specs/developer-cli/spec.md`
+中登记。
 
 ## 7. 排障
 

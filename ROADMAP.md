@@ -112,8 +112,11 @@ Docker/Helm 部署清单。
 **非目标**：不做门户替代；不做 Web 智能体的执行通道；不覆盖全部 206 个接口；不做离线缓存；
 不引入密码授权。
 
-**过渡期限制**：CLI 会话不写入在线名单，管理员按用户强制下线不覆盖 CLI 会话；该限制由后续
-`add-multi-client-sessions` 变更移除，详见 `openspec/changes/add-developer-cli/`。
+**过渡期限制（已知限制，暂不改造）**：CLI 会话不写入在线名单，管理员按用户强制下线不覆盖
+CLI 会话。当前阶段保留该限制，不启动 `add-multi-client-sessions`；需要管理员强制下线覆盖
+CLI 会话，或需要多客户端会话管理时再单独立项。契约见
+`openspec/specs/auth-service/spec.md`，变更记录见
+`openspec/changes/archive/2026-11-18-add-developer-cli/`。
 
 ---
 
