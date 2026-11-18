@@ -58,7 +58,11 @@ public abstract class BaseCommand implements Runnable {
      * @return 应用服务
      */
     protected CliApplication app() {
-        return root().application();
+        CliApplication application = root().application();
+        if (options.tokenStdin) {
+            application.useTokenFromStdin();
+        }
+        return application;
     }
 
     /**

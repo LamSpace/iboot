@@ -31,7 +31,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -125,5 +128,30 @@ class AuthorizationServerConfigTest {
 
         assertThat(decoded.getSubject()).isEqualTo("7");
         assertThat(decoded.getClaimAsString("iss")).isEqualTo(properties.getIssuer());
+    }
+
+    /**
+     * 个人访问令牌编码器应使用同一把 RSA 密钥并带上 {@code kid}。
+     */
+    @Test
+    void encoderSignsPatWithConfiguredKey() throws Exception {
+        RSAKey rsaKey = new RSAKeyGenerator(2048).keyID("pat-key").generate();
+        JWKSource<SecurityContext> jwkSource = new ImmutableJWKSet<>(new JWKSet(rsaKey));
+        JwtEncoder encoder = config.jwtEncoder(jwkSource);
+
+        Jwt jwt = encoder.encode(JwtEncoderParameters.from(JwtClaimsSet.builder()
+                .issuer(properties.getIssuer())
+                .subject("7")
+                .id("pat-1")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(300))
+                .claim("pat", true)
+                .build()));
+
+        assertThat(jwt.getHeaders().get("kid")).isEqualTo("pat-key");
+        assertThat(String.valueOf(jwt.getHeaders().get("alg"))).isEqualTo("RS256");
+        Jwt decoded = config.jwtDecoder(jwkSource).decode(jwt.getTokenValue());
+        assertThat(decoded.getId()).isEqualTo("pat-1");
+        assertThat(decoded.getClaimAsBoolean("pat")).isTrue();
     }
 }

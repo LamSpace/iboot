@@ -20,6 +20,8 @@ import com.iboot.auth.domain.model.AuthUser;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,31 +63,65 @@ public class AuthDirectory {
      * @return 用户视图；不存在或已逻辑删除时返回空
      */
     public Optional<AuthUser> findUserByUsername(String username) {
-        List<AuthUser> users = jdbcTemplate.query(
-                "SELECT id, username, password, nickname, avatar, dept_id, status "
-                        + "FROM sys_user WHERE username = ? AND deleted = 0",
-                (rs, rowNum) -> {
-                    long deptIdValue = rs.getLong("dept_id");
-                    Long deptId = rs.wasNull() ? null : deptIdValue;
-                    return new AuthUser(
-                            rs.getLong("id"),
-                            rs.getString("username"),
-                            rs.getString("password"),
-                            rs.getString("nickname"),
-                            rs.getString("avatar"),
-                            deptId,
-                            rs.getInt("status"),
-                            new ArrayList<>());
-                },
-                username);
-        if (users.isEmpty()) {
-            return Optional.empty();
-        }
-        AuthUser user = users.get(0);
+        return jdbcTemplate.query(
+                        "SELECT id, username, password, nickname, avatar, dept_id, status "
+                                + "FROM sys_user WHERE username = ? AND deleted = 0",
+                        (rs, rowNum) -> mapUser(rs),
+                        username)
+                .stream()
+                .findFirst()
+                .map(this::withRoles);
+    }
+
+    /**
+     * 按用户 ID 查询认证所需的用户视图。
+     *
+     * @param id 用户 ID
+     * @return 用户视图；不存在或已逻辑删除时返回空
+     */
+    public Optional<AuthUser> findUserById(Long id) {
+        return jdbcTemplate.query(
+                        "SELECT id, username, password, nickname, avatar, dept_id, status "
+                                + "FROM sys_user WHERE id = ? AND deleted = 0",
+                        (rs, rowNum) -> mapUser(rs),
+                        id)
+                .stream()
+                .findFirst()
+                .map(this::withRoles);
+    }
+
+    /**
+     * 把结果集映射为不含角色列表的用户视图。
+     *
+     * @param rs 结果集
+     * @return 用户视图
+     * @throws SQLException 读取列失败时抛出
+     */
+    private AuthUser mapUser(ResultSet rs) throws SQLException {
+        long deptIdValue = rs.getLong("dept_id");
+        Long deptId = rs.wasNull() ? null : deptIdValue;
+        return new AuthUser(
+                rs.getLong("id"),
+                rs.getString("username"),
+                rs.getString("password"),
+                rs.getString("nickname"),
+                rs.getString("avatar"),
+                deptId,
+                rs.getInt("status"),
+                new ArrayList<>());
+    }
+
+    /**
+     * 为已查询到的用户补充角色 ID 列表。
+     *
+     * @param user 用户视图
+     * @return 带角色列表的用户视图
+     */
+    private AuthUser withRoles(AuthUser user) {
         List<Long> roleIds = jdbcTemplate.queryForList(
                 "SELECT role_id FROM sys_user_role WHERE user_id = ?", Long.class, user.id());
-        return Optional.of(new AuthUser(user.id(), user.username(), user.password(), user.nickname(),
-                user.avatar(), user.deptId(), user.status(), roleIds));
+        return new AuthUser(user.id(), user.username(), user.password(), user.nickname(),
+                user.avatar(), user.deptId(), user.status(), roleIds);
     }
 
     /**
@@ -145,6 +181,22 @@ public class AuthDirectory {
         List<String> codes = jdbcTemplate.queryForList(
                 "SELECT role_code FROM sys_role WHERE id = ? AND deleted = 0", String.class, roleId);
         return codes.isEmpty() ? Optional.empty() : Optional.of(codes.get(0));
+    }
+
+    /**
+     * 按角色 ID 查询未删除的角色编码。
+     *
+     * @param roleIds 角色 ID 列表
+     * @return 角色编码列表；{@code roleIds} 为空时返回空列表
+     */
+    public List<String> findRoleCodesByRoleIds(List<Long> roleIds) {
+        if (roleIds == null || roleIds.isEmpty()) {
+            return List.of();
+        }
+        String placeholders = String.join(",", Collections.nCopies(roleIds.size(), "?"));
+        return jdbcTemplate.queryForList(
+                "SELECT role_code FROM sys_role WHERE id IN (" + placeholders + ") AND deleted = 0",
+                String.class, roleIds.toArray());
     }
 
     /**

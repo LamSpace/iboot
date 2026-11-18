@@ -75,6 +75,7 @@ context 会被拒绝，需先切换到其他 context。删除 context 时同时�
 | `iboot backup list` / `iboot backup summary` | 备份记录与汇总 |
 | `iboot log login` / `iboot log operate` | 登录日志 / 操作日志 |
 | `iboot online list` | 在线会话 |
+| `iboot token list` | 当前用户的个人访问令牌元数据 |
 | `iboot api <METHOD> <PATH> [-d body]` | 任意已存在接口的逃生口 |
 
 所有查询命令支持 `-p/--page`、`-s/--size`；`--json` 输出解包后的业务数据，`--raw`
@@ -96,6 +97,40 @@ context 会被拒绝，需先切换到其他 context。删除 context 时同时�
 
 写操作由服务端 `@Log` 记录，可用 `iboot log operate` 查看；Docker 全量部署默认关闭备份，
 `backup trigger` 会返回“备份功能未启用”的业务错误，这是预期行为。
+
+### 个人访问令牌
+
+PAT 面向 CI 与无浏览器环境，使用交互式登录会话签发，之后可长期使用：
+
+| 命令 | 说明 |
+|---|---|
+| `iboot token create <name> [--expires-days <n>] --yes` | 签发 PAT；明文只显示一次 |
+| `iboot token list` | 列出当前用户的 PAT 元数据 |
+| `iboot token revoke <id> --yes` | 撤销 PAT |
+
+有效期默认 30 天、最长 90 天；每个用户最多 10 个活动令牌。签发与撤销是写操作，
+必须带 `--yes`；`--dry-run` 只打印请求。列表中的 `status` 为 `ACTIVE`、`REVOKED`
+或 `EXPIRED`，并显示最近使用时间（尽力记录，可能缺失）。
+
+```bash
+./bin/iboot token create ci --expires-days 30 --yes
+# 立即保存输出的令牌明文；后续 list 不再返回
+./bin/iboot token list
+./bin/iboot token revoke 3 --yes
+```
+
+PAT 的权限是签发时的快照：角色或权限调整后不会自动同步，需要撤销并重建。用户被停用
+或删除时，该用户的全部 PAT 立即失效。PAT 不出现在在线列表，也不会被会话级强退覆盖；
+撤销入口是 `token revoke` 或用户停用/删除。
+
+CI 中优先使用标准输入注入，避免令牌进入命令行参数与 shell 历史：
+
+```bash
+printf '%s' "$IBOOT_PAT" | ./bin/iboot user list --token-stdin
+```
+
+令牌来源优先级为 `--token-stdin` > `IBOOT_TOKEN` > 本地凭据；标准输入的令牌不会
+写入凭据文件。
 
 ## 5. 输出与退出码
 
@@ -121,7 +156,10 @@ context 会被拒绝，需先切换到其他 context。删除 context 时同时�
 - Spring Authorization Server 对公共客户端 + 授权码**不下发刷新令牌**，会话语义由共享 Redis
   的滑动续期承担：资源服务不因 JWT 自身 `exp` 过期而拒绝仍在会话内的请求。401 表示会话已失效，
   CLI 直接提示重新登录；只有服务端确实返回刷新令牌时才尝试续期一次。
-- `IBOOT_TOKEN` 仅用于 CI/测试，优先级高于本地凭据；不要在交互式终端或共享环境中使用。
+- `IBOOT_TOKEN` 与 `--token-stdin` 仅用于 CI/测试；`--token-stdin` 优先于环境变量，
+  且不会写入凭据文件。不要在交互式终端或共享环境中使用长期令牌。
+- PAT 是长期凭据：保存在 CI secret 中，不要提交到仓库或写入日志；怀疑泄漏时立即
+  `token revoke`，必要时停用用户以撤销其全部 PAT。
 - 认证服务重启会使内存中的授权记录失效；由于没有刷新令牌，重新 `login` 即可。
 
 ### 过渡期会话限制（已知限制）
@@ -130,9 +168,11 @@ CLI 会话在 `add-multi-client-sessions` 落地前**不写入在线名单**：
 
 - 门户会话不会被 CLI 登录驱逐；
 - CLI 会话不出现在“在线用户”列表；
-- 管理员按用户执行强制下线时，不会撤销 CLI 会话。
+- 管理员按用户执行强制下线时，不会撤销 CLI 会话；
+- PAT 同样不出现在在线列表，也不会被会话级强退覆盖；PAT 只能通过 `token revoke`
+  或用户停用/删除撤销。
 
-> **状态标注（2026-11-18）**：以上两项为已登记的已知限制。当前阶段保留该限制，
+> **状态标注（2026-11-18）**：以上为已登记的已知限制。当前阶段保留该限制，
 > 不启动 `add-multi-client-sessions` 变更；需要管理员强制下线覆盖 CLI 会话，或需要
 > 门户/小程序/CLI 多客户端并存时，再单独立项。CLI 自身的 `logout` 仍可撤销当前会话。
 
@@ -146,6 +186,7 @@ CLI 会话在 `add-multi-client-sessions` 落地前**不写入在线名单**：
 | `127.0.0.1:8765` 被占用 | 关闭占用进程；CLI 使用固定端口，需与认证服务登记的 redirect URI 一致 |
 | 登录后立即 401 | 检查 context 的 issuer 与网关地址是否一致；确认认证服务已启动 |
 | `403` | 当前用户没有该接口权限；换有权限的账号，不要绕过服务端权限 |
+| PAT 请求 401 | 令牌已过期、已撤销，或用户被停用/删除；重新签发或恢复用户状态 |
 | 连接失败 | 确认 `http://localhost:8088/actuator/health` 可访问；Docker 环境先执行 `scripts/docker-deploy.sh status` |
 | OIDC 发现失败 | 确认 `/.well-known/openid-configuration` 经网关可达 |
 

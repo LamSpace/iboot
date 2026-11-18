@@ -45,6 +45,8 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
@@ -84,7 +86,7 @@ import java.util.UUID;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
-@EnableConfigurationProperties(AuthServerProperties.class)
+@EnableConfigurationProperties({AuthServerProperties.class, PersonalAccessTokenProperties.class})
 public class AuthorizationServerConfig {
 
     /**
@@ -262,6 +264,20 @@ public class AuthorizationServerConfig {
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+    }
+
+    /**
+     * 个人访问令牌使用的编码器。
+     *
+     * <p>与授权服务器签发访问令牌共用同一把 RSA 签名密钥，因此资源服务不需要新增
+     * 验签配置；编码器只在认证服务内部使用，不对外暴露。
+     *
+     * @param jwkSource 公钥集来源
+     * @return JWT 编码器
+     */
+    @Bean
+    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
+        return new NimbusJwtEncoder(jwkSource);
     }
 
     /**

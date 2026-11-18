@@ -33,7 +33,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,9 +48,10 @@ import java.util.concurrent.TimeUnit;
  * <p>从请求头 {@code Authorization} 解析 Bearer 令牌，校验通过后将认证信息写入
  * 安全上下文；白名单路径直接放行，未携带或校验失败时交给后续过滤器处理。
  *
- * <p>支持两种令牌：自包含令牌用认证服务公钥验签、声明直接建模，共享存储中的
- * {@code login_tokens:<jti>} 只用于判断会话是否被撤销并做滑动续期；旧的对称签名令牌
- * 仍按「令牌原文即会话键」的方式读取，直到双栈窗口关闭。
+ * <p>支持三种令牌：自包含令牌用认证服务公钥验签、声明直接建模，共享存储中的
+ * {@code login_tokens:<jti>} 只用于判断会话是否被撤销并做滑动续期；个人访问令牌
+ * 使用独立的 {@code pat_tokens:<jti>} 判定有效性，固定有效期、不滑动、不写在线映射；
+ * 旧的对称签名令牌仍按「令牌原文即会话键」的方式读取，直到双栈窗口关闭。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -114,7 +118,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 JwtTokenVerifier.VerifiedToken verified = tokenVerifier.verify(token);
                 if (verified != null) {
-                    if (verified.legacy()) {
+                    if (isPat(verified.claims())) {
+                        authenticatePat(verified.claims());
+                    } else if (verified.legacy()) {
                         authenticateLegacySession(token);
                     } else {
                         authenticateStateless(verified.claims());
@@ -177,6 +183,68 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
+     * 按个人访问令牌的规则建立认证上下文。
+     *
+     * <p>PAT 只以 {@code pat_tokens:<jti>} 是否存在判定有效性，并要求令牌自身未过期；
+     * 与交互式会话不同，这里不滑动 TTL，也不写入或延长 {@code online_token:<userId>}。
+     * 最近使用时间写入 {@code pat_last_used:<jti>}，失败只记录调试日志，不影响认证。
+     *
+     * @param claims 令牌声明
+     */
+    @SuppressWarnings("unchecked")
+    private void authenticatePat(Claims claims) {
+        String tokenId = claims.getId();
+        String subject = claims.getSubject();
+        if (StringUtils.isBlank(tokenId) || StringUtils.isBlank(subject)) {
+            return;
+        }
+        Date expiration = claims.getExpiration();
+        if (expiration == null || expiration.toInstant().isBefore(Instant.now())) {
+            return;
+        }
+        String redisKey = Constants.PAT_TOKEN_KEY + tokenId;
+        if (redisTemplate.opsForValue().get(redisKey) == null) {
+            return;
+        }
+        Long userId = Long.valueOf(subject);
+        recordPatLastUsed(tokenId, expiration);
+        Object permissionsClaim = claims.get(Constants.PERMISSIONS);
+        List<String> permissions = permissionsClaim instanceof List<?> list
+                ? list.stream().map(String::valueOf).toList()
+                : List.of();
+        applyAuthentication(buildPrincipal(claims, userId), permissions);
+    }
+
+    /**
+     * 判断令牌是否为个人访问令牌。
+     *
+     * @param claims 令牌声明
+     * @return 声明 {@code pat=true} 时返回 {@code true}
+     */
+    private boolean isPat(Claims claims) {
+        return Boolean.TRUE.equals(claims.get(Constants.PAT_CLAIM, Boolean.class));
+    }
+
+    /**
+     * 记录个人访问令牌的最近使用时间。
+     *
+     * @param tokenId 令牌标识
+     * @param expiration 令牌过期时间
+     */
+    private void recordPatLastUsed(String tokenId, Date expiration) {
+        long remainingMillis = expiration.toInstant().toEpochMilli() - System.currentTimeMillis();
+        if (remainingMillis <= 0) {
+            return;
+        }
+        try {
+            redisTemplate.opsForValue().set(Constants.PAT_LAST_USED_KEY + tokenId,
+                    Instant.now().toString(), Duration.ofMillis(remainingMillis));
+        } catch (RuntimeException e) {
+            log.debug("记录 PAT 最近使用时间失败：{}", e.getMessage());
+        }
+    }
+
+    /**
      * 把令牌声明转换为与旧会话结构一致的认证主体。
      *
      * <p>下游通过 {@link SecurityUtils} 读取 {@code userId}、{@code username}、
@@ -195,6 +263,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         principal.put(Constants.DEPT_ID, claims.get(Constants.DEPT_ID));
         principal.put("nickname", claims.get("nickname"));
         principal.put("jti", claims.getId());
+        principal.put(Constants.PAT_CLAIM, isPat(claims));
         return principal;
     }
 

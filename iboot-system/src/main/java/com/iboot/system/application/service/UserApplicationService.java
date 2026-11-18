@@ -53,10 +53,15 @@ public class UserApplicationService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final PersonalAccessTokenRevoker personalAccessTokenRevoker;
+
     @SuppressWarnings("all")
-    public UserApplicationService(final UserRepository userRepository, final PasswordEncoder passwordEncoder) {
+    public UserApplicationService(final UserRepository userRepository,
+                                  final PasswordEncoder passwordEncoder,
+                                  final PersonalAccessTokenRevoker personalAccessTokenRevoker) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.personalAccessTokenRevoker = personalAccessTokenRevoker;
     }
 
     /**
@@ -140,7 +145,11 @@ public class UserApplicationService {
         if (Constants.USER_TYPE_SYSTEM.equals(user.getUserType())) {
             throw new BusinessException("系统内置用户不允许删除");
         }
-        return userRepository.deleteById(id);
+        boolean deleted = userRepository.deleteById(id);
+        if (deleted) {
+            personalAccessTokenRevoker.revokeAll(id);
+        }
+        return deleted;
     }
 
     /**
@@ -313,7 +322,11 @@ public class UserApplicationService {
         } else {
             user.disable();
         }
-        return userRepository.update(user);
+        boolean updated = userRepository.update(user);
+        if (updated && status == 0) {
+            personalAccessTokenRevoker.revokeAll(userId);
+        }
+        return updated;
     }
 
 }

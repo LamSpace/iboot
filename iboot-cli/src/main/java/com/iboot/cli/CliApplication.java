@@ -35,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -55,6 +56,16 @@ public class CliApplication {
     private final OidcClient oidcClient;
 
     private final TokenService tokenService;
+
+    /**
+     * 是否已经读取过标准输入，保证多个命令路径只消费一次。
+     */
+    private final AtomicBoolean tokenStdinRead = new AtomicBoolean();
+
+    /**
+     * 从标准输入注入的令牌，优先级高于环境变量与本地凭据。
+     */
+    private volatile String tokenOverride;
 
     /**
      * 使用默认配置路径创建应用。
@@ -111,11 +122,45 @@ public class CliApplication {
      * @return 令牌；不存在时返回 {@code null}
      */
     public TokenSet tokens(String contextName) {
+        if (tokenOverride != null && !tokenOverride.isBlank()) {
+            return new TokenSet(tokenOverride, null, null, Long.MAX_VALUE, "Bearer");
+        }
         String environmentToken = System.getenv("IBOOT_TOKEN");
         if (environmentToken != null && !environmentToken.isBlank()) {
             return new TokenSet(environmentToken, null, null, Long.MAX_VALUE, "Bearer");
         }
         return credentialStore.load(contextName);
+    }
+
+    /**
+     * 判断当前调用是否已从标准输入注入令牌。
+     *
+     * @return 存在标准输入令牌时返回 {@code true}
+     */
+    public boolean hasTokenOverride() {
+        return tokenOverride != null && !tokenOverride.isBlank();
+    }
+
+    /**
+     * 从标准输入读取访问令牌，仅第一次调用生效。
+     *
+     * <p>用于 CI 注入 PAT：令牌不进入命令行参数、不写入凭据文件，也不回显。
+     *
+     * @throws CliException 标准输入为空或读取失败时抛出
+     */
+    public void useTokenFromStdin() {
+        if (!tokenStdinRead.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            String value = new String(System.in.readAllBytes(), StandardCharsets.UTF_8).trim();
+            if (value.isEmpty()) {
+                throw new CliException(ExitCode.USAGE, "标准输入没有令牌");
+            }
+            this.tokenOverride = value;
+        } catch (IOException e) {
+            throw new CliException(ExitCode.USAGE, "读取标准输入失败", e);
+        }
     }
 
     /**
