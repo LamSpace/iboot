@@ -18,12 +18,19 @@ package com.iboot.cli;
 
 import com.iboot.cli.auth.CredentialStore;
 import com.iboot.cli.config.ConfigStore;
+import com.iboot.cli.http.ApiResponse;
+import com.iboot.cli.output.Output;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
@@ -88,6 +95,13 @@ class MainCommandTest {
     }
 
     @Test
+    void jobWaitStillRequiresConfirmation() {
+        assertThat(commandLine().execute("job", "run", "1", "--wait"))
+                .isEqualTo(ExitCode.CONFIRM);
+        assertThat(commandLine().execute("job", "run", "1", "--wait", "--dry-run")).isZero();
+    }
+
+    @Test
     void configAddUseAndRemoveContext() {
         assertThat(commandLine().execute("config", "add", "staging",
                 "--base-url", "https://staging.example.com", "--use")).isZero();
@@ -114,6 +128,37 @@ class MainCommandTest {
     @Test
     void tokenHelpSucceeds() {
         assertThat(commandLine().execute("token", "--help")).isZero();
+    }
+
+    @Test
+    void tokenCreatePassesScopesInDryRun() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        PrintStream original = System.out;
+        try {
+            System.setOut(new PrintStream(output, true, StandardCharsets.UTF_8));
+            assertThat(commandLine().execute("token", "create", "ci",
+                    "--scope", "user:list", "--dry-run")).isZero();
+        } finally {
+            System.setOut(original);
+        }
+        assertThat(output.toString(StandardCharsets.UTF_8)).contains("\"scopes\":[\"user:list\"]");
+    }
+
+    @Test
+    void operateLogOutputIncludesAuthType() {
+        ObjectNode row = JsonNodeFactory.instance.objectNode();
+        row.put("id", 1L);
+        row.put("authType", "PAT");
+        ArrayNode rows = JsonNodeFactory.instance.arrayNode().add(row);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        PrintStream original = System.out;
+        try {
+            System.setOut(new PrintStream(output, true, StandardCharsets.UTF_8));
+            Output.print(new ApiResponse(200, null, rows, null), false, false);
+        } finally {
+            System.setOut(original);
+        }
+        assertThat(output.toString(StandardCharsets.UTF_8)).contains("PAT");
     }
 
     @Test

@@ -59,15 +59,13 @@ public class UserCommand extends BaseCommand {
         @Override
         public void run() {
             Map<String, String> query = new LinkedHashMap<>();
-            query.put("pageNum", String.valueOf(page.page));
-            query.put("pageSize", String.valueOf(page.size));
             if (username != null) {
                 query.put("username", username);
             }
             if (status != null) {
                 query.put("status", String.valueOf(status));
             }
-            print(get("/api/user/list", query));
+            print(getPaged("/api/user/list", page, query));
         }
     }
 

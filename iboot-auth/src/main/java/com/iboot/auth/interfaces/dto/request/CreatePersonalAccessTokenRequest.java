@@ -21,6 +21,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 /**
  * 创建个人访问令牌请求。
  *
@@ -46,6 +48,13 @@ public class CreatePersonalAccessTokenRequest {
     @Schema(description = "有效期天数；为空时使用默认值")
     @Min(value = 1, message = "有效期至少 1 天")
     private Long expiresDays;
+
+    /**
+     * 权限码范围；为空时继承用户全部权限。
+     */
+    @Schema(description = "权限码范围；为空时继承用户全部权限")
+    @Size(max = 50, message = "scope 数量不能超过 50")
+    private List<String> scopes;
 
     /**
      * 创建空请求，供框架反序列化使用。
@@ -87,5 +96,23 @@ public class CreatePersonalAccessTokenRequest {
      */
     public void setExpiresDays(Long expiresDays) {
         this.expiresDays = expiresDays;
+    }
+
+    /**
+     * 返回权限码范围。
+     *
+     * @return 权限码列表；未指定时为空列表
+     */
+    public List<String> getScopes() {
+        return scopes;
+    }
+
+    /**
+     * 设置权限码范围。
+     *
+     * @param scopes 权限码列表
+     */
+    public void setScopes(List<String> scopes) {
+        this.scopes = scopes;
     }
 }

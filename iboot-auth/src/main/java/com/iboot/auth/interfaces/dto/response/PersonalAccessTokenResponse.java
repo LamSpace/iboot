@@ -19,6 +19,7 @@ package com.iboot.auth.interfaces.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 个人访问令牌列表项。
@@ -27,6 +28,7 @@ import java.time.LocalDateTime;
  *
  * @param id 记录 ID
  * @param name 令牌名称
+ * @param scopes 权限码范围；空列表表示继承用户全部权限
  * @param status 当前状态
  * @param createdAt 创建时间
  * @param expiresAt 过期时间
@@ -38,6 +40,7 @@ import java.time.LocalDateTime;
 public record PersonalAccessTokenResponse(
         @Schema(description = "记录 ID") Long id,
         @Schema(description = "令牌名称") String name,
+        @Schema(description = "权限码范围；为空表示继承全部权限") List<String> scopes,
         @Schema(description = "状态：ACTIVE、REVOKED、EXPIRED") String status,
         @Schema(description = "创建时间") LocalDateTime createdAt,
         @Schema(description = "过期时间") LocalDateTime expiresAt,

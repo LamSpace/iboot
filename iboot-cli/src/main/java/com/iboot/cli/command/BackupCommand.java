@@ -55,9 +55,7 @@ public class BackupCommand extends BaseCommand {
 
         @Override
         public void run() {
-            print(get("/api/monitor/backup/records", Map.of(
-                    "pageNum", String.valueOf(page.page),
-                    "pageSize", String.valueOf(page.size))));
+            print(getPaged("/api/monitor/backup/records", page, Map.of()));
         }
     }
 

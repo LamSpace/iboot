@@ -121,6 +121,18 @@
           width="120"
         />
         <el-table-column
+          prop="authType"
+          :label="t('security.operateLog.authType')"
+          width="110"
+          align="center"
+        >
+          <template #default="{ row }">
+            <el-tag :type="row.authType === 'PAT' ? 'warning' : 'info'">
+              {{ row.authType || "SESSION" }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
           prop="operIp"
           :label="t('security.operateLog.operIp')"
           width="130"
@@ -198,6 +210,9 @@
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('security.operateLog.operatorName')">{{
           currentLog?.operatorName
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('security.operateLog.authType')">{{
+          currentLog?.authType || "SESSION"
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('security.operateLog.operIp')">{{
           currentLog?.operIp

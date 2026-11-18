@@ -16,6 +16,7 @@
 
 package com.iboot.kernel.logging;
 
+import com.iboot.kernel.security.Constants;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -65,11 +66,12 @@ class OperateLogRecorderTest {
         recorder(jdbcTemplate, new SimpleMeterRegistry()).record(sample());
 
         assertThat(capturedSql.get()).contains("INSERT INTO iboot_admin.sys_operate_log");
-        assertThat(captured.get()).hasSize(16);
+        assertThat(captured.get()).hasSize(17);
         assertThat(captured.get()[0]).isEqualTo("登录");
         assertThat(captured.get()[5]).isEqualTo("tester");
         assertThat(captured.get()[12]).isEqualTo(1);
         assertThat(captured.get()[14]).isInstanceOf(LocalDateTime.class);
+        assertThat(captured.get()[16]).isEqualTo(Constants.AUTH_TYPE_SESSION);
     }
 
     /**
@@ -186,6 +188,7 @@ class OperateLogRecorderTest {
                 .status(1)
                 .operateTime(LocalDateTime.now())
                 .costTime(12L)
+                .authType(Constants.AUTH_TYPE_SESSION)
                 .build();
     }
 }

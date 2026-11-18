@@ -154,6 +154,45 @@ class JwtAuthenticationFilterPatTest {
     }
 
     /**
+     * PAT 声明中的权限必须再按 scope 取交集。
+     *
+     * @throws Exception 过滤器执行失败时抛出
+     */
+    @Test
+    void intersectsPermissionsWithScopes() throws Exception {
+        String jti = "pat-jti-scope";
+        String token = patToken(jti, Instant.now().plusSeconds(3600),
+                List.of("user:list", "user:add"), List.of("user:list"));
+        redisTemplate.opsForValue().set(Constants.PAT_TOKEN_KEY + jti, Map.of("userId", 7L), 60, TimeUnit.MINUTES);
+
+        filter.doFilter(request(token), new MockHttpServletResponse(), new MockFilterChain());
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
+                .extracting(Object::toString)
+                .containsExactly("user:list");
+    }
+
+    /**
+     * 没有 scopes 声明的旧 PAT 保持全部声明的权限。
+     *
+     * @throws Exception 过滤器执行失败时抛出
+     */
+    @Test
+    void keepsDeclaredPermissionsWithoutScopes() throws Exception {
+        String jti = "pat-jti-no-scope";
+        String token = patToken(jti, Instant.now().plusSeconds(3600),
+                List.of("user:list", "user:add"), List.of());
+        redisTemplate.opsForValue().set(Constants.PAT_TOKEN_KEY + jti, Map.of("userId", 7L), 60, TimeUnit.MINUTES);
+
+        filter.doFilter(request(token), new MockHttpServletResponse(), new MockFilterChain());
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
+                .extracting(Object::toString)
+                .containsExactlyInAnyOrder("user:list", "user:add");
+    }
+
+    /**
      * 撤销后（共享存储键不存在）不再建立认证上下文。
      *
      * @throws Exception 过滤器执行失败时抛出
@@ -190,17 +229,23 @@ class JwtAuthenticationFilterPatTest {
     }
 
     private String patToken(String jti, Instant expiration) {
+        return patToken(jti, expiration, List.of("user:list"), List.of());
+    }
+
+    private String patToken(String jti, Instant expiration, List<String> permissions, List<String> scopes) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .id(jti)
                 .subject("7")
                 .claim("userId", 7L)
                 .claim("username", "tester")
-                .claim("permissions", List.of("user:list"))
+                .claim("permissions", permissions)
                 .claim(Constants.PAT_CLAIM, true)
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(expiration))
-                .signWith(key)
-                .compact();
+                .expiration(Date.from(expiration));
+        if (!scopes.isEmpty()) {
+            builder.claim(Constants.PAT_SCOPES_CLAIM, scopes);
+        }
+        return builder.signWith(key).compact();
     }
 }

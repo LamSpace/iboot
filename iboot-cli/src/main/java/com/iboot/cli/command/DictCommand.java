@@ -49,9 +49,7 @@ public class DictCommand extends BaseCommand {
 
         @Override
         public void run() {
-            print(get("/api/dict/type/list", Map.of(
-                    "pageNum", String.valueOf(page.page),
-                    "pageSize", String.valueOf(page.size))));
+            print(getPaged("/api/dict/type/list", page, Map.of()));
         }
     }
 

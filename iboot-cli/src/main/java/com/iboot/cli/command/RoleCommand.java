@@ -47,9 +47,7 @@ public class RoleCommand extends BaseCommand {
 
         @Override
         public void run() {
-            print(get("/api/role/list", Map.of(
-                    "pageNum", String.valueOf(page.page),
-                    "pageSize", String.valueOf(page.size))));
+            print(getPaged("/api/role/list", page, Map.of()));
         }
     }
 }

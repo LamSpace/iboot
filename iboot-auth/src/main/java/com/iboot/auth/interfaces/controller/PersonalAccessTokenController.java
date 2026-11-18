@@ -81,9 +81,10 @@ public class PersonalAccessTokenController {
             @Valid @RequestBody CreatePersonalAccessTokenRequest request) {
         rejectPat();
         PersonalAccessTokenCreated created = tokenService.create(
-                SecurityUtils.getCurrentUserId(), request.getName(), request.getExpiresDays());
+                SecurityUtils.getCurrentUserId(), request.getName(), request.getExpiresDays(),
+                request.getScopes());
         return Result.success(new PersonalAccessTokenCreatedResponse(created.id(), created.name(),
-                created.token(), created.createdAt(), created.expiresAt()));
+                created.scopes(), created.token(), created.createdAt(), created.expiresAt()));
     }
 
     /**
@@ -126,8 +127,8 @@ public class PersonalAccessTokenController {
      * @return 响应 DTO
      */
     private PersonalAccessTokenResponse toResponse(PersonalAccessTokenSummary summary) {
-        return new PersonalAccessTokenResponse(summary.id(), summary.name(), summary.status(),
-                summary.createdAt(), summary.expiresAt(), summary.lastUsedAt());
+        return new PersonalAccessTokenResponse(summary.id(), summary.name(), summary.scopes(),
+                summary.status(), summary.createdAt(), summary.expiresAt(), summary.lastUsedAt());
     }
 
     /**

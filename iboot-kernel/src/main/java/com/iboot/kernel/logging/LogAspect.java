@@ -16,6 +16,8 @@
 
 package com.iboot.kernel.logging;
 
+import com.iboot.kernel.security.Constants;
+import com.iboot.kernel.security.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
@@ -145,6 +147,8 @@ public class LogAspect {
                     .status(e != null ? 0 : 1)
                     .costTime(costTime)
                     .operateTime(LocalDateTime.now())
+                    .authType(SecurityUtils.isPersonalAccessToken()
+                            ? Constants.AUTH_TYPE_PAT : Constants.AUTH_TYPE_SESSION)
                     .build();
             // 保存请求参数
             if (controllerLog.isSaveRequestData()) {

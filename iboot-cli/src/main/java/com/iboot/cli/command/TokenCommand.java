@@ -24,6 +24,7 @@ import picocli.CommandLine.Parameters;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -60,12 +61,19 @@ public class TokenCommand extends BaseCommand {
                 description = "有效期天数；默认 30，最长 90")
         Long expiresDays;
 
+        @Option(names = "--scope", paramLabel = "<permission>",
+                description = "权限码范围，可重复；缺省继承用户全部权限")
+        List<String> scopes;
+
         @Override
         public void run() {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("name", name);
             if (expiresDays != null) {
                 body.put("expiresDays", expiresDays);
+            }
+            if (scopes != null && !scopes.isEmpty()) {
+                body.put("scopes", scopes);
             }
             ApiResponse response = write("POST", "/api/auth/tokens", JSON.writeValueAsString(body));
             if (response == null) {

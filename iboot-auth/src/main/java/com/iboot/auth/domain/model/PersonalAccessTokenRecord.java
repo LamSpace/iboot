@@ -17,6 +17,7 @@
 package com.iboot.auth.domain.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 个人访问令牌的元数据记录。
@@ -28,6 +29,7 @@ import java.time.LocalDateTime;
  * @param userId 所属用户 ID
  * @param name 令牌名称
  * @param tokenId 令牌唯一标识（JWT jti）
+ * @param scopes 权限码范围；空列表表示继承用户全部权限
  * @param expiresAt 过期时间
  * @param revoked 是否已撤销
  * @param revokedAt 撤销时间，未撤销时为 {@code null}
@@ -36,6 +38,6 @@ import java.time.LocalDateTime;
  * @since 1.0.0
  */
 public record PersonalAccessTokenRecord(Long id, Long userId, String name, String tokenId,
-                                       LocalDateTime expiresAt, boolean revoked,
+                                       List<String> scopes, LocalDateTime expiresAt, boolean revoked,
                                        LocalDateTime revokedAt, LocalDateTime createTime) {
 }

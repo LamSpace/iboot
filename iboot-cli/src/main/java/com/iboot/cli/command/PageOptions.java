@@ -37,4 +37,12 @@ public class PageOptions {
      */
     @Option(names = {"-s", "--size"}, defaultValue = "20", description = "每页数量")
     public int size = 20;
+
+    /**
+     * 自动翻页取回全部记录。
+     *
+     * <p>忽略 {@code --page}，固定每页 100 条；结果超过安全上限时拒绝执行。
+     */
+    @Option(names = "--all", description = "自动翻页取回全部记录（最多 10000 条）")
+    public boolean all;
 }

@@ -43,6 +43,9 @@ printf '%s' "$IBOOT_PAT" | ./bin/iboot user list --token-stdin
 ./bin/iboot backup list
 ./bin/iboot log operate --size 20
 ./bin/iboot online list --json
+
+# 取全量：固定每页 100，超过 10000 条会拒绝
+./bin/iboot user list --all --json
 ```
 
 `--json` 输出解包后的业务数据，适合继续用 `jq` 处理；默认输出表格供人阅读。
@@ -52,9 +55,12 @@ printf '%s' "$IBOOT_PAT" | ./bin/iboot user list --token-stdin
 ```bash
 ./bin/iboot job run 12 --dry-run
 ./bin/iboot job run 12 --yes
+./bin/iboot job run 12 --wait --yes
 ./bin/iboot backup trigger --wait --yes
 ./bin/iboot online kick <tokenId> --yes
 ```
+
+`job run --wait` 只等待本次触发后新产生的执行日志，失败以业务错误退出。
 
 `backup trigger --wait` 轮询到 `SUCCESS` / `FAILED`，默认每 2 秒、最多 300 秒；
 Docker 全量部署默认关闭备份，会返回“备份功能未启用”。
@@ -65,12 +71,14 @@ Docker 全量部署默认关闭备份，会返回“备份功能未启用”。
 
 ```bash
 ./bin/iboot token create ci --expires-days 30 --yes
+./bin/iboot token create ops --scope job:run --scope backup:record:create --yes
 ./bin/iboot token list
 ./bin/iboot token revoke 3 --yes
 ```
 
-PAT 的权限是签发时快照；角色调整后撤销并重建。用户停用或删除时全部 PAT 失效。
-PAT 不出现在在线列表，也不被会话级强退覆盖。
+`--scope` 是权限码子集，不指定时继承全部权限。PAT 的权限是签发时快照；角色调整后
+撤销并重建。用户停用或删除时全部 PAT 失效。PAT 不出现在在线列表，也不被会话级强退
+覆盖。操作日志的 `authType` 区分 `SESSION` 与 `PAT`。
 
 ## References
 

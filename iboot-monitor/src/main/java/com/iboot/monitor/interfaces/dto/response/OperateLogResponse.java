@@ -127,6 +127,12 @@ public class OperateLogResponse {
     @Schema(description = "操作时间")
     private LocalDateTime operTime;
 
+    /**
+     * 认证方式：SESSION-交互式会话，PAT-个人访问令牌。
+     */
+    @Schema(description = "认证方式：SESSION/PAT")
+    private String authType;
+
     @SuppressWarnings("all")
     public OperateLogResponse() {
     }
@@ -135,7 +141,8 @@ public class OperateLogResponse {
     public OperateLogResponse(final Long id, final String title, final Integer businessType, final String method,
                               final String requestMethod, final String operatorName, final String deptName, final String operUrl,
                               final String operIp, final String operLocation, final String operParam, final String jsonResult,
-                              final Integer status, final String errorMsg, final Long costTime, final LocalDateTime operTime) {
+                              final Integer status, final String errorMsg, final Long costTime, final LocalDateTime operTime,
+                              final String authType) {
         this.id = id;
         this.title = title;
         this.businessType = businessType;
@@ -152,6 +159,7 @@ public class OperateLogResponse {
         this.errorMsg = errorMsg;
         this.costTime = costTime;
         this.operTime = operTime;
+        this.authType = authType;
     }
 
     @SuppressWarnings("all")
@@ -317,6 +325,26 @@ public class OperateLogResponse {
     @SuppressWarnings("all")
     public void setOperTime(final LocalDateTime operTime) {
         this.operTime = operTime;
+    }
+
+    /**
+     * 认证方式：SESSION-交互式会话，PAT-个人访问令牌。
+     *
+     * @return 认证方式
+     */
+    @SuppressWarnings("all")
+    public String getAuthType() {
+        return this.authType;
+    }
+
+    /**
+     * 认证方式：SESSION-交互式会话，PAT-个人访问令牌。
+     *
+     * @param authType 认证方式
+     */
+    @SuppressWarnings("all")
+    public void setAuthType(final String authType) {
+        this.authType = authType;
     }
 
     @java.lang.Override
@@ -505,6 +533,9 @@ public class OperateLogResponse {
         private LocalDateTime operTime;
 
         @SuppressWarnings("all")
+        private String authType;
+
+        @SuppressWarnings("all")
         OperateLogResponseBuilder() {
         }
 
@@ -652,11 +683,23 @@ public class OperateLogResponse {
             return this;
         }
 
+        /**
+         * 认证方式：SESSION-交互式会话，PAT-个人访问令牌。
+         *
+         * @param authType 认证方式
+         * @return {@code this}
+         */
+        @SuppressWarnings("all")
+        public OperateLogResponse.OperateLogResponseBuilder authType(final String authType) {
+            this.authType = authType;
+            return this;
+        }
+
         @SuppressWarnings("all")
         public OperateLogResponse build() {
             return new OperateLogResponse(this.id, this.title, this.businessType, this.method, this.requestMethod,
                     this.operatorName, this.deptName, this.operUrl, this.operIp, this.operLocation, this.operParam,
-                    this.jsonResult, this.status, this.errorMsg, this.costTime, this.operTime);
+                    this.jsonResult, this.status, this.errorMsg, this.costTime, this.operTime, this.authType);
         }
 
         @java.lang.Override

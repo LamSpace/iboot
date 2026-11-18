@@ -49,9 +49,7 @@ public class ParamCommand extends BaseCommand {
 
         @Override
         public void run() {
-            print(get("/api/config/list", Map.of(
-                    "pageNum", String.valueOf(page.page),
-                    "pageSize", String.valueOf(page.size))));
+            print(getPaged("/api/config/list", page, Map.of()));
         }
     }
 

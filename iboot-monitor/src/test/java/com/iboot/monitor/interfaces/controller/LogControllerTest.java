@@ -16,6 +16,7 @@
 
 package com.iboot.monitor.interfaces.controller;
 
+import com.iboot.kernel.logging.OperateLog;
 import com.iboot.kernel.security.JwtSecurityConfig;
 import com.iboot.kernel.security.JwtTokenUtil;
 import com.iboot.monitor.application.service.LoginLogApplicationService;
@@ -103,6 +104,25 @@ class LogControllerTest {
     }
 
     /**
+     * 操作日志列表应返回认证方式。
+     *
+     * @throws Exception MockMvc 调用失败时抛出
+     */
+    @Test
+    void operateLogListReturnsAuthType() throws Exception {
+        OperateLog log = operateLog();
+        when(operateLogApplicationService.getOperateLogPage(anyInt(), anyInt())).thenReturn(List.of(log));
+        when(operateLogApplicationService.countOperateLogs()).thenReturn(1L);
+
+        mockMvc.perform(get("/api/log/operate/list")
+                        .with(authentication(auth("operatelog:list")))
+                        .header(VERSION_HEADER, "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.data.total").value(1))
+                .andExpect(jsonPath("$.data.data.data[0].authType").value("PAT"));
+    }
+
+    /**
      * 缺少权限码时拒绝访问。
      *
      * @throws Exception MockMvc 调用失败时抛出
@@ -113,6 +133,15 @@ class LogControllerTest {
                         .with(authentication(auth("other:list")))
                         .header(VERSION_HEADER, "1"))
                 .andExpect(status().isForbidden());
+    }
+
+    private OperateLog operateLog() {
+        OperateLog log = new OperateLog();
+        log.setId(1L);
+        log.setTitle("定时任务");
+        log.setAuthType("PAT");
+        log.setOperateTime(LocalDateTime.now());
+        return log;
     }
 
     private LoginLog loginLog() {

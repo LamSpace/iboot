@@ -16,16 +16,22 @@
 
 package com.iboot.kernel.logging;
 
+import com.iboot.kernel.security.Constants;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -46,6 +52,7 @@ class LogAspectTest {
     @AfterEach
     void tearDown() {
         RequestContextHolder.resetRequestAttributes();
+        SecurityContextHolder.clearContext();
     }
 
     /**
@@ -80,6 +87,37 @@ class LogAspectTest {
         assertThat(recorded.getUrl()).isEqualTo("/api/demo");
         assertThat(recorded.getStatus()).isZero();
         assertThat(recorded.getErrorMsg()).isEqualTo("boom");
+        assertThat(recorded.getAuthType()).isEqualTo(Constants.AUTH_TYPE_SESSION);
+    }
+
+    /**
+     * PAT 主体应记录为 PAT，而不是交互式会话。
+     *
+     * @throws Exception 反射获取注解失败时抛出
+     */
+    @Test
+    void recordsPatAuthType() throws Exception {
+        Map<String, Object> principal = new HashMap<>();
+        principal.put(Constants.PAT_CLAIM, true);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, List.of()));
+        OperateLogRecorder recorder = mock(OperateLogRecorder.class);
+        LogAspect aspect = new LogAspect(recorder);
+        Method method = SampleController.class.getDeclaredMethod("run");
+        Log annotation = method.getAnnotation(Log.class);
+        JoinPoint joinPoint = mock(JoinPoint.class);
+        MethodSignature signature = mock(MethodSignature.class);
+        when(joinPoint.getSignature()).thenReturn(signature);
+        when(signature.getMethod()).thenReturn(method);
+        when(joinPoint.getTarget()).thenReturn(new SampleController());
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/demo");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        aspect.doAfterThrowing(joinPoint, annotation, new IllegalStateException("boom"));
+
+        ArgumentCaptor<OperateLog> captor = ArgumentCaptor.forClass(OperateLog.class);
+        verify(recorder).record(captor.capture());
+        assertThat(captor.getValue().getAuthType()).isEqualTo(Constants.AUTH_TYPE_PAT);
     }
 
     /**

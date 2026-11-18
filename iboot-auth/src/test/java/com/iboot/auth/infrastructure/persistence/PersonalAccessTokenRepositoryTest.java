@@ -63,9 +63,10 @@ class PersonalAccessTokenRepositoryTest {
         repository = new PersonalAccessTokenRepository(jdbcTemplate);
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(30);
 
-        repository.insert(7L, "ci", "jti-1", expiresAt);
+        repository.insert(7L, "ci", "jti-1", "user:list,job:run", expiresAt);
 
-        verify(jdbcTemplate).update(anyString(), eq(7L), eq("ci"), eq("jti-1"), eq(expiresAt));
+        verify(jdbcTemplate).update(anyString(), eq(7L), eq("ci"), eq("jti-1"),
+                eq("user:list,job:run"), eq(expiresAt));
     }
 
     /**
@@ -83,6 +84,7 @@ class PersonalAccessTokenRepositoryTest {
         when(resultSet.getLong("user_id")).thenReturn(7L);
         when(resultSet.getString("name")).thenReturn("ci");
         when(resultSet.getString("token_id")).thenReturn("jti-1");
+        when(resultSet.getString("scopes")).thenReturn("user:list,job:run");
         when(resultSet.getTimestamp("expires_at")).thenReturn(Timestamp.valueOf(expiresAt));
         when(resultSet.getBoolean("revoked")).thenReturn(false);
         when(resultSet.getTimestamp("revoked_at")).thenReturn(null);
@@ -100,6 +102,7 @@ class PersonalAccessTokenRepositoryTest {
         assertThat(records.get(0).userId()).isEqualTo(7L);
         assertThat(records.get(0).name()).isEqualTo("ci");
         assertThat(records.get(0).tokenId()).isEqualTo("jti-1");
+        assertThat(records.get(0).scopes()).containsExactly("user:list", "job:run");
         assertThat(records.get(0).expiresAt()).isEqualTo(expiresAt);
         assertThat(records.get(0).revoked()).isFalse();
     }

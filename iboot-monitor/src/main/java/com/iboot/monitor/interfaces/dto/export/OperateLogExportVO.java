@@ -102,6 +102,12 @@ public class OperateLogExportVO {
     @ExcelColumn(name = "操作时间", order = 12, width = 20)
     private LocalDateTime operTime;
 
+    /**
+     * 导出列：认证方式。
+     */
+    @ExcelColumn(name = "认证方式", order = 13, width = 12)
+    private String authType;
+
     @SuppressWarnings("all")
     public OperateLogExportVO() {
     }
@@ -109,7 +115,8 @@ public class OperateLogExportVO {
     @SuppressWarnings("all")
     public OperateLogExportVO(final Long id, final String title, final Integer businessType, final String requestMethod,
                               final String operatorName, final String deptName, final String operUrl, final String operIp,
-                              final String operLocation, final Integer status, final Long costTime, final LocalDateTime operTime) {
+                              final String operLocation, final Integer status, final Long costTime,
+                              final LocalDateTime operTime, final String authType) {
         this.id = id;
         this.title = title;
         this.businessType = businessType;
@@ -122,6 +129,7 @@ public class OperateLogExportVO {
         this.status = status;
         this.costTime = costTime;
         this.operTime = operTime;
+        this.authType = authType;
     }
 
     @SuppressWarnings("all")
@@ -247,6 +255,26 @@ public class OperateLogExportVO {
     @SuppressWarnings("all")
     public void setOperTime(final LocalDateTime operTime) {
         this.operTime = operTime;
+    }
+
+    /**
+     * 认证方式。
+     *
+     * @return 认证方式
+     */
+    @SuppressWarnings("all")
+    public String getAuthType() {
+        return this.authType;
+    }
+
+    /**
+     * 认证方式。
+     *
+     * @param authType 认证方式
+     */
+    @SuppressWarnings("all")
+    public void setAuthType(final String authType) {
+        this.authType = authType;
     }
 
     @java.lang.Override
@@ -397,6 +425,9 @@ public class OperateLogExportVO {
         private LocalDateTime operTime;
 
         @SuppressWarnings("all")
+        private String authType;
+
+        @SuppressWarnings("all")
         OperateLogExportVOBuilder() {
         }
 
@@ -508,11 +539,23 @@ public class OperateLogExportVO {
             return this;
         }
 
+        /**
+         * 认证方式。
+         *
+         * @param authType 认证方式
+         * @return {@code this}
+         */
+        @SuppressWarnings("all")
+        public OperateLogExportVO.OperateLogExportVOBuilder authType(final String authType) {
+            this.authType = authType;
+            return this;
+        }
+
         @SuppressWarnings("all")
         public OperateLogExportVO build() {
             return new OperateLogExportVO(this.id, this.title, this.businessType, this.requestMethod, this.operatorName,
                     this.deptName, this.operUrl, this.operIp, this.operLocation, this.status, this.costTime,
-                    this.operTime);
+                    this.operTime, this.authType);
         }
 
         @java.lang.Override

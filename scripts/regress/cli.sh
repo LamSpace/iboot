@@ -176,6 +176,8 @@ REG_CLI_JOB_ID="$(printf '%s' "$job_created" | jq -r '.data.id // empty')"
 [ -n "$REG_CLI_JOB_ID" ] || reg_die "创建 CLI 回归任务失败：$job_created"
 cli_run job run "$REG_CLI_JOB_ID" --dry-run >/dev/null || reg_fail "job run --dry-run 失败"
 cli_run job run "$REG_CLI_JOB_ID" --yes >/dev/null || reg_fail "job run --yes 失败"
+cli_run job run "$REG_CLI_JOB_ID" --wait --yes >/dev/null || reg_fail "job run --wait 失败"
+reg_pass "job run --wait 等待本次执行成功"
 job_log_found=0
 for _ in $(seq 1 15); do
     job_logs="$(cli_run job logs --job-id "$REG_CLI_JOB_ID" --json --size 10)"
@@ -323,6 +325,37 @@ else
     reg_pass "token list 只返回元数据"
 fi
 
+all_json="$(cli_run user list --all --json --size 5)"
+all_total="$(printf '%s' "$all_json" | jq -r '.total // -1')"
+all_count="$(printf '%s' "$all_json" | jq -r '[.data[]?] | length')"
+if [ "$all_total" = "$all_count" ] && [ "$all_total" -gt 0 ]; then
+    reg_pass "--all 合并结果与 total 一致"
+else
+    reg_fail "--all 结果不一致（total=$all_total, count=$all_count）"
+fi
+
+scoped_json="$(cli_run token create regress-scoped --expires-days 1 --scope user:list --yes --json)"
+scoped_token="$(printf '%s' "$scoped_json" | jq -r '.token // empty')"
+scoped_id="$(printf '%s' "$scoped_json" | jq -r '.id // empty')"
+if [ -n "$scoped_token" ]; then
+    if IBOOT_TOKEN="$scoped_token" cli_exec user list --json --size 1 >/dev/null 2>&1; then
+        reg_pass "受限 scope 的 PAT 可调用允许接口"
+    else
+        reg_fail "受限 scope 的 PAT 调用允许接口失败"
+    fi
+    set +e
+    IBOOT_TOKEN="$scoped_token" cli_exec backup list --json >/dev/null 2>&1
+    scoped_denied=$?
+    set -e
+    if [ "$scoped_denied" -eq 4 ]; then
+        reg_pass "受限 scope 的 PAT 调用越界接口返回 403"
+    else
+        reg_fail "受限 scope 越界退出码为 $scoped_denied，期望 4"
+    fi
+else
+    reg_fail "受限 scope PAT 未返回明文"
+fi
+
 if IBOOT_TOKEN="$pat_token" cli_exec user list --json --size 1 >/dev/null 2>&1; then
     reg_pass "PAT 可调用只读接口"
 else
@@ -375,6 +408,61 @@ else
     reg_pass "操作日志不含令牌明文"
 fi
 
+pat_job_body='{"jobName":"PAT回归任务","jobGroup":"DEFAULT","invokeTarget":"sampleTask.noParams","cronExpression":"0 0 4 * * ?","status":0,"remark":"PAT regress"}'
+pat_job_created="$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+    -d "$pat_job_body" "$REG_GATEWAY/api/job" | reg_unwrap)"
+pat_job_id="$(printf '%s' "$pat_job_created" | jq -r '.data.id // empty')"
+if [ -n "$pat_job_id" ]; then
+    if IBOOT_TOKEN="$pat_token" cli_exec job run "$pat_job_id" --wait --yes >/dev/null 2>&1; then
+        reg_pass "PAT 触发任务并等待成功"
+    else
+        reg_fail "PAT 触发任务 --wait 失败"
+    fi
+    pat_type_found=0
+    for _ in $(seq 1 10); do
+        pat_type_logs="$(cli_run log operate --all --json)"
+        if printf '%s' "$pat_type_logs" | jq -e \
+            '[.data[]? | select((.operUrl // "") | contains("/api/job/")) | select(.authType == "PAT")] | length > 0' \
+            >/dev/null 2>&1; then
+            pat_type_found=1
+            break
+        fi
+        sleep 1
+    done
+    if [ "$pat_type_found" -eq 1 ]; then
+        reg_pass "操作日志以 PAT 标记认证方式"
+    else
+        reg_fail "操作日志未出现 authType=PAT"
+    fi
+    curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/job/$pat_job_id" >/dev/null || true
+else
+    reg_fail "创建 PAT 回归任务失败：$(printf '%s' "$pat_job_created" | head -c 200)"
+fi
+
+fail_job_body='{"jobName":"CLI失败任务","jobGroup":"DEFAULT","invokeTarget":"sampleTask.notFound","cronExpression":"0 0 5 * * ?","status":0,"remark":"CLI regress fail"}'
+fail_job_created="$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+    -d "$fail_job_body" "$REG_GATEWAY/api/job" | reg_unwrap)"
+fail_job_id="$(printf '%s' "$fail_job_created" | jq -r '.data.id // empty')"
+if [ -n "$fail_job_id" ]; then
+    set +e
+    cli_run job run "$fail_job_id" --wait --yes --timeout 60 >/dev/null
+    fail_wait_status=$?
+    set -e
+    if [ "$fail_wait_status" -eq 6 ]; then
+        reg_pass "job run --wait 以业务错误反映执行失败"
+    else
+        reg_fail "job run --wait 失败退出码为 $fail_wait_status，期望 6"
+    fi
+    curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+        "$REG_GATEWAY/api/job/$fail_job_id" >/dev/null || true
+else
+    reg_fail "创建失败任务失败：$(printf '%s' "$fail_job_created" | head -c 200)"
+fi
+
+if [ -n "$scoped_id" ]; then
+    cli_run token revoke "$scoped_id" --yes >/dev/null || reg_fail "撤销受限 scope PAT 失败"
+fi
 cli_run token revoke "$pat_id" --yes >/dev/null || reg_fail "token revoke 失败"
 set +e
 IBOOT_TOKEN="$pat_token" cli_exec user list --json --size 1 >/dev/null 2>&1

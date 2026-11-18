@@ -52,9 +52,7 @@ public class OnlineCommand extends BaseCommand {
 
         @Override
         public void run() {
-            print(get("/api/online/list", Map.of(
-                    "pageNum", String.valueOf(page.page),
-                    "pageSize", String.valueOf(page.size))));
+            print(getPaged("/api/online/list", page, Map.of()));
         }
     }
 

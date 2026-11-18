@@ -68,16 +68,19 @@ class PersonalAccessTokenControllerTest {
     void createsTokenForInteractiveSession() {
         authenticate(false);
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(30);
-        when(tokenService.create(7L, "ci", 30L)).thenReturn(
-                new PersonalAccessTokenCreated(42L, "ci", "jwt-token", LocalDateTime.now(), expiresAt));
+        when(tokenService.create(7L, "ci", 30L, List.of("user:list"))).thenReturn(
+                new PersonalAccessTokenCreated(42L, "ci", List.of("user:list"), "jwt-token",
+                        LocalDateTime.now(), expiresAt));
         CreatePersonalAccessTokenRequest request = new CreatePersonalAccessTokenRequest();
         request.setName("ci");
         request.setExpiresDays(30L);
+        request.setScopes(List.of("user:list"));
 
         Result<PersonalAccessTokenCreatedResponse> result = controller.create(request);
 
         assertThat(result.getData().token()).isEqualTo("jwt-token");
         assertThat(result.getData().id()).isEqualTo(42L);
+        assertThat(result.getData().scopes()).containsExactly("user:list");
     }
 
     /**
@@ -87,13 +90,15 @@ class PersonalAccessTokenControllerTest {
     void listsMetadata() {
         authenticate(false);
         when(tokenService.list(7L)).thenReturn(List.of(
-                new PersonalAccessTokenSummary(1L, "ci", PersonalAccessTokenService.STATUS_ACTIVE,
+                new PersonalAccessTokenSummary(1L, "ci", List.of("user:list"),
+                        PersonalAccessTokenService.STATUS_ACTIVE,
                         LocalDateTime.now(), LocalDateTime.now().plusDays(1), null)));
 
         Result<List<PersonalAccessTokenResponse>> result = controller.list();
 
         assertThat(result.getData()).hasSize(1);
         assertThat(result.getData().get(0).name()).isEqualTo("ci");
+        assertThat(result.getData().get(0).scopes()).containsExactly("user:list");
         assertThat(result.getData().get(0).status()).isEqualTo("ACTIVE");
     }
 

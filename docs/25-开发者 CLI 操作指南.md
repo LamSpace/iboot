@@ -78,14 +78,16 @@ context 会被拒绝，需先切换到其他 context。删除 context 时同时�
 | `iboot token list` | 当前用户的个人访问令牌元数据 |
 | `iboot api <METHOD> <PATH> [-d body]` | 任意已存在接口的逃生口 |
 
-所有查询命令支持 `-p/--page`、`-s/--size`；`--json` 输出解包后的业务数据，`--raw`
-输出原始响应（含 CloudEvents 信封）。
+所有查询命令支持 `-p/--page`、`-s/--size`；分页命令还支持 `--all`：忽略 `--page`，
+固定每页 100 条拉取全部页并合并，结果超过 10,000 条时拒绝执行，建议增加筛选条件。
+`--json` 输出解包后的业务数据，`--raw` 输出原始响应（含 CloudEvents 信封）。
 
 ### 运维写命令
 
 | 命令 | 说明 |
 |---|---|
 | `iboot job run <id> --yes` | 立即执行一次定时任务；结果用 `job logs --job-id <id>` 查看 |
+| `iboot job run <id> --wait --yes` | 触发并等待本次执行进入终态；失败以业务错误退出 |
 | `iboot job logs --job-id <id>` | 按任务过滤执行日志 |
 | `iboot backup trigger --yes` | 手动触发一次备份 |
 | `iboot backup trigger --wait --yes` | 触发并轮询到 `SUCCESS`/`FAILED` |
@@ -94,6 +96,10 @@ context 会被拒绝，需先切换到其他 context。删除 context 时同时�
 写命令默认拒绝执行，必须带 `--yes`；`--dry-run` 只打印方法、路径和请求体，不发送请求。
 `backup trigger --wait` 默认每 2 秒轮询、最多等待 300 秒，可用 `--interval` / `--timeout`
 覆盖；等待失败或超时以业务错误退出码结束，不会删除或修改备份记录。
+
+`job run --wait` 在触发前记录该任务最新执行日志，触发后只接受新产生的日志；默认每 2 秒
+轮询、最多等待 300 秒。成功输出日志 ID，失败输出异常信息并以业务错误退出，超时提示
+未出现新的终态日志。
 
 写操作由服务端 `@Log` 记录，可用 `iboot log operate` 查看；Docker 全量部署默认关闭备份，
 `backup trigger` 会返回“备份功能未启用”的业务错误，这是预期行为。
@@ -104,7 +110,7 @@ PAT 面向 CI 与无浏览器环境，使用交互式登录会话签发，之后
 
 | 命令 | 说明 |
 |---|---|
-| `iboot token create <name> [--expires-days <n>] --yes` | 签发 PAT；明文只显示一次 |
+| `iboot token create <name> [--expires-days <n>] [--scope <perm>]... --yes` | 签发 PAT；明文只显示一次 |
 | `iboot token list` | 列出当前用户的 PAT 元数据 |
 | `iboot token revoke <id> --yes` | 撤销 PAT |
 
@@ -119,9 +125,20 @@ PAT 面向 CI 与无浏览器环境，使用交互式登录会话签发，之后
 ./bin/iboot token revoke 3 --yes
 ```
 
-PAT 的权限是签发时的快照：角色或权限调整后不会自动同步，需要撤销并重建。用户被停用
-或删除时，该用户的全部 PAT 立即失效。PAT 不出现在在线列表，也不会被会话级强退覆盖；
-撤销入口是 `token revoke` 或用户停用/删除。
+`--scope` 可重复指定权限码，必须是当前用户已有权限的子集；不指定时继承全部权限。
+例如只允许 CI 查询用户与触发任务：
+
+```bash
+./bin/iboot token create ci --scope user:list --scope job:run --yes
+```
+
+有效权限为权限快照与 scope 的交集，超出范围的接口返回 403。PAT 的权限是签发时的快照：
+角色或权限调整后不会自动同步，需要撤销并重建。用户被停用或删除时，该用户的全部 PAT
+立即失效。PAT 不出现在在线列表，也不会被会话级强退覆盖；撤销入口是 `token revoke`
+或用户停用/删除。
+
+操作日志中的 `authType` 区分 `SESSION` 与 `PAT`；`iboot log operate --json` 与门户的
+操作日志页均可查看，便于区分人工操作与 CI 触发。
 
 CI 中优先使用标准输入注入，避免令牌进入命令行参数与 shell 历史：
 

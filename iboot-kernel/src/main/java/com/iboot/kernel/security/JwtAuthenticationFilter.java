@@ -208,11 +208,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         Long userId = Long.valueOf(subject);
         recordPatLastUsed(tokenId, expiration);
-        Object permissionsClaim = claims.get(Constants.PERMISSIONS);
-        List<String> permissions = permissionsClaim instanceof List<?> list
+        List<String> permissions = claimList(claims.get(Constants.PERMISSIONS));
+        List<String> scopes = claimList(claims.get(Constants.PAT_SCOPES_CLAIM));
+        if (!scopes.isEmpty()) {
+            permissions = permissions.stream().filter(scopes::contains).toList();
+        }
+        applyAuthentication(buildPrincipal(claims, userId), permissions);
+    }
+
+    /**
+     * 把声明值转换为字符串列表。
+     *
+     * @param value 声明值
+     * @return 字符串列表；不是数组时返回空列表
+     */
+    private List<String> claimList(Object value) {
+        return value instanceof List<?> list
                 ? list.stream().map(String::valueOf).toList()
                 : List.of();
-        applyAuthentication(buildPrincipal(claims, userId), permissions);
     }
 
     /**
