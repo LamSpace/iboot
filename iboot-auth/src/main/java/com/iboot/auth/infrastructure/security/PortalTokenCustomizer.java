@@ -55,16 +55,21 @@ public class PortalTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
 
     private final CredentialAuthenticator credentialAuthenticator;
 
+    private final AuthServerProperties properties;
+
     /**
      * 创建令牌定制器。
      *
      * @param redisTemplate 共享会话 Redis 模板
      * @param credentialAuthenticator 凭据认证器，用于读取会话配置与独占会话策略
+     * @param properties 授权服务器配置，用于识别开发者 CLI 客户端
      */
     public PortalTokenCustomizer(RedisTemplate<String, Object> redisTemplate,
-                                 CredentialAuthenticator credentialAuthenticator) {
+                                 CredentialAuthenticator credentialAuthenticator,
+                                 AuthServerProperties properties) {
         this.redisTemplate = redisTemplate;
         this.credentialAuthenticator = credentialAuthenticator;
+        this.properties = properties;
     }
 
     /**
@@ -99,11 +104,14 @@ public class PortalTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
                 .claim(Constants.PERMISSIONS, principal.permissions())
                 .claim("sid", sessionId);
 
-        boolean newLogin = AuthorizationGrantType.AUTHORIZATION_CODE.equals(context.getAuthorizationGrantType());
+        boolean cliClient = context.getRegisteredClient() != null
+                && properties.getCliClientId().equals(context.getRegisteredClient().getClientId());
+        boolean newLogin = AuthorizationGrantType.AUTHORIZATION_CODE.equals(context.getAuthorizationGrantType())
+                && !cliClient;
         if (newLogin) {
             credentialAuthenticator.evictPreviousSession(user.id());
         }
-        writeSession(sessionId, principal);
+        writeSession(sessionId, principal, !cliClient);
     }
 
     /**
@@ -144,12 +152,16 @@ public class PortalTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
     }
 
     /**
-     * 写入共享会话与在线映射，并续期。
+     * 写入共享会话，并按客户端类型决定是否写入在线映射。
+     *
+     * <p>开发者 CLI 在过渡期内不写入在线映射：这样不会覆盖门户的在线记录，也不会
+     * 参与按用户的强制下线。该例外由 {@code add-multi-client-sessions} 变更移除。
      *
      * @param sessionId 会话标识
      * @param principal 用户主体
+     * @param writeOnlineMapping 是否写入 {@code online_token:<userId>}
      */
-    private void writeSession(String sessionId, PortalUserPrincipal principal) {
+    private void writeSession(String sessionId, PortalUserPrincipal principal, boolean writeOnlineMapping) {
         AuthUser user = principal.user();
         Map<String, Object> session = new HashMap<>();
         session.put(Constants.USER_ID, user.id());
@@ -166,7 +178,9 @@ public class PortalTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
         long sessionTimeoutMinutes = credentialAuthenticator.sessionTimeoutMinutes();
         redisTemplate.opsForValue().set(Constants.LOGIN_TOKEN_KEY + sessionId, session,
                 sessionTimeoutMinutes, TimeUnit.MINUTES);
-        redisTemplate.opsForValue().set(Constants.ONLINE_TOKEN_KEY + user.id(), sessionId,
-                sessionTimeoutMinutes, TimeUnit.MINUTES);
+        if (writeOnlineMapping) {
+            redisTemplate.opsForValue().set(Constants.ONLINE_TOKEN_KEY + user.id(), sessionId,
+                    sessionTimeoutMinutes, TimeUnit.MINUTES);
+        }
     }
 }

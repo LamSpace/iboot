@@ -136,6 +136,9 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 
 **网关 `iboot-gateway`**：统一路由、跨域、SSE 长连接透传与服务降级。
 
+**开发者 CLI `iboot-cli`**：授权码 + PKCE 登录、多 context、只读查询与 `iboot api` 逃生口；
+复用现有权限、数据范围与审计，不直连数据库。详见 [docs/25](<./docs/25-开发者 CLI 操作指南.md>)。
+
 **服务治理**：网关按路由限流（`429` 统一 JSON），`iboot-notify` 内部端点具备入口流控；规则存 Nacos 并热更新，Sentinel Dashboard（8858）为本地必选组件，治理指标进入 Prometheus。门户“微服务治理”菜单提供 Nacos 与 Sentinel 控制台入口：开发环境经门户同源代理内嵌，生产环境只保留内网跳转。审批 → 通知已改为本地 outbox + RocketMQ，消费失败按重试进入死信队列。
 
 ## 快速开始
@@ -214,7 +217,8 @@ MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root \
 
 ```
 iboot/
-├── pom.xml                  # 父 POM，聚合 13 个后端模块
+├── pom.xml                  # 父 POM，聚合 15 个 Maven 模块
+├── bin/iboot                # 开发者 CLI 启动脚本
 ├── docker/                  # 中间件编排与初始化脚本
 │   ├── docker-compose.yml
 │   └── init.sql
@@ -236,6 +240,8 @@ iboot/
 ├── iboot-monitor/           # 监控与日志 :8087
 ├── iboot-ops/               # 运维控制台 :8089
 ├── iboot-sentinel/          # 治理指标桥接库（不独立部署）
+├── iboot-logging/           # 日志共享库（不独立部署）
+├── iboot-cli/               # 开发者命令行工具（不独立部署）
 ├── iboot-portal/            # 前端（Vue 3 + Vite）
 ├── docs/                     # 项目文档，入口 docs/README.md
 ├── openspec/                # 能力契约与变更记录
@@ -257,9 +263,12 @@ mvn clean package
 
 # 单个模块测试
 mvn -pl iboot-system test
+mvn -pl iboot-cli test
 
-# 全栈回归：契约快照 → 路由覆盖 → 冒烟 → 权限矩阵
+# 全栈回归：契约快照 → 路由覆盖 → 冒烟 → 权限矩阵 → CLI
 bash scripts/regress/regress.sh
+bash scripts/regress/cli.sh
+# Docker 全量部署时追加：REG_OIDC_REDIRECT=http://localhost/callback
 
 # 链路追踪核验
 bash scripts/regress/trace-chain.sh <traceId> --expect iboot-gateway,iboot-system
@@ -296,7 +305,8 @@ scripts/docker-deploy.sh up core
 | [docs/22 AI 工作台操作指南](<./docs/22-AI 工作台操作指南.md>) | 模型配置、RAG、智能体与知识图谱 |
 | [docs/11 可观测性设计](<./docs/11-可观测性设计.md>) | 指标、日志、告警与追踪 |
 | [docs/24 SkyWalking 与 Tempo 对比实验](<./docs/24-SkyWalking 与 Tempo 对比实验.md>) | 辅助 APM 栈、双后端验收、开销度量与选型结论 |
-| [openspec/specs](openspec/specs) | 29 份能力契约 |
+| [docs/25 开发者 CLI 操作指南](<./docs/25-开发者 CLI 操作指南.md>) | CLI 安装、登录、context、只读命令与安全边界 |
+| [openspec/specs](openspec/specs) | 能力契约与变更记录 |
 | [openspec/changes/archive](openspec/changes/archive) | 历次变更的 proposal / design / tasks |
 
 ## 许可证

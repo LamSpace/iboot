@@ -49,6 +49,25 @@ public class AuthServerProperties {
     private String clientName = "iBoot Portal";
 
     /**
+     * 开发者 CLI 的客户端标识。
+     *
+     * <p>该客户端同样使用授权码 + PKCE；过渡期内其会话不写入在线名单，也不参与
+     * 独占会话驱逐。
+     */
+    private String cliClientId = "iboot-cli";
+
+    /**
+     * 开发者 CLI 的展示名称。
+     */
+    private String cliClientName = "iBoot CLI";
+
+    /**
+     * 开发者 CLI 允许的 loopback 回调地址。
+     */
+    private List<String> cliRedirectUris =
+            new ArrayList<>(List.of("http://127.0.0.1:8765/callback"));
+
+    /**
      * 允许的回调地址。
      */
     private List<String> redirectUris = new ArrayList<>(List.of("http://localhost:5173/callback"));
@@ -138,6 +157,60 @@ public class AuthServerProperties {
      */
     public void setClientName(String clientName) {
         this.clientName = clientName;
+    }
+
+    /**
+     * 获取开发者 CLI 的客户端标识。
+     *
+     * @return CLI 客户端标识
+     */
+    public String getCliClientId() {
+        return cliClientId;
+    }
+
+    /**
+     * 设置开发者 CLI 的客户端标识。
+     *
+     * @param cliClientId CLI 客户端标识
+     */
+    public void setCliClientId(String cliClientId) {
+        this.cliClientId = cliClientId;
+    }
+
+    /**
+     * 获取开发者 CLI 的展示名称。
+     *
+     * @return CLI 展示名称
+     */
+    public String getCliClientName() {
+        return cliClientName;
+    }
+
+    /**
+     * 设置开发者 CLI 的展示名称。
+     *
+     * @param cliClientName CLI 展示名称
+     */
+    public void setCliClientName(String cliClientName) {
+        this.cliClientName = cliClientName;
+    }
+
+    /**
+     * 获取开发者 CLI 允许的回调地址。
+     *
+     * @return CLI 回调地址列表
+     */
+    public List<String> getCliRedirectUris() {
+        return cliRedirectUris;
+    }
+
+    /**
+     * 设置开发者 CLI 允许的回调地址。
+     *
+     * @param cliRedirectUris CLI 回调地址列表
+     */
+    public void setCliRedirectUris(List<String> cliRedirectUris) {
+        this.cliRedirectUris = cliRedirectUris;
     }
 
     /**

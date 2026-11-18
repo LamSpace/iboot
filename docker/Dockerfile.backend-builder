@@ -33,5 +33,6 @@ RUN --mount=type=cache,target=/root/.m2/repository,sharing=locked \
 
 COPY . .
 
+# CLI 不进入部署镜像；排除它可避免 builder 额外解析 shade 插件。
 RUN --mount=type=cache,target=/root/.m2/repository,sharing=locked \
-    mvn -B -DskipTests package
+    mvn -B -DskipTests package -pl '!iboot-cli'

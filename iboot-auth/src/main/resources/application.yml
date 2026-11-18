@@ -81,6 +81,10 @@ iboot:
         - ${IBOOT_AUTH_REDIRECT_URI:http://localhost:5173/callback}
       post-logout-redirect-uris:
         - ${IBOOT_AUTH_LOGOUT_REDIRECT_URI:http://localhost:5173/login}
+      cli-client-id: ${IBOOT_AUTH_CLI_CLIENT_ID:iboot-cli}
+      cli-client-name: iBoot CLI
+      cli-redirect-uris:
+        - ${IBOOT_AUTH_CLI_REDIRECT_URI:http://127.0.0.1:8765/callback}
       access-token-minutes: ${IBOOT_AUTH_ACCESS_TOKEN_MINUTES:30}
       refresh-token-minutes: ${IBOOT_AUTH_REFRESH_TOKEN_MINUTES:30}
       jwk-key-file: ${IBOOT_AUTH_JWK_FILE:}

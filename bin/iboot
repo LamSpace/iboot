@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# iBoot 开发者命令行启动脚本。
+#
+# 优先使用 IBOOT_CLI_JAR 指定的 jar；默认取模块构建产物。
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+JAR="${IBOOT_CLI_JAR:-$ROOT/iboot-cli/target/iboot-cli-1.0.0.jar}"
+
+if [ ! -f "$JAR" ]; then
+    printf '找不到 CLI jar：%s\n先执行：mvn -pl iboot-cli package\n' "$JAR" >&2
+    exit 2
+fi
+
+exec java ${IBOOT_CLI_JAVA_OPTS:-} -jar "$JAR" "$@"
