@@ -28,7 +28,9 @@ cd "$ROOT"
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
 
-REG_WORKFLOW_BASE="${REG_WORKFLOW_BASE:-http://localhost:8086}"
+REG_WORKFLOW_BASE="${REG_WORKFLOW_BASE:-https://localhost:8086}"
+# 内部扣减端点直连系统服务；lib.sh 的默认 REG_BASE 指向公开入口，这里改用服务地址
+REG_BASE="${REG_SYSTEM_BASE:-https://localhost:8080}"
 MYSQL_CONTAINER="${MYSQL_CONTAINER:-iboot-mysql}"
 SEATA_CONTAINER="${SEATA_CONTAINER:-iboot-seata-server}"
 INTERNAL_TOKEN="${IBOOT_SYSTEM_INTERNAL_TOKEN:-iboot-dev-internal-token}"
@@ -75,7 +77,7 @@ wf_post() {
     local path="$1" token="$2" body="${3:-}" extra_header="${4:-}"
     local args=(-sS -X POST -H "Authorization: Bearer $token" -H 'Content-Type: application/json')
     if [ -n "$extra_header" ]; then args+=(-H "$extra_header"); fi
-    curl "${args[@]}" -d "$body" "$REG_WORKFLOW_BASE$path" | reg_unwrap
+    reg_curl "${args[@]}" -d "$body" "$REG_WORKFLOW_BASE$path" | reg_unwrap
 }
 
 submit_leave() {
@@ -109,7 +111,7 @@ ensure_approver() {
 
 fault_profile_active() {
     local body
-    body="$(curl -sS --max-time 5 "$REG_WORKFLOW_BASE/actuator/beans" 2>/dev/null)" || return 1
+    body="$(reg_curl --max-time 5 "$REG_WORKFLOW_BASE/actuator/beans" 2>/dev/null)" || return 1
     printf '%s' "$body" | jq -e '.. | objects | keys? | select(index("seataDemoFaultAspect"))' >/dev/null 2>&1
 }
 
@@ -195,11 +197,11 @@ rm -f "$tmp_a" "$tmp_b"
 reg_log "== 5. 内部扣减幂等 =="
 set_quota 2 2026 5 0
 idem_request="idem-$(date +%s)"
-idem_body_1="$(curl -sS -X POST -H "X-Internal-Token: $INTERNAL_TOKEN" \
+idem_body_1="$(reg_curl -X POST -H "X-Internal-Token: $INTERNAL_TOKEN" \
     -H 'Content-Type: application/json' \
     -d "{\"requestId\":\"$idem_request\",\"userId\":2,\"year\":2026}" \
     "$REG_BASE/internal/leave/quota/deduct")"
-idem_body_2="$(curl -sS -X POST -H "X-Internal-Token: $INTERNAL_TOKEN" \
+idem_body_2="$(reg_curl -X POST -H "X-Internal-Token: $INTERNAL_TOKEN" \
     -H 'Content-Type: application/json' \
     -d "{\"requestId\":\"$idem_request\",\"userId\":2,\"year\":2026}" \
     "$REG_BASE/internal/leave/quota/deduct")"

@@ -17,10 +17,12 @@
 package com.iboot.ai.infrastructure.config;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.HttpClientSettings;
+import org.springframework.boot.ssl.SslBundles;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
@@ -47,8 +49,13 @@ public class AgentToolConfig {
      */
     @Bean("loadBalancedRestClientBuilder")
     @LoadBalanced
-    public RestClient.Builder loadBalancedRestClientBuilder() {
-        return RestClient.builder();
+    public RestClient.Builder loadBalancedRestClientBuilder(SslBundles sslBundles) {
+        // 显式使用 iboot SSL bundle，并保持工具调用的连接/读取超时
+        HttpClientSettings settings = HttpClientSettings.ofSslBundle(sslBundles.getBundle("iboot"))
+                .withConnectTimeout(Duration.ofSeconds(5))
+                .withReadTimeout(Duration.ofSeconds(30));
+        return RestClient.builder()
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings));
     }
 
     /**
@@ -63,7 +70,6 @@ public class AgentToolConfig {
                                       AiProperties properties) {
         return builder
                 .baseUrl(properties.getAgent().getAdminBaseUrl())
-                .requestFactory(requestFactory(properties))
                 .build();
     }
 
@@ -79,20 +85,7 @@ public class AgentToolConfig {
                                     AiProperties properties) {
         return builder
                 .baseUrl(properties.getAgent().getJobBaseUrl())
-                .requestFactory(requestFactory(properties))
                 .build();
     }
 
-    /**
-     * 构造与工具执行超时对齐的请求工厂。
-     *
-     * @param properties AI 配置
-     * @return 请求工厂
-     */
-    private SimpleClientHttpRequestFactory requestFactory(final AiProperties properties) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(5));
-        factory.setReadTimeout(Duration.ofSeconds(Math.max(1, properties.getAgent().getStepTimeoutSeconds())));
-        return factory;
-    }
 }

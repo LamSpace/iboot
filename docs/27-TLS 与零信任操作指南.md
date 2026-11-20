@@ -162,6 +162,12 @@ Docker 全量部署覆盖为 `https://localhost` 与 `https://localhost/callback
 | Docker 门户不健康 | 确认 `docker/certs/` 三个文件已挂载；查看 `docker compose logs iboot-portal` |
 | `https://localhost` 打不开 | 确认 compose 发布了 `443:443`；`docker compose ps` 检查门户健康 |
 | 301 循环 | 确认 80 只做 301，443 server 不再重定向 |
+| 服务间调用返回 500 或“数据权限范围不可用” | 确认 Nacos 实例 `secure=true`，且实例地址与证书 SAN 一致（宿主机 127.0.0.1 / Docker 服务名） |
+| JDBC 报证书或主机名错误 | 确认 `MYSQL_SSL_PARAMS=sslMode=VERIFY_IDENTITY...` 与 JVM truststore；不要改回 `useSSL=false` |
+| Redis 连接被关闭 | 确认服务端只开 TLS 端口，客户端 `REDIS_SSL_ENABLED=true` |
+| Silo 连接失败 | 确认 endpoint 为 `https://`，Silo 使用 `--certs-dir`，客户端 JVM 信任库有效 |
+| 网关上游 502 | 确认网关路由使用 HTTPS 且信任库生效；`lb://` 实例 `secure=true` |
+| Neo4j 连接失败 | 确认 URI 为 `bolt+s://`，驱动使用 JVM 信任库，Bolt TLS policy 已启用 |
 
 ## 7. 明文回退与回滚
 
@@ -172,9 +178,60 @@ Docker 全量部署覆盖为 `https://localhost` 与 `https://localhost/callback
 - 回滚后旧的 `http://localhost:8088` 客户端入口会重新可用，但需要同步恢复认证 issuer、
   门户回调、CLI context 与回归地址；不要在新旧来源之间混用令牌。
 
-## 8. 与后续批次的关系
+## 8. 内部 TLS（B2）
 
-- B2：门户到网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j 的 TLS；Nacos 的 `file:`
-  路径与 `JAVA_TOOL_OPTIONS` 约束见 B0 报告。
+B2 在不改变公开入口的前提下，把门户到网关、服务间、JWKS 与核心数据面切到 TLS。
+
+### 8.1 服务端
+
+- 网关保持 `8088`，但只提供 HTTPS；门户 nginx 与 Vite 的上游改为 `https://`。
+- 九个业务服务与运维控制台通过共享 `iboot-tls.yml` 启用 `server.ssl.bundle=iboot`：
+  - `iboot-kernel` 提供文件，八个业务服务通过 `spring.config.import` 引入；
+  - 网关与运维控制台不依赖 kernel，各自在 `src/main/resources` 放同一份文件。
+- 证书沿用 B1 的 `portal.pem` / `portal-key.pem`，SAN 已覆盖服务名、`localhost`、
+  `127.0.0.1`；容器使用 `docker/certs/runtime/` 中容器用户可读的副本。
+
+### 8.2 信任链
+
+- Spring 客户端使用 SSL bundle（`spring.http.clients.ssl.bundle=iboot`）。
+- Druid、MinIO SDK、Neo4j 驱动等非 Spring 客户端使用 JVM 信任库：
+  `-Djavax.net.ssl.trustStore=docker/certs/truststore.p12`。
+- 宿主机由 `dev-init.sh` 为每个 Java 进程注入；Docker 由 compose 的
+  `JAVA_TOOL_OPTIONS` 注入。
+- Nacos 注册实例的 `secure=true`，网关的 `lb://` 据此选择 HTTPS。宿主机服务以
+  `127.0.0.1` 注册（证书 SAN 覆盖），Docker 以服务名注册（Docker DNS 解析）。
+
+### 8.3 核心数据面
+
+| 组件 | 服务端 | 客户端 |
+|---|---|---|
+| MySQL | `--ssl-ca/--ssl-cert/--ssl-key` + `require_secure_transport=ON` | `sslMode=VERIFY_IDENTITY&requireSSL=true`，Druid + JVM 信任库 |
+| Redis | 只监听 TLS 端口 | `spring.data.redis.ssl.enabled=true`，Lettuce + JVM 信任库 |
+| Silo | `--certs-dir /certs` | 内部/公开 endpoint 使用 `https://`，MinIO SDK + JVM 信任库 |
+| Neo4j（graph） | Bolt TLS policy | `bolt+s://`，驱动 + JVM 信任库 |
+
+### 8.4 验收
+
+```bash
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/tls.sh
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/internal-tls.sh
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
+```
+
+`internal-tls.sh` 覆盖逐端口 TLS、明文拒绝、无 CA 失败、网关→服务、JWKS、
+MySQL cipher、Redis/Silo 明文拒绝与 Neo4j（运行 graph profile 时）。
+
+### 8.5 边界与回退
+
+- Nacos 注册/配置中心仍为 HTTP；B2 不宣称完整零信任。
+- **不提供运行期内部明文回退**：`IBOOT_INTERNAL_TLS_ENABLED=false` 会让
+  `dev-init.sh` 在启动前失败。内网半开 TLS 会同时破坏服务间、JWKS 与数据面，
+  定位成本高于直接回退。
+- 回滚使用上一版 commit/镜像与 compose，或 `git revert`。B1 的边缘回退
+  `IBOOT_TLS_ENABLED=false` 仍只影响公开入口，不改变内部 TLS。
+
+## 9. 与后续批次的关系
+
+- B2：门户到网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j 的 TLS；已完成，Nacos 仍是明文。
 - B3：ES/Kafka 日志与检索面；RocketMQ 只能作为加密通道，不能宣称服务端认证。
 - B4/B5：mTLS、工作负载身份、端口收敛与网络分段；Seata 无原生 TLS，需要单独决策。

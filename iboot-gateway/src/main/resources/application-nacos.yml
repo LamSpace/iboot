@@ -3,6 +3,12 @@ spring:
     nacos:
       discovery:
         server-addr: ${NACOS_ADDR:localhost:8848}
+        # 服务实例以 HTTPS 暴露；lb:// 负载均衡据此选择 https
+        secure: true
+        metadata:
+          secure: "true"
+        # 实例地址使用服务名，证书 SAN 不依赖容器 IP；宿主机开发由 dev-init.sh 覆盖为 127.0.0.1
+        ip: ${IBOOT_NACOS_DISCOVERY_IP:${spring.application.name}}
     gateway:
       server:
         webflux:

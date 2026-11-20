@@ -26,16 +26,18 @@ REG_GATEWAY="${REG_GATEWAY:-https://localhost:5173}"
 REG_OIDC_REDIRECT="${REG_OIDC_REDIRECT:-https://localhost:5173/callback}"
 REG_CACERT="${REG_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
 
-# 契约快照直连各服务；B1 只加密公开入口，内部服务仍是 HTTP。
-SVC_SYSTEM_BASE="${SVC_SYSTEM_BASE:-http://localhost:8080}"
-SVC_AI_BASE="${SVC_AI_BASE:-http://localhost:8081}"
-SVC_FILE_BASE="${SVC_FILE_BASE:-http://localhost:8082}"
-SVC_AUTH_BASE="${SVC_AUTH_BASE:-http://localhost:8083}"
-SVC_NOTIFY_BASE="${SVC_NOTIFY_BASE:-http://localhost:8084}"
-SVC_JOB_BASE="${SVC_JOB_BASE:-http://localhost:8085}"
-SVC_WORKFLOW_BASE="${SVC_WORKFLOW_BASE:-http://localhost:8086}"
-SVC_MONITOR_BASE="${SVC_MONITOR_BASE:-http://localhost:8087}"
+# 契约快照直连各服务；B2 起服务端口只提供 HTTPS。
+SVC_SYSTEM_BASE="${SVC_SYSTEM_BASE:-https://localhost:8080}"
+SVC_AI_BASE="${SVC_AI_BASE:-https://localhost:8081}"
+SVC_FILE_BASE="${SVC_FILE_BASE:-https://localhost:8082}"
+SVC_AUTH_BASE="${SVC_AUTH_BASE:-https://localhost:8083}"
+SVC_NOTIFY_BASE="${SVC_NOTIFY_BASE:-https://localhost:8084}"
+SVC_JOB_BASE="${SVC_JOB_BASE:-https://localhost:8085}"
+SVC_WORKFLOW_BASE="${SVC_WORKFLOW_BASE:-https://localhost:8086}"
+SVC_MONITOR_BASE="${SVC_MONITOR_BASE:-https://localhost:8087}"
+SVC_CACERT="${SVC_CACERT:-$REG_CACERT}"
 export REG_BASE REG_AI_BASE REG_AUTH_BASE REG_GATEWAY REG_OIDC_REDIRECT REG_CACERT
+export SVC_CACERT
 export SVC_SYSTEM_BASE SVC_AI_BASE SVC_FILE_BASE SVC_AUTH_BASE SVC_NOTIFY_BASE
 export SVC_JOB_BASE SVC_WORKFLOW_BASE SVC_MONITOR_BASE
 
@@ -101,10 +103,13 @@ printf '\n===== 3. 路由覆盖 =====\n'
 printf '\n===== 4. TLS 公开入口 =====\n'
 "$HERE/tls.sh" || fail "TLS 检查未通过"
 
-printf '\n===== 5. 冒烟 =====\n'
+printf '\n===== 5. 内部 TLS =====\n'
+"$HERE/internal-tls.sh" || fail "内部 TLS 检查未通过"
+
+printf '\n===== 6. 冒烟 =====\n'
 "$HERE/smoke.sh" || fail "冒烟未通过"
 
-printf '\n===== 6. 权限矩阵 =====\n'
+printf '\n===== 7. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 
 printf '\n'

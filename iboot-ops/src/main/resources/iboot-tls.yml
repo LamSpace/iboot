@@ -1,0 +1,22 @@
+# 共享 TLS 配置：服务端证书与客户端信任链。
+#
+# 由各服务通过 spring.config.import: classpath:iboot-tls.yml 引入。
+# 证书目录由 IBOOT_TLS_CERT_DIR 指定：宿主机开发为 <repo>/docker/certs，
+# 容器内为 /certs。未设置时回落到 docker/certs，便于直接运行 jar。
+spring:
+  http:
+    clients:
+      ssl:
+        bundle: iboot
+  ssl:
+    bundle:
+      pem:
+        iboot:
+          keystore:
+            certificate: file:${IBOOT_TLS_CERT_DIR:docker/certs}/portal.pem
+            private-key: file:${IBOOT_TLS_CERT_DIR:docker/certs}/portal-key.pem
+          truststore:
+            certificate: file:${IBOOT_TLS_CERT_DIR:docker/certs}/ca/rootCA.pem
+server:
+  ssl:
+    bundle: iboot

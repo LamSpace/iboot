@@ -13,13 +13,21 @@ spring:
     name: iboot-ops
   # 注册中心与配置中心：与其它服务一致，使用 spring.config.import 引入 Nacos 配置
   config:
-    import: optional:nacos:iboot-ops.yml
+    import:
+      - classpath:iboot-tls.yml
+      - optional:nacos:iboot-ops.yml
   cloud:
     nacos:
       discovery:
         server-addr: ${NACOS_ADDR:localhost:8848}
         enabled: ${IBOOT_NACOS_ENABLED:true}
         fail-fast: false
+        # 服务实例以 HTTPS 暴露；网关与 SBA 的负载均衡据此选择 https
+        secure: true
+        metadata:
+          secure: "true"
+        # 实例地址使用服务名，证书 SAN 不依赖容器 IP；宿主机开发由 dev-init.sh 覆盖为 127.0.0.1
+        ip: ${IBOOT_NACOS_DISCOVERY_IP:${spring.application.name}}
       config:
         server-addr: ${NACOS_ADDR:localhost:8848}
         file-extension: yml

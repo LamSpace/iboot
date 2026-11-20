@@ -44,8 +44,22 @@ public final class DatabaseInitializer {
 
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z0-9_]+");
 
-    private static final String CONNECTION_PARAMS =
+    private static final String TLS_CONNECTION_PARAMS =
+            "?sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8";
+
+    private static final String PLAIN_CONNECTION_PARAMS =
             "?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true";
+
+    /**
+     * 连接参数：默认要求 TLS；测试或明文排障时可用 MYSQL_TLS_ENABLED=false 回到旧参数。
+     *
+     * @return JDBC 连接参数
+     */
+    private static String connectionParams() {
+        return env("MYSQL_TLS_ENABLED", "true").equalsIgnoreCase("true")
+                ? TLS_CONNECTION_PARAMS
+                : PLAIN_CONNECTION_PARAMS;
+    }
 
     private DatabaseInitializer() {
     }
@@ -80,7 +94,7 @@ public final class DatabaseInitializer {
 
     private static void createDatabaseIfAbsent(String host, String port, String username,
                                                String password, String database) throws SQLException {
-        String url = "jdbc:mysql://" + host + ":" + port + "/" + CONNECTION_PARAMS;
+        String url = "jdbc:mysql://" + host + ":" + port + "/" + connectionParams();
         try (Connection connection = DriverManager.getConnection(url, username, password);
              Statement statement = connection.createStatement()) {
             statement.execute("CREATE DATABASE IF NOT EXISTS `" + database
@@ -92,7 +106,7 @@ public final class DatabaseInitializer {
     private static MysqlDataSource dataSource(String host, String port, String username,
                                               String password, String database) throws SQLException {
         MysqlDataSource dataSource = new MysqlDataSource();
-        dataSource.setURL("jdbc:mysql://" + host + ":" + port + "/" + database + CONNECTION_PARAMS);
+        dataSource.setURL("jdbc:mysql://" + host + ":" + port + "/" + database + connectionParams());
         dataSource.setUser(username);
         dataSource.setPassword(password);
         return dataSource;

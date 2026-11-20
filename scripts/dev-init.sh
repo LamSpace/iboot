@@ -73,6 +73,14 @@ ops_enabled() { [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; }
 # 门户 TLS：默认开启；关闭仅用于排障，回归与验收不得在该模式下判定通过。
 tls_enabled() { [ "${IBOOT_TLS_ENABLED:-true}" = "true" ]; }
 
+# 内部服务 TLS：默认开启；关闭仅用于宿主机排障，Docker 不提供该回退。
+internal_tls_enabled() { [ "${IBOOT_INTERNAL_TLS_ENABLED:-true}" = "true" ]; }
+
+# 内部服务 scheme：启用内部 TLS 时为 https，否则为 http。
+service_scheme() {
+    if internal_tls_enabled; then printf 'https'; else printf 'http'; fi
+}
+
 # 当前模式的公开来源：宿主机开发默认 Vite；关闭 TLS 时使用 HTTP 排障地址。
 public_origin() {
     if tls_enabled; then
@@ -105,6 +113,15 @@ export IBOOT_OPS_SECURITY_ENABLED="${IBOOT_OPS_SECURITY_ENABLED:-false}"
 
 # 宿主机开发进程连接容器内的 Sentinel Dashboard（必选治理控制台）。
 export SENTINEL_DASHBOARD="${SENTINEL_DASHBOARD:-localhost:8858}"
+
+# 宿主机服务通过 Nacos 以回环地址互相发现，证书 SAN 覆盖 127.0.0.1；
+# Docker 部署不设置该变量，实例地址回落到服务名。
+export IBOOT_NACOS_DISCOVERY_IP="${IBOOT_NACOS_DISCOVERY_IP:-127.0.0.1}"
+
+# 内部 Silo endpoint 使用 HTTPS；即使没有 .env 也避免退回 sys_config 的明文地址
+export IBOOT_FILE_SILO_ENDPOINT="${IBOOT_FILE_SILO_ENDPOINT:-https://localhost:9000}"
+export IBOOT_FILE_SILO_PUBLIC_ENDPOINT="${IBOOT_FILE_SILO_PUBLIC_ENDPOINT:-https://localhost:9000}"
+export IBOOT_AI_SILO_ENDPOINT="${IBOOT_AI_SILO_ENDPOINT:-https://localhost:9000}"
 
 # 宿主机进程连接容器内 RocketMQ Proxy 的映射端口；容器内由 compose 注入服务名。
 export IBOOT_ROCKETMQ_ENDPOINTS="${IBOOT_ROCKETMQ_ENDPOINTS:-localhost:18081}"
@@ -189,6 +206,9 @@ stop_all_services() {
 # 默认启用 TLS：生成/复用证书，导出认证服务与 Vite 所需的环境变量。显式设置
 # IBOOT_TLS_ENABLED=false 时进入明文排障模式，只改变公开入口的协议，不改内部服务端口。
 prepare_tls() {
+    if ! internal_tls_enabled; then
+        fail 'B2 不提供运行期内部明文回退（IBOOT_INTERNAL_TLS_ENABLED=false）；请回退到上一版 commit/镜像'
+    fi
     local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
     export IBOOT_TLS_CERT_DIR="$cert_dir"
     if tls_enabled; then
@@ -282,7 +302,7 @@ start_middleware() {
     # 建库与建表统一由 iboot-db-init 完成，服务不再自带迁移。
 
     wait_http 'Elasticsearch' 'http://localhost:9200' 180 || fail 'Elasticsearch 未就绪'
-    wait_http 'Silo' 'http://localhost:9000/minio/health/live' 120 || fail 'Silo 未就绪'
+    wait_http 'Silo' "$(service_scheme)://localhost:9000/minio/health/live" 120 || fail 'Silo 未就绪'
     # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。
     # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。
     wait_http 'Nacos' 'http://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'
@@ -345,7 +365,18 @@ build_backend() {
 
 run_db_init() {
     log '=== 3. 初始化数据库 ==='
-    java -jar "iboot-db-init/target/iboot-db-init-$VERSION-exec.jar" \
+    local -a java_opts=()
+    if internal_tls_enabled; then
+        local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
+        java_opts+=(
+            "-Djavax.net.ssl.trustStore=$cert_dir/truststore.p12"
+            "-Djavax.net.ssl.trustStorePassword=changeit"
+            "-Djavax.net.ssl.trustStoreType=PKCS12"
+        )
+    else
+        export MYSQL_TLS_ENABLED=false
+    fi
+    java "${java_opts[@]}" -jar "iboot-db-init/target/iboot-db-init-$VERSION-exec.jar" \
         || fail '数据库初始化失败（iboot-db-init）'
     log '  数据库就绪'
 }
@@ -381,8 +412,18 @@ start_backend() {
             log "  $name 已在运行（pid $running）"
         else
             local -a java_opts=()
+            if internal_tls_enabled; then
+                local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
+                java_opts+=(
+                    "-Djavax.net.ssl.trustStore=$cert_dir/truststore.p12"
+                    "-Djavax.net.ssl.trustStorePassword=changeit"
+                    "-Djavax.net.ssl.trustStoreType=PKCS12"
+                )
+            else
+                java_opts+=("--server.ssl.enabled=false")
+            fi
             if skywalking_enabled && [ "$name" != "iboot-ops" ]; then
-                java_opts=(
+                java_opts+=(
                     "-javaagent:$SKYWALKING_AGENT"
                     "-Dskywalking.agent.service_name=$name"
                     "-Dskywalking.collector.backend_service=$SKYWALKING_OAP"
@@ -395,7 +436,7 @@ start_backend() {
         fi
         # 表结构已由 db-init 建好；仍让系统服务先就绪，便于其余服务读取共享库中的配置。
         if [ "$name" = "iboot-system" ]; then
-            wait_http "$name" "http://localhost:$port/actuator/health" 240 \
+            wait_http "$name" "$(service_scheme)://localhost:$port/actuator/health" 240 \
                 || fail "$name 未就绪：其余服务启动时要读取系统域的数据，无法继续"
         fi
     done
@@ -410,7 +451,7 @@ wait_backend() {
         if [ "$name" = "iboot-ops" ] && ! ops_enabled; then
             continue
         fi
-        if ! wait_http "$name" "http://localhost:$port/actuator/health" 240; then
+        if ! wait_http "$name" "$(service_scheme)://localhost:$port/actuator/health" 240; then
             printf '  最近日志（logs/%s.log）：\n' "$name" >&2
             tail -20 "$LOG_DIR/$name.log" >&2 2>/dev/null
             return 1
@@ -435,7 +476,12 @@ start_frontend() {
 }
 
 show_status() {
-    local entry name port pid state health
+    local entry name port pid state health scheme
+    scheme="$(service_scheme)"
+    local -a health_opts=(-sf -m 2)
+    if [ "$scheme" = "https" ]; then
+        health_opts+=(--cacert "${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/ca/rootCA.pem")
+    fi
     log '=== 中间件 ==='
     "${COMPOSE[@]}" --profile platform --profile observability ps --format '  {{.Name}}\t{{.Status}}' 2>/dev/null || true
     log '=== 后端 ==='
@@ -443,14 +489,14 @@ show_status() {
         name="${entry%%:*}"
         port="${entry##*:}"
         if [ "$name" = "iboot-ops" ] && ! ops_enabled; then
-            printf '  %-16s %-24s %s  http://localhost:%s\n' "$name" "已关闭（IBOOT_OPS_ENABLED=false）" "-" "$port"
+            printf '  %-16s %-24s %s  %s://localhost:%s\n' "$name" "已关闭（IBOOT_OPS_ENABLED=false）" "-" "$scheme" "$port"
             continue
         fi
         pid="$(service_pid "$name")"
         state='未运行'
         [ -n "$pid" ] && state="运行中（pid $pid）"
-        health="$(curl -sf -m 2 "http://localhost:$port/actuator/health" > /dev/null 2>&1 && echo 健康 || echo 不可用)"
-        printf '  %-16s %-24s %s  http://localhost:%s\n' "$name" "$state" "$health" "$port"
+        health="$(curl "${health_opts[@]}" "$scheme://localhost:$port/actuator/health" > /dev/null 2>&1 && echo 健康 || echo 不可用)"
+        printf '  %-16s %-24s %s  %s://localhost:%s\n' "$name" "$state" "$health" "$scheme" "$port"
     done
     local portal origin
     portal="$(frontend_pids)"
@@ -499,9 +545,9 @@ case "$ACTION" in
         show_status
         log ''
         if ops_enabled; then
-            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，运维控制台 http://localhost:8089/sba，Sentinel Dashboard http://localhost:8858"
+            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 $(service_scheme)://localhost:8088，系统服务 $(service_scheme)://localhost:8080，AI $(service_scheme)://localhost:8081，认证 $(service_scheme)://localhost:8083，运维控制台 $(service_scheme)://localhost:8089/sba，Sentinel Dashboard http://localhost:8858"
         else
-            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，Sentinel Dashboard http://localhost:8858（运维控制台已关闭）"
+            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 $(service_scheme)://localhost:8088，系统服务 $(service_scheme)://localhost:8080，AI $(service_scheme)://localhost:8081，认证 $(service_scheme)://localhost:8083，Sentinel Dashboard http://localhost:8858（运维控制台已关闭）"
         fi
         log '登录账号 admin / admin123456'
         log '服务治理控制台：Nacos http://localhost:8849/next/，Sentinel http://localhost:8858；门户“微服务治理”菜单提供内嵌入口'

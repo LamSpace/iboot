@@ -16,10 +16,12 @@
 
 package com.iboot.workflow.infrastructure.config;
 
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.HttpClientSettings;
+import org.springframework.boot.ssl.SslBundles;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
@@ -28,8 +30,8 @@ import java.time.Duration;
  * 服务间调用客户端配置。
  *
  * <p>审批服务向 notify 登记通知时按注册中心的服务名寻址，不写死主机与端口，也不回穿网关。
- * 独立的 Bean 名称避免与 Spring Boot 自动配置的默认构建器混淆。客户端设置连接与读取超时，
- * 使下游不可用时尽快失败，避免异步投递线程长时间占用。
+ * 独立的 Bean 名称避免与 Spring Boot 自动配置的默认构建器混淆；构建器复用自动配置，
+ * 继承 {@code spring.http.clients.ssl.bundle} 与全局连接/读取超时。
  *
  * @author iBoot Team
  * @since 1.0.0
@@ -44,11 +46,12 @@ public class ServiceClientConfig {
      */
     @Bean("loadBalancedRestClientBuilder")
     @LoadBalanced
-    public RestClient.Builder loadBalancedRestClientBuilder() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+    public RestClient.Builder loadBalancedRestClientBuilder(SslBundles sslBundles) {
         // 下游不可用时尽快失败，让 Sentinel 熔断有机会在重试耗尽前打开
-        factory.setConnectTimeout(Duration.ofSeconds(2));
-        factory.setReadTimeout(Duration.ofSeconds(5));
-        return RestClient.builder().requestFactory(factory);
+        HttpClientSettings settings = HttpClientSettings.ofSslBundle(sslBundles.getBundle("iboot"))
+                .withConnectTimeout(Duration.ofSeconds(2))
+                .withReadTimeout(Duration.ofSeconds(5));
+        return RestClient.builder()
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings));
     }
 }

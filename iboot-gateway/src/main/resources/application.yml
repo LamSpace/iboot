@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: iboot-gateway
+  config:
+    import: classpath:iboot-tls.yml
   profiles:
     # 本地默认走静态地址；接入注册中心后改用 nacos profile
     active: local

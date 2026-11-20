@@ -8,10 +8,17 @@ server:
 spring:
   application:
     name: iboot-ai
+  http:
+    clients:
+      connect-timeout: 5s
+      # 与智能体单步超时对齐，避免工具调用无限挂起
+      read-timeout: ${IBOOT_AI_AGENT_STEP_TIMEOUT_SECONDS:30}s
   # 阶段 2：注册中心与配置中心。Nacos 3.x 不再支持 bootstrap.yml，统一走 spring.config.import；
   # optional: 前缀保证配置中心不可用时仍能以本地配置启动。
   config:
-    import: optional:nacos:iboot-ai.yml
+    import:
+      - classpath:iboot-tls.yml
+      - optional:nacos:iboot-ai.yml
   cloud:
     nacos:
       discovery:
@@ -19,6 +26,12 @@ spring:
         enabled: ${IBOOT_NACOS_ENABLED:true}
         # 注册中心不可用时不阻断启动（默认 fail-fast 会直接让应用启动失败）
         fail-fast: false
+        # 服务实例以 HTTPS 暴露；网关的负载均衡据此选择 https
+        secure: true
+        metadata:
+          secure: "true"
+        # 实例地址使用服务名，证书 SAN 不依赖容器 IP；宿主机开发由 dev-init.sh 覆盖为 127.0.0.1
+        ip: ${IBOOT_NACOS_DISCOVERY_IP:${spring.application.name}}
       config:
         server-addr: ${NACOS_ADDR:localhost:8848}
         file-extension: yml
@@ -37,6 +50,8 @@ spring:
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: 10s
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:true}
       lettuce:
         pool:
           min-idle: 0
@@ -47,7 +62,7 @@ spring:
       repositories:
         enabled: false
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${IBOOT_AI_MYSQL_DATABASE:iboot}?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${IBOOT_AI_MYSQL_DATABASE:iboot}?${MYSQL_SSL_PARAMS:sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -146,14 +161,14 @@ iboot:
       heartbeat-ms: 20000
     permission:
       # 按注册中心服务名寻址；覆盖值也必须是服务名形式，不能是固定地址
-      scope-url: ${IBOOT_AI_SCOPE_URL:http://iboot-system/api/auth/scope}
+      scope-url: ${IBOOT_AI_SCOPE_URL:https://iboot-system/api/auth/scope}
       cache-seconds: ${IBOOT_AI_SCOPE_CACHE_SECONDS:60}
     agent:
       # 默认关闭；开启后 /api/ai/agent/** 才可用
       enabled: ${IBOOT_AI_AGENT_ENABLED:false}
       # 按注册中心的服务名寻址；本地排障时可覆盖为固定地址
-      admin-base-url: ${IBOOT_AI_AGENT_ADMIN_BASE_URL:http://iboot-system}
-      job-base-url: ${IBOOT_AI_AGENT_JOB_BASE_URL:http://iboot-job}
+      admin-base-url: ${IBOOT_AI_AGENT_ADMIN_BASE_URL:https://iboot-system}
+      job-base-url: ${IBOOT_AI_AGENT_JOB_BASE_URL:https://iboot-job}
       max-steps: ${IBOOT_AI_AGENT_MAX_STEPS:6}
       step-timeout-seconds: ${IBOOT_AI_AGENT_STEP_TIMEOUT_SECONDS:30}
       max-result-chars: ${IBOOT_AI_AGENT_MAX_RESULT_CHARS:2000}
@@ -162,7 +177,7 @@ iboot:
     graph:
       # 默认关闭：关闭时不连接 Neo4j，也不注册图查询工具
       enabled: ${IBOOT_AI_GRAPH_ENABLED:false}
-      uri: ${IBOOT_AI_GRAPH_URI:bolt://localhost:7687}
+      uri: ${IBOOT_AI_GRAPH_URI:bolt+s://localhost:7687}
       username: ${IBOOT_AI_GRAPH_USERNAME:neo4j}
       password: ${IBOOT_AI_GRAPH_PASSWORD:}
       database: ${IBOOT_AI_GRAPH_DATABASE:neo4j}

@@ -24,6 +24,8 @@ CERT_FILE="$CERT_DIR/portal.pem"
 KEY_FILE="$CERT_DIR/portal-key.pem"
 TRUSTSTORE="$CERT_DIR/truststore.p12"
 ROOT_CA="$CAROOT/rootCA.pem"
+# 容器运行期证书副本：以容器用户可读权限提供，宿主私钥仍保持 0600
+RUNTIME_DIR="$CERT_DIR/runtime"
 
 # 叶子证书覆盖宿主机、Docker 主机名与全部服务名；B2 可直接复用同一份信任链。
 SAN_NAMES=(
@@ -69,8 +71,28 @@ mkdir -p "$CERT_DIR" "$CAROOT"
 chmod 700 "$CAROOT"
 
 cert_valid() {
-    [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ] && [ -f "$ROOT_CA" ] || return 1
+    [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ] && [ -f "$ROOT_CA" ] && [ -f "$TRUSTSTORE" ] || return 1
     openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1
+}
+
+# 生成容器运行期副本：容器内非 root 用户需要可读私钥；宿主私钥保持 0600。
+ensure_runtime_copies() {
+    mkdir -p "$RUNTIME_DIR"
+    cp -f "$CERT_FILE" "$RUNTIME_DIR/portal.pem"
+    cp -f "$KEY_FILE" "$RUNTIME_DIR/portal-key.pem"
+    cp -f "$ROOT_CA" "$RUNTIME_DIR/rootCA.pem"
+    # 与宿主 docker/certs/ca/rootCA.pem 保持同一相对结构，供 Spring SSL bundle 使用
+    mkdir -p "$RUNTIME_DIR/ca"
+    cp -f "$ROOT_CA" "$RUNTIME_DIR/ca/rootCA.pem"
+    cp -f "$TRUSTSTORE" "$RUNTIME_DIR/truststore.p12"
+    # Silo 的证书目录契约
+    cp -f "$CERT_FILE" "$RUNTIME_DIR/public.crt"
+    cp -f "$KEY_FILE" "$RUNTIME_DIR/private.key"
+    chmod 644 "$RUNTIME_DIR/portal.pem" "$RUNTIME_DIR/portal-key.pem" \
+        "$RUNTIME_DIR/rootCA.pem" "$RUNTIME_DIR/truststore.p12" \
+        "$RUNTIME_DIR/public.crt" "$RUNTIME_DIR/private.key"
+    chmod 755 "$RUNTIME_DIR/ca"
+    chmod 644 "$RUNTIME_DIR/ca/rootCA.pem"
 }
 
 check_expiry() {
@@ -89,6 +111,7 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
 fi
 
 if [ "$FORCE" -eq 0 ] && cert_valid; then
+    ensure_runtime_copies
     log "证书仍然有效，跳过生成：$CERT_FILE"
     log "需要重签时执行：scripts/tls-init.sh --force"
     exit 0
@@ -113,12 +136,14 @@ keytool -importcert -noprompt \
     -storetype PKCS12 \
     -storepass changeit >/dev/null
 chmod 644 "$TRUSTSTORE"
+ensure_runtime_copies
 
 log "完成："
 log "  叶子证书   $CERT_FILE"
 log "  私钥       $KEY_FILE"
 log "  PEM CA     $ROOT_CA"
 log "  Java 信任库 $TRUSTSTORE"
+log "  容器副本   $RUNTIME_DIR（私钥为容器用户可读的 0644）"
 log ""
 log "浏览器信任（一次性，可能需要管理员权限）："
 log "  CAROOT=$CAROOT $MKCERT -install"
