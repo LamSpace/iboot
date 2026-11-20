@@ -334,6 +334,10 @@
       "OperateLogResponse": {
         "description": "操作日志响应",
         "properties": {
+          "authType": {
+            "description": "认证方式：SESSION/PAT",
+            "type": "string"
+          },
           "businessType": {
             "description": "业务类型：0-其它，1-新增，2-修改，3-删除，4-授权，5-导出，6-导入，7-强退，8-清空",
             "format": "int32",

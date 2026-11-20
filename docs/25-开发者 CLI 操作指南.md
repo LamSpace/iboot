@@ -1,7 +1,7 @@
 # 25-开发者 CLI 操作指南
 
-> 适用版本：iBoot 1.0.0。CLI 是独立模块 `iboot-cli`，只经网关 `/api/**` 调用既有接口，
-> 不直连数据库，不进入 Docker/Helm 部署清单。
+> 适用版本：iBoot 1.0.0。CLI 是独立模块 `iboot-cli`，只经门户公开入口的 `/api/**`
+> （门户反代到网关）调用既有接口，不直连数据库，不进入 Docker/Helm 部署清单。
 
 ## 1. 定位与边界
 
@@ -26,13 +26,33 @@ mvn -pl iboot-cli package
 
 ## 3. 登录与上下文
 
-默认 context 为 `dev`，指向网关 `http://localhost:8088`：
+默认 context 为 `dev`，指向宿主机开发的门户 HTTPS 入口 `https://localhost:5173`。
+首次使用先生成本地 CA 与 Java 信任库：
 
 ```bash
+scripts/tls-init.sh
+# 浏览器信任（一次性，可能需要管理员权限）
+CAROOT=docker/certs/ca mkcert -install
+
+# CLI 使用同一份 PKCS12 信任库
+export IBOOT_CLI_TRUSTSTORE="$PWD/docker/certs/truststore.p12"
+
 ./bin/iboot login
 ./bin/iboot status
 ./bin/iboot logout
 ```
+
+宿主机开发需要门户开发服务器正在运行（`scripts/dev-init.sh --frontend`），CLI 的 OIDC
+发现、授权与 `/api` 请求都经过该入口。Docker 全量部署使用独立 context：
+
+```bash
+./bin/iboot config add docker \
+  --base-url https://localhost --issuer https://localhost --use
+```
+
+非 loopback 的 `http://` base URL 会被拒绝；仅 loopback 地址允许 HTTP，用于
+`IBOOT_TLS_ENABLED=false` 排障。证书生成、信任分发与轮换见
+[docs/27](<./27-TLS 与零信任操作指南.md>)。
 
 `login` 会启动 `127.0.0.1:8765` 的 loopback 回调并打开系统浏览器；密码只在认证服务的
 登录页输入，不经过 CLI。无头环境使用：
@@ -204,8 +224,10 @@ CLI 会话在 `add-multi-client-sessions` 落地前**不写入在线名单**：
 | 登录后立即 401 | 检查 context 的 issuer 与网关地址是否一致；确认认证服务已启动 |
 | `403` | 当前用户没有该接口权限；换有权限的账号，不要绕过服务端权限 |
 | PAT 请求 401 | 令牌已过期、已撤销，或用户被停用/删除；重新签发或恢复用户状态 |
-| 连接失败 | 确认 `http://localhost:8088/actuator/health` 可访问；Docker 环境先执行 `scripts/docker-deploy.sh status` |
-| OIDC 发现失败 | 确认 `/.well-known/openid-configuration` 经网关可达 |
+| 连接失败 | 确认门户 `https://localhost:5173`（宿主机开发）或 `https://localhost`（Docker）可访问；网关 `http://localhost:8088` 不再是客户端入口 |
+| 证书校验失败 | 设置 `IBOOT_CLI_TRUSTSTORE="$PWD/docker/certs/truststore.p12"`；先执行 `scripts/tls-init.sh`。不要用 `-k` 或取消校验绕过 |
+| OIDC 发现失败 | 确认 `https://<公开来源>/.well-known/openid-configuration` 可达，且 discovery 的 issuer 与 context 的 issuer 一致 |
+| Docker 环境连接失败 | 先执行 `scripts/docker-deploy.sh status`，再确认使用 Docker context（`https://localhost`） |
 
 ## 8. 能力边界与后续
 

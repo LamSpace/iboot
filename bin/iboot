@@ -12,4 +12,24 @@ if [ ! -f "$JAR" ]; then
     exit 2
 fi
 
-exec java ${IBOOT_CLI_JAVA_OPTS:-} -jar "$JAR" "$@"
+JAVA_ARGS=()
+if [ -n "${IBOOT_CLI_JAVA_OPTS:-}" ]; then
+    read -r -a iboot_cli_java_opts <<< "$IBOOT_CLI_JAVA_OPTS"
+    JAVA_ARGS+=("${iboot_cli_java_opts[@]}")
+fi
+
+# 本地 CA：只在使用 HTTPS 本地环境时需要。证书由 scripts/tls-init.sh 生成。
+if [ -n "${IBOOT_CLI_TRUSTSTORE:-}" ]; then
+    if [ ! -f "$IBOOT_CLI_TRUSTSTORE" ]; then
+        printf '找不到 CLI 信任库：%s\n先执行 scripts/tls-init.sh，或取消 IBOOT_CLI_TRUSTSTORE。\n' \
+            "$IBOOT_CLI_TRUSTSTORE" >&2
+        exit 2
+    fi
+    JAVA_ARGS+=(
+        "-Djavax.net.ssl.trustStore=$IBOOT_CLI_TRUSTSTORE"
+        "-Djavax.net.ssl.trustStorePassword=${IBOOT_CLI_TRUSTSTORE_PASSWORD:-changeit}"
+        "-Djavax.net.ssl.trustStoreType=PKCS12"
+    )
+fi
+
+exec java "${JAVA_ARGS[@]}" -jar "$JAR" "$@"

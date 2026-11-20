@@ -57,6 +57,8 @@ tmp/
 .env
 .env.*
 !.env.example
+# 本地 TLS CA、证书与信任库（由 scripts/tls-init.sh 生成，私钥不入仓）
+docker/certs/
 # 本地覆盖配置（可能含数据库口令与云密钥）
 application-local.yml
 application-local.properties

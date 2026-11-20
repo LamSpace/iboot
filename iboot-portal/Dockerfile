@@ -19,6 +19,11 @@
 # 上下文中的 .env 会被 Vite 读取，因此必须保留（见 .dockerignore）。
 FROM node:22.23.5-bookworm-slim AS build
 
+# 公开来源在构建期注入；进程环境变量优先于构建上下文中的 .env。
+# 宿主机开发直接使用 .env（https://localhost:5173），Docker 默认走门户 443。
+ARG VITE_OIDC_ISSUER=https://localhost
+ENV VITE_OIDC_ISSUER=${VITE_OIDC_ISSUER}
+
 WORKDIR /app
 
 COPY package.json ./
@@ -41,8 +46,8 @@ COPY --from=build /app/dist/ /usr/share/nginx/html/
 # 复制 nginx 配置
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# 暴露端口
-EXPOSE 80
+# 暴露端口：80 只做 HTTPS 重定向，443 提供页面与 API
+EXPOSE 80 443
 
 # 启动 nginx
 CMD ["nginx", "-g", "daemon off;"]

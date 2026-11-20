@@ -70,6 +70,18 @@ fi
 # 运维控制台：默认开启，可通过 IBOOT_OPS_ENABLED=false 关闭以节省本机内存。
 ops_enabled() { [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; }
 
+# 门户 TLS：默认开启；关闭仅用于排障，回归与验收不得在该模式下判定通过。
+tls_enabled() { [ "${IBOOT_TLS_ENABLED:-true}" = "true" ]; }
+
+# 当前模式的公开来源：宿主机开发默认 Vite；关闭 TLS 时使用 HTTP 排障地址。
+public_origin() {
+    if tls_enabled; then
+        printf '%s' "${IBOOT_PUBLIC_ORIGIN:-https://localhost:5173}"
+    else
+        printf '%s' "${IBOOT_PUBLIC_ORIGIN_HTTP:-http://localhost:5173}"
+    fi
+}
+
 # SkyWalking APM 对比实验：默认关闭；打开前需先执行 scripts/apm/fetch-agent.sh
 # 并启动 docker compose --profile apm。只影响启动参数，不改业务代码与依赖。
 SKYWALKING_AGENT="${IBOOT_SKYWALKING_AGENT:-$ROOT/docker/skywalking/agent/skywalking-agent.jar}"
@@ -172,10 +184,48 @@ stop_all_services() {
     stop_frontend
 }
 
+# 准备本地证书与公开来源变量。
+#
+# 默认启用 TLS：生成/复用证书，导出认证服务与 Vite 所需的环境变量。显式设置
+# IBOOT_TLS_ENABLED=false 时进入明文排障模式，只改变公开入口的协议，不改内部服务端口。
+prepare_tls() {
+    local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
+    export IBOOT_TLS_CERT_DIR="$cert_dir"
+    if tls_enabled; then
+        "$ROOT/scripts/tls-init.sh" || fail 'TLS 证书生成失败'
+        export NODE_EXTRA_CA_CERTS="$cert_dir/ca/rootCA.pem"
+        export IBOOT_AUTH_COOKIE_SECURE="${IBOOT_AUTH_COOKIE_SECURE:-true}"
+        export IBOOT_PUBLIC_ORIGIN="${IBOOT_PUBLIC_ORIGIN:-https://localhost:5173}"
+        case "$IBOOT_PUBLIC_ORIGIN" in
+            https://*) ;;
+            *) fail "IBOOT_PUBLIC_ORIGIN 必须是 https 地址（当前：$IBOOT_PUBLIC_ORIGIN）" ;;
+        esac
+    else
+        export IBOOT_PUBLIC_ORIGIN="${IBOOT_PUBLIC_ORIGIN_HTTP:-http://localhost:5173}"
+        export IBOOT_AUTH_COOKIE_SECURE=false
+        unset NODE_EXTRA_CA_CERTS
+        log '[WARN] IBOOT_TLS_ENABLED=false：当前为明文模式，仅用于排障；回归与验收不得判定通过。'
+    fi
+    export IBOOT_AUTH_ISSUER="${IBOOT_AUTH_ISSUER:-$IBOOT_PUBLIC_ORIGIN}"
+    export IBOOT_AUTH_REDIRECT_URI="${IBOOT_AUTH_REDIRECT_URI:-$IBOOT_PUBLIC_ORIGIN/callback}"
+    export IBOOT_AUTH_LOGOUT_REDIRECT_URI="${IBOOT_AUTH_LOGOUT_REDIRECT_URI:-$IBOOT_PUBLIC_ORIGIN/login}"
+    if tls_enabled; then
+        case "$IBOOT_AUTH_ISSUER" in
+            https://*) ;;
+            *) fail "IBOOT_AUTH_ISSUER 必须是 https 地址（当前：$IBOOT_AUTH_ISSUER）" ;;
+        esac
+    fi
+    log "  公开来源：$IBOOT_PUBLIC_ORIGIN"
+}
+
 wait_http() {
     local desc="$1" url="$2" timeout="${3:-180}" i
+    local -a curl_opts=(-sf -m 3)
+    if [ "${url#https://}" != "$url" ]; then
+        curl_opts+=(--cacert "${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/ca/rootCA.pem")
+    fi
     for i in $(seq 1 "$timeout"); do
-        if curl -sf -m 3 "$url" > /dev/null 2>&1; then
+        if curl "${curl_opts[@]}" "$url" > /dev/null 2>&1; then
             log "  $desc 就绪"
             return 0
         fi
@@ -378,7 +428,10 @@ start_frontend() {
         return
     fi
     ( cd iboot-portal && nohup cnpm run dev > "$LOG_DIR/portal.log" 2>&1 & echo $! > "$LOG_DIR/portal.pid" )
-    log "  前端启动中（日志 logs/portal.log，默认 http://localhost:5173）"
+    local origin
+    origin="$(public_origin)"
+    log "  前端启动中（日志 logs/portal.log，$origin）"
+    wait_http 'iboot-portal' "$origin/" 60 || fail "前端未在预期时间内就绪：$origin"
 }
 
 show_status() {
@@ -399,12 +452,13 @@ show_status() {
         health="$(curl -sf -m 2 "http://localhost:$port/actuator/health" > /dev/null 2>&1 && echo 健康 || echo 不可用)"
         printf '  %-16s %-24s %s  http://localhost:%s\n' "$name" "$state" "$health" "$port"
     done
-    local portal
+    local portal origin
     portal="$(frontend_pids)"
+    origin="$(public_origin)"
     if [ -n "$portal" ]; then
-        printf '  %-16s %-24s %s  http://localhost:5173\n' "iboot-portal" "运行中（pid $portal）" "开发服务器"
+        printf '  %-16s %-24s %s  %s\n' "iboot-portal" "运行中（pid $portal）" "开发服务器" "$origin"
     else
-        printf '  %-16s %-24s %s  http://localhost:5173\n' "iboot-portal" "未运行" "-"
+        printf '  %-16s %-24s %s  %s\n' "iboot-portal" "未运行" "-" "$origin"
     fi
 }
 
@@ -434,6 +488,7 @@ case "$ACTION" in
             fail '缺少 DASHSCOPE_CHAT_API_KEY：iboot-ai 启动时校验该值，缺失会直接退出。
        请写入根目录 .env（字段参考 .env.example）后重试。'
         fi
+        prepare_tls
         start_middleware
         build_backend
         run_db_init
@@ -444,9 +499,9 @@ case "$ACTION" in
         show_status
         log ''
         if ops_enabled; then
-            log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，运维控制台 http://localhost:8089/sba，Sentinel Dashboard http://localhost:8858'
+            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，运维控制台 http://localhost:8089/sba，Sentinel Dashboard http://localhost:8858"
         else
-            log '开发环境已就绪：网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，Sentinel Dashboard http://localhost:8858（运维控制台已关闭）'
+            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 http://localhost:8088，系统服务 http://localhost:8080，AI http://localhost:8081，认证 http://localhost:8083，Sentinel Dashboard http://localhost:8858（运维控制台已关闭）"
         fi
         log '登录账号 admin / admin123456'
         log '服务治理控制台：Nacos http://localhost:8849/next/，Sentinel http://localhost:8858；门户“微服务治理”菜单提供内嵌入口'

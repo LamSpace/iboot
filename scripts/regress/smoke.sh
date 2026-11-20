@@ -28,33 +28,33 @@ reg_expect_ok "读取当前用户信息" "$profile"
 reg_expect_jq "返回的用户名为 $REG_USER" ".data.username == \"$REG_USER\"" "$profile"
 
 reg_log "== 3. 文件上传与下载（经网关，/api/file/** 已迁至 iboot-file） =="
-REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
+REG_GATEWAY="${REG_GATEWAY:-https://localhost:5173}"
 # 记录文件操作审计的基线，稍后确认本次链路确实新增了记录
 # 审计表由 iboot-monitor 拥有，所有服务同库写入该表
 operate_log_before=$(docker exec iboot-mysql mysql --default-character-set=utf8mb4 -uroot -proot iboot -N -e "
     SELECT COUNT(*) FROM sys_operate_log WHERE url LIKE '/api/file/%'" 2>/dev/null | tail -1)
 operate_log_before="${operate_log_before:-0}"
 echo "iBoot 回归冒烟 $(date +%s)" > "$WORK/smoke.txt"
-upload=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+upload=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     -F "file=@$WORK/smoke.txt" -F "fileCategory=regress" \
     "$REG_GATEWAY/api/file/upload" | reg_unwrap)
 reg_expect_ok "经网关上传文件" "$upload"
 file_id=$(printf '%s' "$upload" | jq -r '.data.id // empty')
 if [ -n "$file_id" ]; then
-    file_list=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    file_list=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/file/list?pageNum=1&pageSize=50" | reg_unwrap)
     reg_expect_ok "经网关查询文件列表" "$file_list"
     reg_expect_jq "列表包含刚上传的文件" "[.data.data[]? | select(.id == $file_id)] | length == 1" "$file_list"
-    download=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    download=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/file/download-url/$file_id" | reg_unwrap)
     reg_expect_ok "经网关获取下载地址" "$download"
-    if curl -sS -f -H "Authorization: Bearer $REG_TOKEN" \
+    if reg_curl -f -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/file/download/$file_id" -o "$WORK/downloaded.txt"; then
         reg_pass "经网关下载文件内容"
     else
         reg_fail "经网关下载文件失败"
     fi
-    removed=$(curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+    removed=$(reg_curl -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/file/$file_id" | reg_unwrap)
     reg_expect_ok "经网关删除文件" "$removed"
 else
@@ -77,43 +77,43 @@ else
 fi
 
 reg_log "== 3b. 日志与在线会话（经网关，日志与会话已迁至 iboot-monitor） =="
-login_logs=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+login_logs=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/log/login/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "经网关查询登录日志" "$login_logs"
 reg_expect_jq "登录日志分页结构完整" '.data.total >= 1 and (.data.data | type) == "array"' "$login_logs"
 
-operate_logs=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+operate_logs=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/log/operate/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "经网关查询操作日志" "$operate_logs"
 # 操作日志由内核异步写入监控服务的审计表，列表里应能看到本次链路产生的记录
 reg_expect_jq "操作日志包含经网关产生的记录" '[.data.data[]? | select(.operUrl? // "" | startswith("/api/file/"))] | length > 0' "$operate_logs"
 
-online_count=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+online_count=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/online/count" | reg_unwrap)
 reg_expect_ok "经网关查询在线人数" "$online_count"
 reg_expect_jq "在线人数为整数" '(.data | type) == "number" or (.data | type) == "string"' "$online_count"
 
 reg_log "== 4. 实时推送（经网关，消息与 SSE 已迁至 iboot-notify） =="
-message=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+message=$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
     -d '{"title":"回归冒烟消息","content":"回归冒烟内容","messageType":"1","priority":"1","receiverType":"0"}' \
     "$REG_GATEWAY/api/message" | reg_unwrap)
 reg_expect_ok "经网关创建站内消息" "$message"
 message_id=$(printf '%s' "$message" | jq -r '.data.id // empty')
 
-curl -sN --max-time 15 -H "Authorization: Bearer $REG_TOKEN" \
+reg_curl -N --max-time 15 -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/push/connect?t=$REG_TOKEN" > "$WORK/sse.txt" 2>/dev/null &
 SSE_PID=$!
 # 固定等待在负载下会漏事件：先确认连接已注册到 notify，再发送消息
 sse_online=""
 for _ in $(seq 1 10); do
-    sse_online=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+    sse_online=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/push/status" | reg_unwrap | jq -r '.data.online // false')
     [ "$sse_online" = "true" ] && break
     sleep 1
 done
 
 if [ -n "$message_id" ] && [ "$message_id" != "null" ]; then
-    sent=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+    sent=$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
         -d "{\"messageId\":$message_id,\"userIds\":[1]}" "$REG_GATEWAY/api/message/send" | reg_unwrap)
     reg_expect_ok "经网关把消息发送给当前用户" "$sent"
 else
@@ -133,7 +133,7 @@ else
 fi
 
 reg_log "== 4b. 通知投递（经网关，/api/notification/** 已迁至 iboot-notify） =="
-deliveries=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+deliveries=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/notification/delivery?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "经网关查询通知投递记录" "$deliveries"
 # 开发环境的渠道都可用，天然不会产生失败投递；造一条 DEAD 记录覆盖人工重试路径。
@@ -147,12 +147,12 @@ retry_id=$(docker exec iboot-mysql mysql -uroot -proot iboot -N -e "
             'APPROVAL_TODO', '回归重试', '回归重试内容', 'DEAD', 5, 5, NOW());
     SELECT LAST_INSERT_ID();" 2>/dev/null | tail -1)
 if [ -n "$retry_id" ]; then
-    retried=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" \
+    retried=$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/notification/delivery/$retry_id/retry" | reg_unwrap)
     reg_expect_ok "经网关人工重试失败投递" "$retried"
     retry_status=""
     for _ in $(seq 1 15); do
-        retry_status=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+        retry_status=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
             "$REG_GATEWAY/api/notification/delivery?pageNum=1&pageSize=200" | reg_unwrap \
             | jq -r --argjson id "$retry_id" '[.data.data[]? | select(.id == $id)][0].status // empty')
         [ "$retry_status" = "PENDING" ] || [ "$retry_status" = "SENDING" ] || break
@@ -169,40 +169,40 @@ fi
 
 reg_log "== 5. 定时任务与数据备份（经网关，已迁至 iboot-job） =="
 job_body='{"jobName":"回归冒烟任务","jobGroup":"DEFAULT","invokeTarget":"sampleTask.noParams","cronExpression":"0 0 3 * * ?","status":0,"remark":"回归冒烟"}'
-job_created=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+job_created=$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
     -d "$job_body" "$REG_GATEWAY/api/job" | reg_unwrap)
 reg_expect_ok "经网关创建一条暂停任务" "$job_created"
 job_id=$(printf '%s' "$job_created" | jq -r '.data.id // empty')
 if [ -n "$job_id" ] && [ "$job_id" != "null" ]; then
-    job_run=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" \
+    job_run=$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/job/$job_id/run" | reg_unwrap)
     reg_expect_ok "经网关立即执行一次任务" "$job_run"
     job_log=""
     for _ in $(seq 1 10); do
-        job_log=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+        job_log=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
             "$REG_GATEWAY/api/job/log/list?jobId=$job_id&pageNum=1&pageSize=10" | reg_unwrap)
         [ "$(printf '%s' "$job_log" | jq -r '.data.total // 0')" -gt 0 ] && break
         sleep 1
     done
     reg_expect_jq "执行日志中出现该任务的记录" '.data.total > 0' "$job_log"
-    job_removed=$(curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+    job_removed=$(reg_curl -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/job/$job_id" | reg_unwrap)
     reg_expect_ok "经网关删除任务" "$job_removed"
 else
     reg_fail "创建任务未返回 ID"
 fi
 
-backup=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" \
+backup=$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/monitor/backup/records" | reg_unwrap)
 reg_expect_ok "经网关触发一次手动备份" "$backup"
 
 reg_log "== 6. 审批流转（经网关，/api/approval/** 已迁至 iboot-workflow） =="
 approval_post() {
-    curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+    reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
         -d "${2:-}" "$REG_GATEWAY$1" | reg_unwrap
 }
 approval_get() {
-    curl -sS -H "Authorization: Bearer $REG_TOKEN" "$REG_GATEWAY$1" | reg_unwrap
+    reg_curl -H "Authorization: Bearer $REG_TOKEN" "$REG_GATEWAY$1" | reg_unwrap
 }
 
 reg_ensure_user "regress_approver" "回归审批人" 2
@@ -252,14 +252,14 @@ reg_expect_jq "驳回后详情状态为 REJECTED" '.data.application.status == "
 reg_expect_jq "详情包含驳回意见" '[.data.history[]? | select(.comment == "材料不齐")] | length == 1' "$detail2"
 
 reg_log "== 7. 登出与会话撤销 =="
-logout=$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" "$REG_AUTH_BASE/api/auth/logout" | reg_unwrap)
+logout=$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" "$REG_AUTH_BASE/api/auth/logout" | reg_unwrap)
 reg_expect_ok "调用登出接口" "$logout"
 after_logout=$(reg_status /api/user/profile)
 reg_expect_status "登出后令牌立即失效" "$after_logout" "401"
 
 reg_log "== 8. 旧登录协议已下线 =="
 # 接口已下线：路径不在契约基线里，这里只断言它不再返回成功
-legacy_login_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+legacy_login_status=$(reg_curl -o /dev/null -w '%{http_code}' -X POST \
     -H 'Content-Type: application/json' -d '{}' "$REG_GATEWAY/api/auth/login")
 if [ "$legacy_login_status" != "200" ]; then
     reg_pass "旧的用户名密码登录接口已不可用（HTTP $legacy_login_status）"
@@ -267,7 +267,7 @@ else
     reg_fail "旧的用户名密码登录接口仍然可用"
 fi
 
-legacy_body=$(curl -sS -H "Authorization: Bearer $(reg_legacy_token)" "$REG_BASE/api/user/profile")
+legacy_body=$(reg_curl -H "Authorization: Bearer $(reg_legacy_token)" "$REG_BASE/api/user/profile")
 reg_expect_jq "旧格式令牌返回令牌版本过期" '.code == 40101' "$legacy_body"
 
 reg_summary

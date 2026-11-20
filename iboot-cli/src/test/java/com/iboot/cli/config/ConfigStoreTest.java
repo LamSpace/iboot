@@ -40,7 +40,7 @@ class ConfigStoreTest {
         CliConfig config = store().load();
 
         assertThat(config.current().name()).isEqualTo("dev");
-        assertThat(config.current().baseUrl()).isEqualTo("http://localhost:8088");
+        assertThat(config.current().baseUrl()).isEqualTo("https://localhost:5173");
         assertThat(config.current().clientId()).isEqualTo("iboot-cli");
         assertThat(Files.exists(tempDir.resolve("config.json"))).isFalse();
     }

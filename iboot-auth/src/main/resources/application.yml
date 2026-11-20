@@ -1,7 +1,13 @@
 server:
   port: 8083
+  # 浏览器经门户 HTTPS 反代访问；信任 X-Forwarded-Proto，登录页与会话 Cookie 才按 HTTPS 生成
+  forward-headers-strategy: ${IBOOT_FORWARD_HEADERS_STRATEGY:framework}
   servlet:
     context-path: /
+    session:
+      cookie:
+        # 公开入口只提供 HTTPS；直接访问服务 HTTP 端口不作为浏览器登录入口
+        secure: ${IBOOT_AUTH_COOKIE_SECURE:true}
   tomcat:
     threads:
       virtual:
@@ -70,17 +76,18 @@ jwt:
   jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8083/oauth2/jwks}
   legacy-enabled: ${JWT_LEGACY_ENABLED:false}
 
-# 授权服务器：签发者地址必须等于浏览器访问授权服务器所用的地址（开发期即网关地址）
+# 授权服务器：签发者地址必须等于浏览器访问授权服务器所用的公开来源。
+# 宿主机开发默认是 Vite 的 HTTPS 地址；Docker 全量部署由 compose 覆盖为 https://localhost。
 iboot:
   auth:
     server:
-      issuer: ${IBOOT_AUTH_ISSUER:http://localhost:8088}
+      issuer: ${IBOOT_AUTH_ISSUER:https://localhost:5173}
       client-id: ${IBOOT_AUTH_CLIENT_ID:iboot-portal}
       client-name: iBoot Portal
       redirect-uris:
-        - ${IBOOT_AUTH_REDIRECT_URI:http://localhost:5173/callback}
+        - ${IBOOT_AUTH_REDIRECT_URI:https://localhost:5173/callback}
       post-logout-redirect-uris:
-        - ${IBOOT_AUTH_LOGOUT_REDIRECT_URI:http://localhost:5173/login}
+        - ${IBOOT_AUTH_LOGOUT_REDIRECT_URI:https://localhost:5173/login}
       cli-client-id: ${IBOOT_AUTH_CLI_CLIENT_ID:iboot-cli}
       cli-client-name: iBoot CLI
       cli-redirect-uris:

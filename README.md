@@ -60,7 +60,8 @@ iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RB
 [iboot-gateway / iboot-workflow / iboot-notify] --规则与指标--> [sentinel-dashboard :8858]
 ```
 
-前端业务接口只访问网关；服务之间的调用按 Nacos 服务名寻址，不经过网关。运维控制台是旁路，
+前端业务接口只访问门户公开入口，由门户反代到网关；服务之间的调用按 Nacos 服务名寻址，
+不经过网关。运维控制台是旁路，
 开发环境经 Vite 代理以同源 iframe 打开，生产环境只允许内网访问，公网网关不提供 `/sba` 路由。
 Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规则以 Nacos 为唯一持久化来源。
 
@@ -159,10 +160,14 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 cp .env.example .env
 #    至少填写百炼 API Key；其余按需
 
-# 2. 拉起中间件（含 RocketMQ）、Sentinel Dashboard 与基线规则，构建后端并启动九个业务服务与运维控制台
+# 2. 生成 TLS CA/证书，并把 CA 装入浏览器信任库（一次性，可能需要管理员权限）
+bash scripts/tls-init.sh
+CAROOT=docker/certs/ca mkcert -install
+
+# 3. 拉起中间件（含 RocketMQ）、Sentinel Dashboard 与基线规则，构建后端并启动九个业务服务与运维控制台
 bash scripts/dev-init.sh
 
-# 3. 需要前端时
+# 4. 需要前端时（以 HTTPS 启动门户开发服务器）
 bash scripts/dev-init.sh --frontend
 ```
 
@@ -209,11 +214,12 @@ MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root \
 
 **访问与验证**
 
-- 前端开发地址：<http://localhost:5173>，API 经 Vite 代理到网关 `8088`
-- 网关健康检查：<http://localhost:8088/actuator/health>
+- 前端开发地址：<https://localhost:5173>，API 经 Vite 反代到网关 `8088`；浏览器需信任本地 CA
+- 网关健康检查：<http://localhost:8088/actuator/health>（内部地址，不是客户端入口）
 - Sentinel Dashboard：<http://localhost:8858>（本地开发必选，生产需认证）
 - Nacos 控制台：<http://localhost:8849/next/>（本地开发默认关闭控制台登录）
-- 门户“微服务治理”：登录后访问 <http://localhost:5173/dashboard/nacos> 与 <http://localhost:5173/dashboard/sentinel>
+- 门户“微服务治理”：登录后访问 <https://localhost:5173/dashboard/nacos> 与 <https://localhost:5173/dashboard/sentinel>
+- 证书、信任与排障见 [docs/27](<./docs/27-TLS 与零信任操作指南.md>)
 - 默认管理员：`admin` / `admin123456`（baseline 种子数据，首次登录后请立即修改）
 
 ## 目录结构
@@ -294,8 +300,10 @@ scripts/docker-deploy.sh up
 scripts/docker-deploy.sh up core
 ```
 
-前端生产镜像由 nginx 提供静态资源，并把 `/iboot/api` 反向代理到 `iboot-gateway:8088`；
-容器编排、端口、卷与排障见 [`docker/README.md`](docker/README.md)。Helm 组织与 ACK 部署见
+前端生产镜像由 nginx 在 443 提供静态资源、OIDC 与 `/api`，80 只做 HTTPS 重定向；
+`/iboot/api` 反向代理到 `iboot-gateway:8088`。证书由 `scripts/tls-init.sh` 生成并挂载，
+容器编排、端口、卷与排障见 [`docker/README.md`](docker/README.md)，证书与信任见
+[docs/27](<./docs/27-TLS 与零信任操作指南.md>)。Helm 组织与 ACK 部署见
 [ROADMAP 阶段 3](ROADMAP.md#阶段-3云原生ack--helm)。
 
 ## 文档导航

@@ -31,7 +31,7 @@ APPROVAL_APPLY_ROLE_ID=""
 APPROVAL_APPLY_USER_ID=""
 APPROVAL_APPROVE_ROLE_ID=""
 APPROVAL_APPROVE_USER_ID=""
-REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
+REG_GATEWAY="${REG_GATEWAY:-https://localhost:5173}"
 
 cleanup() {
     # 清理必须在管理员身份下进行
@@ -94,10 +94,10 @@ else
     reg_fail "[数据范围][对比] 超管($admin_total) 未多于受限用户($scope_total)，数据范围可能未生效"
 fi
 
-backup_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+backup_denied=$(reg_curl -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/monitor/backup/records")
 reg_expect_status "[功能权限][拒绝] 受限用户访问备份记录（无 backup 权限）" "$backup_denied" "401 403"
-file_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+file_denied=$(reg_curl -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/file/list?pageNum=1&pageSize=10")
 reg_expect_status "[功能权限][拒绝] 受限用户访问文件列表（无 file:list）" "$file_denied" "401 403"
 
@@ -107,11 +107,11 @@ reg_login
 # 冒烟会删除自己上传的文件，若依赖它，全新数据卷上两侧都会是 0。
 seed_file="$(mktemp --suffix=.txt)"
 echo "iBoot 数据范围种子 $(date +%s)" > "$seed_file"
-curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     -F "file=@$seed_file" -F "fileCategory=regress-seed" \
     "$REG_GATEWAY/api/file/upload" > /dev/null || true
 rm -f "$seed_file"
-admin_files=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+admin_files=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/file/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 超管查询文件列表" "$admin_files"
 admin_file_total=$(printf '%s' "$admin_files" | jq -r '.data.total // 0')
@@ -134,7 +134,7 @@ if [ -z "$FILE_USER_ID" ]; then
 fi
 
 reg_login "$FILE_USER_NAME" "$USER_PASS"
-scope_files=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+scope_files=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/file/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 持有 file:list 的受限用户可访问文件列表" "$scope_files"
 scope_file_total=$(printf '%s' "$scope_files" | jq -r '.data.total // 0')
@@ -147,7 +147,7 @@ fi
 
 reg_log "== 调度域：功能权限与数据范围（经网关，已迁至 iboot-job） =="
 reg_login
-admin_jobs=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+admin_jobs=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/job/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 超管经网关查询定时任务列表" "$admin_jobs"
 admin_job_total=$(printf '%s' "$admin_jobs" | jq -r '.data.total // 0')
@@ -174,7 +174,7 @@ if [ -z "$JOB_USER_ID" ]; then
 fi
 
 reg_login "$JOB_USER_NAME" "$USER_PASS"
-scope_jobs=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+scope_jobs=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/job/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 持有 job:list 的受限用户可访问任务列表" "$scope_jobs"
 scope_job_total=$(printf '%s' "$scope_jobs" | jq -r '.data.total // 0')
@@ -184,28 +184,28 @@ else
     reg_fail "[数据范围][对比] 超管($admin_job_total) 未多于受限用户($scope_job_total)，任务数据范围可能未生效"
 fi
 
-job_run_denied=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $REG_TOKEN" \
+job_run_denied=$(reg_curl -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/job/1/run")
 reg_expect_status "[功能权限][拒绝] 无 job:run 的用户不能立即执行任务" "$job_run_denied" "401 403"
-job_add_denied=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $REG_TOKEN" \
+job_add_denied=$(reg_curl -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $REG_TOKEN" \
     -H 'Content-Type: application/json' \
     -d '{"jobName":"越权用例","jobGroup":"DEFAULT","invokeTarget":"sampleTask.noParams","cronExpression":"0 0 3 * * ?"}' \
     "$REG_GATEWAY/api/job")
 reg_expect_status "[功能权限][拒绝] 无 job:add 的用户不能创建任务" "$job_add_denied" "401 403"
 
-scope_backups=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+scope_backups=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/monitor/backup/records?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 持有 backup:record:list 的受限用户可查看备份记录" "$scope_backups"
-backup_create_denied=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $REG_TOKEN" \
+backup_create_denied=$(reg_curl -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/monitor/backup/records")
 reg_expect_status "[功能权限][拒绝] 无 backup:record:create 的用户不能触发备份" "$backup_create_denied" "401 403"
 
 reg_log "== 消息与通知域：功能权限（经网关） =="
 # 当前登录的是只持有 file:list 的受限用户，正好作为「无消息/公告权限」的拒绝用例
-msg_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+msg_denied=$(reg_curl -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/message/list?pageNum=1&pageSize=10")
 reg_expect_status "[功能权限][拒绝] 无 message:list 的用户访问消息列表" "$msg_denied" "401 403"
-notice_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+notice_denied=$(reg_curl -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/notice/list?pageNum=1&pageSize=10")
 reg_expect_status "[功能权限][拒绝] 无 notice:list 的用户访问公告列表" "$notice_denied" "401 403"
 
@@ -230,23 +230,23 @@ if [ -z "$NOTIFY_USER_ID" ]; then
 fi
 
 reg_login "$NOTIFY_USER_NAME" "$USER_PASS"
-msg_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+msg_allowed=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/message/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 持有 message:list 的受限用户可访问消息列表" "$msg_allowed"
-notice_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+notice_allowed=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/notice/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 持有 notice:list 的受限用户可访问公告列表" "$notice_allowed"
 
-status=$(curl -sS -o /dev/null -w '%{http_code}' "$REG_BASE/api/user/list?pageNum=1&pageSize=10")
+status=$(reg_curl -o /dev/null -w '%{http_code}' "$REG_BASE/api/user/list?pageNum=1&pageSize=10")
 reg_expect_status "[功能权限][拒绝] 未携带令牌访问用户列表" "$status" "401 403"
 
 reg_log "== 审批域：功能权限（经网关） =="
 # 无审批权限的受限用户：复用数据范围角色
 reg_login "$USER_NAME" "$USER_PASS"
-mine_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+mine_denied=$(reg_curl -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/approval/mine")
 reg_expect_status "[功能权限][拒绝] 无审批权限访问我的申请" "$mine_denied" "401 403"
-todo_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+todo_denied=$(reg_curl -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/approval/todo")
 reg_expect_status "[功能权限][拒绝] 无审批权限访问待办" "$todo_denied" "401 403"
 
@@ -269,10 +269,10 @@ if [ -z "$APPROVAL_APPLY_USER_ID" ]; then
     [ -n "$APPROVAL_APPLY_USER_ID" ] || reg_die "创建审批申请用户失败：$created"
 fi
 reg_login "$APPROVAL_APPLY_USER_NAME" "$USER_PASS"
-mine_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+mine_allowed=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/approval/mine?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 持有 approval:apply 的用户可查询我的申请" "$mine_allowed"
-todo_denied_by_apply=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+todo_denied_by_apply=$(reg_curl -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/approval/todo")
 reg_expect_status "[功能权限][拒绝] 仅有 approval:apply 的用户不能看待办" "$todo_denied_by_apply" "401 403"
 
@@ -295,13 +295,13 @@ if [ -z "$APPROVAL_APPROVE_USER_ID" ]; then
     [ -n "$APPROVAL_APPROVE_USER_ID" ] || reg_die "创建审批操作用户失败：$created"
 fi
 reg_login "$APPROVAL_APPROVE_USER_NAME" "$USER_PASS"
-todo_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+todo_allowed=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/approval/todo?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 持有 approval:approve 的用户可查看待办" "$todo_allowed"
 
 reg_log "== 监控域：功能权限与数据范围（经网关，已迁至 iboot-monitor） =="
 # 当前登录的是只持有审批权限的用户，正好作为「无日志权限」的拒绝用例
-log_denied=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
+log_denied=$(reg_curl -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/log/login/list?pageNum=1&pageSize=10")
 reg_expect_status "[功能权限][拒绝] 无 loginlog:list 的用户访问登录日志" "$log_denied" "401 403"
 
@@ -309,7 +309,7 @@ MONITOR_ROLE_CODE="ROLE_MONITOR_TEST"
 MONITOR_LOGIN_LOG_MENU_ID=300   # 菜单：登录日志（权限码 loginlog:list）
 MONITOR_USER_NAME="regress_monitor"
 reg_login
-admin_login_total=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+admin_login_total=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/log/login/list?pageNum=1&pageSize=10" | reg_unwrap | jq -r '.data.total // 0')
 roles=$(reg_get /api/role/all)
 MONITOR_ROLE_ID=$(printf '%s' "$roles" | jq -r --arg c "$MONITOR_ROLE_CODE" '.data[]? | select(.roleCode == $c) | .id' | head -1)
@@ -327,7 +327,7 @@ if [ -z "$MONITOR_USER_ID" ]; then
     [ -n "$MONITOR_USER_ID" ] || reg_die "创建监控用户失败：$created"
 fi
 reg_login "$MONITOR_USER_NAME" "$USER_PASS"
-log_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+log_allowed=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/log/login/list?pageNum=1&pageSize=10" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 持有 loginlog:list 的受限用户可访问登录日志" "$log_allowed"
 monitor_login_total=$(printf '%s' "$log_allowed" | jq -r '.data.total // 0')
@@ -338,7 +338,7 @@ else
 fi
 # 在线会话需要独立的 online:list 权限，这里回到超管验证同一端点
 reg_login
-online_allowed=$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+online_allowed=$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/online/count" | reg_unwrap)
 reg_expect_ok "[功能权限][允许] 超管可查询在线人数" "$online_allowed"
 
