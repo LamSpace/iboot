@@ -7,7 +7,7 @@
 #
 # 环境变量：REG_BASE（登录与默认录制源，默认 http://localhost:8080）、
 #           REG_RECORD_BASE（仅 --record 的取数地址；旧实现删除后指向对应服务）、
-#           REG_GATEWAY（重放入口，默认 http://localhost:8088）、REG_USER、REG_PASS
+#           REG_GATEWAY（重放入口，默认 https://localhost:8088）、REG_CACERT、REG_USER、REG_PASS
 #
 # 注：equivalence.sh 是服务迁移期脚本，重放入口默认仍是内部网关 8088；
 # 日常回归请使用 regress.sh 的公开 HTTPS 入口与 REG_CACERT。
@@ -24,11 +24,13 @@ mkdir -p "$TMP"
 
 REG_BASE="${REG_BASE:-http://localhost:8080}"
 REG_RECORD_BASE="${REG_RECORD_BASE:-$REG_BASE}"
-REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
+REG_GATEWAY="${REG_GATEWAY:-https://localhost:8088}"
 export REG_BASE
 
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
+# Python 重放脚本通过该变量信任内部 CA
+export SSL_CERT_FILE="${SSL_CERT_FILE:-$REG_CACERT}"
 
 MODE=""
 SERVICE="file"

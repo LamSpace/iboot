@@ -16,6 +16,9 @@
 
 package com.iboot.monitor.infrastructure.config;
 
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.HttpClientSettings;
+import org.springframework.boot.ssl.SslBundles;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,7 +43,10 @@ public class ServiceClientConfig {
      */
     @Bean("loadBalancedRestClientBuilder")
     @LoadBalanced
-    public RestClient.Builder loadBalancedRestClientBuilder() {
-        return RestClient.builder();
+    public RestClient.Builder loadBalancedRestClientBuilder(SslBundles sslBundles) {
+        // 显式使用 iboot SSL bundle，避免与服务名寻址的负载均衡构建器互相等待
+        return RestClient.builder()
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect()
+                        .build(HttpClientSettings.ofSslBundle(sslBundles.getBundle("iboot"))));
     }
 }

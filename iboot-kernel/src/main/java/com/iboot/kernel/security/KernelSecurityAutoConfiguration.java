@@ -17,7 +17,12 @@
 package com.iboot.kernel.security;
 
 import jakarta.servlet.DispatcherType;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.HttpClientSettings;
+import org.springframework.boot.ssl.NoSuchSslBundleException;
+import org.springframework.boot.ssl.SslBundles;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -33,6 +38,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestClient;
 
 /**
  * 共享内核的鉴权自动配置。
@@ -113,7 +119,19 @@ public class KernelSecurityAutoConfiguration {
          */
         @Bean
         @ConditionalOnMissingBean
-        public JwkSetProvider jwkSetProvider(JwtSecurityConfig jwtSecurityConfig) {
+        public JwkSetProvider jwkSetProvider(JwtSecurityConfig jwtSecurityConfig,
+                                             ObjectProvider<SslBundles> sslBundlesProvider) {
+            SslBundles sslBundles = sslBundlesProvider.getIfAvailable();
+            if (sslBundles != null) {
+                try {
+                    RestClient.Builder builder = RestClient.builder()
+                            .requestFactory(ClientHttpRequestFactoryBuilder.detect()
+                                    .build(HttpClientSettings.ofSslBundle(sslBundles.getBundle("iboot"))));
+                    return new JwkSetProvider(jwtSecurityConfig.getJwkSetUri(), builder);
+                } catch (NoSuchSslBundleException ignored) {
+                    // 测试切片或未启用 SSL bundle 时回落到 JDK 信任库
+                }
+            }
             return new JwkSetProvider(jwtSecurityConfig.getJwkSetUri());
         }
 

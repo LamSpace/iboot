@@ -147,8 +147,11 @@ public class MysqldumpBackupExecutor implements BackupExecutor {
 
     private Connection openServerConnection() throws SQLException {
         BackupProperties.Database database = properties.getDatabase();
+        // 统计表行数走 JDBC；MySQL 只接受 TLS，默认使用与服务数据源相同的校验参数
+        String sslParams = System.getenv().getOrDefault("MYSQL_SSL_PARAMS",
+                "sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8");
         String url = "jdbc:mysql://" + database.getHost() + ":" + database.getPort()
-                + "/?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8";
+                + "/?" + sslParams;
         return DriverManager.getConnection(url, database.getUsername(), database.getPassword());
     }
 

@@ -17,7 +17,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=../regress/lib.sh
 . "$ROOT/scripts/regress/lib.sh"
 
-GATEWAY="${APM_GATEWAY:-http://localhost:8088}"
+GATEWAY="${APM_GATEWAY:-https://localhost:8088}"
 TEMPO="${APM_TEMPO:-http://localhost:3200}"
 OAP="${APM_OAP:-http://localhost:12800}"
 EXPECT="${APM_EXPECT:-iboot-gateway,iboot-system}"
@@ -36,7 +36,7 @@ reg_login || exit 3
 
 START="$(date -u '+%Y-%m-%d %H%M%S')"
 START_MIN="$(date -u '+%Y-%m-%d %H%M')"
-HTTP_CODE="$(curl -sS -D "$WORK/headers" -o "$WORK/body" -w '%{http_code}' \
+HTTP_CODE="$(reg_curl -D "$WORK/headers" -o "$WORK/body" -w '%{http_code}' \
     -H "Authorization: Bearer $REG_TOKEN" "$GATEWAY$PROBE_PATH" || true)"
 if [ "$HTTP_CODE" != "200" ]; then
     printf '[FAIL] 探针请求返回 %s：%s\n' "$HTTP_CODE" "$(head -c 300 "$WORK/body" 2>/dev/null)" >&2

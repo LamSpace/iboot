@@ -43,7 +43,7 @@ public class JwtSecurityConfig {
     /**
      * 认证服务的公钥集地址，资源服务器用它验签自包含令牌。
      */
-    private String jwkSetUri = "http://localhost:8083/oauth2/jwks";
+    private String jwkSetUri = "https://localhost:8083/oauth2/jwks";
 
     /**
      * 是否继续接受旧的对称签名令牌。

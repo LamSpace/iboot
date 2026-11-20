@@ -11,7 +11,10 @@ const certDir = process.env.IBOOT_TLS_CERT_DIR
   || fileURLToPath(new URL('../docker/certs', import.meta.url))
 // 门户是唯一公开入口：OIDC 与 /api 都由 Vite 反代到网关。
 // OIDC 必须保留原始 Host，否则认证服务会按 localhost:8088 生成回调与页面地址。
-const gateway = 'http://localhost:8088'
+// 内部 TLS 默认开启；关闭时仅用于宿主机排障（Docker 不提供该回退）。
+const internalTls = (process.env.IBOOT_INTERNAL_TLS_ENABLED ?? 'true') !== 'false'
+const gateway = `${internalTls ? 'https' : 'http'}://localhost:8088`
+const ops = `${internalTls ? 'https' : 'http'}://localhost:8089`
 
 export default defineConfig(({ command }) => ({
   plugins: [
@@ -87,21 +90,21 @@ export default defineConfig(({ command }) => ({
         },
       },
       '/sba': {
-        target: 'http://localhost:8089', // 运维控制台（Spring Boot Admin）
+        target: ops, // 运维控制台（Spring Boot Admin）
         // 必须保留原始 Host：SBA 用请求 Host 生成页面 base href。
         // 改成 8089 会让 SPA 的接口请求跨源，iframe 内表现为空白页。
         changeOrigin: false,
       },
       '/actuator': {
-        target: 'http://localhost:8089', // 运维控制台自身的 Actuator
+        target: ops, // 运维控制台自身的 Actuator
         changeOrigin: true,
       },
       '/instances': {
-        target: 'http://localhost:8089', // 运维控制台实例端点
+        target: ops, // 运维控制台实例端点
         changeOrigin: true,
       },
       '/applications': {
-        target: 'http://localhost:8089', // 运维控制台应用端点
+        target: ops, // 运维控制台应用端点
         changeOrigin: true,
       },
     },

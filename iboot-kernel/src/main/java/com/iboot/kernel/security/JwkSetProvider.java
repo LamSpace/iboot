@@ -100,6 +100,16 @@ public class JwkSetProvider {
     }
 
     /**
+     * 使用 Spring 自动配置的构建器创建实例，继承 SSL bundle 与全局 HTTP 客户端配置。
+     *
+     * @param jwkSetUri 公钥集地址
+     * @param builder Spring 自动配置的 REST 客户端构建器
+     */
+    public JwkSetProvider(String jwkSetUri, RestClient.Builder builder) {
+        this(jwkSetUri, builder.build(), DEFAULT_MIN_REFRESH_INTERVAL_MILLIS);
+    }
+
+    /**
      * 使用指定的客户端创建实例，供测试与手工装配使用。
      *
      * @param jwkSetUri 公钥集地址

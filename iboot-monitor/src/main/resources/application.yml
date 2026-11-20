@@ -13,13 +13,21 @@ spring:
     name: iboot-monitor
   # 注册中心与配置中心：走 spring.config.import，optional: 保证配置中心不可用时仍能启动
   config:
-    import: optional:nacos:iboot-monitor.yml
+    import:
+      - classpath:iboot-tls.yml
+      - optional:nacos:iboot-monitor.yml
   cloud:
     nacos:
       discovery:
         server-addr: ${NACOS_ADDR:localhost:8848}
         enabled: ${IBOOT_NACOS_ENABLED:true}
         fail-fast: false
+        # 服务实例以 HTTPS 暴露；网关的负载均衡据此选择 https
+        secure: true
+        metadata:
+          secure: "true"
+        # 实例地址使用服务名，证书 SAN 不依赖容器 IP；宿主机开发由 dev-init.sh 覆盖为 127.0.0.1
+        ip: ${IBOOT_NACOS_DISCOVERY_IP:${spring.application.name}}
       config:
         server-addr: ${NACOS_ADDR:localhost:8848}
         file-extension: yml
@@ -34,7 +42,7 @@ spring:
     druid:
       driver-class-name: com.mysql.cj.jdbc.Driver
       # 独立 schema：审计表归本服务所有，其他服务跨 schema 写入
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?${MYSQL_SSL_PARAMS:sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8}
       username: ${MYSQL_USERNAME:root}
       password: ${MYSQL_PASSWORD:root}
       initial-size: 2
@@ -58,6 +66,8 @@ spring:
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: 10s
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:true}
     # 运行日志由 Logstash 直接写入 ES，本服务只做查询
     elasticsearch:
       repositories:
@@ -94,7 +104,7 @@ iboot:
   # 数据权限范围：按注册中心服务名调用系统服务只读接口，失败关闭
   monitor:
     permission:
-      scope-url: ${IBOOT_PERMISSION_SCOPE_URL:http://iboot-system/api/auth/scope}
+      scope-url: ${IBOOT_PERMISSION_SCOPE_URL:https://iboot-system/api/auth/scope}
       cache-seconds: 60
 
 mybatis:

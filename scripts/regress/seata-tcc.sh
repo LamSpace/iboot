@@ -29,7 +29,7 @@ cd "$ROOT"
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
 
-REG_WORKFLOW_BASE="${REG_WORKFLOW_BASE:-http://localhost:8086}"
+REG_WORKFLOW_BASE="${REG_WORKFLOW_BASE:-https://localhost:8086}"
 MYSQL_CONTAINER="${MYSQL_CONTAINER:-iboot-mysql}"
 SEATA_CONTAINER="${SEATA_CONTAINER:-iboot-seata-server}"
 SYSTEM_PID_FILE="${SYSTEM_PID_FILE:-logs/iboot-system.pid}"
@@ -76,13 +76,13 @@ transfer() {
     local token="$1" count="$2" extra_header="${3:-}"
     local args=(-sS -X POST -H "Authorization: Bearer $token" -H 'Content-Type: application/json')
     if [ -n "$extra_header" ]; then args+=(-H "$extra_header"); fi
-    curl "${args[@]}" -d "{\"fromUserId\":1,\"toUserId\":$OTHER_ID,\"year\":2026,\"count\":$count}" \
+    reg_curl "${args[@]}" -d "{\"fromUserId\":1,\"toUserId\":$OTHER_ID,\"year\":2026,\"count\":$count}" \
         "$REG_WORKFLOW_BASE/api/approval/leave/quota/transfer" | reg_unwrap
 }
 
 fault_profile_active() {
     local body
-    body="$(curl -sS --max-time 5 "$REG_WORKFLOW_BASE/actuator/beans" 2>/dev/null)" || return 1
+    body="$(reg_curl --max-time 5 "$REG_WORKFLOW_BASE/actuator/beans" 2>/dev/null)" || return 1
     printf '%s' "$body" | jq -e '.. | objects | keys? | select(index("seataTccDemoFaultAspect"))' >/dev/null 2>&1
 }
 

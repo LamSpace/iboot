@@ -81,6 +81,7 @@ jobs:
         env:
           # 公开入口 TLS；证书由 dev-init.sh 调用 tls-init.sh 生成
           IBOOT_TLS_ENABLED: 'true'
+          IBOOT_INTERNAL_TLS_ENABLED: 'true'
           IBOOT_PUBLIC_ORIGIN: 'https://localhost:5173'
           IBOOT_CLI_TRUSTSTORE: ${{ github.workspace }}/docker/certs/truststore.p12
           REG_CACERT: ${{ github.workspace }}/docker/certs/ca/rootCA.pem

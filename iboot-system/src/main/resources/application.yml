@@ -14,7 +14,9 @@ spring:
   # 阶段 2：注册中心与配置中心。Nacos 3.x 不再支持 bootstrap.yml，统一走 spring.config.import；
   # optional: 前缀保证配置中心不可用时仍能以本地配置启动。
   config:
-    import: optional:nacos:iboot-system.yml
+    import:
+      - classpath:iboot-tls.yml
+      - optional:nacos:iboot-system.yml
   cloud:
     nacos:
       discovery:
@@ -22,6 +24,12 @@ spring:
         enabled: ${IBOOT_NACOS_ENABLED:true}
         # 注册中心不可用时不阻断启动（默认 fail-fast 会直接让应用启动失败）
         fail-fast: false
+        # 服务实例以 HTTPS 暴露；网关的负载均衡据此选择 https
+        secure: true
+        metadata:
+          secure: "true"
+        # 实例地址使用服务名，证书 SAN 不依赖容器 IP；宿主机开发由 dev-init.sh 覆盖为 127.0.0.1
+        ip: ${IBOOT_NACOS_DISCOVERY_IP:${spring.application.name}}
       config:
         server-addr: ${NACOS_ADDR:localhost:8848}
         file-extension: yml
@@ -37,7 +45,7 @@ spring:
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?${MYSQL_SSL_PARAMS:sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8}
       username: ${MYSQL_USERNAME:root}
       password: ${MYSQL_PASSWORD:root}
       initial-size: 5
@@ -78,6 +86,8 @@ spring:
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: 10s
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:true}
       lettuce:
         pool:
           min-idle: 0
@@ -276,7 +286,7 @@ iboot:
   tcc:
     datasource:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?${MYSQL_SSL_PARAMS:sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8}
       username: ${MYSQL_USERNAME:root}
       password: ${MYSQL_PASSWORD:root}
       initial-size: 1
@@ -288,5 +298,5 @@ iboot:
 
   notification:
     # 通知登记：由 iboot-notify 承接，内部端点不经网关
-    base-url: ${IBOOT_NOTIFY_BASE_URL:http://localhost:8084}
+    base-url: ${IBOOT_NOTIFY_BASE_URL:https://localhost:8084}
     internal-token: ${IBOOT_NOTIFY_INTERNAL_TOKEN:}

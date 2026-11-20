@@ -19,7 +19,8 @@ VERSION="1.0.0"
 JAR="$SERVICE/target/$SERVICE-$VERSION.jar"
 AGENT="${IBOOT_SKYWALKING_AGENT:-$ROOT/docker/skywalking/agent/skywalking-agent.jar}"
 OAP="${IBOOT_SKYWALKING_OAP:-127.0.0.1:11800}"
-GATEWAY="${APM_GATEWAY:-http://localhost:8088}"
+GATEWAY="${APM_GATEWAY:-https://localhost:8088}"
+GATEWAY_CACERT="${APM_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
 RUNS=3
 CONCURRENCY=8
 REQUESTS=100
@@ -72,7 +73,7 @@ stop_service() {
 wait_health() {
     local deadline=$(( $(date +%s) + 240 ))
     while [ "$(date +%s)" -lt "$deadline" ]; do
-        if [ "$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:$PORT/actuator/health" 2>/dev/null)" = "200" ]; then
+        if [ "$(curl -s --cacert "$GATEWAY_CACERT" -o /dev/null -w '%{http_code}' "https://localhost:$PORT/actuator/health" 2>/dev/null)" = "200" ]; then
             return 0
         fi
         sleep 0.5
@@ -103,7 +104,7 @@ run_load() {
     start_ms="$(date +%s%3N)"
     seq 1 "$CONCURRENCY" | xargs -P "$CONCURRENCY" -I{} bash -c '
         for ((i = 0; i < REQUESTS; i++)); do
-            curl -s -o /dev/null -w "%{http_code}\n" \
+            curl -s --cacert "$GATEWAY_CACERT" -o /dev/null -w "%{http_code}\n" \
                 -H "Authorization: Bearer $REG_TOKEN" "$GATEWAY/api/user/profile"
         done
     ' > "$WORK/codes"

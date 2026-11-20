@@ -8,7 +8,7 @@ spring:
           routes:
             # 服务端推送：长连接不能被响应超时截断，查询参数中的凭证需原样透传
             - id: notify-sse
-              uri: ${IBOOT_NOTIFY_URI:http://localhost:8084}
+              uri: ${IBOOT_NOTIFY_URI:https://localhost:8084}
               order: 0
               predicates:
                 - Path=/api/push/**
@@ -17,27 +17,27 @@ spring:
                 connect-timeout: 2000
 
             - id: ai
-              uri: ${IBOOT_AI_URI:http://localhost:8081}
+              uri: ${IBOOT_AI_URI:https://localhost:8081}
               order: 10
               predicates:
                 - Path=/api/ai/**
 
             - id: file
-              uri: ${IBOOT_FILE_URI:http://localhost:8082}
+              uri: ${IBOOT_FILE_URI:https://localhost:8082}
               order: 20
               predicates:
                 - Path=/api/file/**
 
             # 消息与通知：消息中心、公告、投递记录与内容检索
             - id: notify
-              uri: ${IBOOT_NOTIFY_URI:http://localhost:8084}
+              uri: ${IBOOT_NOTIFY_URI:https://localhost:8084}
               order: 25
               predicates:
                 - Path=/api/message/**,/api/notice/**,/api/notification/**,/api/search
 
             # 审批工作流：请假审批全部接口
             - id: workflow
-              uri: ${IBOOT_WORKFLOW_URI:http://localhost:8086}
+              uri: ${IBOOT_WORKFLOW_URI:https://localhost:8086}
               order: 26
               predicates:
                 - Path=/api/approval/**
@@ -46,14 +46,14 @@ spring:
             # 备份路径同样挂在 /api/monitor 下（由 job 承接），因此这里按路径逐条登记，
             # 不使用 /api/monitor/** 前缀。
             - id: monitor
-              uri: ${IBOOT_MONITOR_URI:http://localhost:8087}
+              uri: ${IBOOT_MONITOR_URI:https://localhost:8087}
               order: 27
               predicates:
                 - Path=/api/log/**,/api/online/**,/api/monitor/server/**,/api/monitor/redis/**,/api/monitor/silo/**
 
             # 调度服务：定时任务与数据备份。
             - id: job
-              uri: ${IBOOT_JOB_URI:http://localhost:8085}
+              uri: ${IBOOT_JOB_URI:https://localhost:8085}
               order: 28
               predicates:
                 - Path=/api/monitor/backup/**,/api/job/**
@@ -62,7 +62,7 @@ spring:
             # GET /api/auth/scope 返回数据权限范围，属于系统域，由系统服务承载，
             # 因此认证相关路径必须逐条列出而不是 /api/auth/**。
             - id: auth
-              uri: ${IBOOT_AUTH_URI:http://localhost:8083}
+              uri: ${IBOOT_AUTH_URI:https://localhost:8083}
               order: 30
               predicates:
                 - Path=/api/auth/login,/api/auth/logout,/api/auth/register,/api/auth/tokens/**,/oauth2/**,/.well-known/**,/connect/**,/login
@@ -71,7 +71,7 @@ spring:
                 - PreserveHostHeader
 
             - id: system
-              uri: ${IBOOT_SYSTEM_URI:http://localhost:8080}
+              uri: ${IBOOT_SYSTEM_URI:https://localhost:8080}
               order: 100
               predicates:
                 - Path=/api/**

@@ -20,27 +20,31 @@ x-app-env: &app-env
   NACOS_ADDR: nacos:8848
   SEATA_SERVER_ADDR: seata-server:8091
   IBOOT_SEATA_ENABLED: "true"
-  IBOOT_SYSTEM_BASE_URL: http://iboot-system
+  IBOOT_SYSTEM_BASE_URL: https://iboot-system
   # 本地开发默认值；生产通过 .env 或 KMS 注入
   IBOOT_SYSTEM_INTERNAL_TOKEN: ${IBOOT_SYSTEM_INTERNAL_TOKEN:-iboot-dev-internal-token}
   SENTINEL_DASHBOARD: sentinel-dashboard:8858
   TEMPO_OTLP: http://tempo:4318/v1/traces
   IBOOT_LOGGING_KAFKA_ENABLED: "true"
   IBOOT_LOGGING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-  JWT_JWK_SET_URI: http://iboot-auth:8083/oauth2/jwks
+  JWT_JWK_SET_URI: https://iboot-auth:8083/oauth2/jwks
   # 浏览器经门户 443 访问；认证 issuer/回调必须与公开来源一致
   IBOOT_AUTH_ISSUER: https://localhost
   IBOOT_AUTH_REDIRECT_URI: https://localhost/callback
   IBOOT_AUTH_LOGOUT_REDIRECT_URI: https://localhost/login
   IBOOT_AUTH_COOKIE_SECURE: "true"
-  IBOOT_NOTIFY_BASE_URL: http://iboot-notify:8084
+  IBOOT_NOTIFY_BASE_URL: https://iboot-notify:8084
+  # 内部 TLS：证书目录与 JVM 信任库（Druid/MinIO/Neo4j 等非 Spring 客户端也使用）
+  IBOOT_TLS_CERT_DIR: /certs
+  IBOOT_INTERNAL_TLS_ENABLED: "true"
+  JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
   IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-proxy:8081
-  IBOOT_AI_SILO_ENDPOINT: http://silo:9000
+  IBOOT_AI_SILO_ENDPOINT: https://silo:9000
   # 文件存储默认走 Silo；容器内用服务名读写，预签名地址用浏览器可达的宿主机地址
   IBOOT_FILE_STORAGE_TYPE: silo
-  IBOOT_FILE_SILO_ENDPOINT: http://silo:9000
-  IBOOT_FILE_SILO_PUBLIC_ENDPOINT: ${IBOOT_FILE_SILO_PUBLIC_ENDPOINT:-http://localhost:9000}
-  IBOOT_AI_GRAPH_URI: bolt://neo4j:7687
+  IBOOT_FILE_SILO_ENDPOINT: https://silo:9000
+  IBOOT_FILE_SILO_PUBLIC_ENDPOINT: ${IBOOT_FILE_SILO_PUBLIC_ENDPOINT:-https://localhost:9000}
+  IBOOT_AI_GRAPH_URI: bolt+s://neo4j:7687
   MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
 
 x-app-common: &app-common
@@ -83,6 +87,10 @@ services:
       MYSQL_USERNAME: root
       MYSQL_PASSWORD: root
       IBOOT_DB_NAME: iboot
+      MYSQL_TLS_ENABLED: "true"
+      JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
+    volumes:
+      - ./certs/runtime:/certs:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -109,6 +117,7 @@ services:
       SYS_NACOS_CONSOLE_URL: ${SYS_NACOS_CONSOLE_URL:-http://localhost:8849}
       SYS_NACOS_CONSOLE_EMBED: ${SYS_NACOS_CONSOLE_EMBED:-false}
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
       - uploads_data:/app/uploads
     healthcheck:
@@ -143,6 +152,7 @@ services:
       # 开启智能体与智能体管理页面所需的控制器
       IBOOT_AI_AGENT_ENABLED: "true"
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
     healthcheck:
       <<: *app-healthcheck
@@ -176,6 +186,7 @@ services:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
       - uploads_data:/app/uploads
     healthcheck:
@@ -209,6 +220,7 @@ services:
       # 持久化签名密钥：认证服务重启后仍能验证此前签发的令牌
       IBOOT_AUTH_JWK_FILE: /app/keys/iboot-auth-jwk.json
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
       - auth_keys:/app/keys
     healthcheck:
@@ -238,6 +250,7 @@ services:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
     healthcheck:
       <<: *app-healthcheck
@@ -270,6 +283,7 @@ services:
       # 容器内没有 docker CLI；启用备份会触发启动自检失败
       IBOOT_BACKUP_ENABLED: "false"
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
       - uploads_data:/app/uploads
     healthcheck:
@@ -301,6 +315,7 @@ services:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
     healthcheck:
       <<: *app-healthcheck
@@ -329,6 +344,7 @@ services:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
     healthcheck:
       <<: *app-healthcheck
@@ -360,6 +376,7 @@ services:
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
       SPRING_PROFILES_ACTIVE: nacos
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
     healthcheck:
       <<: *app-healthcheck
@@ -390,6 +407,7 @@ services:
       IBOOT_OPS_SECURITY_ENABLED: "false"
       IBOOT_OPS_USER: ops
     volumes:
+      - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
     healthcheck:
       <<: *app-healthcheck
@@ -414,9 +432,9 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./certs/portal.pem:/etc/nginx/certs/portal.pem:ro
-      - ./certs/portal-key.pem:/etc/nginx/certs/portal-key.pem:ro
-      - ./certs/ca/rootCA.pem:/certs/rootCA.pem:ro
+      - ./certs/runtime/portal.pem:/etc/nginx/certs/portal.pem:ro
+      - ./certs/runtime/portal-key.pem:/etc/nginx/certs/portal-key.pem:ro
+      - ./certs/runtime/rootCA.pem:/certs/rootCA.pem:ro
     environment:
       # 健康检查用同一份本地 CA 校验 HTTPS
       SSL_CERT_FILE: /certs/rootCA.pem
@@ -445,6 +463,12 @@ services:
     container_name: iboot-mysql
     ports:
       - "3306:3306"
+    # 服务端 TLS：所有 TCP 连接都必须加密
+    command: >
+      --ssl-ca=/certs/rootCA.pem
+      --ssl-cert=/certs/portal.pem
+      --ssl-key=/certs/portal-key.pem
+      --require_secure_transport=ON
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: iboot
@@ -454,12 +478,13 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
       - iboot-network
     healthcheck:
-      # 强制走 TCP：初始化临时实例只监听 socket，避免健康检查过早通过
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"]
+      # 强制走 TCP 并校验服务端证书
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem --silent"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -470,13 +495,22 @@ services:
     container_name: iboot-redis
     ports:
       - "6379:6379"
+    command: >
+      redis-server
+      --port 0
+      --tls-port 6379
+      --tls-cert-file /certs/portal.pem
+      --tls-key-file /certs/portal-key.pem
+      --tls-ca-cert-file /certs/rootCA.pem
+      --tls-auth-clients no
     volumes:
       - redis_data:/data
+      - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
       - iboot-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--tls", "--cacert", "/certs/rootCA.pem", "-p", "6379", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -492,14 +526,17 @@ services:
       # Silo 保留 MinIO 的 MINIO_* 服务端变量契约
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      # mcli / Go 客户端通过该变量信任本地 CA
+      SSL_CERT_FILE: /certs/rootCA.pem
     volumes:
       - silo_data:/data
-    command: server /data --console-address ":9001"
+      - ./certs/runtime:/certs:ro
+    command: server /data --console-address ":9001" --certs-dir /certs
     restart: unless-stopped
     networks:
       - iboot-network
     healthcheck:
-      test: ["CMD", "mcli", "ready", "local"]
+      test: ["CMD-SHELL", "curl -fsS --cacert /certs/rootCA.pem https://127.0.0.1:9000/minio/health/live >/dev/null || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -511,10 +548,14 @@ services:
     entrypoint: >
       /bin/sh -c "
       sleep 5;
-      mcli alias set mysilo http://silo:9000 minioadmin minioadmin;
+      mcli alias set mysilo https://silo:9000 minioadmin minioadmin;
       mcli mb --ignore-existing mysilo/thanos;
       exit 0;
       "
+    environment:
+      SSL_CERT_FILE: /certs/rootCA.pem
+    volumes:
+      - ./certs/runtime:/certs:ro
     networks:
       - iboot-network
     depends_on:
@@ -1150,9 +1191,18 @@ services:
       - NEO4J_server_memory_heap_initial__size=512m
       - NEO4J_server_memory_heap_max__size=512m
       - NEO4J_server_memory_pagecache_size=256m
+      # Bolt 传输层 TLS；客户端使用 bolt+s://（Neo4j 5.x 的配置前缀是 dbms.ssl）
+      - NEO4J_dbms_ssl_policy_bolt_enabled=true
+      - NEO4J_dbms_ssl_policy_bolt_base__directory=/certs
+      - NEO4J_dbms_ssl_policy_bolt_private__key=private.key
+      - NEO4J_dbms_ssl_policy_bolt_public__certificate=public.crt
+      - NEO4J_dbms_ssl_policy_bolt_client__auth=NONE
+      # 强制 Bolt 只接受 TLS；明文连接必须被拒绝
+      - NEO4J_server_bolt_tls__level=REQUIRED
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
+      - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
       - iboot-network

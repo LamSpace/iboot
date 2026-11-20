@@ -78,7 +78,7 @@ nginx:stable-alpine3.23
 | 服务 | 端口 | 说明 |
 |---|---|---|
 | iboot-portal | 80 / 443 | 前端门户（nginx）；80 只做 HTTPS 重定向 |
-| iboot-gateway | 8088 | 统一网关 |
+| iboot-gateway | 8088 | 统一网关（HTTPS，内部地址） |
 | iboot-system | 8080 | 系统服务 |
 | iboot-ai | 8081 | AI 服务 |
 | iboot-file | 8082 | 文件服务 |
@@ -90,9 +90,9 @@ nginx:stable-alpine3.23
 | iboot-ops | 8089 | 运维控制台（SBA） |
 | sentinel-dashboard | 8858 | Sentinel 治理控制台；本地必选，生产必须认证 |
 | seata-server | 8091 | Seata TC（AT 全局事务）；file store，本地镜像无 7091 控制台 |
-| mysql | 3306 | MySQL 8.0 |
-| redis | 6379 | Redis 7 |
-| silo | 9000/9001 | 对象存储与控制台 |
+| mysql | 3306 | MySQL 8.4（只接受 TLS） |
+| redis | 6379 | Redis 8（只监听 TLS 端口） |
+| silo | 9000/9001 | 对象存储与控制台（HTTPS） |
 | elasticsearch | 9200 | 检索 |
 | kafka | 9092 / 29092 | 日志缓冲（KRaft 单节点；宿主机用 29092） |
 | logstash | 5044 | 集中日志处理，输入来自 Kafka |
@@ -120,7 +120,10 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 | thanos-sidecar / store / query / compact | 19191 / 19193 / 19192 / 19194 |
 | mysql/redis/node/elasticsearch exporter | 9104 / 9121 / 9100 / 9114 |
 
-图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt）。
+图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS）。
+
+B2 起 8080–8089 只提供 HTTPS；MySQL/Redis/Silo/Neo4j 只接受 TLS。Nacos/ES/Kafka
+仍为明文，属于 B3/B5 的后续范围。
 
 ## 启动顺序
 
@@ -179,6 +182,20 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - 既有本地文件不会自动迁移到 Silo；需要保留时先导出，或把类型改回 `local`；
 - `sys.silo.console.url` 保持 `http://localhost:9001`，因为它是浏览器访问地址；
 - 监控服务的 Silo 检查只在存储类型为 `silo` 时真正连接。
+
+## 内部 TLS（B2）
+
+- 业务服务与网关挂载 `./certs/runtime:/certs:ro`，通过 `IBOOT_TLS_CERT_DIR=/certs`
+  使用 `server.ssl`；`JAVA_TOOL_OPTIONS` 注入 PKCS12 信任库。
+- MySQL 以 `--require_secure_transport=ON` 启动；Redis 只监听 TLS 端口；Silo 以
+  `--certs-dir /certs` 启动；Neo4j 的 `graph` profile 启用 Bolt TLS。
+- 数据面健康检查使用本地 CA；Nacos/ES/Kafka 仍为明文。
+- `iboot-auth`、服务间与 JWKS 地址均为 `https://`；Nacos 实例以 `secure=true` 注册。
+- 回滚使用上一版镜像/compose，不提供运行期明文回退。
+
+证书生成与负向用例见
+[docs/27](<../docs/27-TLS 与零信任操作指南.md>) 与
+[`scripts/regress/internal-tls.sh`](../scripts/regress/internal-tls.sh)。
 
 ## Sentinel 治理
 
