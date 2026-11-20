@@ -77,7 +77,7 @@ nginx:stable-alpine3.23
 
 | 服务 | 端口 | 说明 |
 |---|---|---|
-| iboot-portal | 80 | 前端门户（nginx） |
+| iboot-portal | 80 / 443 | 前端门户（nginx）；80 只做 HTTPS 重定向 |
 | iboot-gateway | 8088 | 统一网关 |
 | iboot-system | 8080 | 系统服务 |
 | iboot-ai | 8081 | AI 服务 |
@@ -153,8 +153,10 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   - `TEMPO_OTLP=http://tempo:4318/v1/traces`
   - `JWT_JWK_SET_URI=http://iboot-auth:8083/oauth2/jwks`
 - 网关使用 `SPRING_PROFILES_ACTIVE=nacos`。
-- 认证回调为 `http://localhost/callback` 与 `http://localhost/login`；授权服务器地址仍为
-  `http://localhost:8088`（浏览器经宿主机端口访问）。
+- 认证 issuer 与回调为 `https://localhost`、`https://localhost/callback`、
+  `https://localhost/login`；浏览器经门户 443 访问，网关 `8088` 不是客户端入口。
+- 门户构建参数 `IBOOT_PORTAL_OIDC_ISSUER` 默认 `https://localhost`；证书由
+  `scripts/tls-init.sh` 生成到 `docker/certs/`，compose 只读挂载到门户容器。
 - 认证服务的签名密钥通过 `IBOOT_AUTH_JWK_FILE=/app/keys/iboot-auth-jwk.json` 写入
   `auth_keys` 卷。不要删除该卷，否则所有已签发令牌会在认证服务重启后失效。
 - 本地全栈默认关闭运维控制台认证（`IBOOT_OPS_SECURITY_ENABLED=false`）；生产部署必须开启
@@ -162,7 +164,8 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - 本地全栈默认关闭 Sentinel Dashboard 登录（`auth.enabled=false`）；非本地环境必须叠加
   `docker/docker-compose.prod.yml` 并注入 `SENTINEL_DASHBOARD_USER` / `SENTINEL_DASHBOARD_PASSWORD`。
 - Docker 部署默认关闭 `iboot-job` 备份（`IBOOT_BACKUP_ENABLED=false`），因为运行期镜像没有
-  docker CLI，备份自检会失败。需要备份时应另行为该服务挂载 Docker Socket 并安装客户端。
+  docker CLI，备份自检会失败。需要备份时应另行为该服务挂载 Docker Socket 并安装客户端；
+  在此之前，Docker 全量回归中的备份用例会失败，属已知部署限制。
 
 ### 对象存储与 Silo
 
@@ -226,14 +229,21 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 
 ## 门户同源代理
 
-门户 nginx 除 `/iboot/api` 外，还代理：
+门户 nginx 在 443 提供页面，并把以下路径反代到网关：
 
+- `/oauth2/**`、`/.well-known/**`、`/login`、`/connect/**` → 认证与 OIDC；
+- `/api/**` → 网关（CLI 使用；门户自身仍用 `/iboot/api`）；
+- `/iboot/api` → 网关；
 - `/iboot/ai` → 网关 `/api/ai/**`（知识库、智能体、对话，支持 SSE）；
 - `/druid` → 系统服务的 Druid 数据库监控；
 - `/swagger-ui.html`、`/v3/api-docs`、`/webjars` 等 → 系统服务的 Swagger UI；
 - `/sba` → 运维控制台。
 
 新增后端同源路径时必须同步补充代理，否则 SPA 回退会把 `index.html` 返回给 JSON 或 iframe 请求，表现为 `Unexpected token '<'` 或空白页。
+
+门户 80 只返回 301；443 加载 `docker/certs/portal.pem` 与 `portal-key.pem`，健康检查用
+`docker/certs/ca/rootCA.pem` 校验，不使用跳过证书校验的参数。证书与浏览器信任见
+[docs/27](<../docs/27-TLS 与零信任操作指南.md>)。
 
 AI 智能体默认开启（`IBOOT_AI_AGENT_ENABLED=true`）；初始智能体列表为空，需要先在“AI 工作台 → 智能体管理”中创建智能体。
 
@@ -269,7 +279,8 @@ docker compose -f docker/docker-compose.yml logs iboot-system
 ### 门户 502 或无法访问
 
 确认 `iboot-gateway` 健康，且 `iboot-portal` 的 nginx 能解析 `iboot-gateway:8088`。
-门户启动晚于网关由 `depends_on` 保证。
+门户启动晚于网关由 `depends_on` 保证。HTTPS 无法打开时，先确认 `docker/certs/` 三个文件
+已挂载、门户容器健康检查通过，再访问 `https://localhost`；浏览器需信任本地 CA。
 
 ### 端口被占用
 

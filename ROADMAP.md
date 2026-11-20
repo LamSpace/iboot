@@ -130,6 +130,24 @@ v0–v4 已完成：登录与只读查询（v1）、运维写命令（v2，含�
 `openspec/changes/archive/2026-11-18-add-personal-access-token/` 与
 `openspec/changes/archive/2026-11-19-harden-pat-and-extend-cli/`。
 
+### 开发者安全基线（本地 TLS / mTLS，与阶段 3 并行）
+
+本地传输层加密按批次推进，不新开阶段；操作指南与证书细节只维护在
+[docs/27](<./docs/27-TLS 与零信任操作指南.md>)，B0 实测结论见
+[docs/spike/tls-zero-trust-spike-report.md](./docs/spike/tls-zero-trust-spike-report.md)。
+
+| 批次 | 内容 | 状态 / 判据 |
+|---|---|---|
+| B0 | 信任链、Vite HTTPS、MySQL/Redis/Silo、Nacos/RocketMQ/Seata 可行性 | 已完成；见 B0 报告 |
+| B1 | 边缘 TLS：本地 CA、门户 443、Vite HTTPS、OAuth2/CLI/回归 HTTPS | 进行中：`openspec/changes/add-edge-tls/` |
+| B2 | 门户→网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j | 待启动；Seata 不在范围内 |
+| B3 | ES/Kafka 日志与检索面；RocketMQ 仅作为加密通道 | 待启动 |
+| B4 | 入口收敛、中间件认证、网络分段、每服务 DB 账号 | 待启动 |
+| B5 | 服务间 mTLS、工作负载身份、RocketMQ/Seata 收尾 | 待启动 |
+
+边界：B1 只加密公开入口，网关 `8088` 仍是内部/调试地址；不在本地手搓服务网格，
+L3 留给阶段 3/4 的 ASM/Istio。
+
 ---
 
 ## 4. 版本矩阵

@@ -5,23 +5,39 @@
 #   regress.sh              与 golden 基线比对，出现漂移即失败
 #   regress.sh --refresh    重新生成 golden 基线（仅在确认差异合理时使用）
 #
-# 环境变量：REG_BASE、REG_AI_BASE、REG_FILE_BASE、REG_AUTH_BASE、REG_USER、REG_PASS
+# 环境变量：
+#   REG_BASE / REG_AI_BASE / REG_AUTH_BASE / REG_GATEWAY / REG_OIDC_REDIRECT / REG_CACERT
+#     公开入口（宿主机默认 https://localhost:5173；Docker 覆盖为 https://localhost）
+#   SVC_SYSTEM_BASE 等
+#     契约快照直连的服务地址（B1 内部服务仍为 HTTP，B2 再切换）
 
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/../.." && pwd)"
 GOLDEN="$HERE/golden"
 TMP_DIR="$HERE/.tmp"
 
-REG_BASE="${REG_BASE:-http://localhost:8080}"
-REG_AI_BASE="${REG_AI_BASE:-http://localhost:8081}"
-REG_FILE_BASE="${REG_FILE_BASE:-http://localhost:8082}"
-REG_AUTH_BASE="${REG_AUTH_BASE:-http://localhost:8083}"
-REG_NOTIFY_BASE="${REG_NOTIFY_BASE:-http://localhost:8084}"
-REG_JOB_BASE="${REG_JOB_BASE:-http://localhost:8085}"
-REG_WORKFLOW_BASE="${REG_WORKFLOW_BASE:-http://localhost:8086}"
-REG_MONITOR_BASE="${REG_MONITOR_BASE:-http://localhost:8087}"
-export REG_BASE REG_AI_BASE REG_FILE_BASE REG_AUTH_BASE REG_NOTIFY_BASE REG_JOB_BASE REG_WORKFLOW_BASE REG_MONITOR_BASE
+# 公开入口：登录、冒烟与权限矩阵都经门户，证明 OIDC/API 的同源配置。
+REG_BASE="${REG_BASE:-https://localhost:5173}"
+REG_AI_BASE="${REG_AI_BASE:-https://localhost:5173}"
+REG_AUTH_BASE="${REG_AUTH_BASE:-https://localhost:5173}"
+REG_GATEWAY="${REG_GATEWAY:-https://localhost:5173}"
+REG_OIDC_REDIRECT="${REG_OIDC_REDIRECT:-https://localhost:5173/callback}"
+REG_CACERT="${REG_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
+
+# 契约快照直连各服务；B1 只加密公开入口，内部服务仍是 HTTP。
+SVC_SYSTEM_BASE="${SVC_SYSTEM_BASE:-http://localhost:8080}"
+SVC_AI_BASE="${SVC_AI_BASE:-http://localhost:8081}"
+SVC_FILE_BASE="${SVC_FILE_BASE:-http://localhost:8082}"
+SVC_AUTH_BASE="${SVC_AUTH_BASE:-http://localhost:8083}"
+SVC_NOTIFY_BASE="${SVC_NOTIFY_BASE:-http://localhost:8084}"
+SVC_JOB_BASE="${SVC_JOB_BASE:-http://localhost:8085}"
+SVC_WORKFLOW_BASE="${SVC_WORKFLOW_BASE:-http://localhost:8086}"
+SVC_MONITOR_BASE="${SVC_MONITOR_BASE:-http://localhost:8087}"
+export REG_BASE REG_AI_BASE REG_AUTH_BASE REG_GATEWAY REG_OIDC_REDIRECT REG_CACERT
+export SVC_SYSTEM_BASE SVC_AI_BASE SVC_FILE_BASE SVC_AUTH_BASE SVC_NOTIFY_BASE
+export SVC_JOB_BASE SVC_WORKFLOW_BASE SVC_MONITOR_BASE
 
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
@@ -39,14 +55,14 @@ rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
 printf '===== 1. 接口契约快照 =====\n'
-"$HERE/api-snapshot.sh" "$REG_BASE" system "$TMP_DIR/system.json"
-"$HERE/api-snapshot.sh" "$REG_AI_BASE" ai "$TMP_DIR/ai.json"
-"$HERE/api-snapshot.sh" "$REG_FILE_BASE" file "$TMP_DIR/file.json"
-"$HERE/api-snapshot.sh" "$REG_AUTH_BASE" auth "$TMP_DIR/auth.json"
-"$HERE/api-snapshot.sh" "$REG_NOTIFY_BASE" notify "$TMP_DIR/notify.json"
-"$HERE/api-snapshot.sh" "$REG_JOB_BASE" job "$TMP_DIR/job.json"
-"$HERE/api-snapshot.sh" "$REG_WORKFLOW_BASE" workflow "$TMP_DIR/workflow.json"
-"$HERE/api-snapshot.sh" "$REG_MONITOR_BASE" monitor "$TMP_DIR/monitor.json"
+"$HERE/api-snapshot.sh" "$SVC_SYSTEM_BASE" system "$TMP_DIR/system.json"
+"$HERE/api-snapshot.sh" "$SVC_AI_BASE" ai "$TMP_DIR/ai.json"
+"$HERE/api-snapshot.sh" "$SVC_FILE_BASE" file "$TMP_DIR/file.json"
+"$HERE/api-snapshot.sh" "$SVC_AUTH_BASE" auth "$TMP_DIR/auth.json"
+"$HERE/api-snapshot.sh" "$SVC_NOTIFY_BASE" notify "$TMP_DIR/notify.json"
+"$HERE/api-snapshot.sh" "$SVC_JOB_BASE" job "$TMP_DIR/job.json"
+"$HERE/api-snapshot.sh" "$SVC_WORKFLOW_BASE" workflow "$TMP_DIR/workflow.json"
+"$HERE/api-snapshot.sh" "$SVC_MONITOR_BASE" monitor "$TMP_DIR/monitor.json"
 
 if [ "$REFRESH" -eq 1 ]; then
     mkdir -p "$GOLDEN"
@@ -82,10 +98,13 @@ printf '\n===== 2. 路径守恒 =====\n'
 printf '\n===== 3. 路由覆盖 =====\n'
 "$HERE/route-coverage.sh" "$TMP_DIR" || fail "路由覆盖检查未通过"
 
-printf '\n===== 4. 冒烟 =====\n'
+printf '\n===== 4. TLS 公开入口 =====\n'
+"$HERE/tls.sh" || fail "TLS 检查未通过"
+
+printf '\n===== 5. 冒烟 =====\n'
 "$HERE/smoke.sh" || fail "冒烟未通过"
 
-printf '\n===== 5. 权限矩阵 =====\n'
+printf '\n===== 6. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 
 printf '\n'

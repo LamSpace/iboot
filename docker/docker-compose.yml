@@ -28,6 +28,11 @@ x-app-env: &app-env
   IBOOT_LOGGING_KAFKA_ENABLED: "true"
   IBOOT_LOGGING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
   JWT_JWK_SET_URI: http://iboot-auth:8083/oauth2/jwks
+  # 浏览器经门户 443 访问；认证 issuer/回调必须与公开来源一致
+  IBOOT_AUTH_ISSUER: https://localhost
+  IBOOT_AUTH_REDIRECT_URI: https://localhost/callback
+  IBOOT_AUTH_LOGOUT_REDIRECT_URI: https://localhost/login
+  IBOOT_AUTH_COOKIE_SECURE: "true"
   IBOOT_NOTIFY_BASE_URL: http://iboot-notify:8084
   IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-proxy:8081
   IBOOT_AI_SILO_ENDPOINT: http://silo:9000
@@ -201,9 +206,6 @@ services:
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
-      IBOOT_AUTH_ISSUER: http://localhost:8088
-      IBOOT_AUTH_REDIRECT_URI: http://localhost/callback
-      IBOOT_AUTH_LOGOUT_REDIRECT_URI: http://localhost/login
       # 持久化签名密钥：认证服务重启后仍能验证此前签发的令牌
       IBOOT_AUTH_JWK_FILE: /app/keys/iboot-auth-jwk.json
     volumes:
@@ -404,9 +406,20 @@ services:
     build:
       context: ../iboot-portal
       dockerfile: Dockerfile
+      args:
+        # Docker 公开来源；不要复用宿主机开发的 VITE_OIDC_ISSUER
+        VITE_OIDC_ISSUER: ${IBOOT_PORTAL_OIDC_ISSUER:-https://localhost}
     container_name: iboot-portal
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs/portal.pem:/etc/nginx/certs/portal.pem:ro
+      - ./certs/portal-key.pem:/etc/nginx/certs/portal-key.pem:ro
+      - ./certs/ca/rootCA.pem:/certs/rootCA.pem:ro
+    environment:
+      # 健康检查用同一份本地 CA 校验 HTTPS
+      SSL_CERT_FILE: /certs/rootCA.pem
     depends_on:
       iboot-gateway:
         condition: service_healthy
@@ -420,7 +433,7 @@ services:
       - iboot-network
     healthcheck:
       # 用 IPv4 回环：nginx 只监听 IPv4，localhost 可能解析到 ::1
-      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS --cacert /certs/rootCA.pem https://127.0.0.1/ >/dev/null || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

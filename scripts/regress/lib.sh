@@ -5,10 +5,13 @@
 # 所有地址与账号可用环境变量覆盖：REG_BASE / REG_AI_BASE / REG_AUTH_BASE / REG_USER / REG_PASS。
 # 登录走 REG_AUTH_BASE（认证服务），其余请求走 REG_BASE（管理端）。
 
-REG_BASE="${REG_BASE:-http://localhost:8080}"
-REG_AI_BASE="${REG_AI_BASE:-http://localhost:8081}"
-# 登录已迁至认证服务；未显式指定时仍走 REG_BASE，便于在拆分前的基线上录制。
-REG_AUTH_BASE="${REG_AUTH_BASE:-http://localhost:8083}"
+# 默认经宿主机开发的门户 HTTPS 入口；Docker 全量部署覆盖为 https://localhost。
+REG_BASE="${REG_BASE:-https://localhost:5173}"
+REG_AI_BASE="${REG_AI_BASE:-https://localhost:5173}"
+# 登录与 API 都经门户公开入口；认证服务不再以内部端口作为浏览器/脚本入口。
+REG_AUTH_BASE="${REG_AUTH_BASE:-https://localhost:5173}"
+# 本地 CA；明文排障时显式设为空字符串。
+REG_CACERT="${REG_CACERT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/docker/certs/ca/rootCA.pem}"
 REG_USER="${REG_USER:-admin}"
 REG_PASS="${REG_PASS:-admin123456}"
 
@@ -26,7 +29,14 @@ reg_die()  { printf '[ERROR] %s\n' "$*" >&2; exit 1; }
 
 # OIDC 客户端与回调地址，与认证服务登记的客户端保持一致。
 REG_OIDC_CLIENT="${REG_OIDC_CLIENT:-iboot-portal}"
-REG_OIDC_REDIRECT="${REG_OIDC_REDIRECT:-http://localhost:5173/callback}"
+REG_OIDC_REDIRECT="${REG_OIDC_REDIRECT:-https://localhost:5173/callback}"
+
+# 统一 curl：HTTPS 请求必须使用本地 CA，禁止 -k。
+reg_curl() {
+    local -a args=(-sS)
+    [ -n "${REG_CACERT:-}" ] && args+=(--cacert "$REG_CACERT")
+    curl "${args[@]}" "$@"
+}
 
 # 登录并缓存令牌。
 #
@@ -47,20 +57,20 @@ reg_login() {
     query="$query&redirect_uri=$(reg_urlencode "$REG_OIDC_REDIRECT")&code_challenge=$challenge&code_challenge_method=S256"
 
     # 1. 发起授权：未登录时会建立会话并跳转到登录页
-    curl -sS -c "$jar" -b "$jar" -o /dev/null "$REG_AUTH_BASE/oauth2/authorize?$query" \
+    reg_curl -c "$jar" -b "$jar" -o /dev/null "$REG_AUTH_BASE/oauth2/authorize?$query" \
         || { rm -f "$jar"; reg_die "授权请求失败"; }
     # 2. 提交登录页表单
-    curl -sS -c "$jar" -b "$jar" -o /dev/null -X POST \
+    reg_curl -c "$jar" -b "$jar" -o /dev/null -X POST \
         --data-urlencode "username=$user" --data-urlencode "password=$pass" \
         "$REG_AUTH_BASE/login" || { rm -f "$jar"; reg_die "提交登录表单失败"; }
     # 3. 再次请求授权端点，回调地址里带授权码
-    location="$(curl -sS -c "$jar" -b "$jar" -o /dev/null -w '%{redirect_url}' \
+    location="$(reg_curl -c "$jar" -b "$jar" -o /dev/null -w '%{redirect_url}' \
         "$REG_AUTH_BASE/oauth2/authorize?$query")"
     code="$(printf '%s' "$location" | sed -n 's/.*[?&]code=\([^&]*\).*/\1/p')"
     [ -n "$code" ] || reg_die "登录失败（$user）：未取得授权码（$location）"
 
     # 4. 授权码换令牌
-    resp="$(curl -sS -X POST "$REG_AUTH_BASE/oauth2/token" \
+    resp="$(reg_curl -X POST "$REG_AUTH_BASE/oauth2/token" \
         -H 'Content-Type: application/x-www-form-urlencoded' \
         --data-urlencode "grant_type=authorization_code" \
         --data-urlencode "code=$code" \
@@ -123,24 +133,24 @@ reg_unwrap() {
         || printf '%s' "$body"
 }
 
-reg_get()  { curl -sS -H "Authorization: Bearer $REG_TOKEN" "$REG_BASE$1" | reg_unwrap; }
+reg_get()  { reg_curl -H "Authorization: Bearer $REG_TOKEN" "$REG_BASE$1" | reg_unwrap; }
 
 reg_post() {
     local body="${2:-}"
     [ -n "$body" ] || body='{}'
-    curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' -d "$body" "$REG_BASE$1" | reg_unwrap
+    reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' -d "$body" "$REG_BASE$1" | reg_unwrap
 }
 
 reg_put() {
     local body="${2:-}"
     [ -n "$body" ] || body='{}'
-    curl -sS -X PUT -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' -d "$body" "$REG_BASE$1" | reg_unwrap
+    reg_curl -X PUT -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' -d "$body" "$REG_BASE$1" | reg_unwrap
 }
 
-reg_del()  { curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" "$REG_BASE$1" | reg_unwrap; }
+reg_del()  { reg_curl -X DELETE -H "Authorization: Bearer $REG_TOKEN" "$REG_BASE$1" | reg_unwrap; }
 
 # 只返回 HTTP 状态码。
-reg_status() { curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" "$REG_BASE$1"; }
+reg_status() { reg_curl -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $REG_TOKEN" "$REG_BASE$1"; }
 
 # 断言业务成功码为 200。
 # @param $1 用例描述

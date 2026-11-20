@@ -7,10 +7,11 @@
 # 用户停用后失效与重新启用不恢复）。
 #
 # 前置：九个业务服务与网关已启动；CLI jar 已构建（mvn -pl iboot-cli package）。
-# 环境变量：REG_BASE、REG_GATEWAY、REG_USER、REG_PASS、IBOOT_CLI。
-# Docker 全量部署时门户回调为 http://localhost/callback，需设置
-# REG_OIDC_REDIRECT=http://localhost/callback；宿主机开发默认
-# http://localhost:5173/callback。
+# 环境变量：REG_BASE、REG_GATEWAY、REG_USER、REG_PASS、REG_CACERT、IBOOT_CLI。
+# Docker 全量部署时公开来源为 https://localhost，需设置
+# REG_BASE/REG_GATEWAY/REG_AUTH_BASE=https://localhost 与
+# REG_OIDC_REDIRECT=https://localhost/callback；宿主机开发默认
+# https://localhost:5173 与 https://localhost:5173/callback。
 
 set -euo pipefail
 
@@ -19,7 +20,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
 
-REG_GATEWAY="${REG_GATEWAY:-http://localhost:8088}"
+REG_GATEWAY="${REG_GATEWAY:-https://localhost:5173}"
 CLI="${IBOOT_CLI:-$ROOT/bin/iboot}"
 CLI_CONFIG_DIR="$(mktemp -d)"
 CONFIG_TEST_DIR="$(mktemp -d)"
@@ -34,10 +35,16 @@ ROLE_CODE="ROLE_CLI_TEST"
 
 export IBOOT_CONFIG_DIR="$CLI_CONFIG_DIR"
 
+# CLI 使用与回归相同的本地 CA；REG_CACERT 指向 docker/certs/ca/rootCA.pem。
+if [ -n "${REG_CACERT:-}" ] && [ -z "${IBOOT_CLI_TRUSTSTORE:-}" ] \
+    && [ -f "$(dirname "$REG_CACERT")/../truststore.p12" ]; then
+    export IBOOT_CLI_TRUSTSTORE="$(cd "$(dirname "$REG_CACERT")/.." && pwd)/truststore.p12"
+fi
+
 cleanup() {
     reg_login >/dev/null 2>&1 || true
     if [ -n "$REG_CLI_JOB_ID" ]; then
-        curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+        reg_curl -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
             "$REG_GATEWAY/api/job/$REG_CLI_JOB_ID" >/dev/null 2>&1 || true
     fi
     if [ -n "$REG_CLI_USER_ID" ]; then reg_del "/api/user/$REG_CLI_USER_ID" >/dev/null 2>&1 || true; fi
@@ -77,13 +84,13 @@ cli_login() {
         reg_die "CLI 未输出授权地址：$(cat "$CLI_LOGIN_LOG")"
     fi
     rm -f "$CLI_COOKIE_JAR"
-    curl -sS -c "$CLI_COOKIE_JAR" -b "$CLI_COOKIE_JAR" -o /dev/null "$url" \
+    reg_curl -c "$CLI_COOKIE_JAR" -b "$CLI_COOKIE_JAR" -o /dev/null "$url" \
         || { kill "$pid" 2>/dev/null || true; reg_die "授权请求失败"; }
-    curl -sS -c "$CLI_COOKIE_JAR" -b "$CLI_COOKIE_JAR" -o /dev/null -X POST \
+    reg_curl -c "$CLI_COOKIE_JAR" -b "$CLI_COOKIE_JAR" -o /dev/null -X POST \
         --data-urlencode "username=$user" --data-urlencode "password=$pass" \
         "$REG_GATEWAY/login" \
         || { kill "$pid" 2>/dev/null || true; reg_die "提交登录表单失败"; }
-    curl -sS -c "$CLI_COOKIE_JAR" -b "$CLI_COOKIE_JAR" -L -o /dev/null "$url" \
+    reg_curl -c "$CLI_COOKIE_JAR" -b "$CLI_COOKIE_JAR" -L -o /dev/null "$url" \
         || { kill "$pid" 2>/dev/null || true; reg_die "回调 CLI 失败"; }
     wait "$pid" || reg_die "CLI 登录失败：$(cat "$CLI_LOGIN_LOG")"
 }
@@ -122,6 +129,9 @@ fi
 reg_pass "受限用户已就绪（id=$REG_CLI_USER_ID，数据范围=仅本人，权限 user:list）"
 
 reg_log "== CLI 登录 =="
+# 覆盖默认 dev context，使凭据文件继续使用 dev 键（后续用例直接读写该键）。
+cli_exec config add dev --base-url "$REG_GATEWAY" --issuer "${REG_AUTH_BASE:-$REG_GATEWAY}" --use \
+    >/dev/null || reg_die "CLI context 初始化失败"
 cli_login "$REG_USER" "$REG_PASS"
 reg_pass "浏览器授权码登录完成"
 
@@ -170,7 +180,7 @@ mv "$backup" "$credentials"
 
 reg_log "== 运维写命令：任务 =="
 job_body='{"jobName":"CLI回归任务","jobGroup":"DEFAULT","invokeTarget":"sampleTask.noParams","cronExpression":"0 0 3 * * ?","status":0,"remark":"CLI regress"}'
-job_created="$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+job_created="$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
     -d "$job_body" "$REG_GATEWAY/api/job" | reg_unwrap)"
 REG_CLI_JOB_ID="$(printf '%s' "$job_created" | jq -r '.data.id // empty')"
 [ -n "$REG_CLI_JOB_ID" ] || reg_die "创建 CLI 回归任务失败：$job_created"
@@ -193,7 +203,7 @@ if [ "$job_log_found" -eq 1 ]; then
 else
     reg_fail "job logs --job-id 未查到执行日志"
 fi
-curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+reg_curl -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/job/$REG_CLI_JOB_ID" >/dev/null || true
 REG_CLI_JOB_ID=""
 job_audit_found=0
@@ -277,7 +287,7 @@ token_id="$(printf '%s' "$online_list" | jq -r --arg u "$USER_NAME" \
     '.data[]? | select(.username==$u) | .tokenId' | head -1)"
 if [ -n "$token_id" ]; then
     cli_run online kick "$token_id" --yes >/dev/null || reg_fail "online kick 失败"
-    kicked_status="$(curl -sS -o /dev/null -w '%{http_code}' \
+    kicked_status="$(reg_curl -o /dev/null -w '%{http_code}' \
         -H "Authorization: Bearer $restricted_token" \
         "$REG_GATEWAY/api/user/list?pageNum=1&pageSize=1")"
     if [ "$kicked_status" = "401" ]; then
@@ -306,7 +316,7 @@ fi
 
 reg_log "== 个人访问令牌 =="
 reg_login
-online_before="$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+online_before="$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/online/count" | reg_unwrap | jq -r '.data // 0')"
 pat_json="$(cli_run token create regress-pat --expires-days 1 --yes --json)" \
     || reg_fail "token create 失败"
@@ -368,7 +378,7 @@ else
     reg_fail "PAT 标准输入注入失败"
 fi
 
-online_after="$(curl -sS -H "Authorization: Bearer $REG_TOKEN" \
+online_after="$(reg_curl -H "Authorization: Bearer $REG_TOKEN" \
     "$REG_GATEWAY/api/online/count" | reg_unwrap | jq -r '.data // 0')"
 if [ "$online_before" = "$online_after" ]; then
     reg_pass "PAT 不进入在线名单"
@@ -409,7 +419,7 @@ else
 fi
 
 pat_job_body='{"jobName":"PAT回归任务","jobGroup":"DEFAULT","invokeTarget":"sampleTask.noParams","cronExpression":"0 0 4 * * ?","status":0,"remark":"PAT regress"}'
-pat_job_created="$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+pat_job_created="$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
     -d "$pat_job_body" "$REG_GATEWAY/api/job" | reg_unwrap)"
 pat_job_id="$(printf '%s' "$pat_job_created" | jq -r '.data.id // empty')"
 if [ -n "$pat_job_id" ]; then
@@ -434,14 +444,14 @@ if [ -n "$pat_job_id" ]; then
     else
         reg_fail "操作日志未出现 authType=PAT"
     fi
-    curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+    reg_curl -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/job/$pat_job_id" >/dev/null || true
 else
     reg_fail "创建 PAT 回归任务失败：$(printf '%s' "$pat_job_created" | head -c 200)"
 fi
 
 fail_job_body='{"jobName":"CLI失败任务","jobGroup":"DEFAULT","invokeTarget":"sampleTask.notFound","cronExpression":"0 0 5 * * ?","status":0,"remark":"CLI regress fail"}'
-fail_job_created="$(curl -sS -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
+fail_job_created="$(reg_curl -X POST -H "Authorization: Bearer $REG_TOKEN" -H 'Content-Type: application/json' \
     -d "$fail_job_body" "$REG_GATEWAY/api/job" | reg_unwrap)"
 fail_job_id="$(printf '%s' "$fail_job_created" | jq -r '.data.id // empty')"
 if [ -n "$fail_job_id" ]; then
@@ -454,7 +464,7 @@ if [ -n "$fail_job_id" ]; then
     else
         reg_fail "job run --wait 失败退出码为 $fail_wait_status，期望 6"
     fi
-    curl -sS -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
+    reg_curl -X DELETE -H "Authorization: Bearer $REG_TOKEN" \
         "$REG_GATEWAY/api/job/$fail_job_id" >/dev/null || true
 else
     reg_fail "创建失败任务失败：$(printf '%s' "$fail_job_created" | head -c 200)"
@@ -520,7 +530,7 @@ else
 fi
 
 cli_run logout >/dev/null || reg_fail "CLI logout 失败"
-revoked_status="$(curl -sS -o /dev/null -w '%{http_code}' \
+revoked_status="$(reg_curl -o /dev/null -w '%{http_code}' \
     -H "Authorization: Bearer $old_token" \
     "$REG_GATEWAY/api/user/list?pageNum=1&pageSize=1")"
 if [ "$revoked_status" = "401" ]; then

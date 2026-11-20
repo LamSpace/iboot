@@ -8,6 +8,7 @@
 | 脚本 | 用途 |
 |---|---|
 | `dev-init.sh` | 一键拉起本地环境：中间件 → 按需构建 → `iboot-db-init` 建库建表 → 启动九个业务服务与运维控制台 → 等待健康。支持 `--frontend`、`--status`、`--stop`、`--down`、`--purge`。 |
+| `tls-init.sh` | 生成本地 TLS CA、门户证书与 Java 信任库；证书默认写入 `docker/certs/`。支持 `--force` 重签与 `--check` 只检查剩余有效期。浏览器信任需另外执行一次 `mkcert -install`。 |
 | `build.sh` | 前后端一键构建。参数：`all`（默认）、`frontend`、`backend`、`help`。 |
 
 ## 部署
@@ -21,6 +22,15 @@
 
 回归脚本要求九个业务服务、网关与中间件已启动，详细用法见
 `docs/23-微服务底座操作指南.md`。
+
+TLS 环境下回归默认通过宿主机 HTTPS 门户（`https://localhost:5173`）访问，因此宿主机开发
+需先执行 `dev-init.sh --frontend` 启动门户开发服务器；Docker 全量部署覆盖为
+`https://localhost`，需门户容器健康。证书统一用 `REG_CACERT`（默认
+`docker/certs/ca/rootCA.pem`）校验，禁止使用 `-k` 绕过。
+
+Docker 全量回归中的备份用例需要为 `iboot-job` 挂载 Docker Socket 并启用
+`IBOOT_BACKUP_ENABLED`；默认 Docker 部署关闭备份，该用例会失败，属于已登记的部署限制
+（见 [`docker/README.md`](../docker/README.md)）。
 
 ### 回归分层
 

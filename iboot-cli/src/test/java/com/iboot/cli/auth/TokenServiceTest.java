@@ -38,8 +38,8 @@ class TokenServiceTest {
     @TempDir
     Path tempDir;
 
-    private final Context context = new Context("dev", "http://localhost:8088",
-            "http://localhost:8088", "iboot-cli", "http://127.0.0.1:8765/callback");
+    private final Context context = new Context("dev", "https://localhost:5173",
+            "https://localhost:5173", "iboot-cli", "http://127.0.0.1:8765/callback");
 
     private final AtomicInteger refreshCount = new AtomicInteger();
 

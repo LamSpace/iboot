@@ -156,11 +156,20 @@ wait_ready() {
   return 1
 }
 
+# Docker 全量部署必须启用 TLS；证书缺失时在拉起容器前失败。
+prepare_tls() {
+  if [ "${IBOOT_TLS_ENABLED:-true}" != "true" ]; then
+    fail "Docker 全量部署必须启用 TLS（IBOOT_TLS_ENABLED=true）；明文排障请使用宿主机开发模式"
+  fi
+  "$ROOT/scripts/tls-init.sh" || fail "TLS 证书生成失败"
+}
+
 up() {
   local scope="${1:-observability}"
   profiles_for "$scope"
   require_docker
   [ -f "$ROOT/.env" ] || fail "缺少根目录 .env，请从 .env.example 复制并填写后重试"
+  prepare_tls
   stop_host_services
   ensure_base_images
   build_images

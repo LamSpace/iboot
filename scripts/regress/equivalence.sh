@@ -9,6 +9,9 @@
 #           REG_RECORD_BASE（仅 --record 的取数地址；旧实现删除后指向对应服务）、
 #           REG_GATEWAY（重放入口，默认 http://localhost:8088）、REG_USER、REG_PASS
 #
+# 注：equivalence.sh 是服务迁移期脚本，重放入口默认仍是内部网关 8088；
+# 日常回归请使用 regress.sh 的公开 HTTPS 入口与 REG_CACERT。
+#
 # 注意：golden 是迁移期快照，依赖录制时的数据库行 ID、时间戳与备份哈希。
 # 日常回归写入新数据后会出现差异，这属于状态漂移，不是接口行为变化；
 # 不要用 --record 覆盖历史基线来消除差异。

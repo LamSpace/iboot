@@ -60,11 +60,30 @@ jobs:
           java-version: '25'
           cache: maven
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: 安装 cnpm 与 mkcert
+        run: |
+          npm install -g cnpm --registry=https://registry.npmmirror.com
+          GOBIN="$HOME/go/bin" go install filippo.io/mkcert@v1.4.4
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+
       - name: 构建全部模块（跳过测试）
         run: mvn -B -DskipTests package
 
-      - name: 启动全栈（中间件 + db-init + 九个业务服务 + 网关）
+      - name: 启动全栈（中间件 + db-init + 九个业务服务 + 网关 + HTTPS 门户）
         env:
+          # 公开入口 TLS；证书由 dev-init.sh 调用 tls-init.sh 生成
+          IBOOT_TLS_ENABLED: 'true'
+          IBOOT_PUBLIC_ORIGIN: 'https://localhost:5173'
+          IBOOT_CLI_TRUSTSTORE: ${{ github.workspace }}/docker/certs/truststore.p12
+          REG_CACERT: ${{ github.workspace }}/docker/certs/ca/rootCA.pem
           # AI 启动校验要求 key 非空；回归不调用真实模型，用占位值即可。
           DASHSCOPE_CHAT_API_KEY: ci-placeholder
           DASHSCOPE_EMBEDDING_API_KEY: ci-placeholder
@@ -81,13 +100,35 @@ jobs:
           MANAGEMENT_HEALTH_MAIL_ENABLED: 'false'
           # 九个服务同时运行，限制堆避免超出标准 runner 内存。
           JAVA_TOOL_OPTIONS: '-Xms128m -Xmx384m'
-        run: bash scripts/dev-init.sh
+        run: bash scripts/dev-init.sh --frontend
 
       - name: 回归检查
+        env:
+          REG_BASE: https://localhost:5173
+          REG_AI_BASE: https://localhost:5173
+          REG_AUTH_BASE: https://localhost:5173
+          REG_GATEWAY: https://localhost:5173
+          REG_OIDC_REDIRECT: https://localhost:5173/callback
+          REG_CACERT: ${{ github.workspace }}/docker/certs/ca/rootCA.pem
         run: bash scripts/regress/regress.sh
+
+      - name: TLS 公开入口检查
+        env:
+          REG_BASE: https://localhost:5173
+          REG_AUTH_BASE: https://localhost:5173
+          REG_OIDC_REDIRECT: https://localhost:5173/callback
+          REG_CACERT: ${{ github.workspace }}/docker/certs/ca/rootCA.pem
+        run: bash scripts/regress/tls.sh
 
       - name: 开发者 CLI 回归
         timeout-minutes: 10
+        env:
+          REG_BASE: https://localhost:5173
+          REG_AUTH_BASE: https://localhost:5173
+          REG_GATEWAY: https://localhost:5173
+          REG_OIDC_REDIRECT: https://localhost:5173/callback
+          REG_CACERT: ${{ github.workspace }}/docker/certs/ca/rootCA.pem
+          IBOOT_CLI_TRUSTSTORE: ${{ github.workspace }}/docker/certs/truststore.p12
         run: bash scripts/regress/cli.sh
 
       - name: 失败时输出日志

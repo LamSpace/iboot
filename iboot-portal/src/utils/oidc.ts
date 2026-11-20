@@ -8,7 +8,7 @@
  * 避免并发刷新触发服务端的刷新令牌复用检测。
  */
 
-const ISSUER = import.meta.env.VITE_OIDC_ISSUER || "http://localhost:8088";
+const ISSUER = import.meta.env.VITE_OIDC_ISSUER || "https://localhost:5173";
 const CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID || "iboot-portal";
 const SCOPE = "openid profile api";
 const REDIRECT_URI = `${window.location.origin}/callback`;

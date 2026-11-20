@@ -16,16 +16,18 @@
 
 package com.iboot.cli.config;
 
+import java.net.URI;
 import java.util.Objects;
 
 /**
  * 一个 CLI 运行上下文。
  *
- * <p>描述网关地址、OIDC 签发者、客户端标识与本地回调地址。凭据按 context 名称隔离，
- * 切换上下文不会复用其他环境的令牌。
+ * <p>描述门户公开入口、OIDC 签发者、客户端标识与本地回调地址。凭据按 context 名称隔离，
+ * 切换上下文不会复用其他环境的令牌。公开入口与签发者默认必须是 HTTPS；仅 loopback
+ * 地址允许 HTTP，用于本地排障。
  *
  * @param name 上下文名称
- * @param baseUrl 网关基址
+ * @param baseUrl 门户公开入口基址（经门户反代到网关）
  * @param issuer OIDC 签发者；为空时回落到 {@code baseUrl}
  * @param clientId OAuth2 客户端标识
  * @param redirectUri loopback 回调地址
@@ -36,6 +38,8 @@ public record Context(String name, String baseUrl, String issuer, String clientI
 
     /**
      * 创建并校验上下文。
+     *
+     * @throws IllegalArgumentException 名称、地址为空，或地址不是 HTTPS/loopback HTTP 时抛出
      */
     public Context {
         Objects.requireNonNull(name, "name");
@@ -48,6 +52,8 @@ public record Context(String name, String baseUrl, String issuer, String clientI
         }
         baseUrl = stripTrailingSlash(baseUrl);
         issuer = issuer == null || issuer.isBlank() ? baseUrl : stripTrailingSlash(issuer);
+        requireSecureOrigin(baseUrl, "baseUrl");
+        requireSecureOrigin(issuer, "issuer");
         clientId = clientId == null || clientId.isBlank() ? "iboot-cli" : clientId;
         redirectUri = redirectUri == null || redirectUri.isBlank()
                 ? "http://127.0.0.1:8765/callback"
@@ -57,11 +63,42 @@ public record Context(String name, String baseUrl, String issuer, String clientI
     /**
      * 创建默认开发上下文。
      *
+     * <p>默认指向宿主机开发的门户入口；Docker 全量部署使用单独的 context。
+     *
      * @return 默认上下文
      */
     public static Context defaults() {
-        return new Context("dev", "http://localhost:8088", "http://localhost:8088",
+        return new Context("dev", "https://localhost:5173", "https://localhost:5173",
                 "iboot-cli", "http://127.0.0.1:8765/callback");
+    }
+
+    private static void requireSecureOrigin(String value, String field) {
+        URI uri;
+        try {
+            uri = URI.create(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(field + " 不是合法地址：" + value);
+        }
+        String scheme = uri.getScheme();
+        String host = uri.getHost();
+        if (host == null) {
+            throw new IllegalArgumentException(field + " 缺少主机名：" + value);
+        }
+        if ("https".equalsIgnoreCase(scheme)) {
+            return;
+        }
+        if ("http".equalsIgnoreCase(scheme) && isLoopbackHost(host)) {
+            return;
+        }
+        throw new IllegalArgumentException(field + " 必须使用 HTTPS（仅 loopback 地址允许 HTTP）：" + value);
+    }
+
+    private static boolean isLoopbackHost(String host) {
+        String normalized = host.toLowerCase();
+        return normalized.equals("localhost")
+                || normalized.equals("127.0.0.1")
+                || normalized.equals("::1")
+                || normalized.equals("[::1]");
     }
 
     private static String stripTrailingSlash(String value) {
