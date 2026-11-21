@@ -19,7 +19,9 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_ADDR:localhost:8848}
+        server-addr: ${NACOS_SERVER_ADDR:https://localhost:8848}
+        username: ${NACOS_USERNAME:}
+        password: ${NACOS_PASSWORD:}
         enabled: ${IBOOT_NACOS_ENABLED:true}
         fail-fast: false
         # 服务实例以 HTTPS 暴露；网关的负载均衡据此选择 https
@@ -29,7 +31,9 @@ spring:
         # 实例地址使用服务名，证书 SAN 不依赖容器 IP；宿主机开发由 dev-init.sh 覆盖为 127.0.0.1
         ip: ${IBOOT_NACOS_DISCOVERY_IP:${spring.application.name}}
       config:
-        server-addr: ${NACOS_ADDR:localhost:8848}
+        server-addr: ${NACOS_SERVER_ADDR:https://localhost:8848}
+        username: ${NACOS_USERNAME:}
+        password: ${NACOS_PASSWORD:}
         file-extension: yml
         enabled: ${IBOOT_NACOS_ENABLED:true}
   threads:
@@ -43,8 +47,8 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
       # 独立 schema：任务、Quartz 与备份记录表归本服务所有，结构由本服务的 Flyway 管理
       url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?${MYSQL_SSL_PARAMS:sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8}
-      username: ${MYSQL_USERNAME:root}
-      password: ${MYSQL_PASSWORD:root}
+      username: ${MYSQL_USERNAME:iboot_app}
+      password: ${MYSQL_PASSWORD:}
       initial-size: 2
       min-idle: 2
       max-active: 10
@@ -121,8 +125,8 @@ iboot:
       host: ${MYSQL_HOST:localhost}
       port: ${MYSQL_PORT:3306}
       name: ${IBOOT_BACKUP_DATABASE:iboot}
-      username: ${MYSQL_USERNAME:root}
-      password: ${MYSQL_PASSWORD:root}
+      username: ${MYSQL_USERNAME:iboot_app}
+      password: ${MYSQL_PASSWORD:}
     command:
       # 本地默认通过 docker exec 复用 MySQL 容器内的 mysqldump，避免宿主机安装客户端
       dump-prefix:

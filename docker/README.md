@@ -201,9 +201,9 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 ### 对象存储与 Silo
 
 全量 Docker 部署默认使用 Silo（`IBOOT_FILE_STORAGE_TYPE=silo`）。Compose 会把容器内的
-`IBOOT_FILE_SILO_ENDPOINT` 固定为 `http://silo:9000`，把预签名地址
-`IBOOT_FILE_SILO_PUBLIC_ENDPOINT` 固定为 `http://localhost:9000`。宿主机开发读取
-`sys_config` 中的 `http://localhost:9000`；如需本地磁盘，在 `.env` 设置
+`IBOOT_FILE_SILO_ENDPOINT` 固定为 `https://silo:9000`，把预签名地址
+`IBOOT_FILE_SILO_PUBLIC_ENDPOINT` 固定为 `https://localhost:9000`。宿主机开发读取
+`sys_config` 中的 `https://localhost:9000`；如需本地磁盘，在 `.env` 设置
 `IBOOT_FILE_STORAGE_TYPE=local`。
 
 - 切换存储类型后需重启 `iboot-file`、`iboot-system`、`iboot-job`；
@@ -224,6 +224,27 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 证书生成与负向用例见
 [docs/27](<../docs/27-TLS 与零信任操作指南.md>) 与
 [`scripts/regress/internal-tls.sh`](../scripts/regress/internal-tls.sh)。
+
+## 中间件账号（B4.3）
+
+| 组件 | 账号 | 用途 |
+|---|---|---|
+| MySQL | `root` | 仅初始化与迁移 |
+| MySQL | `iboot_app` | 八个业务服务，`iboot` 库 DML |
+| MySQL | `iboot_exporter` | mysqld-exporter 只读 |
+| Redis | 默认用户 | 全部服务，`REDIS_PASSWORD` 认证 |
+| Silo | 根账号 | 服务、`silo-init`、Thanos |
+| Nacos | `iboot` | 服务注册/配置；管理员 `nacos` 仅初始化脚本使用 |
+
+- `.env` 必须提供 `MYSQL_ROOT_PASSWORD`、`MYSQL_APP_PASSWORD`、`MYSQL_EXPORTER_PASSWORD`、
+  `REDIS_PASSWORD`、`SILO_ROOT_USER/PASSWORD`、`NACOS_USERNAME/PASSWORD`、
+  `NACOS_ADMIN_PASSWORD` 与 `NACOS_AUTH_TOKEN`。
+- `mysql-users-init` 与 `nacos-init` 是一次性任务；`db-init` 依赖它们完成后再迁移与启动服务。
+- Nacos 客户端必须使用 `NACOS_SERVER_ADDR=https://nacos:8848`；`NACOS_ADDR` 仍是脚本使用的
+  `host:port`。
+- 本地控制台鉴权保持关闭以便门户内嵌；生产必须在 `docker-compose.prod.yml` 开启。
+- 验收：`scripts/regress/middleware-auth.sh`，覆盖 MySQL 越权、Redis 未认证、Silo 默认凭据
+  与 Nacos 匿名请求。
 
 ## Sentinel 治理
 

@@ -67,6 +67,16 @@ if [ -f "$ROOT/.env" ]; then
     set +a
 fi
 
+# 中间件账号鉴权：缺少凭据时不启动，避免回退到默认口令。
+for required in MYSQL_APP_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_EXPORTER_PASSWORD \
+    REDIS_PASSWORD SILO_ROOT_USER SILO_ROOT_PASSWORD \
+    NACOS_USERNAME NACOS_PASSWORD NACOS_ADMIN_PASSWORD NACOS_AUTH_TOKEN; do
+    [ -n "${!required:-}" ] || fail "缺少中间件凭据：$required（请检查根目录 .env）"
+done
+# 宿主机进程直接读 MYSQL_USERNAME/MYSQL_PASSWORD；仅填写 *_APP_* 时也保持一致。
+export MYSQL_USERNAME="${MYSQL_USERNAME:-${MYSQL_APP_USER:-iboot_app}}"
+export MYSQL_PASSWORD="${MYSQL_PASSWORD:-$MYSQL_APP_PASSWORD}"
+
 # 运维控制台：默认开启，可通过 IBOOT_OPS_ENABLED=false 关闭以节省本机内存。
 ops_enabled() { [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; }
 
@@ -329,10 +339,10 @@ start_middleware() {
 
     local i
     for i in $(seq 1 90); do
-        docker exec iboot-mysql mysqladmin ping -h localhost -uroot -proot --silent > /dev/null 2>&1 && break
+        docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" iboot-mysql mysqladmin ping -h localhost -uroot --silent > /dev/null 2>&1 && break
         sleep 2
     done
-    docker exec iboot-mysql mysqladmin ping -h localhost -uroot -proot --silent > /dev/null 2>&1 \
+    docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" iboot-mysql mysqladmin ping -h localhost -uroot --silent > /dev/null 2>&1 \
         || fail 'MySQL 未在预期时间内就绪'
 
     # 建库与建表统一由 iboot-db-init 完成，服务不再自带迁移。
@@ -342,6 +352,9 @@ start_middleware() {
     # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。
     # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。
     wait_http 'Nacos' 'https://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'
+    # 先初始化管理员与服务账号，再注册服务与写入 Sentinel 基线规则。
+    "${COMPOSE[@]}" run --rm --no-deps nacos-init >/dev/null 2>&1 \
+        || fail 'Nacos 账号初始化失败（nacos-init）'
     wait_http 'Sentinel Dashboard' 'http://localhost:8858/' 120 || fail 'Sentinel Dashboard 未就绪'
     # 审批通过依赖全局事务协调器；必须在 workflow/system 启动前就绪
     wait_healthy 'Seata Server' iboot-seata-server 60 || fail 'Seata Server 未就绪'
@@ -401,6 +414,9 @@ build_backend() {
 
 run_db_init() {
     log '=== 3. 初始化数据库 ==='
+    log '  初始化 MySQL 业务账号...'
+    "${COMPOSE[@]}" run --rm --no-deps mysql-users-init >/dev/null \
+        || fail 'MySQL 账号初始化失败（mysql-users-init）'
     local -a java_opts=()
     if internal_tls_enabled; then
         local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
@@ -412,7 +428,9 @@ run_db_init() {
     else
         export MYSQL_TLS_ENABLED=false
     fi
-    java "${java_opts[@]}" -jar "iboot-db-init/target/iboot-db-init-$VERSION-exec.jar" \
+    # 迁移需要 DDL；业务服务仍使用 .env 中的 iboot_app 账号。
+    MYSQL_USERNAME=root MYSQL_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
+        java "${java_opts[@]}" -jar "iboot-db-init/target/iboot-db-init-$VERSION-exec.jar" \
         || fail '数据库初始化失败（iboot-db-init）'
     log '  数据库就绪'
 }

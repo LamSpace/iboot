@@ -342,8 +342,8 @@ scripts/regress/internal-tls.sh
 - B2：门户到网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j 的 TLS；已完成。
 - B3：ES/Kafka/Logstash 日志与检索面 TLS；已完成；RocketMQ 只作为加密通道，
   不能宣称服务端认证或强制 TLS。
-- B4：Nacos TLS 已完成；端口收敛与网络分段由 `restrict-internal-exposure` 完成；
-  中间件账号鉴权（Nacos 认证、MySQL/Redis/Silo 最小权限账号）仍待做。
+- B4：Nacos TLS、端口收敛与网络分段已完成；中间件账号鉴权由 `harden-middleware-auth`
+  完成（MySQL/Redis/Silo/Nacos）。ES 应用账号、Sentinel 登录与每服务账号仍待后续批次。
 - B5：服务间 mTLS、每服务工作负载身份、RocketMQ 强制 TLS 与 Seata 例外决策。
 
 ## 12. 暴露面与网络分段
@@ -397,6 +397,80 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - 只收敛 Docker 编排发布的网络暴露面，不改变各组件内部的 TLS 配置。
 - 宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程仍按 Spring Boot 默认监听所有网卡；
   它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B4.3/B5 收敛。
-- 中间件仍是共享账号；Nacos 用户认证未开启；服务间没有客户端证书。
+- 中间件已启用账号认证，但仍是共享账号；服务间没有客户端证书。
 - 可观测 UI 仍为 HTTP，但只监听回环地址。
 - 完整身份与工作负载 mTLS 属于 B5，不在本节的宣称范围内。
+
+## 13. 中间件账号与最小权限（B4.3）
+
+B4.3 在 TLS 与网络边界之上补账号认证。它是**共享账号**方案：同一个服务账号被多个服务使用，
+因此不能证明调用方是哪个服务；每服务身份仍属于 B5。
+
+### 13.1 账号矩阵
+
+| 组件 | 账号 | 用途 | 权限 |
+|---|---|---|---|
+| MySQL | `root` | 账号初始化与迁移 | 管理权限；不注入业务服务 |
+| MySQL | `iboot_app` | 八个业务服务 | `iboot` 库 `SELECT/INSERT/UPDATE/DELETE` |
+| MySQL | `iboot_exporter` | mysqld-exporter | `PROCESS`、`REPLICATION CLIENT`、`performance_schema` 只读 |
+| Redis | 默认用户 | 全部服务 | 正确口令后可用；口令由 `REDIS_PASSWORD` 注入 |
+| Silo | 根账号 | 服务、`silo-init`、Thanos | 由 `SILO_ROOT_USER/PASSWORD` 注入 |
+| Nacos | `iboot` | 服务注册/配置与管理脚本 | 配置读写；管理员 `nacos` 只用于初始化脚本 |
+
+### 13.2 初始化
+
+```bash
+# 宿主机开发
+scripts/dev-init.sh
+# 或单独执行
+docker compose -f docker/docker-compose.yml run --rm --no-deps mysql-users-init
+docker compose -f docker/docker-compose.yml run --rm --no-deps nacos-init
+scripts/sentinel-init.sh --verify
+```
+
+- `mysql-users-init` 幂等创建/更新 `iboot_app` 与 `iboot_exporter`；`db-init` 与业务服务依赖它完成。
+- `nacos-init` 首次设置 `nacos` 管理员密码，随后创建/更新 `iboot` 服务账号并授权。
+- Docker 全量部署中，`db-init` 依赖上述两个一次性任务；宿主机开发由 `dev-init.sh` 显式执行。
+
+### 13.3 凭据
+
+根 `.env` 必须提供：
+
+```text
+MYSQL_ROOT_PASSWORD=
+MYSQL_APP_PASSWORD=
+MYSQL_EXPORTER_PASSWORD=
+REDIS_PASSWORD=
+SILO_ROOT_USER=
+SILO_ROOT_PASSWORD=
+NACOS_USERNAME=
+NACOS_PASSWORD=
+NACOS_ADMIN_PASSWORD=
+NACOS_AUTH_TOKEN=
+```
+
+- 缺失任一变量时，`dev-init.sh` 或 `docker compose` 在启动前失败。
+- 口令不写入镜像、compose 默认值或版本管理；回归输出不打印口令。
+- `NACOS_SERVER_ADDR` 必须带 `https://`，否则 Nacos 客户端会用明文调用 TLS 端口并登录失败。
+
+### 13.4 验收
+
+```bash
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/middleware-auth.sh
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
+```
+
+检查覆盖：
+
+- MySQL：业务账号可查询、执行 DDL 被拒绝；exporter 不能写业务库；错误口令失败。
+- Redis：未认证与错误口令被拒绝；正确口令 `PING` 成功。
+- Silo：`minioadmin` 被拒绝；受管凭据可列举 bucket。
+- Nacos：匿名管理请求被拒绝；服务账号可登录；`sentinel-init` 缺少凭据时失败。
+
+### 13.5 边界
+
+- MySQL root 仍允许从编排网络连接，仅用于初始化与迁移；后续可改为专用迁移账号并关闭远程 root。
+- Redis 使用单一受管口令，不是每服务 ACL 用户。
+- Silo 使用受管根凭据，尚未创建按桶授权的应用用户。
+- Nacos 控制台鉴权在本地保持关闭以支持门户内嵌；非本地必须开启，且门户不代填凭据。
+- ES 应用账号最小权限、Sentinel 控制台登录、Kafka SASL、RocketMQ ACL 与 Seata 认证不在本批次范围。

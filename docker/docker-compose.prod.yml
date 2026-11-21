@@ -19,3 +19,8 @@ services:
   iboot-workflow:
     environment:
       IBOOT_SYSTEM_INTERNAL_TOKEN: ${IBOOT_SYSTEM_INTERNAL_TOKEN:?IBOOT_SYSTEM_INTERNAL_TOKEN is required}
+
+  # Nacos 控制台鉴权：本地开发为支持门户内嵌而关闭，非本地必须开启。
+  nacos:
+    environment:
+      - NACOS_AUTH_CONSOLE_ENABLE=true

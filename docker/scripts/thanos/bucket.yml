@@ -2,7 +2,7 @@ type: s3
 config:
   bucket: thanos
   endpoint: silo:9000
-  access_key: minioadmin
-  secret_key: minioadmin
-  insecure: true
+  # 凭据由容器环境变量 AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY 提供
+  # Silo 只提供 HTTPS；insecure=true 会强制 HTTP 并导致 "HTTP request to an HTTPS server"
+  insecure: false
   part_size: 10485760

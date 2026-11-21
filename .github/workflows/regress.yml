@@ -102,6 +102,26 @@ jobs:
           ELASTICSEARCH_USERNAME: elastic
           ELASTICSEARCH_PASSWORD: iboot-dev-elastic
           KIBANA_SYSTEM_PASSWORD: iboot-dev-kibana
+          # 中间件账号鉴权：CI 在干净环境使用独立开发口令。
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_APP_PASSWORD: iboot-dev-app
+          MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
+          MYSQL_USERNAME: iboot_app
+          MYSQL_PASSWORD: iboot-dev-app
+          REDIS_PASSWORD: iboot-dev-redis
+          SILO_ROOT_USER: ibootadmin
+          SILO_ROOT_PASSWORD: iboot-dev-silo
+          IBOOT_AI_SILO_ACCESS_KEY: ibootadmin
+          IBOOT_AI_SILO_SECRET_KEY: iboot-dev-silo
+          IBOOT_FILE_SILO_ACCESS_KEY: ibootadmin
+          IBOOT_FILE_SILO_SECRET_KEY: iboot-dev-silo
+          NACOS_SERVER_ADDR: https://localhost:8848
+          NACOS_USERNAME: iboot
+          NACOS_PASSWORD: iboot-dev-nacos
+          NACOS_ADMIN_PASSWORD: iboot-dev-nacos-admin
+          NACOS_AUTH_TOKEN: aWJvb3QtZGV2LW5hY29zLWF1dGgtdG9rZW4tMzJieXRl
+          NACOS_AUTH_IDENTITY_KEY: iboot
+          NACOS_AUTH_IDENTITY_VALUE: iboot
           # mail host 为空时，默认 health 指标会把服务拉成 DOWN。
           MANAGEMENT_HEALTH_MAIL_ENABLED: 'false'
           # 九个服务同时运行，限制堆避免超出标准 runner 内存。
@@ -118,6 +138,19 @@ jobs:
           REG_CACERT: ${{ github.workspace }}/docker/certs/ca/rootCA.pem
           ELASTIC_PASSWORD: iboot-dev-elastic
           ELASTICSEARCH_PASSWORD: iboot-dev-elastic
+          # 与启动步骤一致：CI 使用同一组中间件账号。
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_APP_PASSWORD: iboot-dev-app
+          MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
+          MYSQL_USERNAME: iboot_app
+          MYSQL_PASSWORD: iboot-dev-app
+          REDIS_PASSWORD: iboot-dev-redis
+          SILO_ROOT_USER: ibootadmin
+          SILO_ROOT_PASSWORD: iboot-dev-silo
+          NACOS_SERVER_ADDR: https://localhost:8848
+          NACOS_USERNAME: iboot
+          NACOS_PASSWORD: iboot-dev-nacos
+          NACOS_ADMIN_PASSWORD: iboot-dev-nacos-admin
           # 与启动步骤一致：CI 不启动 iboot-ops，内部 TLS 不再检查 8089。
           IBOOT_OPS_ENABLED: 'false'
         run: bash scripts/regress/regress.sh

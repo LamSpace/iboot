@@ -1,5 +1,9 @@
 spring:
   cloud:
+    # 本地 profile 只使用静态路由，不注册到 Nacos；接入注册中心时使用 nacos profile。
+    nacos:
+      discovery:
+        enabled: false
     gateway:
       server:
         webflux:

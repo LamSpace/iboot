@@ -31,7 +31,7 @@ reg_log "== 3. 文件上传与下载（经网关，/api/file/** 已迁至 iboot-
 REG_GATEWAY="${REG_GATEWAY:-https://localhost:5173}"
 # 记录文件操作审计的基线，稍后确认本次链路确实新增了记录
 # 审计表由 iboot-monitor 拥有，所有服务同库写入该表
-operate_log_before=$(docker exec iboot-mysql mysql --default-character-set=utf8mb4 -uroot -proot iboot -N -e "
+operate_log_before=$(docker exec -e MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?缺少 MYSQL_ROOT_PASSWORD}" iboot-mysql mysql --default-character-set=utf8mb4 -uroot iboot -N -e "
     SELECT COUNT(*) FROM sys_operate_log WHERE url LIKE '/api/file/%'" 2>/dev/null | tail -1)
 operate_log_before="${operate_log_before:-0}"
 echo "iBoot 回归冒烟 $(date +%s)" > "$WORK/smoke.txt"
@@ -64,7 +64,7 @@ fi
 # 操作日志由内核异步写入共享审计表；给 file 服务的记录一点落库时间
 operate_log_count="$operate_log_before"
 for _ in $(seq 1 10); do
-    operate_log_count=$(docker exec iboot-mysql mysql --default-character-set=utf8mb4 -uroot -proot iboot -N -e "
+    operate_log_count=$(docker exec -e MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?缺少 MYSQL_ROOT_PASSWORD}" iboot-mysql mysql --default-character-set=utf8mb4 -uroot iboot -N -e "
         SELECT COUNT(*) FROM sys_operate_log
         WHERE url LIKE '/api/file/%'" 2>/dev/null | tail -1)
     if [ "${operate_log_count:-0}" -gt "${operate_log_before:-0}" ]; then break; fi
@@ -139,7 +139,7 @@ reg_expect_ok "经网关查询通知投递记录" "$deliveries"
 # 开发环境的渠道都可用，天然不会产生失败投递；造一条 DEAD 记录覆盖人工重试路径。
 # 不复用库里已有的 FAILED 记录：通知服务的定时重试会在一分钟内把它重置，造成 409 竞态。
 # 重投走真实站内渠道，目标状态是 SUCCESS，而不是停留在 PENDING。
-retry_id=$(docker exec iboot-mysql mysql -uroot -proot iboot -N -e "
+retry_id=$(docker exec -e MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?缺少 MYSQL_ROOT_PASSWORD}" iboot-mysql mysql -uroot iboot -N -e "
     INSERT INTO sys_notification_delivery
         (event_id, event_type, channel, recipient_key, recipient_id, template_code, title, content,
          status, attempts, max_attempts, create_time)
@@ -208,7 +208,7 @@ approval_get() {
 reg_ensure_user "regress_approver" "回归审批人" 2
 approver_id="$REG_LAST_ID"
 # 审批权限由专用角色授予；复用历史账号时也能确保拿到 approval:apply / approval:approve
-docker exec iboot-mysql mysql -uroot -proot iboot -e "
+docker exec -e MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?缺少 MYSQL_ROOT_PASSWORD}" iboot-mysql mysql -uroot iboot -e "
     INSERT INTO sys_role (role_code, role_name, role_sort, data_scope, status, create_by)
     SELECT 'ROLE_APPROVAL_SMOKE', '回归冒烟审批角色', 96, 1, 1, 'system' FROM DUAL
     WHERE NOT EXISTS (SELECT 1 FROM sys_role WHERE role_code = 'ROLE_APPROVAL_SMOKE');

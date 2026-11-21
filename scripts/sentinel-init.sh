@@ -20,6 +20,9 @@ NACOS_SCHEME="${NACOS_SCHEME:-https}"
 NACOS_CACERT="${NACOS_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
 NACOS_URL="${NACOS_SCHEME}://${NACOS_ADDR}/nacos/v3/admin/cs/config"
 NACOS_READ_URL="${NACOS_SCHEME}://${NACOS_ADDR}/nacos/v3/client/cs/config"
+NACOS_LOGIN_URL="${NACOS_SCHEME}://${NACOS_ADDR}/nacos/v3/auth/user/login"
+NACOS_USERNAME="${NACOS_USERNAME:-}"
+NACOS_PASSWORD="${NACOS_PASSWORD:-}"
 CURL_OPTS=(-sS)
 if [ "$NACOS_SCHEME" = "https" ]; then
     CURL_OPTS+=(--cacert "$NACOS_CACERT")
@@ -35,7 +38,17 @@ log()  { printf '%s\n' "$*"; }
 fail() { printf '[ERROR] %s\n' "$*" >&2; exit 1; }
 
 command -v curl >/dev/null 2>&1 || fail '未找到 curl'
+command -v jq >/dev/null 2>&1 || fail '未找到 jq'
 [ -d "$RULES_DIR" ] || fail "规则目录不存在：$RULES_DIR"
+[ -n "$NACOS_USERNAME" ] || fail '缺少 NACOS_USERNAME'
+[ -n "$NACOS_PASSWORD" ] || fail '缺少 NACOS_PASSWORD'
+
+login_resp="$(curl "${CURL_OPTS[@]}" -X POST "$NACOS_LOGIN_URL" \
+    --data-urlencode "username=$NACOS_USERNAME" \
+    --data-urlencode "password=$NACOS_PASSWORD")" || fail 'Nacos 登录失败'
+access_token="$(printf '%s' "$login_resp" | jq -r '.accessToken // empty')"
+[ -n "$access_token" ] || fail "Nacos 登录未返回 accessToken：$login_resp"
+CURL_OPTS+=(-H "Authorization: Bearer $access_token")
 
 publish() {
     local data_id="$1" file="$2" remote local_content
