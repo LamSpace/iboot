@@ -8,6 +8,12 @@ spring:
     clients:
       ssl:
         bundle: iboot
+  elasticsearch:
+    restclient:
+      ssl:
+        bundle: iboot
+    username: ${ELASTICSEARCH_USERNAME:elastic}
+    password: ${ELASTICSEARCH_PASSWORD:}
   ssl:
     bundle:
       pem:

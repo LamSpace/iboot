@@ -89,6 +89,8 @@ class KafkaAppenderIntegrationTest {
         appender.setContext(context);
         appender.setEnabled(true);
         appender.setBootstrapServers(KAFKA.getBootstrapServers());
+        // Testcontainers 的 Kafka 为 PLAINTEXT；SSL 路径由单元测试与全栈回归覆盖。
+        appender.setSecurityProtocol("PLAINTEXT");
         appender.setTopic(TOPIC);
         LogstashEncoder encoder = new LogstashEncoder();
         encoder.setCustomFields("{\"app\":\"iboot-it\"}");

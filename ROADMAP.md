@@ -140,8 +140,8 @@ v0–v4 已完成：登录与只读查询（v1）、运维写命令（v2，含�
 |---|---|---|
 | B0 | 信任链、Vite HTTPS、MySQL/Redis/Silo、Nacos/RocketMQ/Seata 可行性 | 已完成；见 B0 报告 |
 | B1 | 边缘 TLS：本地 CA、门户 443、Vite HTTPS、OAuth2/CLI/回归 HTTPS | 已完成：`openspec/changes/archive/2026-11-20-add-edge-tls/` |
-| B2 | 门户→网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j | 进行中：`openspec/changes/add-internal-tls/`；Nacos/ES/Kafka/RocketMQ/Seata 不在本批 |
-| B3 | ES/Kafka 日志与检索面；RocketMQ 仅作为加密通道 | 待启动 |
+| B2 | 门户→网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j | 已完成：`openspec/changes/archive/2026-11-20-add-internal-tls/`；Nacos/ES/Kafka/RocketMQ/Seata 不在本批 |
+| B3 | ES/Kafka/Logstash 日志与检索面；RocketMQ 仅作为加密通道 | 进行中：`openspec/changes/add-log-search-tls/` |
 | B4 | 入口收敛、中间件认证、网络分段、每服务 DB 账号 | 待启动 |
 | B5 | 服务间 mTLS、工作负载身份、RocketMQ/Seata 收尾 | 待启动 |
 

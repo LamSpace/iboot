@@ -37,6 +37,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -146,6 +147,30 @@ class KafkaAppenderTest {
     }
 
     /**
+     * SSL 配置必须写入真实生产者参数，避免只改 logback 配置却没有生效。
+     */
+    @Test
+    void appliesSslProperties() throws Exception {
+        MockProducer<String, byte[]> producer = newMockProducer();
+        TestAppender appender = new TestAppender(producer);
+        appender.setSecurityProtocol("SSL");
+        appender.setTruststoreLocation("/tmp/iboot-truststore.p12");
+        appender.setTruststorePassword("changeit");
+        appender.setTruststoreType("PKCS12");
+        Logger logger = startAppender(appender);
+
+        logger.info("ssl properties");
+        awaitHistory(producer, 1, appender);
+
+        Properties properties = appender.capturedProperties;
+        assertEquals("SSL", properties.getProperty("security.protocol"));
+        assertEquals("/tmp/iboot-truststore.p12", properties.getProperty("ssl.truststore.location"));
+        assertEquals("changeit", properties.getProperty("ssl.truststore.password"));
+        assertEquals("PKCS12", properties.getProperty("ssl.truststore.type"));
+        appender.stop();
+    }
+
+    /**
      * 关闭态不创建生产者、不投递任何事件，宿主机调试与自动化测试因此不受影响。
      */
     @Test
@@ -222,6 +247,8 @@ class KafkaAppenderTest {
 
         private volatile boolean producerCreated;
 
+        private volatile Properties capturedProperties;
+
         TestAppender(Producer<String, byte[]> testProducer) {
             this.testProducer = testProducer;
             setEnabled(true);
@@ -230,6 +257,7 @@ class KafkaAppenderTest {
         @Override
         protected Producer<String, byte[]> createProducer(Properties properties) {
             producerCreated = true;
+            capturedProperties = properties;
             return testProducer;
         }
     }

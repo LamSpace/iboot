@@ -1,4 +1,7 @@
 {
   "rocketMQClusterName": "DefaultCluster",
-  "useEndpointPortFromRequest": true
+  "useEndpointPortFromRequest": true,
+  "tlsTestModeEnable": false,
+  "tlsKeyPath": "/certs/portal-key.pem",
+  "tlsCertPath": "/certs/portal.pem"
 }

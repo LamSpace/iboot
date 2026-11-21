@@ -16,7 +16,9 @@ x-app-env: &app-env
   MYSQL_PASSWORD: root
   REDIS_HOST: redis
   REDIS_PORT: "6379"
-  ELASTICSEARCH_URIS: http://elasticsearch:9200
+  ELASTICSEARCH_URIS: https://elasticsearch:9200
+  ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME:-elastic}
+  ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
   NACOS_ADDR: nacos:8848
   SEATA_SERVER_ADDR: seata-server:8091
   IBOOT_SEATA_ENABLED: "true"
@@ -27,6 +29,10 @@ x-app-env: &app-env
   TEMPO_OTLP: http://tempo:4318/v1/traces
   IBOOT_LOGGING_KAFKA_ENABLED: "true"
   IBOOT_LOGGING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  IBOOT_LOGGING_KAFKA_SECURITY_PROTOCOL: SSL
+  IBOOT_LOGGING_KAFKA_TRUSTSTORE_LOCATION: /certs/truststore.p12
+  IBOOT_LOGGING_KAFKA_TRUSTSTORE_PASSWORD: changeit
+  IBOOT_LOGGING_KAFKA_TRUSTSTORE_TYPE: PKCS12
   JWT_JWK_SET_URI: https://iboot-auth:8083/oauth2/jwks
   # 浏览器经门户 443 访问；认证 issuer/回调必须与公开来源一致
   IBOOT_AUTH_ISSUER: https://localhost
@@ -39,6 +45,7 @@ x-app-env: &app-env
   IBOOT_INTERNAL_TLS_ENABLED: "true"
   JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
   IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-proxy:8081
+  IBOOT_ROCKETMQ_SSL_ENABLED: "true"
   IBOOT_AI_SILO_ENDPOINT: https://silo:9000
   # 文件存储默认走 Silo；容器内用服务名读写，预签名地址用浏览器可达的宿主机地址
   IBOOT_FILE_STORAGE_TYPE: silo
@@ -570,18 +577,42 @@ services:
     environment:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
     volumes:
-      - ./scripts/elk/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./scripts/elk/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      # ES 9.5 只允许从配置目录读取 PEM 证书
+      - ./certs/runtime:/usr/share/elasticsearch/config/certs:ro
       - es_data:/usr/share/elasticsearch/data
     restart: unless-stopped
     networks:
       - iboot-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf --cacert /usr/share/elasticsearch/config/certs/rootCA.pem -u elastic:$${ELASTIC_PASSWORD} https://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
+
+  # 一次性把 kibana_system 的密码同步到 ES；Kibana 9.5 禁止使用 elastic 超级用户。
+  elasticsearch-init:
+    image: elasticsearch:9.5.5
+    container_name: iboot-elasticsearch-init
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until curl -sf --cacert /certs/rootCA.pem -u "elastic:$${ELASTIC_PASSWORD}" https://elasticsearch:9200/_cluster/health >/dev/null 2>&1; do sleep 2; done
+        curl -sf --cacert /certs/rootCA.pem -u "elastic:$${ELASTIC_PASSWORD}"           -X POST -H 'Content-Type: application/json'           -d "{\"password\":\"$${KIBANA_SYSTEM_PASSWORD}\"}"           https://elasticsearch:9200/_security/user/kibana_system/_password >/dev/null
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
+      - KIBANA_SYSTEM_PASSWORD=${KIBANA_SYSTEM_PASSWORD:?KIBANA_SYSTEM_PASSWORD 必须在 .env 中设置}
+    volumes:
+      - ./certs/runtime:/certs:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - iboot-network
 
   logstash:
     image: logstash:9.5.5
@@ -590,9 +621,11 @@ services:
       - "5044:5044"
     volumes:
       - ./scripts/elk/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./certs/runtime:/certs:ro
     environment:
       - LS_JAVA_OPTS=-Xms256m -Xmx256m
       - XPACK_MONITORING_ENABLED=false
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
     restart: unless-stopped
     networks:
       - iboot-network
@@ -751,6 +784,7 @@ services:
       JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     volumes:
       - ./rocketmq/rmq-proxy.json:/home/rocketmq/rocketmq-5.5.0/conf/rmq-proxy.json:ro
+      - ./certs/runtime:/certs:ro
     ports:
       - "18080:8080"
       - "18081:8081"
@@ -786,7 +820,7 @@ services:
 
   # ==================== Kafka（日志缓冲层） ====================
   # KRaft 单节点，不部署 ZooKeeper；只作 24 小时日志缓冲，不承载业务事件。
-  # 双监听：kafka:9092 给容器内服务，localhost:29092 给宿主机进程与 kafka-*.sh 工具。
+  # 三个监听全部 SSL：kafka:9092 给容器内服务，localhost:29092 给宿主机进程与工具，9093 为 controller。
   kafka:
     image: apache/kafka:4.4.0
     container_name: iboot-kafka
@@ -795,12 +829,23 @@ services:
       CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw
       KAFKA_NODE_ID: "1"
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      # 三个监听全部 SSL；9092 容器内、29092 宿主机、9093 controller。
+      KAFKA_LISTENERS: SSL://:9092,SSL_HOST://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: SSL://kafka:9092,SSL_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SSL:SSL,SSL_HOST:SSL,CONTROLLER:SSL
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: SSL
+      # 镜像的 configure 脚本要求 /etc/kafka/secrets 下的文件名与密码文件
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka-keystore.p12
+      KAFKA_SSL_KEY_CREDENTIALS: kafka-key-password
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka-keystore-password
+      KAFKA_SSL_CLIENT_AUTH: none
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: HTTPS
+      # client auth 为 none 时镜像不会自动注入 truststore；controller 出站 SSL 仍需要它
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/truststore.p12
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: changeit
+      KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
@@ -812,11 +857,12 @@ services:
       - "29092:29092"
     volumes:
       - kafka_data:/var/lib/kafka/data
+      - ./certs/runtime:/etc/kafka/secrets:ro
     restart: unless-stopped
     networks:
       - iboot-network
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "printf '%s\n' 'security.protocol=SSL' 'ssl.truststore.location=/etc/kafka/secrets/truststore.p12' 'ssl.truststore.password=changeit' 'ssl.truststore.type=PKCS12' > /tmp/kafka-client.properties && /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 --command-config /tmp/kafka-client.properties >/dev/null 2>&1"]
       interval: 10s
       timeout: 10s
       retries: 12
@@ -830,8 +876,13 @@ services:
     environment:
       TZ: Asia/Shanghai
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_SECURITY_PROTOCOL: SSL
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/truststore.p12
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: changeit
+      KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
     volumes:
       - ./kafka/init-topics.sh:/opt/kafka/init-topics.sh:ro
+      - ./certs/runtime:/etc/kafka/secrets:ro
     depends_on:
       kafka:
         condition: service_healthy
@@ -965,6 +1016,7 @@ services:
       - ./scripts/grafana/provisioning:/etc/grafana/provisioning
       - ./scripts/grafana/grafana.ini:/etc/grafana/grafana.ini
       - grafana_data:/var/lib/grafana
+      - ./certs/runtime:/certs:ro
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
@@ -972,6 +1024,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin123
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://localhost:3000
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
     restart: unless-stopped
     networks:
       - iboot-network
@@ -1152,9 +1205,12 @@ services:
     ports:
       - "9114:9114"
     command:
-      - '--es.uri=http://elasticsearch:9200'
+      - '--es.uri=https://elastic:${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}@elasticsearch:9200'
+      - '--es.ca=/certs/rootCA.pem'
       - '--es.all'
       - '--es.indices'
+    volumes:
+      - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
       - iboot-network
@@ -1169,13 +1225,20 @@ services:
     ports:
       - "5601:5601"
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_SYSTEM_PASSWORD:?KIBANA_SYSTEM_PASSWORD 必须在 .env 中设置}
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/certs/rootCA.pem
+    volumes:
+      - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
       - iboot-network
     depends_on:
       elasticsearch:
         condition: service_healthy
+      elasticsearch-init:
+        condition: service_completed_successfully
 
   # ==================== 知识图谱（graph profile） ====================
   neo4j:
