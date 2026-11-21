@@ -1120,6 +1120,9 @@ services:
       - ./certs/runtime:/certs:ro
     command:
       - '--config.file=/etc/blackbox/blackbox.yml'
+    # 宿主机模式探针需要解析宿主网关；Docker Engine 不会自动提供该域名。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     networks:
       - app
