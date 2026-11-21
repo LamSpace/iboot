@@ -1,0 +1,4 @@
+# 测试专用覆盖：网关集成测试使用 HTTP，不加载本地证书与 SSL bundle。
+server:
+  ssl:
+    enabled: false

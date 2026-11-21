@@ -26,7 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author iBoot Team
  * @since 1.0.0
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {"server.ssl.enabled=false", "spring.cloud.nacos.discovery.enabled=false", "spring.cloud.nacos.config.enabled=false", "spring.cloud.sentinel.eager=false", "spring.cloud.sentinel.datasource.flow.nacos.data-id="})
 class GatewayFailureTest {
 
     /** 一个几乎不可能被占用的端口，用于制造连接拒绝。 */
