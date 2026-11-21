@@ -26,13 +26,18 @@ TRUSTSTORE="$CERT_DIR/truststore.p12"
 ROOT_CA="$CAROOT/rootCA.pem"
 # 容器运行期证书副本：以容器用户可读权限提供，宿主私钥仍保持 0600
 RUNTIME_DIR="$CERT_DIR/runtime"
+# Kafka 需要同时包含私钥与证书链的 PKCS12 keystore；密码仅用于本地开发
+KAFKA_KEYSTORE="$RUNTIME_DIR/kafka-keystore.p12"
+KAFKA_KEY_PASSWORD_FILE="$RUNTIME_DIR/kafka-key-password"
+KAFKA_KEYSTORE_PASSWORD_FILE="$RUNTIME_DIR/kafka-keystore-password"
+KAFKA_STORE_PASS="changeit"
 
 # 叶子证书覆盖宿主机、Docker 主机名与全部服务名；B2 可直接复用同一份信任链。
 SAN_NAMES=(
     localhost 127.0.0.1 ::1 host.docker.internal iboot.local '*.iboot.local'
     iboot-system iboot-gateway iboot-auth iboot-file iboot-notify
     iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops
-    mysql redis elasticsearch silo nacos seata-server rocketmq-proxy tempo
+    mysql redis kafka elasticsearch silo nacos seata-server rocketmq-proxy tempo
 )
 
 FORCE=0
@@ -88,9 +93,21 @@ ensure_runtime_copies() {
     # Silo 的证书目录契约
     cp -f "$CERT_FILE" "$RUNTIME_DIR/public.crt"
     cp -f "$KEY_FILE" "$RUNTIME_DIR/private.key"
+    # Kafka 的 PKCS12 keystore 与密码文件；密码文件供容器镜像的 credentials 机制读取
+    rm -f "$KAFKA_KEYSTORE"
+    openssl pkcs12 -export \
+        -in "$CERT_FILE" \
+        -inkey "$KEY_FILE" \
+        -certfile "$ROOT_CA" \
+        -name iboot \
+        -out "$KAFKA_KEYSTORE" \
+        -passout "pass:$KAFKA_STORE_PASS"
+    printf '%s' "$KAFKA_STORE_PASS" > "$KAFKA_KEY_PASSWORD_FILE"
+    printf '%s' "$KAFKA_STORE_PASS" > "$KAFKA_KEYSTORE_PASSWORD_FILE"
     chmod 644 "$RUNTIME_DIR/portal.pem" "$RUNTIME_DIR/portal-key.pem" \
         "$RUNTIME_DIR/rootCA.pem" "$RUNTIME_DIR/truststore.p12" \
-        "$RUNTIME_DIR/public.crt" "$RUNTIME_DIR/private.key"
+        "$RUNTIME_DIR/public.crt" "$RUNTIME_DIR/private.key" \
+        "$KAFKA_KEYSTORE" "$KAFKA_KEY_PASSWORD_FILE" "$KAFKA_KEYSTORE_PASSWORD_FILE"
     chmod 755 "$RUNTIME_DIR/ca"
     chmod 644 "$RUNTIME_DIR/ca/rootCA.pem"
 }
@@ -144,6 +161,7 @@ log "  私钥       $KEY_FILE"
 log "  PEM CA     $ROOT_CA"
 log "  Java 信任库 $TRUSTSTORE"
 log "  容器副本   $RUNTIME_DIR（私钥为容器用户可读的 0644）"
+log "  Kafka keystore $KAFKA_KEYSTORE"
 log ""
 log "浏览器信任（一次性，可能需要管理员权限）："
 log "  CAROOT=$CAROOT $MKCERT -install"

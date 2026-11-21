@@ -93,9 +93,9 @@ nginx:stable-alpine3.23
 | mysql | 3306 | MySQL 8.4（只接受 TLS） |
 | redis | 6379 | Redis 8（只监听 TLS 端口） |
 | silo | 9000/9001 | 对象存储与控制台（HTTPS） |
-| elasticsearch | 9200 | 检索 |
-| kafka | 9092 / 29092 | 日志缓冲（KRaft 单节点；宿主机用 29092） |
-| logstash | 5044 | 集中日志处理，输入来自 Kafka |
+| elasticsearch | 9200 | 检索（HTTPS + 认证） |
+| kafka | 9092 / 29092 | 日志缓冲（KRaft 单节点，全部监听 SSL；宿主机用 29092） |
+| logstash | 5044 | 集中日志处理，Kafka 输入与 ES 输出均走 TLS |
 | nacos | 8848/8849/9848/9849 | 注册/配置中心，控制台在 8849 |
 | tempo | 4317/4318/3200 | 链路追踪 |
 
@@ -122,8 +122,8 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 
 图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS）。
 
-B2 起 8080–8089 只提供 HTTPS；MySQL/Redis/Silo/Neo4j 只接受 TLS。Nacos/ES/Kafka
-仍为明文，属于 B3/B5 的后续范围。
+B2 起 8080–8089 只提供 HTTPS；MySQL/Redis/Silo/Neo4j 只接受 TLS。B3 起 ES、Kafka、
+Logstash 也只接受 TLS；Nacos 仍为明文，属于后续范围。
 
 ## 启动顺序
 
@@ -152,14 +152,18 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - 应用服务通过 `env_file: ../.env` 读取 DashScope、邮件、短信、通知 token、备份密钥等私有配置。
 - compose 的 `environment` 会覆盖 `.env` 中的宿主机地址，例如：
   - `MYSQL_HOST=mysql`、`REDIS_HOST=redis`、`NACOS_ADDR=nacos:8848`
-  - `ELASTICSEARCH_URIS=http://elasticsearch:9200`
+  - `ELASTICSEARCH_URIS=https://elasticsearch:9200`、`ELASTICSEARCH_USERNAME`、`ELASTICSEARCH_PASSWORD`
   - `TEMPO_OTLP=http://tempo:4318/v1/traces`
-  - `JWT_JWK_SET_URI=http://iboot-auth:8083/oauth2/jwks`
+  - `JWT_JWK_SET_URI=https://iboot-auth:8083/oauth2/jwks`
 - 网关使用 `SPRING_PROFILES_ACTIVE=nacos`。
 - 认证 issuer 与回调为 `https://localhost`、`https://localhost/callback`、
   `https://localhost/login`；浏览器经门户 443 访问，网关 `8088` 不是客户端入口。
 - 门户构建参数 `IBOOT_PORTAL_OIDC_ISSUER` 默认 `https://localhost`；证书由
   `scripts/tls-init.sh` 生成到 `docker/certs/`，compose 只读挂载到门户容器。
+- ES 证书必须挂到 `/usr/share/elasticsearch/config/certs`（9.5 entitlement 限制）；
+  Kafka keystore 与密码文件挂到 `/etc/kafka/secrets`。
+- `.env` 必须提供 `ELASTIC_PASSWORD` 与 `KIBANA_SYSTEM_PASSWORD`；Kibana 9.5 不能使用
+  `elastic` 超级用户，`elasticsearch-init` 会幂等同步 `kibana_system` 密码。
 - 认证服务的签名密钥通过 `IBOOT_AUTH_JWK_FILE=/app/keys/iboot-auth-jwk.json` 写入
   `auth_keys` 卷。不要删除该卷，否则所有已签发令牌会在认证服务重启后失效。
 - 本地全栈默认关闭运维控制台认证（`IBOOT_OPS_SECURITY_ENABLED=false`）；生产部署必须开启
@@ -189,7 +193,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   使用 `server.ssl`；`JAVA_TOOL_OPTIONS` 注入 PKCS12 信任库。
 - MySQL 以 `--require_secure_transport=ON` 启动；Redis 只监听 TLS 端口；Silo 以
   `--certs-dir /certs` 启动；Neo4j 的 `graph` profile 启用 Bolt TLS。
-- 数据面健康检查使用本地 CA；Nacos/ES/Kafka 仍为明文。
+- 数据面健康检查使用本地 CA；ES/Kafka/Logstash 只接受 TLS，Nacos 仍为明文。
 - `iboot-auth`、服务间与 JWKS 地址均为 `https://`；Nacos 实例以 `secure=true` 注册。
 - 回滚使用上一版镜像/compose，不提供运行期明文回退。
 

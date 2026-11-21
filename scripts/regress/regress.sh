@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 回归总入口：契约快照 → 路由覆盖 → 冒烟 → 权限矩阵。
+# 回归总入口：契约快照 → 路由覆盖 → 公开/内部/日志 TLS → 冒烟 → 权限矩阵。
 #
 # 用法：
 #   regress.sh              与 golden 基线比对，出现漂移即失败
@@ -9,7 +9,7 @@
 #   REG_BASE / REG_AI_BASE / REG_AUTH_BASE / REG_GATEWAY / REG_OIDC_REDIRECT / REG_CACERT
 #     公开入口（宿主机默认 https://localhost:5173；Docker 覆盖为 https://localhost）
 #   SVC_SYSTEM_BASE 等
-#     契约快照直连的服务地址（B1 内部服务仍为 HTTP，B2 再切换）
+#     契约快照直连的服务地址（B2 起全部为 HTTPS）
 
 set -euo pipefail
 
@@ -106,10 +106,13 @@ printf '\n===== 4. TLS 公开入口 =====\n'
 printf '\n===== 5. 内部 TLS =====\n'
 "$HERE/internal-tls.sh" || fail "内部 TLS 检查未通过"
 
-printf '\n===== 6. 冒烟 =====\n'
+printf '\n===== 6. 日志与检索 TLS =====\n'
+"$HERE/log-search-tls.sh" || fail "日志与检索 TLS 检查未通过"
+
+printf '\n===== 7. 冒烟 =====\n'
 "$HERE/smoke.sh" || fail "冒烟未通过"
 
-printf '\n===== 7. 权限矩阵 =====\n'
+printf '\n===== 8. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 
 printf '\n'

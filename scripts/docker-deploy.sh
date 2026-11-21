@@ -105,7 +105,7 @@ report_unhealthy() {
   while IFS='|' read -r name service state health; do
     [ -n "$service" ] || continue
     case "$service" in
-      db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init) continue ;;
+      db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init) continue ;;
     esac
     if [ "$state" != "running" ] || { [ -n "$health" ] && [ "$health" != "healthy" ]; }; then
       printf '\n--- %s（%s，health=%s）最近日志 ---\n' "$name" "$state" "${health:-none}" >&2
@@ -115,8 +115,8 @@ report_unhealthy() {
 }
 
 # 等待常驻服务健康，并确认一次性服务以 0 退出。
-# 不使用 compose up --wait：它会把 db-init / silo-init / rocketmq-*-init / kafka-init
-# 这类正常退出的一次性服务判为失败。
+# 不使用 compose up --wait：它会把 db-init / silo-init / rocketmq-*-init / kafka-init /
+# elasticsearch-init 这类正常退出的一次性服务判为失败。
 wait_ready() {
   local timeout="${1:-600}"
   local deadline=$((SECONDS + timeout))
@@ -126,7 +126,7 @@ wait_ready() {
     while IFS='|' read -r name service state health; do
       [ -n "$service" ] || continue
       case "$service" in
-        db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init)
+        db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init)
           if [ "$state" = "exited" ]; then
             exitcode=$(docker inspect -f '{{.State.ExitCode}}' "$name" 2>/dev/null || echo 1)
             if [ "$exitcode" != "0" ]; then

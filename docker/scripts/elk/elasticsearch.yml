@@ -4,9 +4,17 @@ node.name: iboot-es-node
 # 单节点模式
 discovery.type: single-node
 
-# 开发环境关闭安全认证
-xpack.security.enabled: false
+# 只通过 HTTPS + 认证提供检索；证书必须放在 ES 配置目录内（9.5 entitlement 限制）
+xpack.security.enabled: true
 xpack.security.enrollment.enabled: false
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certs/portal.pem
+xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/portal-key.pem
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: certificate
+xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/portal.pem
+xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/portal-key.pem
+xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certs/rootCA.pem
 
 # 数据存储路径
 path.data: /usr/share/elasticsearch/data

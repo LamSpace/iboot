@@ -97,6 +97,11 @@ jobs:
           IBOOT_BACKUP_ENABLED: 'true'
           # 必须是 Base64 编码的 32 字节密钥，否则 iboot-job 启动时校验失败直接退出。
           IBOOT_BACKUP_ENCRYPTION_KEY: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY='
+          # ES 只接受 HTTPS + 认证；Kibana 9.5 不能使用 elastic 超级用户。
+          ELASTIC_PASSWORD: iboot-dev-elastic
+          ELASTICSEARCH_USERNAME: elastic
+          ELASTICSEARCH_PASSWORD: iboot-dev-elastic
+          KIBANA_SYSTEM_PASSWORD: iboot-dev-kibana
           # mail host 为空时，默认 health 指标会把服务拉成 DOWN。
           MANAGEMENT_HEALTH_MAIL_ENABLED: 'false'
           # 九个服务同时运行，限制堆避免超出标准 runner 内存。
@@ -111,6 +116,8 @@ jobs:
           REG_GATEWAY: https://localhost:5173
           REG_OIDC_REDIRECT: https://localhost:5173/callback
           REG_CACERT: ${{ github.workspace }}/docker/certs/ca/rootCA.pem
+          ELASTIC_PASSWORD: iboot-dev-elastic
+          ELASTICSEARCH_PASSWORD: iboot-dev-elastic
         run: bash scripts/regress/regress.sh
 
       - name: TLS 公开入口检查

@@ -72,7 +72,7 @@ spring:
   flyway:
     enabled: false
   elasticsearch:
-    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+    uris: ${ELASTICSEARCH_URIS:https://localhost:9200}
     connection-timeout: 5s
     socket-timeout: 30s
   ai:

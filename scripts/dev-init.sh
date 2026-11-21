@@ -102,6 +102,24 @@ rocketmq_enabled() { [ "${IBOOT_ROCKETMQ_ENABLED:-true}" = "true" ]; }
 # 集中日志（Kafka → Logstash → ES）：默认开启，运行日志页面依赖该链路。
 logging_enabled() { [ "${IBOOT_LOGGING_KAFKA_ENABLED:-true}" = "true" ]; }
 
+# ES 只接受 HTTPS + 认证；宿主机进程与 compose 使用同一组凭据。
+ELASTICSEARCH_URIS="${ELASTICSEARCH_URIS:-https://localhost:9200}"
+case "$ELASTICSEARCH_URIS" in
+    http://*) ELASTICSEARCH_URIS="https://${ELASTICSEARCH_URIS#http://}" ;;
+esac
+export ELASTICSEARCH_URIS
+export ELASTICSEARCH_USERNAME="${ELASTICSEARCH_USERNAME:-elastic}"
+export ELASTICSEARCH_PASSWORD="${ELASTICSEARCH_PASSWORD:-${ELASTIC_PASSWORD:-iboot-dev-elastic}}"
+
+# 宿主机进程通过映射端口连容器内的 Kafka，使用本地 CA 信任库。
+export IBOOT_LOGGING_KAFKA_SECURITY_PROTOCOL="${IBOOT_LOGGING_KAFKA_SECURITY_PROTOCOL:-SSL}"
+export IBOOT_LOGGING_KAFKA_TRUSTSTORE_LOCATION="${IBOOT_LOGGING_KAFKA_TRUSTSTORE_LOCATION:-$ROOT/docker/certs/truststore.p12}"
+export IBOOT_LOGGING_KAFKA_TRUSTSTORE_PASSWORD="${IBOOT_LOGGING_KAFKA_TRUSTSTORE_PASSWORD:-changeit}"
+export IBOOT_LOGGING_KAFKA_TRUSTSTORE_TYPE="${IBOOT_LOGGING_KAFKA_TRUSTSTORE_TYPE:-PKCS12}"
+
+# RocketMQ 仅启用加密通道；客户端不校验服务端证书。
+export IBOOT_ROCKETMQ_SSL_ENABLED="${IBOOT_ROCKETMQ_SSL_ENABLED:-true}"
+
 # 可观测平台：默认随开发环境启动；资源紧张时可关闭。
 observability_enabled() { [ "${IBOOT_OBSERVABILITY_ENABLED:-true}" = "true" ]; }
 
@@ -255,6 +273,22 @@ wait_http() {
     return 1
 }
 
+# 等待 ES 通过 HTTPS + 凭据就绪；不回退到明文。
+wait_es() {
+    local timeout="${1:-180}" i
+    for i in $(seq 1 "$timeout"); do
+        if curl -sf -m 3 --cacert "${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/ca/rootCA.pem" \
+            -u "$ELASTICSEARCH_USERNAME:$ELASTICSEARCH_PASSWORD" \
+            "$ELASTICSEARCH_URIS/_cluster/health" > /dev/null 2>&1; then
+            log '  Elasticsearch 就绪'
+            return 0
+        fi
+        sleep 1
+    done
+    printf '[ERROR] Elasticsearch 在 %s 秒内未就绪：%s\n' "$timeout" "$ELASTICSEARCH_URIS" >&2
+    return 1
+}
+
 wait_healthy() {
     local desc="$1" name="$2" timeout="${3:-120}" i status
     for i in $(seq 1 "$timeout"); do
@@ -272,7 +306,7 @@ wait_healthy() {
 
 start_middleware() {
     log '=== 1. 中间件 ==='
-    local infra=(mysql redis silo silo-init elasticsearch seata-server)
+    local infra=(mysql redis silo silo-init elasticsearch elasticsearch-init seata-server)
     if rocketmq_enabled; then
         infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init)
     fi
@@ -301,7 +335,7 @@ start_middleware() {
 
     # 建库与建表统一由 iboot-db-init 完成，服务不再自带迁移。
 
-    wait_http 'Elasticsearch' 'http://localhost:9200' 180 || fail 'Elasticsearch 未就绪'
+    wait_es 180 || fail 'Elasticsearch 未就绪'
     wait_http 'Silo' "$(service_scheme)://localhost:9000/minio/health/live" 120 || fail 'Silo 未就绪'
     # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。
     # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。

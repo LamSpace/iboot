@@ -230,8 +230,82 @@ MySQL cipher、Redis/Silo 明文拒绝与 Neo4j（运行 graph profile 时）。
 - 回滚使用上一版 commit/镜像与 compose，或 `git revert`。B1 的边缘回退
   `IBOOT_TLS_ENABLED=false` 仍只影响公开入口，不改变内部 TLS。
 
-## 9. 与后续批次的关系
+## 9. 日志与检索面 TLS（B3）
+
+B3 在 B2 基础上把集中日志与检索面切到 TLS，并把 RocketMQ 只能做到“加密通道”的边界写死。
+
+### 9.1 Elasticsearch
+
+- ES 9.5 启用 `xpack.security.enabled=true`，HTTP 与 transport 都开启 TLS。
+- 证书必须放在 ES 配置目录内（9.5 的 entitlement 限制）：
+  `/usr/share/elasticsearch/config/certs/`，不能复用其他组件的 `/certs` 挂载。
+- 凭据由 `.env` 的 `ELASTIC_PASSWORD` 注入；Kibana 使用 `kibana_system`，
+  由一次性 `elasticsearch-init` 幂等同步密码，不能使用 `elastic` 超级用户。
+- Spring 客户端使用共享 `iboot-tls.yml` 中的
+  `spring.elasticsearch.restclient.ssl.bundle=iboot`，地址必须是 `https://`。
+- Logstash、Kibana、Grafana 与 elasticsearch-exporter 都通过本地 CA 校验证书，
+  Grafana 使用 `$__file{/certs/rootCA.pem}` 注入 CA。
+
+验证：
+
+```bash
+curl --cacert docker/certs/ca/rootCA.pem -u elastic:"$ELASTIC_PASSWORD" \
+  https://localhost:9200/_cluster/health
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:9200/_cluster/health   # 应为 000
+```
+
+### 9.2 Kafka
+
+- 三个监听全部 SSL：`SSL://kafka:9092`、`SSL_HOST://localhost:29092`、
+  `CONTROLLER://:9093`；明文客户端被拒绝。
+- `tls-init.sh` 额外生成 `runtime/kafka-keystore.p12` 与密码文件。
+- 镜像的 configure 脚本要求 `KAFKA_SSL_KEYSTORE_FILENAME`、`KAFKA_SSL_KEY_CREDENTIALS`、
+  `KAFKA_SSL_KEYSTORE_CREDENTIALS`，文件放在 `/etc/kafka/secrets`。
+- client auth 为 `none` 时镜像不会自动注入 truststore；controller 出站 SSL 仍需显式传
+  `KAFKA_SSL_TRUSTSTORE_LOCATION`，否则启动时报 PKIX 失败。
+- `KafkaAppender` 默认 `security.protocol=SSL`，宿主机信任库为
+  `docker/certs/truststore.p12`，容器内为 `/certs/truststore.p12`。
+
+验证：
+
+```bash
+scripts/regress/log-search-tls.sh
+scripts/regress/log-pipeline.sh --drills
+```
+
+### 9.3 Logstash 与日志管道
+
+- Kafka 输入使用 `security_protocol=SSL` 与 PKCS12 truststore；
+  ES 输出使用 `https://`、`ssl_certificate_authorities` 与凭据。
+- 端到端探针必须能从 Kafka 经 Logstash 进入 ES，并按 `traceId` 检索到。
+- Kafka 或 Logstash 不可用时业务仍正常运行；恢复后日志自动续传。
+
+### 9.4 RocketMQ 加密边界
+
+- Proxy 加载本地证书并开启 TLS；workflow 与 notify 设置
+  `IBOOT_ROCKETMQ_SSL_ENABLED=true`。
+- **已知边界**：同一端口仍接受明文；客户端使用 `InsecureTrustManagerFactory`，
+  不校验服务端证书。该链路只提供被动窃听防护，不提供身份认证或强制 TLS。
+- 文档与回归输出统一使用“加密通道/已知边界”，不得写成零信任或 mTLS。
+- 强制 TLS 与客户端认证留待 B4/B5 或前置 TLS 终止代理。
+
+### 9.5 验收与回滚
+
+```bash
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/log-search-tls.sh
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/log-pipeline.sh
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/log-pipeline.sh --drills
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
+```
+
+回滚使用上一版 commit/镜像与 compose，并恢复 ES/Kafka 旧配置。ES 已有卷可以用
+`ELASTIC_PASSWORD` 直接启用 security；若旧卷状态异常，执行
+`docker exec iboot-elasticsearch bin/elasticsearch-reset-password -u elastic` 或重建本地卷。
+Kafka 回到 PLAINTEXT 需要重建 broker 容器；不存在运行时自动明文回退开关。
+
+## 10. 与后续批次的关系
 
 - B2：门户到网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j 的 TLS；已完成，Nacos 仍是明文。
-- B3：ES/Kafka 日志与检索面；RocketMQ 只能作为加密通道，不能宣称服务端认证。
+- B3：ES/Kafka/Logstash 日志与检索面 TLS；已完成；RocketMQ 只作为加密通道，
+  不能宣称服务端认证或强制 TLS。
 - B4/B5：mTLS、工作负载身份、端口收敛与网络分段；Seata 无原生 TLS，需要单独决策。

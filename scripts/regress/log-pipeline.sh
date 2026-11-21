@@ -21,9 +21,21 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
-ES_URL="${LOG_ES_URL:-http://localhost:9200}"
+# compose 插值需要 ES/Kibana 凭据；与 dev-init 使用同一份根 .env。
+if [ -f "$ROOT/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    . "$ROOT/.env"
+    set +a
+fi
+
+ES_URL="${LOG_ES_URL:-https://localhost:9200}"
 GATEWAY_URL="${LOG_GATEWAY_URL:-https://localhost:8088}"
 GATEWAY_CACERT="${LOG_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
+ES_CACERT="${LOG_ES_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
+ES_USER="${LOG_ES_USER:-elastic}"
+ES_PASSWORD="${LOG_ES_PASSWORD:-${ELASTIC_PASSWORD:-iboot-dev-elastic}}"
+KAFKA_TRUSTSTORE="${LOG_KAFKA_TRUSTSTORE:-/etc/kafka/secrets/truststore.p12}"
 KAFKA_CONTAINER="${LOG_KAFKA_CONTAINER:-iboot-kafka}"
 LOGSTASH_CONTAINER="${LOG_LOGSTASH_CONTAINER:-iboot-logstash}"
 COMPOSE=(docker compose -f docker/docker-compose.yml)
@@ -51,7 +63,8 @@ die()  { printf '[ERROR] %s\n' "$*" >&2; exit 1; }
 #
 # @param $1 _search 请求体
 es_count() {
-    curl -sS -X POST "$ES_URL/iboot-logs-*/_search" \
+    curl -sS --cacert "$ES_CACERT" -u "$ES_USER:$ES_PASSWORD" \
+        -X POST "$ES_URL/iboot-logs-*/_search" \
         -H 'Content-Type: application/json' -d "$1" \
         | python3 -c 'import json,sys; print(json.load(sys.stdin)["hits"]["total"]["value"])' 2>/dev/null || printf '0'
 }
@@ -77,7 +90,11 @@ produce_probe() {
     local trace_id="$1"
     printf '%s\n' "{\"@timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000)\",\"app\":\"iboot-probe\",\"traceId\":\"$trace_id\",\"message\":\"log-pipeline regress probe\"}" \
         | docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-producer.sh \
-            --bootstrap-server localhost:9092 --topic iboot-logs >/dev/null 2>&1
+            --bootstrap-server localhost:9092 --topic iboot-logs \
+            --command-property security.protocol=SSL \
+            --command-property "ssl.truststore.location=$KAFKA_TRUSTSTORE" \
+            --command-property ssl.truststore.password=changeit \
+            --command-property ssl.truststore.type=PKCS12 >/dev/null 2>&1
 }
 
 # 等待 Kafka 容器健康。
@@ -105,7 +122,7 @@ http_probe() {
 }
 
 printf '== 日志管道回归 ==\n'
-curl -sS -o /dev/null "$ES_URL" || die "Elasticsearch 不可达：$ES_URL"
+curl -sS --cacert "$ES_CACERT" -u "$ES_USER:$ES_PASSWORD" -o /dev/null "$ES_URL" || die "Elasticsearch 不可达：$ES_URL"
 
 printf '\n[1] 十个可部署进程的日志覆盖\n'
 for app in $APPS; do

@@ -20,10 +20,12 @@ import ch.qos.logback.core.encoder.Encoder;
 import net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender;
 import net.logstash.logback.encoder.LogstashEncoder;
 import net.logstash.logback.encoder.com.lmax.disruptor.EventHandler;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
@@ -77,6 +79,26 @@ public class KafkaAppender extends LoggingEventAsyncDisruptorAppender {
      * 生产者客户端标识，默认取服务应用名，便于在 broker 侧按服务观察连接。
      */
     private String clientId = "iboot-logging";
+
+    /**
+     * Kafka 安全协议；默认 SSL，明文仅用于明确的排障或测试。
+     */
+    private String securityProtocol = "SSL";
+
+    /**
+     * 客户端信任库路径；宿主机为 {@code docker/certs/truststore.p12}，容器内由环境覆盖。
+     */
+    private String truststoreLocation = "docker/certs/truststore.p12";
+
+    /**
+     * 信任库密码；本地开发固定为 changeit，生产通过环境注入。
+     */
+    private String truststorePassword = "changeit";
+
+    /**
+     * 信任库类型；tls-init.sh 生成 PKCS12。
+     */
+    private String truststoreType = "PKCS12";
 
     /**
      * 事件编码器，默认输出与既有链路一致的 JSON（含 {@code app}、{@code traceId}）。
@@ -228,7 +250,35 @@ public class KafkaAppender extends LoggingEventAsyncDisruptorAppender {
         properties.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "lz4");
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
+        applySecurityProperties(properties);
         return properties;
+    }
+
+    /**
+     * 按配置写入 Kafka SSL 客户端参数。
+     *
+     * <p>明文协议只写入 {@code security.protocol}，不写信任库；SSL 协议下缺少信任库会导致
+     * 握手失败，由 Kafka 客户端按既有失败路径降级，不影响日志调用线程。
+     *
+     * @param properties 生产者配置
+     */
+    private void applySecurityProperties(Properties properties) {
+        if (securityProtocol == null || securityProtocol.isBlank()) {
+            return;
+        }
+        properties.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+        if ("PLAINTEXT".equalsIgnoreCase(securityProtocol)) {
+            return;
+        }
+        if (truststoreLocation != null && !truststoreLocation.isBlank()) {
+            properties.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststoreLocation);
+        }
+        if (truststorePassword != null && !truststorePassword.isBlank()) {
+            properties.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, truststorePassword);
+        }
+        if (truststoreType != null && !truststoreType.isBlank()) {
+            properties.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, truststoreType);
+        }
     }
 
     /**
@@ -301,6 +351,78 @@ public class KafkaAppender extends LoggingEventAsyncDisruptorAppender {
      */
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    /**
+     * 获取 Kafka 安全协议。
+     *
+     * @return 安全协议
+     */
+    public String getSecurityProtocol() {
+        return securityProtocol;
+    }
+
+    /**
+     * 设置 Kafka 安全协议。
+     *
+     * @param securityProtocol 安全协议，默认 SSL
+     */
+    public void setSecurityProtocol(String securityProtocol) {
+        this.securityProtocol = securityProtocol;
+    }
+
+    /**
+     * 获取信任库路径。
+     *
+     * @return 信任库路径
+     */
+    public String getTruststoreLocation() {
+        return truststoreLocation;
+    }
+
+    /**
+     * 设置信任库路径。
+     *
+     * @param truststoreLocation 信任库路径
+     */
+    public void setTruststoreLocation(String truststoreLocation) {
+        this.truststoreLocation = truststoreLocation;
+    }
+
+    /**
+     * 获取信任库密码。
+     *
+     * @return 信任库密码
+     */
+    public String getTruststorePassword() {
+        return truststorePassword;
+    }
+
+    /**
+     * 设置信任库密码。
+     *
+     * @param truststorePassword 信任库密码
+     */
+    public void setTruststorePassword(String truststorePassword) {
+        this.truststorePassword = truststorePassword;
+    }
+
+    /**
+     * 获取信任库类型。
+     *
+     * @return 信任库类型
+     */
+    public String getTruststoreType() {
+        return truststoreType;
+    }
+
+    /**
+     * 设置信任库类型。
+     *
+     * @param truststoreType 信任库类型
+     */
+    public void setTruststoreType(String truststoreType) {
+        this.truststoreType = truststoreType;
     }
 
     /**
