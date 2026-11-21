@@ -48,7 +48,8 @@ import java.util.List;
  * @author iBoot Team
  * @since 1.0.0
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "server.ssl.enabled=false")
 class GatewayFlowControlTest {
 
     private static HttpServer notifyStub;
