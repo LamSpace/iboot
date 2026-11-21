@@ -41,7 +41,7 @@ OTHER_TOKEN=""
 OTHER_ID=""
 
 sql() {
-    docker exec "$MYSQL_CONTAINER" mysql -uroot -proot iboot -N -B -e "$1" 2>/dev/null | tr -d '\r'
+    docker exec -e MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?缺少 MYSQL_ROOT_PASSWORD}" "$MYSQL_CONTAINER" mysql -uroot iboot -N -B -e "$1" 2>/dev/null | tr -d '\r'
 }
 
 quota_field() {

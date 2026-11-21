@@ -22,7 +22,9 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_ADDR:localhost:8848}
+        server-addr: ${NACOS_SERVER_ADDR:https://localhost:8848}
+        username: ${NACOS_USERNAME:}
+        password: ${NACOS_PASSWORD:}
         enabled: ${IBOOT_NACOS_ENABLED:true}
         # 注册中心不可用时不阻断启动（默认 fail-fast 会直接让应用启动失败）
         fail-fast: false
@@ -33,7 +35,9 @@ spring:
         # 实例地址使用服务名，证书 SAN 不依赖容器 IP；宿主机开发由 dev-init.sh 覆盖为 127.0.0.1
         ip: ${IBOOT_NACOS_DISCOVERY_IP:${spring.application.name}}
       config:
-        server-addr: ${NACOS_ADDR:localhost:8848}
+        server-addr: ${NACOS_SERVER_ADDR:https://localhost:8848}
+        username: ${NACOS_USERNAME:}
+        password: ${NACOS_PASSWORD:}
         file-extension: yml
         enabled: ${IBOOT_NACOS_ENABLED:true}
   threads:
@@ -63,8 +67,8 @@ spring:
         enabled: false
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${IBOOT_AI_MYSQL_DATABASE:iboot}?${MYSQL_SSL_PARAMS:sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8}
-    username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:root}
+    username: ${MYSQL_USERNAME:iboot_app}
+    password: ${MYSQL_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10

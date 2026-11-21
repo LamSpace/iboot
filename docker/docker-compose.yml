@@ -12,14 +12,20 @@ x-app-env: &app-env
   TZ: Asia/Shanghai
   MYSQL_HOST: mysql
   MYSQL_PORT: "3306"
-  MYSQL_USERNAME: root
-  MYSQL_PASSWORD: root
+  # 业务服务使用最小权限账号；root 只用于账号初始化与迁移。
+  MYSQL_USERNAME: ${MYSQL_APP_USER:-iboot_app}
+  MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?MYSQL_APP_PASSWORD 必须在 .env 中设置}
   REDIS_HOST: redis
   REDIS_PORT: "6379"
+  REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD 必须在 .env 中设置}
   ELASTICSEARCH_URIS: https://elasticsearch:9200
   ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME:-elastic}
   ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
   NACOS_ADDR: nacos:8848
+  # 客户端 HTTP 鉴权登录必须走 HTTPS；gRPC 仍按端口偏移连接 9848。
+  NACOS_SERVER_ADDR: https://nacos:8848
+  NACOS_USERNAME: ${NACOS_USERNAME:?NACOS_USERNAME 必须在 .env 中设置}
+  NACOS_PASSWORD: ${NACOS_PASSWORD:?NACOS_PASSWORD 必须在 .env 中设置}
   SEATA_SERVER_ADDR: seata-server:8091
   IBOOT_SEATA_ENABLED: "true"
   IBOOT_SYSTEM_BASE_URL: https://iboot-system
@@ -47,9 +53,13 @@ x-app-env: &app-env
   IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-proxy:8081
   IBOOT_ROCKETMQ_SSL_ENABLED: "true"
   IBOOT_AI_SILO_ENDPOINT: https://silo:9000
+  IBOOT_AI_SILO_ACCESS_KEY: ${SILO_ROOT_USER:?SILO_ROOT_USER 必须在 .env 中设置}
+  IBOOT_AI_SILO_SECRET_KEY: ${SILO_ROOT_PASSWORD:?SILO_ROOT_PASSWORD 必须在 .env 中设置}
   # 文件存储默认走 Silo；容器内用服务名读写，预签名地址用浏览器可达的宿主机地址
   IBOOT_FILE_STORAGE_TYPE: silo
   IBOOT_FILE_SILO_ENDPOINT: https://silo:9000
+  IBOOT_FILE_SILO_ACCESS_KEY: ${SILO_ROOT_USER:?SILO_ROOT_USER 必须在 .env 中设置}
+  IBOOT_FILE_SILO_SECRET_KEY: ${SILO_ROOT_PASSWORD:?SILO_ROOT_PASSWORD 必须在 .env 中设置}
   IBOOT_FILE_SILO_PUBLIC_ENDPOINT: ${IBOOT_FILE_SILO_PUBLIC_ENDPOINT:-https://localhost:9000}
   IBOOT_AI_GRAPH_URI: bolt+s://neo4j:7687
   MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
@@ -92,12 +102,40 @@ services:
       TZ: Asia/Shanghai
       MYSQL_HOST: mysql
       MYSQL_PORT: "3306"
+      # 迁移需要 DDL，使用 root；业务服务使用 iboot_app。
       MYSQL_USERNAME: root
-      MYSQL_PASSWORD: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}
       IBOOT_DB_NAME: iboot
       MYSQL_TLS_ENABLED: "true"
       JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
     volumes:
+      - ./certs/runtime:/certs:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mysql-users-init:
+        condition: service_completed_successfully
+      nacos-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - data
+
+  # 幂等创建 MySQL 业务账号与 exporter 账号；db-init 与业务服务依赖它完成。
+  mysql-users-init:
+    image: mysql:8.4.13
+    container_name: iboot-mysql-users-init
+    entrypoint: ["/bin/bash", "/scripts/mysql-users-init.sh"]
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}
+      MYSQL_APP_USER: ${MYSQL_APP_USER:-iboot_app}
+      MYSQL_APP_PASSWORD: ${MYSQL_APP_PASSWORD:?MYSQL_APP_PASSWORD 必须在 .env 中设置}
+      MYSQL_EXPORTER_USER: ${MYSQL_EXPORTER_USER:-iboot_exporter}
+      MYSQL_EXPORTER_PASSWORD: ${MYSQL_EXPORTER_PASSWORD:?MYSQL_EXPORTER_PASSWORD 必须在 .env 中设置}
+    volumes:
+      - ../scripts/mysql-users-init.sh:/scripts/mysql-users-init.sh:ro
       - ./certs/runtime:/certs:ro
     depends_on:
       mysql:
@@ -490,9 +528,9 @@ services:
       --ssl-key=/certs/portal-key.pem
       --require_secure_transport=ON
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}
       MYSQL_DATABASE: iboot
-      # 允许其它容器以 root 连接；仅用于本地/单机部署
+      # root 仅用于账号初始化与迁移；业务服务使用 iboot_app
       MYSQL_ROOT_HOST: "%"
       TZ: Asia/Shanghai
     volumes:
@@ -504,7 +542,7 @@ services:
       - data
     healthcheck:
       # 强制走 TCP 并校验服务端证书
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem --silent"]
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$${MYSQL_ROOT_PASSWORD}\" mysqladmin ping -h 127.0.0.1 -uroot --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem --silent"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -516,13 +554,16 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
     command: >
-      redis-server
+      sh -c 'exec redis-server
       --port 0
       --tls-port 6379
       --tls-cert-file /certs/portal.pem
       --tls-key-file /certs/portal-key.pem
       --tls-ca-cert-file /certs/rootCA.pem
       --tls-auth-clients no
+      --requirepass "$$REDIS_PASSWORD"'
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD 必须在 .env 中设置}
     volumes:
       - redis_data:/data
       - ./certs/runtime:/certs:ro
@@ -530,7 +571,7 @@ services:
     networks:
       - data
     healthcheck:
-      test: ["CMD", "redis-cli", "--tls", "--cacert", "/certs/rootCA.pem", "-p", "6379", "ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli --tls --cacert /certs/rootCA.pem -p 6379 ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -543,9 +584,9 @@ services:
       - "127.0.0.1:9000:9000"
       - "127.0.0.1:9001:9001"
     environment:
-      # Silo 保留 MinIO 的 MINIO_* 服务端变量契约
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      # Silo 保留 MinIO 的 MINIO_* 服务端变量契约；凭据必须由 .env 注入。
+      MINIO_ROOT_USER: ${SILO_ROOT_USER:?SILO_ROOT_USER 必须在 .env 中设置}
+      MINIO_ROOT_PASSWORD: ${SILO_ROOT_PASSWORD:?SILO_ROOT_PASSWORD 必须在 .env 中设置}
       # mcli / Go 客户端通过该变量信任本地 CA
       SSL_CERT_FILE: /certs/rootCA.pem
     volumes:
@@ -556,7 +597,7 @@ services:
     networks:
       - data
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS --cacert /certs/rootCA.pem https://127.0.0.1:9000/minio/health/live >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "mcli alias set hc https://127.0.0.1:9000 \"$${MINIO_ROOT_USER}\" \"$${MINIO_ROOT_PASSWORD}\" >/dev/null && mcli ls hc >/dev/null"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -568,11 +609,13 @@ services:
     entrypoint: >
       /bin/sh -c "
       sleep 5;
-      mcli alias set mysilo https://silo:9000 minioadmin minioadmin;
+      mcli alias set mysilo https://silo:9000 \"$${SILO_ROOT_USER}\" \"$${SILO_ROOT_PASSWORD}\";
       mcli mb --ignore-existing mysilo/thanos;
       exit 0;
       "
     environment:
+      SILO_ROOT_USER: ${SILO_ROOT_USER:?SILO_ROOT_USER 必须在 .env 中设置}
+      SILO_ROOT_PASSWORD: ${SILO_ROOT_PASSWORD:?SILO_ROOT_PASSWORD 必须在 .env 中设置}
       SSL_CERT_FILE: /certs/rootCA.pem
     volumes:
       - ./certs/runtime:/certs:ro
@@ -661,14 +704,14 @@ services:
       - "127.0.0.1:8849:8080"
     environment:
       - MODE=standalone
-      - NACOS_AUTH_ENABLE=false
-      # Nacos 3.x 的 admin API 认证独立于 server auth；本地开发关闭以便脚本写入基线规则
-      - NACOS_AUTH_ADMIN_ENABLE=false
-      # Nacos 3.x 的控制台认证又独立于 server/admin auth；本地开发关闭以便门户内嵌
+      - NACOS_AUTH_ENABLE=true
+      # 管理端鉴权必须开启；sentinel-init.sh 先登录再写入。
+      - NACOS_AUTH_ADMIN_ENABLE=true
+      # 控制台鉴权本地关闭以支持门户内嵌；非本地由 docker-compose.prod.yml 开启。
       - NACOS_AUTH_CONSOLE_ENABLE=false
-      - NACOS_AUTH_TOKEN=aWJvb3QtZGV2LW5hY29zLWF1dGgtdG9rZW4tMzJieXRl
-      - NACOS_AUTH_IDENTITY_KEY=iboot-dev
-      - NACOS_AUTH_IDENTITY_VALUE=iboot-dev
+      - NACOS_AUTH_TOKEN=${NACOS_AUTH_TOKEN:?NACOS_AUTH_TOKEN 必须在 .env 中设置}
+      - NACOS_AUTH_IDENTITY_KEY=${NACOS_AUTH_IDENTITY_KEY:-iboot}
+      - NACOS_AUTH_IDENTITY_VALUE=${NACOS_AUTH_IDENTITY_VALUE:-iboot}
       - JVM_XMS=512m
       - JVM_XMX=512m
       - JVM_XMN=256m
@@ -690,6 +733,28 @@ services:
       timeout: 5s
       retries: 10
       start_period: 60s
+
+  # 初始化 Nacos 管理员密码与服务账号；业务服务依赖它完成后再注册。
+  nacos-init:
+    image: nacos/nacos-server:v3.3.0
+    container_name: iboot-nacos-init
+    entrypoint: ["/bin/sh", "/scripts/nacos-init.sh"]
+    environment:
+      NACOS_ADDR: nacos:8848
+      NACOS_SCHEME: https
+      NACOS_CACERT: /certs/rootCA.pem
+      NACOS_ADMIN_PASSWORD: ${NACOS_ADMIN_PASSWORD:?NACOS_ADMIN_PASSWORD 必须在 .env 中设置}
+      NACOS_USERNAME: ${NACOS_USERNAME:?NACOS_USERNAME 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_PASSWORD:?NACOS_PASSWORD 必须在 .env 中设置}
+    volumes:
+      - ../scripts/nacos-init.sh:/scripts/nacos-init.sh:ro
+      - ./certs/runtime:/certs:ro
+    depends_on:
+      nacos:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - data
 
   sentinel-dashboard:
     image: bladex/sentinel-dashboard:1.8.10
@@ -1075,8 +1140,14 @@ services:
     image: thanosio/thanos:v0.42.5
     container_name: thanos-sidecar
     profiles: ["observability"]
+    environment:
+      AWS_ACCESS_KEY_ID: ${SILO_ROOT_USER:?SILO_ROOT_USER 必须在 .env 中设置}
+      AWS_SECRET_ACCESS_KEY: ${SILO_ROOT_PASSWORD:?SILO_ROOT_PASSWORD 必须在 .env 中设置}
+      SSL_CERT_FILE: /certs/rootCA.pem
+      AWS_CA_BUNDLE: /certs/rootCA.pem
     volumes:
       - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - ./certs/runtime:/certs:ro
       - prometheus_data:/prometheus
     user: "root"
     command:
@@ -1100,8 +1171,14 @@ services:
     image: thanosio/thanos:v0.42.5
     container_name: thanos-store
     profiles: ["observability"]
+    environment:
+      AWS_ACCESS_KEY_ID: ${SILO_ROOT_USER:?SILO_ROOT_USER 必须在 .env 中设置}
+      AWS_SECRET_ACCESS_KEY: ${SILO_ROOT_PASSWORD:?SILO_ROOT_PASSWORD 必须在 .env 中设置}
+      SSL_CERT_FILE: /certs/rootCA.pem
+      AWS_CA_BUNDLE: /certs/rootCA.pem
     volumes:
       - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - ./certs/runtime:/certs:ro
       - thanos_store_data:/var/thanos/store
     user: "root"
     command:
@@ -1144,8 +1221,14 @@ services:
     image: thanosio/thanos:v0.42.5
     container_name: thanos-compact
     profiles: ["observability"]
+    environment:
+      AWS_ACCESS_KEY_ID: ${SILO_ROOT_USER:?SILO_ROOT_USER 必须在 .env 中设置}
+      AWS_SECRET_ACCESS_KEY: ${SILO_ROOT_PASSWORD:?SILO_ROOT_PASSWORD 必须在 .env 中设置}
+      SSL_CERT_FILE: /certs/rootCA.pem
+      AWS_CA_BUNDLE: /certs/rootCA.pem
     volumes:
       - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - ./certs/runtime:/certs:ro
       - thanos_compact_data:/var/thanos/compact
     user: "root"
     command:
@@ -1170,10 +1253,10 @@ services:
     container_name: iboot-mysql-exporter
     profiles: ["observability"]
     environment:
-      MYSQLD_EXPORTER_PASSWORD: root
+      MYSQLD_EXPORTER_PASSWORD: ${MYSQL_EXPORTER_PASSWORD:?MYSQL_EXPORTER_PASSWORD 必须在 .env 中设置}
     command:
       - '--mysqld.address=mysql:3306'
-      - '--mysqld.username=root'
+      - '--mysqld.username=${MYSQL_EXPORTER_USER:-iboot_exporter}'
     restart: unless-stopped
     networks:
       - data
@@ -1187,6 +1270,7 @@ services:
     profiles: ["observability"]
     environment:
       REDIS_ADDR: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD 必须在 .env 中设置}
     restart: unless-stopped
     networks:
       - data

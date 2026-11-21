@@ -19,7 +19,9 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_ADDR:localhost:8848}
+        server-addr: ${NACOS_SERVER_ADDR:https://localhost:8848}
+        username: ${NACOS_USERNAME:}
+        password: ${NACOS_PASSWORD:}
         enabled: ${IBOOT_NACOS_ENABLED:true}
         fail-fast: false
         # 服务实例以 HTTPS 暴露；网关的负载均衡据此选择 https
@@ -29,7 +31,9 @@ spring:
         # 实例地址使用服务名，证书 SAN 不依赖容器 IP；宿主机开发由 dev-init.sh 覆盖为 127.0.0.1
         ip: ${IBOOT_NACOS_DISCOVERY_IP:${spring.application.name}}
       config:
-        server-addr: ${NACOS_ADDR:localhost:8848}
+        server-addr: ${NACOS_SERVER_ADDR:https://localhost:8848}
+        username: ${NACOS_USERNAME:}
+        password: ${NACOS_PASSWORD:}
         file-extension: yml
         enabled: ${IBOOT_NACOS_ENABLED:true}
   threads:
@@ -43,8 +47,8 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
       # 独立 schema：审计表归本服务所有，其他服务跨 schema 写入
       url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?${MYSQL_SSL_PARAMS:sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8}
-      username: ${MYSQL_USERNAME:root}
-      password: ${MYSQL_PASSWORD:root}
+      username: ${MYSQL_USERNAME:iboot_app}
+      password: ${MYSQL_PASSWORD:}
       initial-size: 2
       min-idle: 2
       max-active: 10

@@ -2,7 +2,9 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_ADDR:localhost:8848}
+        server-addr: ${NACOS_SERVER_ADDR:https://localhost:8848}
+        username: ${NACOS_USERNAME:}
+        password: ${NACOS_PASSWORD:}
         # 服务实例以 HTTPS 暴露；lb:// 负载均衡据此选择 https
         secure: true
         metadata:
