@@ -75,55 +75,77 @@ nginx:stable-alpine3.23
 
 ## 服务与端口
 
-| 服务 | 端口 | 说明 |
-|---|---|---|
-| iboot-portal | 80 / 443 | 前端门户（nginx）；80 只做 HTTPS 重定向 |
-| iboot-gateway | 8088 | 统一网关（HTTPS，内部地址） |
-| iboot-system | 8080 | 系统服务 |
-| iboot-ai | 8081 | AI 服务 |
-| iboot-file | 8082 | 文件服务 |
-| iboot-auth | 8083 | 认证服务 |
-| iboot-notify | 8084 | 通知服务 |
-| iboot-job | 8085 | 调度与备份 |
-| iboot-workflow | 8086 | 审批工作流 |
-| iboot-monitor | 8087 | 监控与日志查询 |
-| iboot-ops | 8089 | 运维控制台（SBA） |
-| sentinel-dashboard | 8858 | Sentinel 治理控制台；本地必选，生产必须认证 |
-| seata-server | 8091 | Seata TC（AT 全局事务）；file store，本地镜像无 7091 控制台 |
-| mysql | 3306 | MySQL 8.4（只接受 TLS） |
-| redis | 6379 | Redis 8（只监听 TLS 端口） |
-| silo | 9000/9001 | 对象存储与控制台（HTTPS） |
-| elasticsearch | 9200 | 检索（HTTPS + 认证） |
-| kafka | 9092 / 29092 | 日志缓冲（KRaft 单节点，全部监听 SSL；宿主机用 29092） |
-| logstash | 5044 | 集中日志处理，Kafka 输入与 ES 输出均走 TLS |
-| nacos | 8848/8849（HTTPS）/9848（gRPC TLS） | 注册/配置中心，控制台在 8849 |
-| tempo | 4317/4318/3200 | 链路追踪 |
+Docker 全量部署中，宿主机只有门户 `80/443` 绑定全部网卡；其它容器发布端口只绑定 `127.0.0.1`，供宿主机开发、调试与回归使用。未列出的内部端口不发布到宿主机。宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程不在容器发布面内。
+
+| 服务 | 宿主机端口 | 绑定 | 说明 |
+|---|---|---|---|
+| iboot-portal | 80 / 443 | `0.0.0.0` | 前端门户（nginx）；80 只做 HTTPS 重定向，唯一公开入口 |
+| iboot-gateway | 8088 | `127.0.0.1` | 统一网关（HTTPS，内部地址） |
+| iboot-system | 8080 | `127.0.0.1` | 系统服务 |
+| iboot-ai | 8081 | `127.0.0.1` | AI 服务 |
+| iboot-file | 8082 | `127.0.0.1` | 文件服务 |
+| iboot-auth | 8083 | `127.0.0.1` | 认证服务 |
+| iboot-notify | 8084 | `127.0.0.1` | 通知服务 |
+| iboot-job | 8085 | `127.0.0.1` | 调度与备份 |
+| iboot-workflow | 8086 | `127.0.0.1` | 审批工作流 |
+| iboot-monitor | 8087 | `127.0.0.1` | 监控与日志查询 |
+| iboot-ops | 8089 | `127.0.0.1` | 运维控制台（SBA） |
+| sentinel-dashboard | 8858 | `127.0.0.1` | Sentinel 治理控制台；本地必选，生产必须认证 |
+| seata-server | 8091 | `127.0.0.1` | Seata TC（AT 全局事务）；file store，本地镜像无 7091 控制台 |
+| mysql | 3306 | `127.0.0.1` | MySQL 8.4（只接受 TLS） |
+| redis | 6379 | `127.0.0.1` | Redis 8（只监听 TLS 端口） |
+| silo | 9000/9001 | `127.0.0.1` | 对象存储与控制台（HTTPS） |
+| elasticsearch | 9200 | `127.0.0.1` | 检索（HTTPS + 认证） |
+| kafka | 29092 | `127.0.0.1` | 宿主机监听；容器内使用 `kafka:9092`，全部监听 SSL |
+| rocketmq-proxy | 18080/18081 | `127.0.0.1` | gRPC/HTTP；当前只提供加密通道，边界见 [docs/27 §9.4](<../docs/27-TLS 与零信任操作指南.md>) |
+| logstash | — | — | 不发布；在编排网络内从 Kafka 读取并写入 Elasticsearch |
+| nacos | 8848/9848/8849 | `127.0.0.1` | HTTPS API / gRPC TLS / 控制台（8849） |
+| tempo | 4317/4318/3200 | `127.0.0.1` | OTLP gRPC / OTLP HTTP / UI |
 
 APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 
-| 服务 | 端口 | 说明 |
-|---|---|---|
-| skywalking-oap | 11800 / 12800 / 17128 | gRPC 上报 / GraphQL 查询 / admin |
-| skywalking-ui | 18082 | Horizon UI；默认账号仅限本机 |
-| skywalking-banyandb | 17913 | 存储；与 OAP 11.0.0 的 server API 0.11 精确配套 |
+| 服务 | 宿主机端口 | 绑定 | 说明 |
+|---|---|---|---|
+| skywalking-oap | 11800 / 12800 | `127.0.0.1` | gRPC 上报 / GraphQL 查询；admin 端口不发布 |
+| skywalking-ui | 18082 | `127.0.0.1` | Horizon UI；默认账号仅限本机 |
+| skywalking-banyandb | — | — | 不发布；与 OAP 11.0.0 的 server API 0.11 精确配套 |
 
 > 业务服务的 Agent 不由 compose 注入：当前开发路径是宿主机 `scripts/dev-init.sh` 在 `IBOOT_SKYWALKING_ENABLED=true` 时追加 `-javaagent`。容器化后如何挂载 Agent 留到阶段 3 再评估。
 
 可观测性组件（默认启动；`up core` 可只启动核心）：
 
-| 服务 | 端口 |
-|---|---|
-| prometheus | 9090 |
-| grafana | 3000 |
-| alertmanager | 9093 |
-| kibana | 5601 |
-| thanos-sidecar / store / query / compact | 19191 / 19193 / 19192 / 19194 |
-| mysql/redis/node/elasticsearch exporter | 9104 / 9121 / 9100 / 9114 |
+| 服务 | 宿主机端口 | 绑定 | 说明 |
+|---|---|---|---|
+| prometheus | 9090 | `127.0.0.1` | 抓取目标按运行模式选择配置，见下文 |
+| grafana | 3000 | `127.0.0.1` | 看板 |
+| alertmanager | 9093 | `127.0.0.1` | 告警 |
+| kibana | 5601 | `127.0.0.1` | 日志检索 UI |
+| thanos-sidecar / store / query / compact | — | — | 不发布；Grafana 经 `obs` 网络访问 `thanos-query` |
+| mysql/redis/node/elasticsearch exporter | — | — | 不发布；Prometheus 在编排网络内抓取 |
 
-图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS）。
+图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS），均绑定 `127.0.0.1`。
 
 B2 起 8080–8089 只提供 HTTPS；MySQL/Redis/Silo/Neo4j 只接受 TLS。B3 起 ES、Kafka、
 Logstash 也只接受 TLS；Nacos 在 B4 起同样只接受 TLS。
+
+### 网络分段
+
+compose 定义 `edge` / `app` / `data` / `obs` 四个网络：
+
+| 网络 | 成员 | 边界 |
+|---|---|---|
+| `edge` | 门户、网关、系统服务、运维控制台 | 门户唯一入口；门户不加入数据面网络 |
+| `app` | 网关、系统服务、运维控制台、八个业务服务、Prometheus | 服务间调用与指标抓取 |
+| `data` | 中间件、全部业务与初始化任务、Logstash/Kibana/Grafana/Thanos/exporter | 业务与数据面通信 |
+| `obs` | Prometheus、Grafana、Alertmanager、Thanos、SkyWalking、exporter | 可观测组件内部通信 |
+
+门户容器无法解析或连接 `mysql`、`redis`、`elasticsearch`、`nacos`；这是可回归验证的边界，
+不是仅靠文档约定。暴露面检查见 [`scripts/regress/exposure.sh`](../scripts/regress/exposure.sh)。
+
+Prometheus 有两种配置：Docker 全量部署与直接 `docker compose up` 默认用
+`prometheus.docker.yml`（服务名目标）；`dev-init.sh` 在宿主机开发模式覆盖为
+`prometheus.yml`（`host.docker.internal` 目标）。两者都通过 `/certs/rootCA.pem`
+以 HTTPS 抓取服务指标。
 
 ## 启动顺序
 

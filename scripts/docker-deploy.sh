@@ -174,6 +174,8 @@ up() {
   ensure_base_images
   build_images
 
+  # Docker 全量部署下服务端口只绑定回环地址，Prometheus 必须经编排网络按服务名抓取。
+  export IBOOT_PROMETHEUS_CONFIG="${IBOOT_PROMETHEUS_CONFIG:-prometheus.docker.yml}"
   log "启动服务（范围：$scope）..."
   "${COMPOSE[@]}" "${PROFILE_ARGS[@]}" up -d \
     || fail "容器创建/启动失败，请先查看：${COMPOSE[*]} ps"

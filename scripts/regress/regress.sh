@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 回归总入口：契约快照 → 路由覆盖 → 公开/内部/日志 TLS → 冒烟 → 权限矩阵。
+# 回归总入口：契约快照 → 路由覆盖 → 公开/内部/日志 TLS → 暴露面 → 冒烟 → 权限矩阵。
 #
 # 用法：
 #   regress.sh              与 golden 基线比对，出现漂移即失败
@@ -109,10 +109,13 @@ printf '\n===== 5. 内部 TLS =====\n'
 printf '\n===== 6. 日志与检索 TLS =====\n'
 "$HERE/log-search-tls.sh" || fail "日志与检索 TLS 检查未通过"
 
-printf '\n===== 7. 冒烟 =====\n'
+printf '\n===== 7. 暴露面与网络分段 =====\n'
+"$HERE/exposure.sh" || fail "暴露面检查未通过"
+
+printf '\n===== 8. 冒烟 =====\n'
 "$HERE/smoke.sh" || fail "冒烟未通过"
 
-printf '\n===== 8. 权限矩阵 =====\n'
+printf '\n===== 9. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 
 printf '\n'

@@ -6,12 +6,13 @@
 
 ## 1. 范围与边界
 
-当前阶段只加密**浏览器/CLI → 门户**这一段（L1 边缘 TLS）：
+当前已完成的加密范围：
 
-- 门户是唯一公开入口；宿主机开发用 Vite，Docker 全量部署用门户 nginx 443。
-- 门户到网关、服务间、MySQL/Redis/Silo 等数据面仍是明文，属于 B2/B3。
-- 网关 `localhost:8088` 保留为内部/调试地址，**不再是浏览器或 CLI 的客户端入口**。
-- 不引入本机服务网格、SPIFFE/OPA；mTLS 与工作负载身份留给 B4/B5。
+- 浏览器/CLI → 门户（L1 边缘 TLS）；门户 → 网关；服务间调用与 JWKS。
+- MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面。
+- Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 只有加密通道（见 §9.4）。
+- Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
+- 不引入本机服务网格、SPIFFE/OPA；每服务工作负载身份与完整 mTLS 留给 B5。
 
 ## 2. 证书
 
@@ -341,5 +342,61 @@ scripts/regress/internal-tls.sh
 - B2：门户到网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j 的 TLS；已完成。
 - B3：ES/Kafka/Logstash 日志与检索面 TLS；已完成；RocketMQ 只作为加密通道，
   不能宣称服务端认证或强制 TLS。
-- B4：Nacos TLS 已完成；端口收敛、网络分段、中间件认证与每服务账号仍待做。
-- B5：mTLS、工作负载身份、RocketMQ 强制 TLS 与 Seata 例外决策。
+- B4：Nacos TLS 已完成；端口收敛与网络分段由 `restrict-internal-exposure` 完成；
+  中间件账号鉴权（Nacos 认证、MySQL/Redis/Silo 最小权限账号）仍待做。
+- B5：服务间 mTLS、每服务工作负载身份、RocketMQ 强制 TLS 与 Seata 例外决策。
+
+## 12. 暴露面与网络分段
+
+TLS 只保护「连上之后」的通道，不回答「谁允许连接」。本节把容器部署的宿主机暴露面与
+容器网络边界固化下来；它仍不等于零信任身份，服务端目前不校验调用方身份（B5）。
+
+### 12.1 宿主机端口
+
+| 类别 | 端口 | 绑定 |
+|---|---|---|
+| 门户 | 80 / 443 | `0.0.0.0` |
+| 网关与业务服务 | 8080–8089 | `127.0.0.1` |
+| 数据面 | 3306、6379、9000/9001、9200、8848/9848/8849、8091、29092、18080/18081 | `127.0.0.1` |
+| 治理与可观测 UI | 8858、9090、3000、9093、5601、18082、3200 | `127.0.0.1` |
+| 图数据库（`graph` profile） | 7474、7687 | `127.0.0.1` |
+| Logstash、Thanos、exporter、SkyWalking Banyandb/OAP admin | 不发布 | — |
+
+Docker 的端口发布会绕过常见主机防火墙，因此不能采用「先发布到 `0.0.0.0` 再靠 ufw 限制」
+的做法。需要从其它主机临时访问时，用 SSH 端口转发，不修改 compose。
+
+### 12.2 容器网络
+
+| 网络 | 成员 | 边界 |
+|---|---|---|
+| `edge` | 门户、网关、系统服务、运维控制台 | 门户唯一入口 |
+| `app` | 网关、系统服务、运维控制台、八个业务服务、Prometheus | 服务间调用与指标抓取 |
+| `data` | 中间件、业务与初始化任务、Logstash/Kibana/Grafana/Thanos/exporter | 数据面 |
+| `obs` | Prometheus、Grafana、Alertmanager、Thanos、SkyWalking、exporter | 可观测组件 |
+
+门户只加入 `edge`，无法解析 `mysql`、`redis`、`elasticsearch`、`nacos`。这不是文档约定，
+而是由回归脚本检查的运行时边界。
+
+### 12.3 验收
+
+```bash
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/exposure.sh
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
+```
+
+`exposure.sh` 分三层：
+
+1. 用 `docker inspect` 断言只有门户 80/443 绑定 `0.0.0.0`，其余已发布端口绑定 `127.0.0.1`，
+   并断言已移除的映射不再出现。
+2. 用宿主机非回环 IPv4 连接 3306、6379、9200、8848、29092，必须失败；回环地址必须成功。
+3. 容器矩阵：门户访问网关成功，访问 MySQL/Redis/ES/Nacos 失败；业务服务访问 MySQL/Nacos 成功。
+   容器未运行时明确跳过矩阵，但端口检查仍执行。
+
+### 12.4 边界
+
+- 只收敛 Docker 编排发布的网络暴露面，不改变各组件内部的 TLS 配置。
+- 宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程仍按 Spring Boot 默认监听所有网卡；
+  它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B4.3/B5 收敛。
+- 中间件仍是共享账号；Nacos 用户认证未开启；服务间没有客户端证书。
+- 可观测 UI 仍为 HTTP，但只监听回环地址。
+- 完整身份与工作负载 mTLS 属于 B5，不在本节的宣称范围内。

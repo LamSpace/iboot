@@ -306,6 +306,8 @@ wait_healthy() {
 
 start_middleware() {
     log '=== 1. 中间件 ==='
+    # Prometheus 在宿主机开发模式抓取宿主进程；Docker 全量部署的默认配置按服务名抓取。
+    export IBOOT_PROMETHEUS_CONFIG="${IBOOT_PROMETHEUS_CONFIG:-prometheus.yml}"
     local infra=(mysql redis silo silo-init elasticsearch elasticsearch-init seata-server)
     if rocketmq_enabled; then
         infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init)
