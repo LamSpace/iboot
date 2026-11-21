@@ -13,7 +13,12 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 SVC_CACERT="${SVC_CACERT:-${REG_CACERT:-}}"
 CERT_DIR="${IBOOT_TLS_CERT_DIR:-$(cd "$HERE/../.." && pwd)/docker/certs}"
-PORTS=(8080 8081 8082 8083 8084 8085 8086 8087 8088 8089)
+PORTS=(8080 8081 8082 8083 8084 8085 8086 8087 8088)
+if [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; then
+    PORTS+=(8089)
+else
+    reg_log "  iboot-ops 已关闭，跳过 8089"
+fi
 EMPTY_CA="$(mktemp)"
 cleanup() { rm -f "$EMPTY_CA"; }
 trap cleanup EXIT
