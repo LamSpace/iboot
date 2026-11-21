@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 回归总入口：契约快照 → 路由覆盖 → 公开/内部/日志 TLS → 中间件认证 → 暴露面 → 冒烟 → 权限矩阵。
+# 回归总入口：契约快照 → 路由覆盖 → 公开/内部/日志 TLS → 证书到期 → 中间件认证 →
+# 暴露面 → 明文审计 → 冒烟 → 权限矩阵。
 #
 # 用法：
 #   regress.sh              与 golden 基线比对，出现漂移即失败
@@ -106,19 +107,25 @@ printf '\n===== 4. TLS 公开入口 =====\n'
 printf '\n===== 5. 内部 TLS =====\n'
 "$HERE/internal-tls.sh" || fail "内部 TLS 检查未通过"
 
-printf '\n===== 6. 中间件认证 =====\n'
+printf '\n===== 6. 证书到期监控 =====\n'
+"$HERE/tls-cert-monitor.sh" || fail "证书到期监控检查未通过"
+
+printf '\n===== 7. 中间件认证 =====\n'
 "$HERE/middleware-auth.sh" || fail "中间件认证检查未通过"
 
-printf '\n===== 7. 日志与检索 TLS =====\n'
+printf '\n===== 8. 日志与检索 TLS =====\n'
 "$HERE/log-search-tls.sh" || fail "日志与检索 TLS 检查未通过"
 
-printf '\n===== 8. 暴露面与网络分段 =====\n'
+printf '\n===== 9. 暴露面与网络分段 =====\n'
 "$HERE/exposure.sh" || fail "暴露面检查未通过"
 
-printf '\n===== 9. 冒烟 =====\n'
+printf '\n===== 10. 明文默认地址审计 =====\n'
+"$HERE/plaintext-audit.sh" || fail "明文默认地址审计未通过"
+
+printf '\n===== 11. 冒烟 =====\n'
 "$HERE/smoke.sh" || fail "冒烟未通过"
 
-printf '\n===== 10. 权限矩阵 =====\n'
+printf '\n===== 12. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 
 printf '\n'

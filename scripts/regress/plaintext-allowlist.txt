@@ -1,0 +1,15 @@
+# 明文允许清单
+#
+# 每一行是配置中允许出现的明文片段；扫描命中时按子串匹配。
+# 新增条目必须说明用途、不可加密原因与后续处理去向；清单只允许缩小。
+#
+# 用途：链路追踪 OTLP 默认地址；已知边界，待单独变更做 Tempo TLS
+TEMPO_OTLP:http://localhost:4318
+# 用途：CLI 本机回环 OAuth 回调；RFC 8252 要求 loopback，不承载业务数据
+IBOOT_AUTH_CLI_REDIRECT_URI:http://127.0.0.1:8765
+# 用途：Grafana → Tempo 查询；已知边界，与 Tempo TLS 同批处理
+url: http://tempo:3200
+# 用途：Grafana → Prometheus 查询；Prometheus 本地只提供 HTTP
+url: http://prometheus:9090
+# 用途：Grafana → Thanos Query 查询；本地 Thanos 只提供 HTTP
+url: http://thanos-query:19192

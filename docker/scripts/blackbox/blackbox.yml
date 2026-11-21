@@ -1,0 +1,10 @@
+# Blackbox 探针配置：只做 TLS 握手并暴露证书到期时间。
+modules:
+  https_cert:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      preferred_ip_protocol: ip4
+      tls_config:
+        ca_file: /certs/rootCA.pem

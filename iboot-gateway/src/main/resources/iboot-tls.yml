@@ -12,7 +12,7 @@ spring:
     restclient:
       ssl:
         bundle: iboot
-    username: ${ELASTICSEARCH_USERNAME:elastic}
+    username: ${ELASTICSEARCH_USERNAME:}
     password: ${ELASTICSEARCH_PASSWORD:}
   ssl:
     bundle:

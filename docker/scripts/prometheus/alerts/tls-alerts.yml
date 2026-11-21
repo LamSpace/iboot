@@ -1,0 +1,29 @@
+groups:
+  - name: tls-alerts
+    rules:
+      - alert: TlsCertificateExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry{job="tls-cert"} - time()) / 86400 < 30
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS 证书将在 30 天内过期"
+          description: "叶子证书剩余 {{ $value | printf \"%.1f\" }} 天，执行 scripts/tls-init.sh --force 重签并重启服务"
+
+      - alert: TlsCertificateExpiringCritical
+        expr: (probe_ssl_earliest_cert_expiry{job="tls-cert"} - time()) / 86400 < 7
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "TLS 证书将在 7 天内过期"
+          description: "叶子证书剩余 {{ $value | printf \"%.1f\" }} 天，必须立即轮换"
+
+      - alert: TlsCertificateProbeFailed
+        expr: probe_success{job="tls-cert"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS 证书探针失败"
+          description: "blackbox 无法完成到 {{ $labels.instance }} 的 TLS 握手，证书到期检测不可见"

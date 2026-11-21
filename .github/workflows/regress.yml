@@ -99,9 +99,15 @@ jobs:
           IBOOT_BACKUP_ENCRYPTION_KEY: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY='
           # ES 只接受 HTTPS + 认证；Kibana 9.5 不能使用 elastic 超级用户。
           ELASTIC_PASSWORD: iboot-dev-elastic
-          ELASTICSEARCH_USERNAME: elastic
-          ELASTICSEARCH_PASSWORD: iboot-dev-elastic
+          ES_AI_PASSWORD: iboot-dev-es-ai
+          ES_NOTIFY_PASSWORD: iboot-dev-es-notify
+          ES_MONITOR_PASSWORD: iboot-dev-es-monitor
+          ES_LOGSTASH_PASSWORD: iboot-dev-es-logstash
+          ES_GRAFANA_PASSWORD: iboot-dev-es-grafana
+          ES_EXPORTER_PASSWORD: iboot-dev-es-exporter
           KIBANA_SYSTEM_PASSWORD: iboot-dev-kibana
+          GRAFANA_ADMIN_PASSWORD: iboot-dev-grafana
+          NEO4J_PASSWORD: iboot-dev-neo4j
           # 中间件账号鉴权：CI 在干净环境使用独立开发口令。
           MYSQL_ROOT_PASSWORD: root
           MYSQL_APP_PASSWORD: iboot-dev-app
@@ -137,7 +143,13 @@ jobs:
           REG_OIDC_REDIRECT: https://localhost:5173/callback
           REG_CACERT: ${{ github.workspace }}/docker/certs/ca/rootCA.pem
           ELASTIC_PASSWORD: iboot-dev-elastic
-          ELASTICSEARCH_PASSWORD: iboot-dev-elastic
+          ES_AI_PASSWORD: iboot-dev-es-ai
+          ES_NOTIFY_PASSWORD: iboot-dev-es-notify
+          ES_MONITOR_PASSWORD: iboot-dev-es-monitor
+          ES_LOGSTASH_PASSWORD: iboot-dev-es-logstash
+          ES_GRAFANA_PASSWORD: iboot-dev-es-grafana
+          ES_EXPORTER_PASSWORD: iboot-dev-es-exporter
+          NEO4J_PASSWORD: iboot-dev-neo4j
           # 与启动步骤一致：CI 使用同一组中间件账号。
           MYSQL_ROOT_PASSWORD: root
           MYSQL_APP_PASSWORD: iboot-dev-app

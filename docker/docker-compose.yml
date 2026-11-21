@@ -19,8 +19,19 @@ x-app-env: &app-env
   REDIS_PORT: "6379"
   REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD 必须在 .env 中设置}
   ELASTICSEARCH_URIS: https://elasticsearch:9200
-  ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME:-elastic}
-  ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
+  # 默认不注入任何 ES 凭据；使用 ES 的服务在自身 environment 中覆盖专用账号。
+  ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME:-}
+  ELASTICSEARCH_PASSWORD: ${ELASTICSEARCH_PASSWORD:-}
+  # .env 会整文件进入容器；显式清空超级用户口令，避免绕过专用账号。
+  ELASTIC_PASSWORD: ""
+  MYSQL_ROOT_PASSWORD: ""
+  # 各服务只保留自己的 ES 口令，其余账号口令不进入业务容器。
+  ES_AI_PASSWORD: ""
+  ES_NOTIFY_PASSWORD: ""
+  ES_MONITOR_PASSWORD: ""
+  ES_LOGSTASH_PASSWORD: ""
+  ES_GRAFANA_PASSWORD: ""
+  ES_EXPORTER_PASSWORD: ""
   NACOS_ADDR: nacos:8848
   # 客户端 HTTP 鉴权登录必须走 HTTPS；gRPC 仍按端口偏移连接 9848。
   NACOS_SERVER_ADDR: https://nacos:8848
@@ -62,6 +73,8 @@ x-app-env: &app-env
   IBOOT_FILE_SILO_SECRET_KEY: ${SILO_ROOT_PASSWORD:?SILO_ROOT_PASSWORD 必须在 .env 中设置}
   IBOOT_FILE_SILO_PUBLIC_ENDPOINT: ${IBOOT_FILE_SILO_PUBLIC_ENDPOINT:-https://localhost:9000}
   IBOOT_AI_GRAPH_URI: bolt+s://neo4j:7687
+  # 图数据库与 Neo4j 服务端共用同一组受管口令；缺失时编排直接失败。
+  IBOOT_AI_GRAPH_PASSWORD: ${NEO4J_PASSWORD:?NEO4J_PASSWORD 必须在 .env 中设置}
   MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
 
 x-app-common: &app-common
@@ -116,6 +129,8 @@ services:
       mysql-users-init:
         condition: service_completed_successfully
       nacos-init:
+        condition: service_completed_successfully
+      es-users-init:
         condition: service_completed_successfully
     restart: "no"
     networks:
@@ -201,6 +216,8 @@ services:
       JAVA_OPTIONS: "-Xms512m -Xmx1024m --enable-native-access=ALL-UNNAMED"
       # 开启智能体与智能体管理页面所需的控制器
       IBOOT_AI_AGENT_ENABLED: "true"
+      ELASTICSEARCH_USERNAME: iboot_ai
+      ELASTICSEARCH_PASSWORD: ${ES_AI_PASSWORD:?ES_AI_PASSWORD 必须在 .env 中设置}
     volumes:
       - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
@@ -299,6 +316,8 @@ services:
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+      ELASTICSEARCH_USERNAME: iboot_notify
+      ELASTICSEARCH_PASSWORD: ${ES_NOTIFY_PASSWORD:?ES_NOTIFY_PASSWORD 必须在 .env 中设置}
     volumes:
       - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
@@ -393,6 +412,8 @@ services:
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+      ELASTICSEARCH_USERNAME: iboot_monitor
+      ELASTICSEARCH_PASSWORD: ${ES_MONITOR_PASSWORD:?ES_MONITOR_PASSWORD 必须在 .env 中设置}
     volumes:
       - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
@@ -670,6 +691,31 @@ services:
     networks:
       - data
 
+  # 一次性创建 Elasticsearch 最小权限账号；依赖 ES 的服务与日志链路在它完成后启动。
+  es-users-init:
+    image: elasticsearch:9.5.5
+    container_name: iboot-es-users-init
+    entrypoint: ["/bin/bash", "/scripts/es-users-init.sh"]
+    environment:
+      ES_HOST: elasticsearch
+      ES_PORT: "9200"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
+      ES_AI_PASSWORD: ${ES_AI_PASSWORD:?ES_AI_PASSWORD 必须在 .env 中设置}
+      ES_NOTIFY_PASSWORD: ${ES_NOTIFY_PASSWORD:?ES_NOTIFY_PASSWORD 必须在 .env 中设置}
+      ES_MONITOR_PASSWORD: ${ES_MONITOR_PASSWORD:?ES_MONITOR_PASSWORD 必须在 .env 中设置}
+      ES_LOGSTASH_PASSWORD: ${ES_LOGSTASH_PASSWORD:?ES_LOGSTASH_PASSWORD 必须在 .env 中设置}
+      ES_GRAFANA_PASSWORD: ${ES_GRAFANA_PASSWORD:?ES_GRAFANA_PASSWORD 必须在 .env 中设置}
+      ES_EXPORTER_PASSWORD: ${ES_EXPORTER_PASSWORD:?ES_EXPORTER_PASSWORD 必须在 .env 中设置}
+    volumes:
+      - ../scripts/es-users-init.sh:/scripts/es-users-init.sh:ro
+      - ./certs/runtime:/certs:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - data
+
   logstash:
     image: logstash:9.5.5
     container_name: iboot-logstash
@@ -679,13 +725,15 @@ services:
     environment:
       - LS_JAVA_OPTS=-Xms256m -Xmx256m
       - XPACK_MONITORING_ENABLED=false
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
+      - ES_LOGSTASH_PASSWORD=${ES_LOGSTASH_PASSWORD:?ES_LOGSTASH_PASSWORD 必须在 .env 中设置}
     restart: unless-stopped
     networks:
       - data
     depends_on:
       elasticsearch:
         condition: service_healthy
+      es-users-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9600/_node/stats/pipelines?pretty | grep -q 'main' || exit 1"]
       interval: 15s
@@ -1062,6 +1110,21 @@ services:
       start_period: 30s
 
   # ==================== 监控组件（observability profile） ====================
+  # 证书探针：用本地 CA 完成 TLS 握手，暴露 probe_ssl_earliest_cert_expiry。
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.27.0
+    container_name: iboot-blackbox-exporter
+    profiles: ["observability"]
+    volumes:
+      - ./scripts/blackbox/blackbox.yml:/etc/blackbox/blackbox.yml:ro
+      - ./certs/runtime:/certs:ro
+    command:
+      - '--config.file=/etc/blackbox/blackbox.yml'
+    restart: unless-stopped
+    networks:
+      - app
+      - obs
+
   prometheus:
     image: prom/prometheus:v3.16.0
     container_name: iboot-prometheus
@@ -1104,19 +1167,23 @@ services:
       - ./certs/runtime:/certs:ro
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD 必须在 .env 中设置}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://localhost:3000
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
+      - ES_GRAFANA_PASSWORD=${ES_GRAFANA_PASSWORD:?ES_GRAFANA_PASSWORD 必须在 .env 中设置}
     restart: unless-stopped
     networks:
       - data
       - obs
     depends_on:
-      - prometheus
-      - thanos-query
+      prometheus:
+        condition: service_started
+      thanos-query:
+        condition: service_started
+      es-users-init:
+        condition: service_completed_successfully
 
   alertmanager:
     image: prom/alertmanager:v0.35.0
@@ -1300,7 +1367,7 @@ services:
     container_name: iboot-elasticsearch-exporter
     profiles: ["observability"]
     command:
-      - '--es.uri=https://elastic:${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}@elasticsearch:9200'
+      - '--es.uri=https://iboot_exporter:${ES_EXPORTER_PASSWORD:?ES_EXPORTER_PASSWORD 必须在 .env 中设置}@elasticsearch:9200'
       - '--es.ca=/certs/rootCA.pem'
       - '--es.all'
       - '--es.indices'
@@ -1313,6 +1380,8 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+      es-users-init:
+        condition: service_completed_successfully
 
   kibana:
     image: kibana:9.5.5
@@ -1335,6 +1404,8 @@ services:
         condition: service_healthy
       elasticsearch-init:
         condition: service_completed_successfully
+      es-users-init:
+        condition: service_completed_successfully
 
   # ==================== 知识图谱（graph profile） ====================
   neo4j:
@@ -1345,7 +1416,7 @@ services:
       - "127.0.0.1:7474:7474"
       - "127.0.0.1:7687:7687"
     environment:
-      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-iboot123456}
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:?NEO4J_PASSWORD 必须在 .env 中设置}
       # 受本机内存约束（R4）：堆与页缓存显式限制
       - NEO4J_server_memory_heap_initial__size=512m
       - NEO4J_server_memory_heap_max__size=512m
