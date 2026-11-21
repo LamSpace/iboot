@@ -44,7 +44,7 @@
 - [x] 6.1 宿主机模式执行完整回归，覆盖账号、TLS、证书、明文审计与既有业务用例；验证：`scripts/regress/regress.sh` 全部通过。
 - [x] 6.2 Docker 全量部署执行完整回归；验证：容器内账号、ES 写读、Grafana 只读、证书探针全部通过。
 - [x] 6.3 更新 `docs/27` 的 B4.4 小节与后续批次关系，说明 Tempo 明文链路仍是已登记边界；验证：文档章节与 proposal/design 的 Non-Goals 一致。
-- [ ] 6.4 更新 `.github/workflows/regress.yml` 的新增凭据与服务启动等待；验证：PR 的 CI 回归通过。
+- [x] 6.4 更新 `.github/workflows/regress.yml` 的新增凭据与服务启动等待；验证：PR 的 CI 回归通过。
 
 ## Workflow follow-up
 
