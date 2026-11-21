@@ -105,7 +105,7 @@ report_unhealthy() {
   while IFS='|' read -r name service state health; do
     [ -n "$service" ] || continue
     case "$service" in
-      mysql-users-init|nacos-init|db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init) continue ;;
+      mysql-users-init|nacos-init|db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init|es-users-init) continue ;;
     esac
     if [ "$state" != "running" ] || { [ -n "$health" ] && [ "$health" != "healthy" ]; }; then
       printf '\n--- %s（%s，health=%s）最近日志 ---\n' "$name" "$state" "${health:-none}" >&2
@@ -126,7 +126,7 @@ wait_ready() {
     while IFS='|' read -r name service state health; do
       [ -n "$service" ] || continue
       case "$service" in
-        mysql-users-init|nacos-init|db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init)
+        mysql-users-init|nacos-init|db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init|es-users-init)
           if [ "$state" = "exited" ]; then
             exitcode=$(docker inspect -f '{{.State.ExitCode}}' "$name" 2>/dev/null || echo 1)
             if [ "$exitcode" != "0" ]; then

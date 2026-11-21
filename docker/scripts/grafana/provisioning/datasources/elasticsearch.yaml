@@ -10,9 +10,9 @@ datasources:
     url: https://elasticsearch:9200
     isDefault: false
     basicAuth: true
-    basicAuthUser: elastic
+    basicAuthUser: iboot_grafana
     secureJsonData:
-      basicAuthPassword: ${ELASTIC_PASSWORD}
+      basicAuthPassword: ${ES_GRAFANA_PASSWORD}
       tlsCACert: $__file{/certs/rootCA.pem}
     jsonData:
       tlsAuthWithCACert: true

@@ -70,12 +70,17 @@ fi
 # 中间件账号鉴权：缺少凭据时不启动，避免回退到默认口令。
 for required in MYSQL_APP_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_EXPORTER_PASSWORD \
     REDIS_PASSWORD SILO_ROOT_USER SILO_ROOT_PASSWORD \
-    NACOS_USERNAME NACOS_PASSWORD NACOS_ADMIN_PASSWORD NACOS_AUTH_TOKEN; do
+    NACOS_USERNAME NACOS_PASSWORD NACOS_ADMIN_PASSWORD NACOS_AUTH_TOKEN \
+    NEO4J_PASSWORD ELASTIC_PASSWORD ES_AI_PASSWORD ES_NOTIFY_PASSWORD \
+    ES_MONITOR_PASSWORD ES_LOGSTASH_PASSWORD ES_GRAFANA_PASSWORD \
+    ES_EXPORTER_PASSWORD GRAFANA_ADMIN_PASSWORD; do
     [ -n "${!required:-}" ] || fail "缺少中间件凭据：$required（请检查根目录 .env）"
 done
 # 宿主机进程直接读 MYSQL_USERNAME/MYSQL_PASSWORD；仅填写 *_APP_* 时也保持一致。
 export MYSQL_USERNAME="${MYSQL_USERNAME:-${MYSQL_APP_USER:-iboot_app}}"
 export MYSQL_PASSWORD="${MYSQL_PASSWORD:-$MYSQL_APP_PASSWORD}"
+# 图数据库口令与 Neo4j 服务端同源，避免两处维护后漂移。
+export IBOOT_AI_GRAPH_PASSWORD="${IBOOT_AI_GRAPH_PASSWORD:-$NEO4J_PASSWORD}"
 
 # 运维控制台：默认开启，可通过 IBOOT_OPS_ENABLED=false 关闭以节省本机内存。
 ops_enabled() { [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; }
@@ -332,7 +337,7 @@ start_middleware() {
         # 显式列出 observability profile 中的服务，避免 compose 一并拉起应用容器与宿主机端口冲突。
         local observability=(prometheus grafana alertmanager thanos-sidecar thanos-store \
             thanos-query thanos-compact mysql-exporter redis-exporter node-exporter \
-            elasticsearch-exporter kibana)
+            elasticsearch-exporter kibana blackbox-exporter)
         "${COMPOSE[@]}" --profile observability up -d "${observability[@]}" > /dev/null \
             || fail '可观测平台启动失败'
     fi
@@ -348,6 +353,9 @@ start_middleware() {
     # 建库与建表统一由 iboot-db-init 完成，服务不再自带迁移。
 
     wait_es 180 || fail 'Elasticsearch 未就绪'
+    # 业务服务与日志链路只拿专用账号；超级用户只留在初始化任务里。
+    "${COMPOSE[@]}" run --rm --no-deps es-users-init >/dev/null \
+        || fail 'ES 账号初始化失败（es-users-init）'
     wait_http 'Silo' "$(service_scheme)://localhost:9000/minio/health/live" 120 || fail 'Silo 未就绪'
     # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。
     # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。
@@ -490,7 +498,23 @@ start_backend() {
                     "-Dskywalking.agent.sample_n_per_3_secs=-1"
                 )
             fi
-            nohup java "${java_opts[@]}" -jar "$name/target/$name-$VERSION.jar" > "$LOG_DIR/$name.log" 2>&1 &
+            local -a env_opts=(
+                -u ELASTIC_PASSWORD -u ES_AI_PASSWORD -u ES_NOTIFY_PASSWORD
+                -u ES_MONITOR_PASSWORD -u ES_LOGSTASH_PASSWORD
+                -u ES_GRAFANA_PASSWORD -u ES_EXPORTER_PASSWORD
+            )
+            case "$name" in
+                iboot-ai)
+                    env_opts+=(ELASTICSEARCH_USERNAME=iboot_ai "ELASTICSEARCH_PASSWORD=$ES_AI_PASSWORD")
+                    ;;
+                iboot-notify)
+                    env_opts+=(ELASTICSEARCH_USERNAME=iboot_notify "ELASTICSEARCH_PASSWORD=$ES_NOTIFY_PASSWORD")
+                    ;;
+                iboot-monitor)
+                    env_opts+=(ELASTICSEARCH_USERNAME=iboot_monitor "ELASTICSEARCH_PASSWORD=$ES_MONITOR_PASSWORD")
+                    ;;
+            esac
+            nohup env "${env_opts[@]}" java "${java_opts[@]}" -jar "$name/target/$name-$VERSION.jar" > "$LOG_DIR/$name.log" 2>&1 &
             echo $! > "$pidfile"
             log "  $name 启动中（pid $!，端口 $port）"
         fi

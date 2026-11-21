@@ -15,6 +15,22 @@ alerting:
             - alertmanager:9093
 
 scrape_configs:
+  # TLS 证书到期探针：共享叶子证书由任一服务端点即可反映到期时间。
+  - job_name: 'tls-cert'
+    metrics_path: '/probe'
+    params:
+      module: [https_cert]
+    static_configs:
+      - targets:
+          - 'https://iboot-system:8080/actuator/health'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 'blackbox-exporter:9115'
+
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']

@@ -343,7 +343,8 @@ scripts/regress/internal-tls.sh
 - B3：ES/Kafka/Logstash 日志与检索面 TLS；已完成；RocketMQ 只作为加密通道，
   不能宣称服务端认证或强制 TLS。
 - B4：Nacos TLS、端口收敛与网络分段已完成；中间件账号鉴权由 `harden-middleware-auth`
-  完成（MySQL/Redis/Silo/Nacos）。ES 应用账号、Sentinel 登录与每服务账号仍待后续批次。
+  完成（MySQL/Redis/Silo/Nacos）；默认值与运维收尾由 `harden-operational-defaults`
+  完成（ES 专用账号、Grafana/Neo4j 默认值、证书告警、明文审计）。
 - B5：服务间 mTLS、每服务工作负载身份、RocketMQ 强制 TLS 与 Seata 例外决策。
 
 ## 12. 暴露面与网络分段
@@ -416,6 +417,7 @@ B4.3 在 TLS 与网络边界之上补账号认证。它是**共享账号**方案
 | Redis | 默认用户 | 全部服务 | 正确口令后可用；口令由 `REDIS_PASSWORD` 注入 |
 | Silo | 根账号 | 服务、`silo-init`、Thanos | 由 `SILO_ROOT_USER/PASSWORD` 注入 |
 | Nacos | `iboot` | 服务注册/配置与管理脚本 | 配置读写；管理员 `nacos` 只用于初始化脚本 |
+| Neo4j | `neo4j` | AI 图能力 | 社区版单账号；口令由 `NEO4J_PASSWORD` 注入，缺失时编排失败 |
 
 ### 13.2 初始化
 
@@ -473,4 +475,72 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - Redis 使用单一受管口令，不是每服务 ACL 用户。
 - Silo 使用受管根凭据，尚未创建按桶授权的应用用户。
 - Nacos 控制台鉴权在本地保持关闭以支持门户内嵌；非本地必须开启，且门户不代填凭据。
-- ES 应用账号最小权限、Sentinel 控制台登录、Kafka SASL、RocketMQ ACL 与 Seata 认证不在本批次范围。
+- Neo4j 使用环境注入的单一账号；社区版不支持按服务划分用户，不能据此声称工作负载身份。
+- Neo4j 的 `NEO4J_AUTH` 只在空数据卷首次启动时生效。已有 `neo4j_data` 卷时，修改
+  `NEO4J_PASSWORD` 不会改数据库内口令，需先停止 Neo4j 后执行
+  `neo4j-admin dbms set-initial-password <新口令>`，或删除 graph profile 的数据卷重建
+  （图数据可由业务重新同步）。
+- ES 应用账号最小权限、Sentinel 控制台登录、Kafka SASL、RocketMQ ACL 与 Seata 认证不在 B4.3 范围。
+
+## 14. 默认值、账号与证书告警收尾（B4.4）
+
+B4.4 处理 B4.3 审计中剩下的默认值和运维缺口，不改变 TLS 拓扑。
+
+### 14.1 Elasticsearch 专用账号
+
+`es-users-init` 在 ES 健康后幂等创建六个账号，业务容器不再持有 `elastic` 口令：
+
+| 账号 | 用途 | 权限 |
+|---|---|---|
+| `iboot_ai` | AI 知识库 | `iboot-kb-chunk-*` 读写、建索引 |
+| `iboot_notify` | 通知内容索引 | `iboot-content-*` 读写、建索引 |
+| `iboot_monitor` | 运行日志查询 | `iboot-logs-*` 只读 |
+| `iboot_grafana` | Grafana 日志数据源 | `iboot-logs-*` 只读 |
+| `iboot_logstash` | 日志写入 | `iboot-logs-*` 写入、建索引 |
+| `iboot_exporter` | 指标导出 | 集群与索引只读监控 |
+
+- 口令由 `ES_*_PASSWORD` 注入；`ELASTIC_PASSWORD` 只进入 `es-users-init`、ES/Kibana
+  初始化与运维脚本。
+- 编排在业务服务中显式清空 `ELASTIC_PASSWORD` 与其它服务的 ES 口令，避免 `.env`
+  整文件挂载后越权可见。
+
+### 14.2 Grafana 与 Neo4j 默认值
+
+- Grafana 匿名角色从 `Admin` 降为 `Viewer`，管理员口令改为
+  `GRAFANA_ADMIN_PASSWORD` 必填；匿名用户不能改数据源或调用管理接口。
+  已有 `grafana_data` 卷时环境变量不会覆盖数据库中的旧管理员口令，需执行
+  `docker exec iboot-grafana grafana cli admin reset-admin-password <新口令>`。
+- Neo4j 口令改为 `NEO4J_PASSWORD` 必填，`.env.example` 只保留本地占位值。
+  已有数据卷的改口令方式见 §13.5。
+
+### 14.3 证书过期告警
+
+- `blackbox-exporter` 用本地 CA 探测 `iboot-system:8080`（宿主机模式经
+  `host.docker.internal`），暴露 `probe_ssl_earliest_cert_expiry`。
+- `tls-alerts` 规则：剩余 30 天 warning、7 天 critical、探针失败 warning。
+- 所有服务当前共用一张叶子证书，因此一个探针即可覆盖；B5 拆分证书后必须增加目标。
+
+验证：
+
+```bash
+scripts/regress/tls-cert-monitor.sh
+curl -s 'http://127.0.0.1:9090/api/v1/query?query=probe_ssl_earliest_cert_expiry{job="tls-cert"}'
+```
+
+### 14.4 明文默认地址审计
+
+`scripts/regress/plaintext-audit.sh` 扫描应用配置与 Grafana 数据源；命中 `http://`
+且未登记在 `scripts/regress/plaintext-allowlist.txt` 时失败。当前例外：
+
+- Tempo OTLP 默认地址与 Grafana→Tempo 数据源（待 `add-tempo-tls`）。
+- Grafana→Prometheus / Thanos（本地后端只提供 HTTP）。
+- CLI 回环 OAuth 回调（RFC 8252，不承载业务数据）。
+
+允许清单只允许缩小；新增条目必须在评审中说明用途、不可加密原因与后续处理去向。
+
+### 14.5 边界
+
+- Tempo OTLP/HTTP、Prometheus、Thanos 的明文链路仍未加密，属于已登记边界。
+- Grafana 匿名只读依赖 Viewer 角色；若 Explore 权限不可用，按 `design.md` 的退路处理，
+  不得回退匿名 Admin。
+- 本批次不包含服务间 mTLS、RocketMQ 强制 TLS、Seata 认证与 Kafka SASL。

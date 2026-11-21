@@ -225,7 +225,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 [docs/27](<../docs/27-TLS 与零信任操作指南.md>) 与
 [`scripts/regress/internal-tls.sh`](../scripts/regress/internal-tls.sh)。
 
-## 中间件账号（B4.3）
+## 中间件账号（B4.3 / B4.4）
 
 | 组件 | 账号 | 用途 |
 |---|---|---|
@@ -235,16 +235,26 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 | Redis | 默认用户 | 全部服务，`REDIS_PASSWORD` 认证 |
 | Silo | 根账号 | 服务、`silo-init`、Thanos |
 | Nacos | `iboot` | 服务注册/配置；管理员 `nacos` 仅初始化脚本使用 |
+| Neo4j | `neo4j` | AI 图能力；`NEO4J_PASSWORD` 必填，缺失时编排失败 |
+| ES | `iboot_ai` / `iboot_notify` | 知识库与内容索引读写，按索引前缀授权 |
+| ES | `iboot_monitor` / `iboot_grafana` | 日志索引只读 |
+| ES | `iboot_logstash` | 日志索引写入 |
+| ES | `iboot_exporter` | 集群与索引只读监控 |
+| ES | `elastic` | 仅 `es-users-init`、初始化与运维脚本 |
 
 - `.env` 必须提供 `MYSQL_ROOT_PASSWORD`、`MYSQL_APP_PASSWORD`、`MYSQL_EXPORTER_PASSWORD`、
   `REDIS_PASSWORD`、`SILO_ROOT_USER/PASSWORD`、`NACOS_USERNAME/PASSWORD`、
-  `NACOS_ADMIN_PASSWORD` 与 `NACOS_AUTH_TOKEN`。
-- `mysql-users-init` 与 `nacos-init` 是一次性任务；`db-init` 依赖它们完成后再迁移与启动服务。
+  `NACOS_ADMIN_PASSWORD`、`NACOS_AUTH_TOKEN`、`NEO4J_PASSWORD`、`ES_*_PASSWORD`
+  与 `GRAFANA_ADMIN_PASSWORD`。
+- `mysql-users-init`、`nacos-init` 与 `es-users-init` 是一次性任务；`db-init` 依赖它们完成后再
+  迁移与启动服务。
+- 业务服务只拿自己的 ES 账号口令；`ELASTIC_PASSWORD` 在业务容器中被显式清空。
 - Nacos 客户端必须使用 `NACOS_SERVER_ADDR=https://nacos:8848`；`NACOS_ADDR` 仍是脚本使用的
   `host:port`。
-- 本地控制台鉴权保持关闭以便门户内嵌；生产必须在 `docker-compose.prod.yml` 开启。
-- 验收：`scripts/regress/middleware-auth.sh`，覆盖 MySQL 越权、Redis 未认证、Silo 默认凭据
-  与 Nacos 匿名请求。
+- Grafana 匿名只读（Viewer），管理员口令来自 `GRAFANA_ADMIN_PASSWORD`；本地 Sentinel
+  保持关闭登录，生产必须在 `docker-compose.prod.yml` 开启。
+- 验收：`scripts/regress/middleware-auth.sh`，覆盖 MySQL 越权、Redis 未认证、Silo 默认凭据、
+  Nacos 匿名请求与 ES 各账号边界。
 
 ## Sentinel 治理
 

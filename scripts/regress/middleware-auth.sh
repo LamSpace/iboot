@@ -29,12 +29,27 @@ SILO_ROOT_USER="${SILO_ROOT_USER:-}"
 SILO_ROOT_PASSWORD="${SILO_ROOT_PASSWORD:-}"
 NACOS_USERNAME="${NACOS_USERNAME:-}"
 NACOS_PASSWORD="${NACOS_PASSWORD:-}"
+NEO4J_PASSWORD="${NEO4J_PASSWORD:-}"
+ES_AI_PASSWORD="${ES_AI_PASSWORD:-}"
+ES_NOTIFY_PASSWORD="${ES_NOTIFY_PASSWORD:-}"
+ES_MONITOR_PASSWORD="${ES_MONITOR_PASSWORD:-}"
+ES_LOGSTASH_PASSWORD="${ES_LOGSTASH_PASSWORD:-}"
+ES_GRAFANA_PASSWORD="${ES_GRAFANA_PASSWORD:-}"
+ES_EXPORTER_PASSWORD="${ES_EXPORTER_PASSWORD:-}"
 
 mysql_exec() {
     local user="$1" password="$2" sql="$3"
     docker exec -e MYSQL_PWD="$password" iboot-mysql mysql \
         --protocol=TCP --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem \
         -h127.0.0.1 -u"$user" -e "$sql" 2>/dev/null
+}
+
+ES_CA=/usr/share/elasticsearch/config/certs/rootCA.pem
+es_status() {
+    local user="$1" password="$2" method="$3" path="$4"
+    docker exec iboot-elasticsearch \
+        curl -sS --cacert "$ES_CA" -u "$user:$password" -X "$method" \
+        -o /dev/null -w '%{http_code}' "https://localhost:9200$path" 2>/dev/null
 }
 
 reg_log "== 1. MySQL 最小权限 =="
@@ -121,6 +136,98 @@ if env -u NACOS_USERNAME -u NACOS_PASSWORD "$ROOT/scripts/sentinel-init.sh" >/de
     reg_fail "sentinel-init 缺少凭据仍成功"
 else
     reg_pass "sentinel-init 缺少凭据时失败"
+fi
+
+reg_log "== 5. Elasticsearch 最小权限 =="
+if [ "$(es_status iboot_ai "$ES_AI_PASSWORD" GET '/iboot-kb-chunk-*/_search')" = "200" ]; then
+    reg_pass "AI 账号可读取知识库索引"
+else
+    reg_fail "AI 账号无法读取知识库索引"
+fi
+if [ "$(es_status iboot_ai "$ES_AI_PASSWORD" GET '/_security/user')" = "403" ]; then
+    reg_pass "AI 账号不能访问安全接口"
+else
+    reg_fail "AI 账号越权访问安全接口"
+fi
+if [ "$(es_status iboot_ai "$ES_AI_PASSWORD" PUT '/iboot-kb-chunk-auth-probe')" = "200" ]; then
+    reg_pass "AI 账号可创建知识库索引"
+    es_status elastic "$ELASTIC_PASSWORD" DELETE '/iboot-kb-chunk-auth-probe' >/dev/null
+else
+    reg_fail "AI 账号无法创建知识库索引"
+fi
+if [ "$(es_status iboot_notify "$ES_NOTIFY_PASSWORD" PUT '/iboot-content-auth-probe')" = "200" ]; then
+    reg_pass "通知账号可创建内容索引"
+    es_status elastic "$ELASTIC_PASSWORD" DELETE '/iboot-content-auth-probe' >/dev/null
+else
+    reg_fail "通知账号无法创建内容索引"
+fi
+if [ "$(es_status iboot_monitor "$ES_MONITOR_PASSWORD" GET '/iboot-logs-*/_search')" = "200" ]; then
+    reg_pass "监控账号可读取日志索引"
+else
+    reg_fail "监控账号无法读取日志索引"
+fi
+if [ "$(es_status iboot_monitor "$ES_MONITOR_PASSWORD" PUT '/iboot-logs-auth-probe')" = "403" ]; then
+    reg_pass "监控账号不能写入日志索引"
+else
+    reg_fail "监控账号越权写入日志索引"
+fi
+if [ "$(es_status iboot_grafana "$ES_GRAFANA_PASSWORD" GET '/iboot-logs-*/_search')" = "200" ]; then
+    reg_pass "Grafana 账号可读取日志索引"
+else
+    reg_fail "Grafana 账号无法读取日志索引"
+fi
+if [ "$(es_status iboot_logstash "$ES_LOGSTASH_PASSWORD" PUT '/iboot-logs-auth-probe')" = "200" ]; then
+    reg_pass "Logstash 账号可写入日志索引"
+    es_status elastic "$ELASTIC_PASSWORD" DELETE '/iboot-logs-auth-probe' >/dev/null
+else
+    reg_fail "Logstash 账号无法写入日志索引"
+fi
+if [ "$(es_status iboot_exporter "$ES_EXPORTER_PASSWORD" GET '/_cluster/health')" = "200" ]; then
+    reg_pass "ES exporter 账号可读取集群健康"
+else
+    reg_fail "ES exporter 账号无法读取集群健康"
+fi
+if [ "$(es_status iboot_exporter "$ES_EXPORTER_PASSWORD" PUT '/iboot-exporter-auth-probe')" = "403" ]; then
+    reg_pass "ES exporter 账号不能创建索引"
+else
+    reg_fail "ES exporter 账号越权创建索引"
+fi
+if [ "$(es_status iboot_monitor wrong-password GET '/_cluster/health')" = "401" ]; then
+    reg_pass "ES 错误口令被拒绝"
+else
+    reg_fail "ES 错误口令未被拒绝"
+fi
+ai_env=""
+if docker inspect iboot-ai >/dev/null 2>&1; then
+    ai_env="$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' iboot-ai 2>/dev/null || true)"
+else
+    ai_pid="$(pgrep -f '^java .*iboot-ai-1\.0\.0\.jar' | head -1 || true)"
+    [ -n "$ai_pid" ] && ai_env="$(tr '\0' '\n' < "/proc/$ai_pid/environ" 2>/dev/null || true)"
+fi
+if printf '%s' "$ai_env" | grep -q '^ELASTIC_PASSWORD=..'; then
+    reg_fail "业务服务仍注入了 elastic 超级用户口令"
+else
+    reg_pass "业务服务没有 elastic 超级用户口令"
+fi
+
+reg_log "== 6. Neo4j 凭据 =="
+neo4j_running="$(docker inspect -f '{{.State.Running}}' iboot-neo4j 2>/dev/null || true)"
+if [ "$neo4j_running" = "true" ]; then
+    # cypher-shell 没有 CA 参数；+ssc 表示加密并接受自签证书，CA 校验由内部 TLS 回归覆盖。
+    if docker exec iboot-neo4j /var/lib/neo4j/bin/cypher-shell \
+        -a bolt+ssc://localhost:7687 -u neo4j -p "$NEO4J_PASSWORD" "RETURN 1" >/dev/null 2>&1; then
+        reg_pass "Neo4j 受管口令可连接"
+    else
+        reg_fail "Neo4j 受管口令无法连接"
+    fi
+    if docker exec iboot-neo4j /var/lib/neo4j/bin/cypher-shell \
+        -a bolt+ssc://localhost:7687 -u neo4j -p iboot123456 "RETURN 1" >/dev/null 2>&1; then
+        reg_fail "Neo4j 旧默认口令仍可连接"
+    else
+        reg_pass "Neo4j 旧默认口令被拒绝"
+    fi
+else
+    reg_log "  [SKIP] Neo4j 未运行（graph profile 未启用）"
 fi
 
 reg_summary
