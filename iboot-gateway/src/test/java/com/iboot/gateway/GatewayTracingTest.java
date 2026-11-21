@@ -40,7 +40,7 @@ import java.nio.charset.StandardCharsets;
  * @since 1.0.0
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {"management.tracing.sampling.probability=1.0", "server.ssl.enabled=false"})
+        properties = {"management.tracing.sampling.probability=1.0", "server.ssl.enabled=false", "spring.cloud.nacos.discovery.enabled=false", "spring.cloud.nacos.config.enabled=false", "spring.cloud.sentinel.eager=false", "spring.cloud.sentinel.datasource.flow.nacos.data-id="})
 @Import(GatewayTracingTest.ObservationCapture.class)
 class GatewayTracingTest {
 

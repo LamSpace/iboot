@@ -27,7 +27,7 @@ import java.nio.charset.StandardCharsets;
  * @since 1.0.0
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {"management.tracing.export.enabled=false", "server.ssl.enabled=false"})
+        properties = {"management.tracing.export.enabled=false", "server.ssl.enabled=false", "spring.cloud.nacos.discovery.enabled=false", "spring.cloud.nacos.config.enabled=false", "spring.cloud.sentinel.eager=false", "spring.cloud.sentinel.datasource.flow.nacos.data-id="})
 class GatewayTracingDisabledTest {
 
     private static HttpServer adminStub;

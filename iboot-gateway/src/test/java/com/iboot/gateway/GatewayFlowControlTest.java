@@ -49,7 +49,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "server.ssl.enabled=false")
+        properties = {"server.ssl.enabled=false", "spring.cloud.nacos.discovery.enabled=false", "spring.cloud.nacos.config.enabled=false", "spring.cloud.sentinel.eager=false", "spring.cloud.sentinel.datasource.flow.nacos.data-id="})
 class GatewayFlowControlTest {
 
     private static HttpServer notifyStub;
