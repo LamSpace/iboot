@@ -96,7 +96,7 @@ nginx:stable-alpine3.23
 | elasticsearch | 9200 | 检索（HTTPS + 认证） |
 | kafka | 9092 / 29092 | 日志缓冲（KRaft 单节点，全部监听 SSL；宿主机用 29092） |
 | logstash | 5044 | 集中日志处理，Kafka 输入与 ES 输出均走 TLS |
-| nacos | 8848/8849/9848/9849 | 注册/配置中心，控制台在 8849 |
+| nacos | 8848/8849（HTTPS）/9848（gRPC TLS） | 注册/配置中心，控制台在 8849 |
 | tempo | 4317/4318/3200 | 链路追踪 |
 
 APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
@@ -123,7 +123,7 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS）。
 
 B2 起 8080–8089 只提供 HTTPS；MySQL/Redis/Silo/Neo4j 只接受 TLS。B3 起 ES、Kafka、
-Logstash 也只接受 TLS；Nacos 仍为明文，属于后续范围。
+Logstash 也只接受 TLS；Nacos 在 B4 起同样只接受 TLS。
 
 ## 启动顺序
 
@@ -162,6 +162,8 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   `scripts/tls-init.sh` 生成到 `docker/certs/`，compose 只读挂载到门户容器。
 - ES 证书必须挂到 `/usr/share/elasticsearch/config/certs`（9.5 entitlement 限制）；
   Kafka keystore 与密码文件挂到 `/etc/kafka/secrets`。
+- Nacos 挂载 `./certs/runtime:/certs:ro`，使用 `nacos-keystore.p12` 启用 HTTPS；
+  gRPC TLS 与客户端证书由 `JAVA_TOOL_OPTIONS` 中的 `nacos.remote.*.rpc.tls.*` 系统属性开启。
 - `.env` 必须提供 `ELASTIC_PASSWORD` 与 `KIBANA_SYSTEM_PASSWORD`；Kibana 9.5 不能使用
   `elastic` 超级用户，`elasticsearch-init` 会幂等同步 `kibana_system` 密码。
 - 认证服务的签名密钥通过 `IBOOT_AUTH_JWK_FILE=/app/keys/iboot-auth-jwk.json` 写入
@@ -193,7 +195,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   使用 `server.ssl`；`JAVA_TOOL_OPTIONS` 注入 PKCS12 信任库。
 - MySQL 以 `--require_secure_transport=ON` 启动；Redis 只监听 TLS 端口；Silo 以
   `--certs-dir /certs` 启动；Neo4j 的 `graph` profile 启用 Bolt TLS。
-- 数据面健康检查使用本地 CA；ES/Kafka/Logstash 只接受 TLS，Nacos 仍为明文。
+- 数据面健康检查使用本地 CA；ES/Kafka/Logstash/Nacos 只接受 TLS。
 - `iboot-auth`、服务间与 JWKS 地址均为 `https://`；Nacos 实例以 `secure=true` 注册。
 - 回滚使用上一版镜像/compose，不提供运行期明文回退。
 
@@ -217,8 +219,8 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - **宿主机 Vite 开发**：两个控制台都关闭登录，门户直接内嵌；Nacos 经 Vite 的
   `/nacos-console` 代理访问。
 - **Docker 全栈**：门户由 nginx 提供，不代理 Nacos 控制台，因此 compose 用
-  `SYS_NACOS_CONSOLE_URL=http://localhost:8849` 与 `SYS_NACOS_CONSOLE_EMBED=false`
-  覆盖 `sys_config` 中的开发默认值，页面显示说明卡并跳转到 `http://localhost:8849`。
+  `SYS_NACOS_CONSOLE_URL=https://localhost:8849` 与 `SYS_NACOS_CONSOLE_EMBED=false`
+  覆盖 `sys_config` 中的开发默认值，页面显示说明卡并跳转到 `https://localhost:8849`。
   这两个值可在根目录 `.env` 中用同名变量覆盖。
 - **非本地部署**：保持控制台鉴权，在参数配置中把 `sys.nacos.console.embed` 与
   `sys.sentinel.dashboard.embed` 改为 `false`，Nacos 地址改为内网绝对地址；生产

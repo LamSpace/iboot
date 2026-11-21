@@ -16,8 +16,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NACOS_ADDR="${NACOS_ADDR:-localhost:8848}"
-NACOS_URL="http://${NACOS_ADDR}/nacos/v3/admin/cs/config"
-NACOS_READ_URL="http://${NACOS_ADDR}/nacos/v3/client/cs/config"
+NACOS_SCHEME="${NACOS_SCHEME:-https}"
+NACOS_CACERT="${NACOS_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
+NACOS_URL="${NACOS_SCHEME}://${NACOS_ADDR}/nacos/v3/admin/cs/config"
+NACOS_READ_URL="${NACOS_SCHEME}://${NACOS_ADDR}/nacos/v3/client/cs/config"
+CURL_OPTS=(-sS)
+if [ "$NACOS_SCHEME" = "https" ]; then
+    CURL_OPTS+=(--cacert "$NACOS_CACERT")
+fi
 NAMESPACE="${NACOS_NAMESPACE:-public}"
 GROUP="${SENTINEL_GROUP:-SENTINEL_GROUP}"
 RULES_DIR="$ROOT/docker/sentinel/rules"
@@ -35,7 +41,7 @@ publish() {
     local data_id="$1" file="$2" remote local_content
     [ -f "$file" ] || fail "规则文件不存在：$file"
 
-    curl -sf -X POST "$NACOS_URL" \
+    curl "${CURL_OPTS[@]}" -f -X POST "$NACOS_URL" \
         --data-urlencode "dataId=$data_id" \
         --data-urlencode "groupName=$GROUP" \
         --data-urlencode "namespaceId=$NAMESPACE" \
@@ -47,7 +53,7 @@ publish() {
         local_content="$(cat "$file")"
         remote=''
         for _ in $(seq 1 10); do
-            remote="$(curl -sf "$NACOS_READ_URL?dataId=$data_id&groupName=$GROUP&namespaceId=$NAMESPACE" \
+            remote="$(curl "${CURL_OPTS[@]}" -f "$NACOS_READ_URL?dataId=$data_id&groupName=$GROUP&namespaceId=$NAMESPACE" \
                 | jq -r '.data.content // empty' || true)"
             [ "$remote" = "$local_content" ] && break
             sleep 0.3

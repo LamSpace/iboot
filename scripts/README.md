@@ -48,7 +48,7 @@ CI 的 PR 任务只跑路由覆盖、构建与网关测试；定时 / 手动任�
 |---|---|
 | `regress/regress.sh` | 总入口：契约快照 → 路径守恒 → 路由覆盖 → 公开 TLS → 内部 TLS → 日志与检索 TLS → 冒烟 → 权限矩阵；`--refresh` 重建基线。 |
 | `regress/tls.sh` | 公开入口 TLS：证书、协议版本、明文重定向、issuer 与回调一致性。 |
-| `regress/internal-tls.sh` | 内部 TLS：服务端口、网关→服务、JWKS、MySQL/Redis/Silo/Neo4j 的负向矩阵。 |
+| `regress/internal-tls.sh` | 内部 TLS：服务端口、网关→服务、JWKS、MySQL/Redis/Silo/Nacos/Neo4j 的负向矩阵。 |
 | `regress/log-search-tls.sh` | 日志与检索 TLS：ES HTTPS/认证、Kafka SSL-only、Logstash 全链路、RocketMQ 加密边界。 |
 | `regress/api-snapshot.sh` | 导出服务的 OpenAPI 快照并归一化为基线。 |
 | `regress/equivalence.sh` | 迁移期一次性校验：迁移前从旧实现录制，迁移后经网关重放比对。 |

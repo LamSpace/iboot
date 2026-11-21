@@ -12,6 +12,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib.sh"
 
 SVC_CACERT="${SVC_CACERT:-${REG_CACERT:-}}"
+CERT_DIR="${IBOOT_TLS_CERT_DIR:-$(cd "$HERE/../.." && pwd)/docker/certs}"
 PORTS=(8080 8081 8082 8083 8084 8085 8086 8087 8088 8089)
 EMPTY_CA="$(mktemp)"
 cleanup() { rm -f "$EMPTY_CA"; }
@@ -123,7 +124,46 @@ else
     reg_pass "Silo 不接受明文（HTTP ${silo_plain:-无响应}）"
 fi
 
-reg_log "== 8. Neo4j（可选） =="
+reg_log "== 8. Nacos TLS =="
+nacos_status="$(svc_curl -o /dev/null -w '%{http_code}' "https://localhost:8848/nacos/v1/ns/operator/metrics" 2>/dev/null || true)"
+if [ "$nacos_status" = "200" ]; then
+    reg_pass "Nacos 8848 HTTPS API 返回 200"
+else
+    reg_fail "Nacos 8848 HTTPS API 失败（HTTP ${nacos_status:-无响应}）"
+fi
+nacos_console="$(svc_curl -o /dev/null -w '%{http_code}' "https://localhost:8849/v3/console/health/readiness" 2>/dev/null || true)"
+if [ "$nacos_console" = "200" ]; then
+    reg_pass "Nacos 控制台 HTTPS 返回 200"
+else
+    reg_fail "Nacos 控制台 HTTPS 失败（HTTP ${nacos_console:-无响应}）"
+fi
+nacos_no_ca="$(curl -sS -o /dev/null -w '%{http_code}' "https://localhost:8848/nacos/v1/ns/operator/metrics" 2>/dev/null || true)"
+if [ "$nacos_no_ca" = "200" ]; then
+    reg_fail "Nacos 8848 不带 CA 仍可访问"
+else
+    reg_pass "Nacos 8848 不带 CA 时证书校验失败（${nacos_no_ca:-无响应}）"
+fi
+for port in 8848 8849; do
+    plain="$(curl -sS -o /dev/null -w '%{http_code}' "http://localhost:$port/" 2>/dev/null || true)"
+    if [ "$plain" = "200" ]; then
+        reg_fail "Nacos 端口 $port 仍接受明文 HTTP"
+    else
+        reg_pass "Nacos 端口 $port 拒绝明文（HTTP ${plain:-无响应}）"
+    fi
+done
+if echo | timeout 10 openssl s_client -connect localhost:9848 -tls1_2 -CAfile "$SVC_CACERT" \
+    -cert "$CERT_DIR/portal.pem" -key "$CERT_DIR/portal-key.pem" 2>&1 | grep -q "Verify return code: 0"; then
+    reg_pass "Nacos gRPC 9848 接受带客户端证书的 TLS 1.2"
+else
+    reg_fail "Nacos gRPC 9848 双向 TLS 握手失败"
+fi
+if echo | timeout 10 openssl s_client -connect localhost:9848 -tls1_2 -CAfile "$SVC_CACERT" 2>&1 | grep -q "Verify return code: 0"; then
+    reg_fail "Nacos gRPC 9848 未要求客户端证书"
+else
+    reg_pass "Nacos gRPC 9848 拒绝无客户端证书的连接"
+fi
+
+reg_log "== 9. Neo4j（可选） =="
 if docker inspect iboot-neo4j >/dev/null 2>&1; then
     if echo | timeout 10 openssl s_client -connect localhost:7687 -tls1_2 -CAfile "$SVC_CACERT" >/dev/null 2>&1; then
         reg_pass "Neo4j Bolt 端口接受 TLS"

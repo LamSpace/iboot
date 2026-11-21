@@ -217,7 +217,7 @@ MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root \
 - 前端开发地址：<https://localhost:5173>，API 经 Vite 反代到网关 `8088`；浏览器需信任本地 CA
 - 网关健康检查：<http://localhost:8088/actuator/health>（内部地址，不是客户端入口）
 - Sentinel Dashboard：<http://localhost:8858>（本地开发必选，生产需认证）
-- Nacos 控制台：<http://localhost:8849/next/>（本地开发默认关闭控制台登录）
+- Nacos 控制台：<https://localhost:8849/next/>（本地开发默认关闭控制台登录）
 - 门户“微服务治理”：登录后访问 <https://localhost:5173/dashboard/nacos> 与 <https://localhost:5173/dashboard/sentinel>
 - 证书、信任与排障见 [docs/27](<./docs/27-TLS 与零信任操作指南.md>)
 - 默认管理员：`admin` / `admin123456`（baseline 种子数据，首次登录后请立即修改）
