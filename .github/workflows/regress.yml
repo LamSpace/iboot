@@ -118,6 +118,8 @@ jobs:
           REG_CACERT: ${{ github.workspace }}/docker/certs/ca/rootCA.pem
           ELASTIC_PASSWORD: iboot-dev-elastic
           ELASTICSEARCH_PASSWORD: iboot-dev-elastic
+          # 与启动步骤一致：CI 不启动 iboot-ops，内部 TLS 不再检查 8089。
+          IBOOT_OPS_ENABLED: 'false'
         run: bash scripts/regress/regress.sh
 
       - name: TLS 公开入口检查
