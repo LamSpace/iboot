@@ -30,6 +30,7 @@ RUNTIME_DIR="$CERT_DIR/runtime"
 KAFKA_KEYSTORE="$RUNTIME_DIR/kafka-keystore.p12"
 KAFKA_KEY_PASSWORD_FILE="$RUNTIME_DIR/kafka-key-password"
 KAFKA_KEYSTORE_PASSWORD_FILE="$RUNTIME_DIR/kafka-keystore-password"
+NACOS_KEYSTORE="$RUNTIME_DIR/nacos-keystore.p12"
 KAFKA_STORE_PASS="changeit"
 
 # 叶子证书覆盖宿主机、Docker 主机名与全部服务名；B2 可直接复用同一份信任链。
@@ -104,10 +105,20 @@ ensure_runtime_copies() {
         -passout "pass:$KAFKA_STORE_PASS"
     printf '%s' "$KAFKA_STORE_PASS" > "$KAFKA_KEY_PASSWORD_FILE"
     printf '%s' "$KAFKA_STORE_PASS" > "$KAFKA_KEYSTORE_PASSWORD_FILE"
+    # Nacos 使用 Spring Boot server.ssl，需要 PKCS12 keystore
+    rm -f "$NACOS_KEYSTORE"
+    openssl pkcs12 -export \
+        -in "$CERT_FILE" \
+        -inkey "$KEY_FILE" \
+        -certfile "$ROOT_CA" \
+        -name nacos \
+        -out "$NACOS_KEYSTORE" \
+        -passout "pass:$KAFKA_STORE_PASS"
     chmod 644 "$RUNTIME_DIR/portal.pem" "$RUNTIME_DIR/portal-key.pem" \
         "$RUNTIME_DIR/rootCA.pem" "$RUNTIME_DIR/truststore.p12" \
         "$RUNTIME_DIR/public.crt" "$RUNTIME_DIR/private.key" \
-        "$KAFKA_KEYSTORE" "$KAFKA_KEY_PASSWORD_FILE" "$KAFKA_KEYSTORE_PASSWORD_FILE"
+        "$KAFKA_KEYSTORE" "$KAFKA_KEY_PASSWORD_FILE" "$KAFKA_KEYSTORE_PASSWORD_FILE" \
+        "$NACOS_KEYSTORE"
     chmod 755 "$RUNTIME_DIR/ca"
     chmod 644 "$RUNTIME_DIR/ca/rootCA.pem"
 }
@@ -162,6 +173,7 @@ log "  PEM CA     $ROOT_CA"
 log "  Java 信任库 $TRUSTSTORE"
 log "  容器副本   $RUNTIME_DIR（私钥为容器用户可读的 0644）"
 log "  Kafka keystore $KAFKA_KEYSTORE"
+log "  Nacos keystore $NACOS_KEYSTORE"
 log ""
 log "浏览器信任（一次性，可能需要管理员权限）："
 log "  CAROOT=$CAROOT $MKCERT -install"

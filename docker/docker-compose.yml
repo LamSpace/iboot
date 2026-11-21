@@ -43,7 +43,7 @@ x-app-env: &app-env
   # 内部 TLS：证书目录与 JVM 信任库（Druid/MinIO/Neo4j 等非 Spring 客户端也使用）
   IBOOT_TLS_CERT_DIR: /certs
   IBOOT_INTERNAL_TLS_ENABLED: "true"
-  JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
+  JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dnacos.remote.client.rpc.tls.enable=true -Dnacos.remote.client.rpc.tls.trustCollectionChainPath=file:/certs/ca/rootCA.pem -Dnacos.remote.client.rpc.tls.trustAll=false -Dnacos.remote.client.rpc.tls.mutualAuth=true -Dnacos.remote.client.rpc.tls.certChainFile=file:/certs/portal.pem -Dnacos.remote.client.rpc.tls.certPrivateKey=file:/certs/portal-key.pem"
   IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-proxy:8081
   IBOOT_ROCKETMQ_SSL_ENABLED: "true"
   IBOOT_AI_SILO_ENDPOINT: https://silo:9000
@@ -121,7 +121,7 @@ services:
       JAVA_OPTIONS: "-Xms512m -Xmx1024m --enable-native-access=ALL-UNNAMED"
       # 门户 nginx 不代理 Nacos 控制台，容器部署固定为跳转模式；地址取浏览器可达的宿主机端口。
       # 这两个环境变量覆盖 sys_config 中的开发默认值，宿主机 Vite 开发不受影响。
-      SYS_NACOS_CONSOLE_URL: ${SYS_NACOS_CONSOLE_URL:-http://localhost:8849}
+      SYS_NACOS_CONSOLE_URL: ${SYS_NACOS_CONSOLE_URL:-https://localhost:8849}
       SYS_NACOS_CONSOLE_EMBED: ${SYS_NACOS_CONSOLE_EMBED:-false}
     volumes:
       - ./certs/runtime:/certs:ro
@@ -647,7 +647,6 @@ services:
     ports:
       - "8848:8848"
       - "9848:9848"
-      - "9849:9849"
       - "8849:8080"
     environment:
       - MODE=standalone
@@ -662,11 +661,20 @@ services:
       - JVM_XMS=512m
       - JVM_XMX=512m
       - JVM_XMN=256m
+      # Nacos 3.3：HTTP/控制台走 Spring Boot server.ssl，gRPC 单独启用 TLS
+      - SERVER_SSL_ENABLED=true
+      - SERVER_SSL_KEY_STORE=file:/certs/nacos-keystore.p12
+      - SERVER_SSL_KEY_STORE_PASSWORD=changeit
+      - SERVER_SSL_KEY_STORE_TYPE=PKCS12
+      # Nacos 的 gRPC TLS 属性需要以 JVM 系统属性注入；纯环境变量名无法映射 camelCase
+      - JAVA_TOOL_OPTIONS=-Dnacos.remote.server.rpc.tls.enableTls=true -Dnacos.remote.server.rpc.tls.certChainFile=file:/certs/portal.pem -Dnacos.remote.server.rpc.tls.certPrivateKey=file:/certs/portal-key.pem -Dnacos.remote.server.rpc.tls.mutualAuthEnable=true -Dnacos.remote.server.rpc.tls.trustCollectionCertFile=file:/certs/rootCA.pem
+    volumes:
+      - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
       - iboot-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v3/console/health/readiness || exit 1"]
+      test: ["CMD-SHELL", "curl -sf --cacert /certs/rootCA.pem https://localhost:8080/v3/console/health/readiness || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

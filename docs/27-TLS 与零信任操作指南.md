@@ -223,7 +223,7 @@ MySQL cipher、Redis/Silo 明文拒绝与 Neo4j（运行 graph profile 时）。
 
 ### 8.5 边界与回退
 
-- Nacos 注册/配置中心仍为 HTTP；B2 不宣称完整零信任。
+- Nacos 的 TLS 在 B4 单独完成，见第 10 节；B2 本身不宣称完整零信任。
 - **不提供运行期内部明文回退**：`IBOOT_INTERNAL_TLS_ENABLED=false` 会让
   `dev-init.sh` 在启动前失败。内网半开 TLS 会同时破坏服务间、JWKS 与数据面，
   定位成本高于直接回退。
@@ -303,9 +303,43 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 `docker exec iboot-elasticsearch bin/elasticsearch-reset-password -u elastic` 或重建本地卷。
 Kafka 回到 PLAINTEXT 需要重建 broker 容器；不存在运行时自动明文回退开关。
 
-## 10. 与后续批次的关系
+## 10. Nacos TLS（B4）
 
-- B2：门户到网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j 的 TLS；已完成，Nacos 仍是明文。
+Nacos 3.3 的 HTTP API、控制台与 gRPC 通道已切到 TLS；gRPC 进一步要求客户端证书（mTLS）。
+
+- `tls-init.sh` 生成 `runtime/nacos-keystore.p12`，compose 挂载到 `/certs`。
+- HTTP/控制台通过 Spring Boot `server.ssl` 启用 HTTPS；gRPC 通过 JVM 系统属性启用 TLS：
+  `nacos.remote.server.rpc.tls.enableTls=true` 等。纯环境变量无法映射 camelCase，必须用
+  `JAVA_TOOL_OPTIONS` 或 `application.properties`。
+- 客户端在 JVM 启动前注入：
+  `-Dnacos.remote.client.rpc.tls.enable=true`、
+  `-Dnacos.remote.client.rpc.tls.trustCollectionChainPath=file:<cert-dir>/ca/rootCA.pem`、
+  `-Dnacos.remote.client.rpc.tls.trustAll=false`、
+  `-Dnacos.remote.client.rpc.tls.mutualAuth=true`、
+  `-Dnacos.remote.client.rpc.tls.certChainFile=file:<cert-dir>/portal.pem`、
+  `-Dnacos.remote.client.rpc.tls.certPrivateKey=file:<cert-dir>/portal-key.pem`；
+  `serverAddr` 仍为 `host:8848`。
+- gRPC 端口偏移保持不变：8848 → 9848；9849 是集群内部端口，不映射宿主机。
+- 门户 Vite 的 `/nacos-console` 代理、`sentinel-init.sh`、`dev-init.sh` 健康检查与 Docker
+  控制台 URL 都改为 HTTPS + 本地 CA。
+- Nacos 用户认证与鉴权仍关闭；gRPC 已启用 mTLS，但所有服务共用同一张客户端证书，每服务身份留待 B5。
+
+验证：
+
+```bash
+curl --cacert docker/certs/ca/rootCA.pem https://localhost:8848/nacos/v1/ns/operator/metrics
+curl --cacert docker/certs/ca/rootCA.pem https://localhost:8849/v3/console/health/readiness
+echo | openssl s_client -connect localhost:9848 -tls1_2 -CAfile docker/certs/ca/rootCA.pem \
+  -cert docker/certs/portal.pem -key docker/certs/portal-key.pem
+scripts/regress/internal-tls.sh
+```
+
+回滚：恢复上一版 compose/镜像与 Nacos 明文配置；不存在运行时明文回退开关。
+
+## 11. 与后续批次的关系
+
+- B2：门户到网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j 的 TLS；已完成。
 - B3：ES/Kafka/Logstash 日志与检索面 TLS；已完成；RocketMQ 只作为加密通道，
   不能宣称服务端认证或强制 TLS。
-- B4/B5：mTLS、工作负载身份、端口收敛与网络分段；Seata 无原生 TLS，需要单独决策。
+- B4：Nacos TLS 已完成；端口收敛、网络分段、中间件认证与每服务账号仍待做。
+- B5：mTLS、工作负载身份、RocketMQ 强制 TLS 与 Seata 例外决策。

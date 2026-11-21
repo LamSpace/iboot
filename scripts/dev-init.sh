@@ -339,7 +339,7 @@ start_middleware() {
     wait_http 'Silo' "$(service_scheme)://localhost:9000/minio/health/live" 120 || fail 'Silo 未就绪'
     # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。
     # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。
-    wait_http 'Nacos' 'http://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'
+    wait_http 'Nacos' 'https://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'
     wait_http 'Sentinel Dashboard' 'http://localhost:8858/' 120 || fail 'Sentinel Dashboard 未就绪'
     # 审批通过依赖全局事务协调器；必须在 workflow/system 启动前就绪
     wait_healthy 'Seata Server' iboot-seata-server 60 || fail 'Seata Server 未就绪'
@@ -452,6 +452,12 @@ start_backend() {
                     "-Djavax.net.ssl.trustStore=$cert_dir/truststore.p12"
                     "-Djavax.net.ssl.trustStorePassword=changeit"
                     "-Djavax.net.ssl.trustStoreType=PKCS12"
+                    "-Dnacos.remote.client.rpc.tls.enable=true"
+                    "-Dnacos.remote.client.rpc.tls.trustCollectionChainPath=file:$cert_dir/ca/rootCA.pem"
+                    "-Dnacos.remote.client.rpc.tls.trustAll=false"
+                    "-Dnacos.remote.client.rpc.tls.mutualAuth=true"
+                    "-Dnacos.remote.client.rpc.tls.certChainFile=file:$cert_dir/portal.pem"
+                    "-Dnacos.remote.client.rpc.tls.certPrivateKey=file:$cert_dir/portal-key.pem"
                 )
             else
                 java_opts+=("--server.ssl.enabled=false")
@@ -584,7 +590,7 @@ case "$ACTION" in
             log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 $(service_scheme)://localhost:8088，系统服务 $(service_scheme)://localhost:8080，AI $(service_scheme)://localhost:8081，认证 $(service_scheme)://localhost:8083，Sentinel Dashboard http://localhost:8858（运维控制台已关闭）"
         fi
         log '登录账号 admin / admin123456'
-        log '服务治理控制台：Nacos http://localhost:8849/next/，Sentinel http://localhost:8858；门户“微服务治理”菜单提供内嵌入口'
+        log '服务治理控制台：Nacos https://localhost:8849/next/，Sentinel http://localhost:8858；门户“微服务治理”菜单提供内嵌入口'
         if observability_enabled; then
             log '可观测平台：Grafana http://localhost:3000，Prometheus http://localhost:9090，Kibana http://localhost:5601，Alertmanager http://localhost:9093'
         fi

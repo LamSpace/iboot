@@ -76,7 +76,7 @@ export default defineConfig(({ command }) => ({
       // Nacos 控制台只在本地开发内嵌：代理到控制台 SPA 与 /v3 API，
       // 并删除 X-Frame-Options（Nacos 的 GET 文档响应带 DENY）。
       '/nacos-console': {
-        target: 'http://localhost:8849',
+        target: 'https://localhost:8849',
         changeOrigin: true,
         ws: true,
         rewrite: (path) =>
