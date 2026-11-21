@@ -59,7 +59,8 @@ x-app-common: &app-common
     - ../.env
   restart: unless-stopped
   networks:
-    - iboot-network
+    - app
+    - data
 
 x-app-healthcheck: &app-healthcheck
   interval: 15s
@@ -103,7 +104,7 @@ services:
         condition: service_healthy
     restart: "no"
     networks:
-      - iboot-network
+      - data
 
   # ==================== 应用服务 ====================
   iboot-system:
@@ -115,7 +116,7 @@ services:
         MODULE: iboot-system
         PORT: "8080"
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms512m -Xmx1024m --enable-native-access=ALL-UNNAMED"
@@ -131,6 +132,10 @@ services:
       <<: *app-healthcheck
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
       start_period: 120s
+    networks:
+      - edge
+      - app
+      - data
     depends_on:
       mysql:
         condition: service_healthy
@@ -152,7 +157,7 @@ services:
         MODULE: iboot-ai
         PORT: "8081"
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms512m -Xmx1024m --enable-native-access=ALL-UNNAMED"
@@ -188,7 +193,7 @@ services:
         MODULE: iboot-file
         PORT: "8082"
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -220,7 +225,7 @@ services:
         MODULE: iboot-auth
         PORT: "8083"
     ports:
-      - "8083:8083"
+      - "127.0.0.1:8083:8083"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -252,7 +257,7 @@ services:
         MODULE: iboot-notify
         PORT: "8084"
     ports:
-      - "8084:8084"
+      - "127.0.0.1:8084:8084"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -283,7 +288,7 @@ services:
         MODULE: iboot-job
         PORT: "8085"
     ports:
-      - "8085:8085"
+      - "127.0.0.1:8085:8085"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -317,7 +322,7 @@ services:
         MODULE: iboot-workflow
         PORT: "8086"
     ports:
-      - "8086:8086"
+      - "127.0.0.1:8086:8086"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -346,7 +351,7 @@ services:
         MODULE: iboot-monitor
         PORT: "8087"
     ports:
-      - "8087:8087"
+      - "127.0.0.1:8087:8087"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -377,7 +382,7 @@ services:
         MODULE: iboot-gateway
         PORT: "8088"
     ports:
-      - "8088:8088"
+      - "127.0.0.1:8088:8088"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -389,6 +394,10 @@ services:
       <<: *app-healthcheck
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8088"]
       start_period: 90s
+    networks:
+      - edge
+      - app
+      - data
     depends_on:
       nacos:
         condition: service_healthy
@@ -406,7 +415,7 @@ services:
         MODULE: iboot-ops
         PORT: "8089"
     ports:
-      - "8089:8089"
+      - "127.0.0.1:8089:8089"
     environment:
       <<: *app-env
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -419,6 +428,10 @@ services:
     healthcheck:
       <<: *app-healthcheck
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8089"]
+    networks:
+      - edge
+      - app
+      - data
     depends_on:
       nacos:
         condition: service_healthy
@@ -455,7 +468,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - iboot-network
+      - edge
     healthcheck:
       # 用 IPv4 回环：nginx 只监听 IPv4，localhost 可能解析到 ::1
       test: ["CMD-SHELL", "curl -fsS --cacert /certs/rootCA.pem https://127.0.0.1/ >/dev/null || exit 1"]
@@ -469,7 +482,7 @@ services:
     image: mysql:8.4.13
     container_name: iboot-mysql
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     # 服务端 TLS：所有 TCP 连接都必须加密
     command: >
       --ssl-ca=/certs/rootCA.pem
@@ -488,7 +501,7 @@ services:
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       # 强制走 TCP 并校验服务端证书
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem --silent"]
@@ -501,7 +514,7 @@ services:
     image: redis:8.8.4
     container_name: iboot-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     command: >
       redis-server
       --port 0
@@ -515,7 +528,7 @@ services:
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       test: ["CMD", "redis-cli", "--tls", "--cacert", "/certs/rootCA.pem", "-p", "6379", "ping"]
       interval: 10s
@@ -527,8 +540,8 @@ services:
     image: pgsty/silo:RELEASE.2026-11-12T00-00-00Z
     container_name: iboot-silo
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     environment:
       # Silo 保留 MinIO 的 MINIO_* 服务端变量契约
       MINIO_ROOT_USER: minioadmin
@@ -541,7 +554,7 @@ services:
     command: server /data --console-address ":9001" --certs-dir /certs
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS --cacert /certs/rootCA.pem https://127.0.0.1:9000/minio/health/live >/dev/null || exit 1"]
       interval: 15s
@@ -564,7 +577,7 @@ services:
     volumes:
       - ./certs/runtime:/certs:ro
     networks:
-      - iboot-network
+      - data
     depends_on:
       silo:
         condition: service_healthy
@@ -573,7 +586,7 @@ services:
     image: elasticsearch:9.5.5
     container_name: iboot-elasticsearch
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     environment:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - discovery.type=single-node
@@ -585,7 +598,7 @@ services:
       - es_data:/usr/share/elasticsearch/data
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       test: ["CMD-SHELL", "curl -sf --cacert /usr/share/elasticsearch/config/certs/rootCA.pem -u elastic:$${ELASTIC_PASSWORD} https://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
@@ -612,13 +625,11 @@ services:
         condition: service_healthy
     restart: "no"
     networks:
-      - iboot-network
+      - data
 
   logstash:
     image: logstash:9.5.5
     container_name: iboot-logstash
-    ports:
-      - "5044:5044"
     volumes:
       - ./scripts/elk/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
       - ./certs/runtime:/certs:ro
@@ -628,7 +639,7 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -645,9 +656,9 @@ services:
     image: nacos/nacos-server:v3.3.0
     container_name: iboot-nacos
     ports:
-      - "8848:8848"
-      - "9848:9848"
-      - "8849:8080"
+      - "127.0.0.1:8848:8848"
+      - "127.0.0.1:9848:9848"
+      - "127.0.0.1:8849:8080"
     environment:
       - MODE=standalone
       - NACOS_AUTH_ENABLE=false
@@ -672,7 +683,7 @@ services:
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       test: ["CMD-SHELL", "curl -sf --cacert /certs/rootCA.pem https://localhost:8080/v3/console/health/readiness || exit 1"]
       interval: 15s
@@ -684,7 +695,7 @@ services:
     image: bladex/sentinel-dashboard:1.8.10
     container_name: iboot-sentinel-dashboard
     ports:
-      - "8858:8858"
+      - "127.0.0.1:8858:8858"
     environment:
       TZ: Asia/Shanghai
       # 本地开发关闭登录；非本地部署必须用 docker-compose.prod.yml 覆盖并注入账号密码
@@ -694,7 +705,7 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8858/ >/dev/null || exit 1"]
       interval: 15s
@@ -707,7 +718,7 @@ services:
     image: apache/seata-server:2.6.0
     container_name: iboot-seata-server
     ports:
-      - "8091:8091"
+      - "127.0.0.1:8091:8091"
     environment:
       TZ: Asia/Shanghai
       # 本地开发限制堆与直接内存；镜像默认 2g
@@ -719,7 +730,7 @@ services:
       - seata_data:/seata-server/sessionStore
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8091' || exit 1"]
       interval: 15s
@@ -737,7 +748,7 @@ services:
       JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/9876'"]
       interval: 10s
@@ -755,7 +766,7 @@ services:
       - rocketmq_broker_data:/home/rocketmq/store
     restart: "no"
     networks:
-      - iboot-network
+      - data
 
   rocketmq-broker:
     image: apache/rocketmq:5.5.0
@@ -769,7 +780,7 @@ services:
       - rocketmq_broker_data:/home/rocketmq/store
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     depends_on:
       rocketmq-namesrv:
         condition: service_healthy
@@ -794,11 +805,11 @@ services:
       - ./rocketmq/rmq-proxy.json:/home/rocketmq/rocketmq-5.5.0/conf/rmq-proxy.json:ro
       - ./certs/runtime:/certs:ro
     ports:
-      - "18080:8080"
-      - "18081:8081"
+      - "127.0.0.1:18080:8080"
+      - "127.0.0.1:18081:8081"
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     depends_on:
       rocketmq-namesrv:
         condition: service_healthy
@@ -824,7 +835,7 @@ services:
         condition: service_healthy
     restart: "no"
     networks:
-      - iboot-network
+      - data
 
   # ==================== Kafka（日志缓冲层） ====================
   # KRaft 单节点，不部署 ZooKeeper；只作 24 小时日志缓冲，不承载业务事件。
@@ -862,13 +873,13 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
       KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
     ports:
-      - "29092:29092"
+      - "127.0.0.1:29092:29092"
     volumes:
       - kafka_data:/var/lib/kafka/data
       - ./certs/runtime:/etc/kafka/secrets:ro
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       test: ["CMD-SHELL", "printf '%s\n' 'security.protocol=SSL' 'ssl.truststore.location=/etc/kafka/secrets/truststore.p12' 'ssl.truststore.password=changeit' 'ssl.truststore.type=PKCS12' > /tmp/kafka-client.properties && /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 --command-config /tmp/kafka-client.properties >/dev/null 2>&1"]
       interval: 10s
@@ -896,22 +907,22 @@ services:
         condition: service_healthy
     restart: "no"
     networks:
-      - iboot-network
+      - data
 
   tempo:
     image: grafana/tempo:2.10.9
     container_name: iboot-tempo
     ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "3200:3200"
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:3200:3200"
     command: ["-config.file=/etc/tempo.yaml"]
     volumes:
       - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
       - tempo_data:/var/tempo
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
 
   # ==================== SkyWalking APM 对比实验（apm profile） ====================
   # 辅助观测栈：与 Tempo 并行观测同一批服务，默认不启动，实验结束可整体删除。
@@ -924,13 +935,11 @@ services:
     command: standalone --stream-root-path /data/stream --measure-root-path /data/measure
     expose:
       - "17912"
-    ports:
-      - "17913:17913"
     volumes:
       - skywalking_banyandb_data:/data
     restart: unless-stopped
     networks:
-      - iboot-network
+      - obs
     healthcheck:
       test: ["CMD", "sh", "-c", "nc -nz 127.0.0.1 17912"]
       interval: 5s
@@ -945,9 +954,8 @@ services:
       skywalking-banyandb:
         condition: service_healthy
     ports:
-      - "11800:11800"
-      - "12800:12800"
-      - "17128:17128"
+      - "127.0.0.1:11800:11800"
+      - "127.0.0.1:12800:12800"
     environment:
       SW_STORAGE: banyandb
       SW_STORAGE_BANYANDB_TARGETS: skywalking-banyandb:17912
@@ -956,7 +964,7 @@ services:
       JAVA_OPTS: "-Xms512m -Xmx1024m"
     restart: unless-stopped
     networks:
-      - iboot-network
+      - obs
     healthcheck:
       # OAP 镜像没有 curl/wget，用 bash 内建 /dev/tcp 探查询端口。
       test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/12800"]
@@ -974,13 +982,13 @@ services:
         condition: service_healthy
     ports:
       # 8080 已被 iboot-system 占用，UI 映射到 18082。
-      - "18082:8081"
+      - "127.0.0.1:18082:8081"
     volumes:
       # Horizon 的后端地址与登录用户只从该文件读取，没有环境变量入口。
       - ./skywalking/horizon.yaml:/app/horizon.yaml:ro
     restart: unless-stopped
     networks:
-      - iboot-network
+      - obs
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 15s
@@ -994,15 +1002,18 @@ services:
     container_name: iboot-prometheus
     profiles: ["observability"]
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     volumes:
-      - ./scripts/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./scripts/prometheus/alerts:/etc/prometheus/alerts
+      # 目录整体只读挂载，按运行模式选择 prometheus.yml 或 prometheus.docker.yml
+      - ./scripts/prometheus:/etc/prometheus:ro
+      # 服务端口只接受内部 TLS，抓取时用本地 CA 校验
+      - ./certs/runtime:/certs:ro
       - prometheus_data:/prometheus
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      # 直接 compose 启动等同于 Docker 全量部署，默认按服务名抓取；宿主机开发由 dev-init.sh 覆盖。
+      - '--config.file=/etc/prometheus/${IBOOT_PROMETHEUS_CONFIG:-prometheus.docker.yml}'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
@@ -1012,14 +1023,15 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
     networks:
-      - iboot-network
+      - app
+      - obs
 
   grafana:
     image: grafana/grafana:13.2.6
     container_name: iboot-grafana
     profiles: ["observability"]
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - ./scripts/grafana/provisioning:/etc/grafana/provisioning
       - ./scripts/grafana/grafana.ini:/etc/grafana/grafana.ini
@@ -1035,7 +1047,8 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
+      - obs
     depends_on:
       - prometheus
       - thanos-query
@@ -1045,7 +1058,7 @@ services:
     container_name: iboot-alertmanager
     profiles: ["observability"]
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093"
     volumes:
       - ./scripts/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
       - alertmanager_data:/alertmanager
@@ -1054,7 +1067,7 @@ services:
       - '--storage.path=/alertmanager'
     restart: unless-stopped
     networks:
-      - iboot-network
+      - obs
     depends_on:
       - prometheus
 
@@ -1062,8 +1075,6 @@ services:
     image: thanosio/thanos:v0.42.5
     container_name: thanos-sidecar
     profiles: ["observability"]
-    ports:
-      - "19191:19191"
     volumes:
       - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
       - prometheus_data:/prometheus
@@ -1077,7 +1088,8 @@ services:
       - '--http-address=0.0.0.0:19192'
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
+      - obs
     depends_on:
       prometheus:
         condition: service_started
@@ -1088,8 +1100,6 @@ services:
     image: thanosio/thanos:v0.42.5
     container_name: thanos-store
     profiles: ["observability"]
-    ports:
-      - "19193:19192"
     volumes:
       - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
       - thanos_store_data:/var/thanos/store
@@ -1104,7 +1114,8 @@ services:
       - '--chunk-pool-size=2GB'
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
+      - obs
     depends_on:
       silo:
         condition: service_healthy
@@ -1113,8 +1124,6 @@ services:
     image: thanosio/thanos:v0.42.5
     container_name: thanos-query
     profiles: ["observability"]
-    ports:
-      - "19192:19192"
     command:
       - query
       - '--grpc-address=0.0.0.0:19191'
@@ -1125,7 +1134,8 @@ services:
       - '--query.timeout=5m'
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
+      - obs
     depends_on:
       - thanos-sidecar
       - thanos-store
@@ -1134,8 +1144,6 @@ services:
     image: thanosio/thanos:v0.42.5
     container_name: thanos-compact
     profiles: ["observability"]
-    ports:
-      - "19194:19192"
     volumes:
       - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
       - thanos_compact_data:/var/thanos/compact
@@ -1151,7 +1159,8 @@ services:
       - '--retention.resolution-1h=1y'
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
+      - obs
     depends_on:
       silo:
         condition: service_healthy
@@ -1160,8 +1169,6 @@ services:
     image: prom/mysqld-exporter:v0.21.0
     container_name: iboot-mysql-exporter
     profiles: ["observability"]
-    ports:
-      - "9104:9104"
     environment:
       MYSQLD_EXPORTER_PASSWORD: root
     command:
@@ -1169,7 +1176,8 @@ services:
       - '--mysqld.username=root'
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
+      - obs
     depends_on:
       - mysql
 
@@ -1177,13 +1185,12 @@ services:
     image: oliver006/redis_exporter:v1.97.0
     container_name: iboot-redis-exporter
     profiles: ["observability"]
-    ports:
-      - "9121:9121"
     environment:
       REDIS_ADDR: redis://redis:6379
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
+      - obs
     depends_on:
       - redis
 
@@ -1191,8 +1198,6 @@ services:
     image: prom/node-exporter:v1.12.1
     container_name: iboot-node-exporter
     profiles: ["observability"]
-    ports:
-      - "9100:9100"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -1204,14 +1209,12 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     restart: unless-stopped
     networks:
-      - iboot-network
+      - obs
 
   elasticsearch-exporter:
     image: prometheuscommunity/elasticsearch-exporter:v1.11.0
     container_name: iboot-elasticsearch-exporter
     profiles: ["observability"]
-    ports:
-      - "9114:9114"
     command:
       - '--es.uri=https://elastic:${ELASTIC_PASSWORD:?ELASTIC_PASSWORD 必须在 .env 中设置}@elasticsearch:9200'
       - '--es.ca=/certs/rootCA.pem'
@@ -1221,7 +1224,8 @@ services:
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
+      - obs
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -1231,7 +1235,7 @@ services:
     container_name: iboot-kibana
     profiles: ["observability"]
     ports:
-      - "5601:5601"
+      - "127.0.0.1:5601:5601"
     environment:
       - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
       - ELASTICSEARCH_USERNAME=kibana_system
@@ -1241,7 +1245,7 @@ services:
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -1254,8 +1258,8 @@ services:
     container_name: iboot-neo4j
     profiles: ["graph"]
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
     environment:
       - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-iboot123456}
       # 受本机内存约束（R4）：堆与页缓存显式限制
@@ -1276,7 +1280,7 @@ services:
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
-      - iboot-network
+      - data
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
       interval: 30s
@@ -1285,7 +1289,13 @@ services:
       start_period: 40s
 
 networks:
-  iboot-network:
+  edge:
+    driver: bridge
+  app:
+    driver: bridge
+  data:
+    driver: bridge
+  obs:
     driver: bridge
 
 volumes:
