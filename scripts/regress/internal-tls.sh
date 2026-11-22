@@ -59,6 +59,56 @@ for port in "${PORTS[@]}"; do
     fi
 done
 
+reg_log "== 2b. 服务证书身份 =="
+SERVICE_PORTS=(
+    "iboot-system:8080" "iboot-ai:8081" "iboot-file:8082" "iboot-auth:8083"
+    "iboot-notify:8084" "iboot-job:8085" "iboot-workflow:8086"
+    "iboot-monitor:8087" "iboot-gateway:8088"
+)
+if [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; then
+    SERVICE_PORTS+=("iboot-ops:8089")
+fi
+FINGERPRINTS="$(mktemp)"
+service_cert_fingerprint() {
+    local port="$1" svc="$2"
+    echo | timeout 10 openssl s_client -connect "localhost:$port" -servername "$svc" 2>/dev/null \
+        | openssl x509 2>/dev/null
+}
+for entry in "${SERVICE_PORTS[@]}"; do
+    svc="${entry%%:*}"
+    port="${entry##*:}"
+    cert="$(service_cert_fingerprint "$port" "$svc")"
+    if [ -z "$cert" ]; then
+        reg_fail "$svc 未提供证书"
+        continue
+    fi
+    if printf '%s' "$cert" | openssl x509 -noout -checkhost "$svc" >/dev/null 2>&1; then
+        reg_pass "$svc 证书 SAN 覆盖服务名 $svc"
+    else
+        reg_fail "$svc 证书 SAN 不包含服务名 $svc"
+    fi
+    if printf '%s' "$cert" | openssl x509 -noout -checkhost localhost >/dev/null 2>&1; then
+        reg_pass "$svc 证书 SAN 覆盖 localhost"
+    else
+        reg_fail "$svc 证书 SAN 不包含 localhost"
+    fi
+    printf '%s' "$cert" | openssl x509 -noout -fingerprint -sha256 \
+        | sed 's/^.*=//' >> "$FINGERPRINTS"
+done
+unique_count="$(sort -u "$FINGERPRINTS" | wc -l | tr -d ' ')"
+if [ "$unique_count" -eq "${#SERVICE_PORTS[@]}" ]; then
+    reg_pass "十张服务证书指纹互不相同"
+else
+    reg_fail "服务证书存在重复指纹（唯一 $unique_count / ${#SERVICE_PORTS[@]}）"
+fi
+shared_fp="$(openssl x509 -in "$CERT_DIR/portal.pem" -noout -fingerprint -sha256 2>/dev/null | sed 's/^.*=//')"
+if [ -n "$shared_fp" ] && grep -qxF "$shared_fp" "$FINGERPRINTS"; then
+    reg_fail "业务服务仍在共享门户证书"
+else
+    reg_pass "业务服务未使用共享门户证书"
+fi
+rm -f "$FINGERPRINTS"
+
 reg_log "== 3. 无 CA 必须失败 =="
 status="$(curl -sS -o /dev/null -w '%{http_code}' --cacert "$EMPTY_CA" "https://localhost:8080/actuator/health" 2>/dev/null || true)"
 if [ "$status" = "000" ] || [ -z "$status" ]; then

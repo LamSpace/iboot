@@ -515,6 +515,13 @@ start_backend() {
                 -u KAFKA_LOGSTASH_PASSWORD -u KAFKA_TOOLS_PASSWORD
                 -u REDIS_EXPORTER_PASSWORD
             )
+            if internal_tls_enabled; then
+                local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
+                env_opts+=(
+                    "IBOOT_TLS_CERT_FILE=$cert_dir/services/$name.pem"
+                    "IBOOT_TLS_KEY_FILE=$cert_dir/services/$name-key.pem"
+                )
+            fi
             case "$name" in
                 iboot-ai)
                     env_opts+=(ELASTICSEARCH_USERNAME=iboot_ai "ELASTICSEARCH_PASSWORD=$ES_AI_PASSWORD")

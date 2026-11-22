@@ -215,10 +215,11 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - `sys.silo.console.url` 保持 `http://localhost:9001`，因为它是浏览器访问地址；
 - 监控服务的 Silo 检查只在存储类型为 `silo` 时真正连接。
 
-## 内部 TLS（B2）
+## 内部 TLS（B2 / B5.1）
 
 - 业务服务与网关挂载 `./certs/runtime:/certs:ro`，通过 `IBOOT_TLS_CERT_DIR=/certs`
-  使用 `server.ssl`；`JAVA_TOOL_OPTIONS` 注入 PKCS12 信任库。
+  使用 `server.ssl`；每个服务再通过 `IBOOT_TLS_CERT_FILE` / `IBOOT_TLS_KEY_FILE`
+  加载 `services/<服务名>.pem` 的独立证书。`JAVA_TOOL_OPTIONS` 注入 PKCS12 信任库。
 - MySQL 以 `--require_secure_transport=ON` 启动；Redis 只监听 TLS 端口；Silo 以
   `--certs-dir /certs` 启动；Neo4j 的 `graph` profile 启用 Bolt TLS。
 - 数据面健康检查使用本地 CA；ES/Kafka/Logstash/Nacos 只接受 TLS。
