@@ -92,6 +92,11 @@ for entry in "${SERVICE_PORTS[@]}"; do
     else
         reg_fail "$svc 证书 SAN 不包含 localhost"
     fi
+    if printf '%s' "$cert" | openssl x509 -noout -checkhost host.docker.internal >/dev/null 2>&1; then
+        reg_pass "$svc 证书 SAN 覆盖 host.docker.internal"
+    else
+        reg_fail "$svc 证书 SAN 不包含 host.docker.internal"
+    fi
     printf '%s' "$cert" | openssl x509 -noout -fingerprint -sha256 \
         | sed 's/^.*=//' >> "$FINGERPRINTS"
 done

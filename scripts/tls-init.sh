@@ -188,7 +188,7 @@ for svc in "${SERVICE_NAMES[@]}"; do
     CAROOT="$CAROOT" "$MKCERT" \
         -cert-file "$SERVICE_DIR/$svc.pem" \
         -key-file "$SERVICE_DIR/$svc-key.pem" \
-        localhost 127.0.0.1 ::1 "$svc"
+        localhost 127.0.0.1 ::1 host.docker.internal "$svc"
     chmod 600 "$SERVICE_DIR/$svc-key.pem"
     chmod 644 "$SERVICE_DIR/$svc.pem"
 done

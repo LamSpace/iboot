@@ -22,7 +22,7 @@
 
 ### 每个服务一张叶子证书
 
-`tls-init.sh` 新增 `SERVICE_NAMES`，为每个服务调用 `mkcert -cert-file services/<svc>.pem -key-file services/<svc>-key.pem localhost 127.0.0.1 ::1 <svc>`。所有证书由同一个本地 CA 签发，现有 `truststore.p12` 不变。私钥在 `runtime` 副本中保持容器用户可读，宿主私钥 0600。
+`tls-init.sh` 新增 `SERVICE_NAMES`，为每个服务调用 `mkcert -cert-file services/<svc>.pem -key-file services/<svc>-key.pem localhost 127.0.0.1 ::1 host.docker.internal <svc>`。`host.docker.internal` 用于宿主机模式下 Prometheus/blackbox 从容器内抓取宿主进程。所有证书由同一个本地 CA 签发，现有 `truststore.p12` 不变。私钥在 `runtime` 副本中保持容器用户可读，宿主私钥 0600。
 
 ### 通过环境变量选择证书
 
