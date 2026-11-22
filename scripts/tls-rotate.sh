@@ -56,8 +56,14 @@ case "$RESTART" in
         printf '[tls-rotate] 未重启运行时；需要时执行 --restart docker|host\n'
         ;;
     docker)
-        printf '[tls-rotate] 重启 Docker 全栈\n'
-        "$ROOT/scripts/docker-deploy.sh" up
+        printf '[tls-rotate] 重建当前运行的 Docker 服务\n'
+        COMPOSE=(docker compose -f "$ROOT/docker/docker-compose.yml")
+        mapfile -t services < <("${COMPOSE[@]}" ps --services 2>/dev/null)
+        if [ "${#services[@]}" -eq 0 ]; then
+            printf '[tls-rotate] 未发现运行中的 compose 服务\n' >&2
+            exit 1
+        fi
+        "${COMPOSE[@]}" up -d --force-recreate "${services[@]}"
         ;;
     host)
         printf '[tls-rotate] 重启宿主机开发进程\n'
