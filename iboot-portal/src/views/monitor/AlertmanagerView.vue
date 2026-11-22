@@ -51,7 +51,7 @@ import IframePanel from "@/components/IframePanel.vue";
 
 const { t } = useI18n();
 
-const defaultUrl = "http://localhost:9093";
+const defaultUrl = "https://localhost:9093";
 const alertmanagerUrl = ref(defaultUrl);
 const iframePanel = ref<InstanceType<typeof IframePanel>>();
 

@@ -116,12 +116,15 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 
 | 服务 | 宿主机端口 | 绑定 | 说明 |
 |---|---|---|---|
-| prometheus | 9090 | `127.0.0.1` | 抓取目标按运行模式选择配置，见下文 |
-| grafana | 3000 | `127.0.0.1` | 看板 |
-| alertmanager | 9093 | `127.0.0.1` | 告警 |
-| kibana | 5601 | `127.0.0.1` | 日志检索 UI |
-| thanos-sidecar / store / query / compact | — | — | 不发布；Grafana 经 `obs` 网络访问 `thanos-query` |
+| prometheus | 9090 | `127.0.0.1` | HTTPS；抓取目标按运行模式选择配置，见下文 |
+| grafana | 3000 | `127.0.0.1` | HTTPS 看板 |
+| alertmanager | 9093 | `127.0.0.1` | HTTPS 告警 |
+| kibana | 5601 | `127.0.0.1` | HTTPS 日志检索 UI |
+| thanos-query | 19192 | `127.0.0.1` | HTTPS 查询 UI |
+| thanos-sidecar / store / compact | — | — | 不发布；Grafana 经 `obs` 网络以 HTTPS 访问 `thanos-query` |
 | mysql/redis/node/elasticsearch exporter | — | — | 不发布；Prometheus 在编排网络内抓取 |
+
+> 五个可观测控制台只提供 HTTPS，使用本地 CA 校验；Sentinel Dashboard 仍为回环 HTTP，属于已登记边界。
 
 图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS），均绑定 `127.0.0.1`。
 

@@ -48,7 +48,7 @@ import IframePanel from "@/components/IframePanel.vue";
 
 const { t } = useI18n();
 
-const defaultUrl = "http://localhost:9090";
+const defaultUrl = "https://localhost:9090";
 const prometheusUrl = ref(defaultUrl);
 const iframePanel = ref<InstanceType<typeof IframePanel>>();
 

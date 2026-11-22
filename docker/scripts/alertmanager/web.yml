@@ -1,0 +1,4 @@
+# Alertmanager Web TLS：告警管理页面与 API 只接受 HTTPS。
+tls_server_config:
+  cert_file: /certs/portal.pem
+  key_file: /certs/portal-key.pem

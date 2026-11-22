@@ -39,6 +39,7 @@ SAN_NAMES=(
     iboot-system iboot-gateway iboot-auth iboot-file iboot-notify
     iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops
     mysql redis kafka elasticsearch silo nacos seata-server rocketmq-proxy tempo
+    prometheus alertmanager grafana thanos-query thanos-sidecar thanos-store thanos-compact kibana
 )
 
 FORCE=0

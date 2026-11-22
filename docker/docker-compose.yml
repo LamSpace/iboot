@@ -1196,6 +1196,7 @@ services:
     command:
       # 直接 compose 启动等同于 Docker 全量部署，默认按服务名抓取；宿主机开发由 dev-init.sh 覆盖。
       - '--config.file=/etc/prometheus/${IBOOT_PROMETHEUS_CONFIG:-prometheus.docker.yml}'
+      - '--web.config.file=/etc/prometheus/web.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
@@ -1225,7 +1226,7 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD 必须在 .env 中设置}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_SERVER_ROOT_URL=https://localhost:3000
       - ES_GRAFANA_PASSWORD=${ES_GRAFANA_PASSWORD:?ES_GRAFANA_PASSWORD 必须在 .env 中设置}
     restart: unless-stopped
     networks:
@@ -1247,9 +1248,12 @@ services:
       - "127.0.0.1:9093:9093"
     volumes:
       - ./scripts/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./scripts/alertmanager/web.yml:/etc/alertmanager/web.yml:ro
+      - ./certs/runtime:/certs:ro
       - alertmanager_data:/alertmanager
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--web.config.file=/etc/alertmanager/web.yml'
       - '--storage.path=/alertmanager'
     restart: unless-stopped
     networks:
@@ -1268,13 +1272,15 @@ services:
       AWS_CA_BUNDLE: /certs/rootCA.pem
     volumes:
       - ./scripts/thanos/bucket.yml:/etc/thanos/bucket.yml
+      - ./scripts/thanos/prometheus-http-client.yml:/etc/thanos/prometheus-http-client.yml:ro
       - ./certs/runtime:/certs:ro
       - prometheus_data:/prometheus
     user: "root"
     command:
       - sidecar
       - '--tsdb.path=/prometheus'
-      - '--prometheus.url=http://prometheus:9090'
+      - '--prometheus.url=https://prometheus:9090'
+      - '--prometheus.http-client-file=/etc/thanos/prometheus-http-client.yml'
       - '--objstore.config-file=/etc/thanos/bucket.yml'
       - '--grpc-address=0.0.0.0:19191'
       - '--http-address=0.0.0.0:19192'
@@ -1322,10 +1328,16 @@ services:
     image: thanosio/thanos:v0.42.5
     container_name: thanos-query
     profiles: ["observability"]
+    ports:
+      - "127.0.0.1:19192:19192"
+    volumes:
+      - ./scripts/thanos/http.yml:/etc/thanos/http.yml:ro
+      - ./certs/runtime:/certs:ro
     command:
       - query
       - '--grpc-address=0.0.0.0:19191'
       - '--http-address=0.0.0.0:19192'
+      - '--http.config=/etc/thanos/http.yml'
       - '--endpoint=thanos-sidecar:19191'
       - '--endpoint=thanos-store:19191'
       - '--query.replica-label=replica'
@@ -1452,6 +1464,9 @@ services:
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_SYSTEM_PASSWORD:?KIBANA_SYSTEM_PASSWORD 必须在 .env 中设置}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/certs/rootCA.pem
+      - SERVER_SSL_ENABLED=true
+      - SERVER_SSL_CERTIFICATE=/certs/portal.pem
+      - SERVER_SSL_KEY=/certs/portal-key.pem
     volumes:
       - ./certs/runtime:/certs:ro
     restart: unless-stopped

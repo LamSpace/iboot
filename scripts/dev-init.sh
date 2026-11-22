@@ -390,7 +390,7 @@ start_middleware() {
     fi
     if observability_enabled; then
         # Kibana 首次启动较慢；未就绪只提示，不影响后端。
-        wait_http 'Kibana' 'http://localhost:5601/api/status' 180 || log '  Kibana 未在预期时间内就绪（可稍后重试页面）'
+        wait_http 'Kibana' 'https://localhost:5601/api/status' 180 || log '  Kibana 未在预期时间内就绪（可稍后重试页面）'
     fi
     log '  中间件就绪'
 }
@@ -648,7 +648,7 @@ case "$ACTION" in
         log '登录账号 admin / admin123456'
         log '服务治理控制台：Nacos https://localhost:8849/next/，Sentinel http://localhost:8858；门户“微服务治理”菜单提供内嵌入口'
         if observability_enabled; then
-            log '可观测平台：Grafana http://localhost:3000，Prometheus http://localhost:9090，Kibana http://localhost:5601，Alertmanager http://localhost:9093'
+            log '可观测平台：Grafana https://localhost:3000，Prometheus https://localhost:9090，Kibana https://localhost:5601，Alertmanager https://localhost:9093'
         fi
         ;;
 esac

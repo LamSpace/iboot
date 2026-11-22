@@ -1,0 +1,5 @@
+# Prometheus Web TLS：控制台与查询 API 只接受 HTTPS。
+# 证书由 tls-init.sh 生成并挂载到 /certs。
+tls_server_config:
+  cert_file: /certs/portal.pem
+  key_file: /certs/portal-key.pem

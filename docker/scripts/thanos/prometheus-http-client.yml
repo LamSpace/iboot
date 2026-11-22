@@ -1,0 +1,3 @@
+# Thanos sidecar 访问 Prometheus 的 HTTP 客户端配置：只信任本地 CA。
+tls_config:
+  ca_file: /certs/rootCA.pem

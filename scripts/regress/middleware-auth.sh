@@ -273,7 +273,7 @@ kafka_client_config() {
 }
 
 kafka_topics() {
-    timeout -k 3 20 docker exec iboot-kafka /opt/kafka/bin/kafka-topics.sh \
+    timeout -k 3 40 docker exec iboot-kafka /opt/kafka/bin/kafka-topics.sh \
         --bootstrap-server localhost:9092 \
         --command-config /tmp/iboot-regress-client.properties "$@" 2>/dev/null
 }

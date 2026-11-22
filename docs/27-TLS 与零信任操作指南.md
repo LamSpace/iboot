@@ -9,7 +9,7 @@
 当前已完成的加密范围：
 
 - 浏览器/CLI → 门户（L1 边缘 TLS）；门户 → 网关；服务间调用与 JWKS。
-- MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面；Kafka SASL 与 Redis 命名 ACL。
+- MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面；Kafka SASL 与 Redis 命名 ACL；Grafana/Prometheus/Alertmanager/Thanos/Kibana 控制台。
 - Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 只有加密通道（见 §9.4）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
 - 不引入本机服务网格、SPIFFE/OPA；每服务工作负载身份与完整 mTLS 留给 B5。
@@ -351,6 +351,7 @@ scripts/regress/internal-tls.sh
   完成（ES 专用账号、Grafana/Neo4j 默认值、证书告警、明文审计）。
 - B4.5：Tempo 的 OTLP 上报与查询链路 TLS 已完成（`add-tempo-tls`）。
 - B4.6：Kafka SASL/ACL 与 Redis 命名 ACL 已完成（`harden-kafka-redis-auth`）。
+- B4.7：可观测查询与控制台 TLS 已完成（`harden-observability-ui-tls`）。
 - B5：服务间 mTLS、每服务工作负载身份、RocketMQ 强制 TLS 与 Seata 例外决策。
 
 ## 12. 暴露面与网络分段
@@ -365,7 +366,7 @@ TLS 只保护「连上之后」的通道，不回答「谁允许连接」。本�
 | 门户 | 80 / 443 | `0.0.0.0` |
 | 网关与业务服务 | 8080–8089 | `127.0.0.1` |
 | 数据面 | 3306、6379、9000/9001、9200、8848/9848/8849、8091、29092、18080/18081 | `127.0.0.1` |
-| 治理与可观测 UI | 8858、9090、3000、9093、5601、18082、3200 | `127.0.0.1` |
+| 治理与可观测 UI | 8858、9090、3000、9093、5601、19192、18082、3200 | `127.0.0.1`；除 Sentinel 外均 HTTPS |
 | 图数据库（`graph` profile） | 7474、7687 | `127.0.0.1` |
 | Logstash、Thanos、exporter、SkyWalking Banyandb/OAP admin | 不发布 | — |
 
@@ -405,7 +406,7 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - 宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程仍按 Spring Boot 默认监听所有网卡；
   它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B5 收敛。
 - 中间件已启用账号认证，但仍是共享账号；服务间没有客户端证书。
-- 可观测 UI 仍为 HTTP，但只监听回环地址。
+- 可观测 UI 除 Sentinel 外均为 HTTPS；Sentinel 仍为回环 HTTP，作为已登记边界。
 - 完整身份与工作负载 mTLS 属于 B5，不在本节的宣称范围内。
 
 ## 13. 中间件账号与最小权限（B4.3）
@@ -539,14 +540,13 @@ curl -s 'http://127.0.0.1:9090/api/v1/query?query=probe_ssl_earliest_cert_expiry
 `scripts/regress/plaintext-audit.sh` 扫描应用配置与 Grafana 数据源；命中 `http://`
 且未登记在 `scripts/regress/plaintext-allowlist.txt` 时失败。当前例外：
 
-- Grafana→Prometheus / Thanos（本地后端只提供 HTTP）。
 - CLI 回环 OAuth 回调（RFC 8252，不承载业务数据）。
 
 允许清单只允许缩小；新增条目必须在评审中说明用途、不可加密原因与后续处理去向。
 
 ### 14.5 边界
 
-- Prometheus、Thanos 的明文链路仍未加密，属于已登记边界；Tempo 已在 B4.5 完成 TLS。
+- Prometheus、Thanos 的明文链路已在 B4.7 收敛为 TLS；Sentinel Dashboard 仍为回环 HTTP，属于已登记边界。
 - Grafana 匿名只读依赖 Viewer 角色；若 Explore 权限不可用，按 `design.md` 的退路处理，
   不得回退匿名 Admin。
 - 本批次不包含服务间 mTLS、RocketMQ 强制 TLS、Seata 认证与 Kafka SASL。
@@ -558,7 +558,7 @@ Tempo 的 OTLP/HTTP（4318）、OTLP/gRPC（4317）接收端口与查询 HTTP（
 - `docker/tempo/tempo.yaml` 用 `server.http_tls_config` 为 3200 提供 HTTPS，并在两个 OTLP receiver 上配置 `tls`。
 - 9095 是 Tempo 进程内 frontend↔querier 的 gRPC 端口，不发布到宿主机；开启 `grpc_tls_config` 会打断内部调用，因此保留明文并登记为边界。
 - 应用 `TEMPO_OTLP` 与 Grafana `Tempo` 数据源均为 `https://`；Grafana 通过 `tlsAuthWithCACert` 使用 `/certs/rootCA.pem` 校验证书。
-- 明文允许清单移除 Tempo 两条，仅保留 CLI 回环回调与 Grafana→Prometheus/Thanos。
+- 明文允许清单移除 Tempo 两条；B4.7 完成后仅保留 CLI 回环回调。
 
 验证：
 
@@ -609,3 +609,23 @@ scripts/regress/log-pipeline.sh
 
 回滚：恢复旧 compose 与镜像重建 Kafka/Redis；Kafka ACL 元数据保留但在 Authorizer 关闭后不生效；
 Redis 启动参数恢复为 `--requirepass` 即回到默认用户模式。
+
+## 17. 可观测控制台 TLS（B4.7）
+
+Grafana、Prometheus、Alertmanager、Thanos Query 与 Kibana 的 HTTP 入口只提供 HTTPS，证书复用本地叶子证书。
+
+- Prometheus/Alertmanager 通过 `--web.config.file`、Thanos Query 通过 `--http.config` 加载 `tls_server_config`。
+- Grafana 使用 `[server] protocol=https`；Kibana 使用 `SERVER_SSL_ENABLED=true`。
+- Grafana 的 Prometheus/Thanos 数据源、Thanos sidecar 到 Prometheus、Prometheus 到 Alertmanager 均使用 HTTPS + 本地 CA。
+- `sys_config` 中五个控制台地址由 `V16__observability_https_urls.sql` 迁移为 `https://`。
+- Sentinel Dashboard 仍为回环 HTTP，未挂载证书，作为已登记边界。
+
+验证：
+
+```bash
+scripts/regress/observability-tls.sh
+scripts/regress/tls-cert-monitor.sh
+scripts/regress/regress.sh
+```
+
+回滚：恢复上一版 Compose/配置与迁移前的控制台地址，重建可观测组件；不存在运行时明文回退开关。

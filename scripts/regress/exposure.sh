@@ -19,7 +19,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 command -v jq >/dev/null 2>&1 || reg_die "缺少 jq，无法解析容器端口绑定"
 
-REMOVED_PORTS="5044 17128 17913 9100 9104 9114 9121 19191 19192 19193 19194"
+REMOVED_PORTS="5044 17128 17913 9100 9104 9114 9121 19191 19193 19194"
 DATA_PORTS="3306 6379 9200 8848 29092"
 
 have_docker=false
