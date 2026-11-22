@@ -227,6 +227,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - 门户 nginx 挂载 `portal.pem` 并用 `proxy_ssl_certificate` 访问上游；Prometheus 与
   blackbox 通过 `/certs/clients/` 的专用证书抓取服务端口。
 - RocketMQ 使用 `mq` 网络 + `rocketmq-tls`（nginx `stream` + `ssl_preread`）只转发 TLS；
+  Broker/Proxy 启用 ACL 2.0，workflow/notify 各自持有 access key，运维账号只用于初始化；
   Seata 使用 `tx` 网络，仅 workflow/system 可访问。
 - 服务间请求按客户端证书 CN 做路径级授权（`iboot-service-authz`）；
   `IBOOT_SERVICE_AUTHORIZATION_ENABLED=true` 由 compose 公共环境注入，矩阵见 [docs/27 §20](<../docs/27-TLS 与零信任操作指南.md>)。
@@ -258,6 +259,9 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 | Kafka | `iboot_log` | 九个服务日志生产，只能写 `iboot-logs` |
 | Kafka | `iboot_logstash` | Logstash 消费，只能读该 topic 与消费组 |
 | Kafka | `iboot_tools` / `broker` | 初始化运维与节点间通信，超级用户 |
+| RocketMQ | `iboot_rocketmq` | 仅 Broker/Proxy 初始化、`mqadmin` 与排障 |
+| RocketMQ | `iboot_workflow` | 只允许 PUB `iboot-notification` |
+| RocketMQ | `iboot_notify` | 只允许 SUB 该 topic、其消费组与重试 topic |
 | ES | `iboot_ai` / `iboot_notify` | 知识库与内容索引读写，按索引前缀授权 |
 | ES | `iboot_monitor` / `iboot_grafana` | 日志索引只读 |
 | ES | `iboot_logstash` | 日志索引写入 |

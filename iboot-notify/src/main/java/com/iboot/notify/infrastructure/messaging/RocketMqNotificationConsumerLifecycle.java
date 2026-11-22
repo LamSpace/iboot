@@ -18,7 +18,9 @@ package com.iboot.notify.infrastructure.messaging;
 
 import com.iboot.notify.infrastructure.config.RocketMqProperties;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
+import org.apache.rocketmq.client.apis.ClientConfigurationBuilder;
 import org.apache.rocketmq.client.apis.ClientServiceProvider;
+import org.apache.rocketmq.client.apis.StaticSessionCredentialsProvider;
 import org.apache.rocketmq.client.apis.consumer.FilterExpression;
 import org.apache.rocketmq.client.apis.consumer.FilterExpressionType;
 import org.apache.rocketmq.client.apis.consumer.MessageListener;
@@ -28,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.util.Map;
@@ -134,11 +137,7 @@ public class RocketMqNotificationConsumerLifecycle implements SmartLifecycle {
     }
 
     private PushConsumer createConsumer() throws Exception {
-        ClientConfiguration configuration = ClientConfiguration.newBuilder()
-                .setEndpoints(properties.getEndpoints())
-                .enableSsl(properties.isSslEnabled())
-                .enableVirtualThreads(true)
-                .build();
+        ClientConfiguration configuration = clientConfiguration();
         return provider.newPushConsumerBuilder()
                 .setClientConfiguration(configuration)
                 .setConsumerGroup(properties.getConsumerGroup())
@@ -146,6 +145,23 @@ public class RocketMqNotificationConsumerLifecycle implements SmartLifecycle {
                         new FilterExpression("*", FilterExpressionType.TAG)))
                 .setMessageListener(listener)
                 .build();
+    }
+
+    /**
+     * 构造客户端配置；配置了 access key 时附加 ACL 凭据。
+     *
+     * @return RocketMQ 客户端配置
+     */
+    private ClientConfiguration clientConfiguration() {
+        ClientConfigurationBuilder builder = ClientConfiguration.newBuilder()
+                .setEndpoints(properties.getEndpoints())
+                .enableSsl(properties.isSslEnabled())
+                .enableVirtualThreads(true);
+        if (StringUtils.hasText(properties.getAccessKey())) {
+            builder.setCredentialProvider(new StaticSessionCredentialsProvider(
+                    properties.getAccessKey(), properties.getSecretKey()));
+        }
+        return builder.build();
     }
 
     private void sleep(final Duration duration) {

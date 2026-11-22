@@ -46,7 +46,21 @@ class RocketMqPropertiesTest {
             assertThat(properties.getConsumerGroup()).isEqualTo("iboot-notify-consumer");
             assertThat(properties.isConsumerEnabled()).isTrue();
             assertThat(properties.getRetryInterval()).isEqualTo(Duration.ofSeconds(10));
+            assertThat(properties.getAccessKey()).isEmpty();
+            assertThat(properties.getSecretKey()).isEmpty();
         });
+    }
+
+    @Test
+    void bindsAclCredentials() {
+        runner.withPropertyValues(
+                        "iboot.rocketmq.access-key=iboot_notify",
+                        "iboot.rocketmq.secret-key=secret")
+                .run(context -> {
+                    RocketMqProperties properties = context.getBean(RocketMqProperties.class);
+                    assertThat(properties.getAccessKey()).isEqualTo("iboot_notify");
+                    assertThat(properties.getSecretKey()).isEqualTo("secret");
+                });
     }
 
     @Test
