@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 日志与检索面 TLS 回归：Elasticsearch、Kafka、Logstash 与 RocketMQ 加密边界。
+# 日志与检索面 TLS 回归：Elasticsearch、Kafka、Logstash 与 RocketMQ TLS 入口。
 #
 # 前置：
 #   - Elasticsearch / Kafka / Logstash 已按 TLS 配置启动；
@@ -14,7 +14,7 @@
 #   KAFKA_LOG_PASSWORD      iboot_log 的 SASL 口令
 #   KAFKA_TOOLS_PASSWORD    iboot_tools 的 SASL 口令
 #   LOG_LOGSTASH_CONTAINER  默认 iboot-logstash
-#   LOG_ROCKETMQ_PORT       默认 18081；为空时跳过
+#   LOG_ROCKETMQ_PORT       RocketMQ TLS 入口，默认 18081；为空时跳过
 
 set -uo pipefail
 
@@ -165,17 +165,22 @@ else
     reg_fail "找不到 Logstash 容器：$LOGSTASH_CONTAINER"
 fi
 
-reg_log "== 5. RocketMQ 加密边界 =="
+reg_log "== 5. RocketMQ TLS-only 入口 =="
 if [ -n "$ROCKETMQ_PORT" ] && (echo > "/dev/tcp/localhost/$ROCKETMQ_PORT") >/dev/null 2>&1; then
     if echo | timeout 10 openssl s_client -connect "localhost:$ROCKETMQ_PORT" -tls1_2 -CAfile "$CA" 2>&1 | grep -q "Verify return code: 0"; then
-        reg_pass "RocketMQ Proxy 接受 TLS 1.2 且证书可被本地 CA 验证"
+        reg_pass "RocketMQ TLS 入口接受 TLS 1.2 且证书可被本地 CA 验证"
     else
-        reg_fail "RocketMQ Proxy TLS 握手失败（端口 $ROCKETMQ_PORT）"
+        reg_fail "RocketMQ TLS 入口握手失败（端口 $ROCKETMQ_PORT）"
     fi
-    reg_log "  [INFO] 同一端口仍接受明文：这是已登记的加密边界，不计为 TLS 通过"
-    reg_log "  [INFO] 客户端不校验服务端证书：RocketMQ 只作为加密通道，不提供身份认证"
+    plain="$(curl -sS -m 5 -o /dev/null -w '%{http_code}' "http://localhost:$ROCKETMQ_PORT/" 2>/dev/null || true)"
+    if [ "$plain" = "000" ] || [ -z "$plain" ]; then
+        reg_pass "RocketMQ 入口拒绝明文连接"
+    else
+        reg_fail "RocketMQ 入口仍接受明文（HTTP ${plain:-无响应}）"
+    fi
+    reg_log "  [INFO] 客户端不校验服务端证书且无 ACL：这是 TLS-only 加密入口的已知边界"
 else
-    reg_log "  跳过：RocketMQ Proxy 端口不可达（$ROCKETMQ_PORT）"
+    reg_log "  跳过：RocketMQ TLS 入口不可达（$ROCKETMQ_PORT）"
 fi
 
 reg_summary

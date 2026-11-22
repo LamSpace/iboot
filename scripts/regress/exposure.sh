@@ -20,7 +20,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 command -v jq >/dev/null 2>&1 || reg_die "缺少 jq，无法解析容器端口绑定"
 
 REMOVED_PORTS="5044 17128 17913 9100 9104 9114 9121 19191 19193 19194"
-DATA_PORTS="3306 6379 9200 8848 29092"
+DATA_PORTS="3306 6379 9200 8848 29092 18081"
 
 have_docker=false
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
@@ -122,6 +122,38 @@ else
             fi
         done
     fi
+fi
+
+reg_log "== 3b. Seata 与 RocketMQ 网络隔离 =="
+if [ "$have_docker" != true ] || ! docker inspect iboot-portal >/dev/null 2>&1; then
+    reg_log "  容器未运行，跳过隔离矩阵"
+else
+    for src in iboot-workflow iboot-system; do
+        docker inspect "$src" >/dev/null 2>&1 || continue
+        if docker exec "$src" bash -c "exec 3<>/dev/tcp/seata-server/8091" >/dev/null 2>&1; then
+            reg_pass "$src 可访问 Seata 8091（tx 网络）"
+        else
+            reg_fail "$src 无法访问 Seata 8091"
+        fi
+    done
+    for src in iboot-file iboot-ai; do
+        docker inspect "$src" >/dev/null 2>&1 || continue
+        if docker exec "$src" bash -c "exec 3<>/dev/tcp/seata-server/8091" >/dev/null 2>&1; then
+            reg_fail "$src 仍可访问 Seata 8091（tx 隔离失效）"
+        else
+            reg_pass "$src 无法访问 Seata 8091"
+        fi
+        if docker exec "$src" bash -c "exec 3<>/dev/tcp/rocketmq-proxy/8081" >/dev/null 2>&1; then
+            reg_fail "$src 仍可直连 RocketMQ Proxy 8081（mq 隔离失效）"
+        else
+            reg_pass "$src 无法直连 RocketMQ Proxy 8081"
+        fi
+        if docker exec "$src" bash -c "exec 3<>/dev/tcp/rocketmq-tls/8081" >/dev/null 2>&1; then
+            reg_pass "$src 可访问 RocketMQ TLS 入口 8081"
+        else
+            reg_fail "$src 无法访问 RocketMQ TLS 入口 8081"
+        fi
+    done
 fi
 
 reg_summary

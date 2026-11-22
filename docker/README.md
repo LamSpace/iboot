@@ -91,13 +91,13 @@ Docker 全量部署中，宿主机只有门户 `80/443` 绑定全部网卡；其
 | iboot-monitor | 8087 | `127.0.0.1` | 监控与日志查询 |
 | iboot-ops | 8089 | `127.0.0.1` | 运维控制台（SBA） |
 | sentinel-dashboard | 8858 | `127.0.0.1` | Sentinel 治理控制台；本地必选，生产必须认证 |
-| seata-server | 8091 | `127.0.0.1` | Seata TC（AT 全局事务）；file store，本地镜像无 7091 控制台 |
+| seata-server | 8091 | `127.0.0.1` | Seata TC（AT 全局事务）；只在 `tx` 网络对 workflow/system 可见，本地镜像无 7091 控制台 |
 | mysql | 3306 | `127.0.0.1` | MySQL 8.4（只接受 TLS） |
 | redis | 6379 | `127.0.0.1` | Redis 8（只监听 TLS 端口） |
 | silo | 9000/9001 | `127.0.0.1` | 对象存储与控制台（HTTPS） |
 | elasticsearch | 9200 | `127.0.0.1` | 检索（HTTPS + 认证） |
 | kafka | 29092 | `127.0.0.1` | 宿主机监听；容器内使用 `kafka:9092`，全部监听 SSL |
-| rocketmq-proxy | 18080/18081 | `127.0.0.1` | gRPC/HTTP；当前只提供加密通道，边界见 [docs/27 §9.4](<../docs/27-TLS 与零信任操作指南.md>) |
+| rocketmq-tls | 18081 | `127.0.0.1` | RocketMQ TLS-only 入口；Proxy 原生端口只在 `mq` 网络内，边界见 [docs/27 §9.4](<../docs/27-TLS 与零信任操作指南.md>) |
 | logstash | — | — | 不发布；在编排网络内从 Kafka 读取并写入 Elasticsearch |
 | nacos | 8848/9848/8849 | `127.0.0.1` | HTTPS API / gRPC TLS / 控制台（8849） |
 | tempo | 4317/4318/3200 | `127.0.0.1` | OTLP gRPC / OTLP HTTP / UI |
@@ -133,13 +133,15 @@ B3 起 ES、Kafka、Logstash 也只接受 TLS；Nacos 在 B4 起同样只接受 
 
 ### 网络分段
 
-compose 定义 `edge` / `app` / `data` / `obs` 四个网络：
+compose 定义 `edge` / `app` / `data` / `obs` / `mq` / `tx` 六个网络：
 
 | 网络 | 成员 | 边界 |
 |---|---|---|
 | `edge` | 门户、网关、系统服务、运维控制台 | 门户唯一入口；门户不加入数据面网络 |
-| `app` | 网关、系统服务、运维控制台、八个业务服务、Prometheus | 服务间调用与指标抓取 |
-| `data` | 中间件、全部业务与初始化任务、Logstash/Kibana/Grafana/Thanos/exporter | 业务与数据面通信 |
+| `app` | 网关、系统服务、运维控制台、八个业务服务、Prometheus、`rocketmq-tls` | 服务间调用、指标抓取与 RocketMQ TLS 入口 |
+| `data` | 中间件（不含 Seata 与 RocketMQ 集群）、业务与初始化任务、Logstash/Kibana/Grafana/Thanos/exporter | 业务与数据面通信 |
+| `mq` | RocketMQ NameServer/Broker/Proxy/初始化任务、`rocketmq-tls` | 仅 RocketMQ 集群与 TLS 前置代理 |
+| `tx` | `seata-server`、`iboot-workflow`、`iboot-system` | 仅事务协调与两个事务参与方 |
 | `obs` | Prometheus、Grafana、Alertmanager、Thanos、SkyWalking、exporter | 可观测组件内部通信 |
 
 门户容器无法解析或连接 `mysql`、`redis`、`elasticsearch`、`nacos`；这是可回归验证的边界，
@@ -215,7 +217,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - `sys.silo.console.url` 保持 `http://localhost:9001`，因为它是浏览器访问地址；
 - 监控服务的 Silo 检查只在存储类型为 `silo` 时真正连接。
 
-## 内部 TLS 与 mTLS（B2 / B5.1 / B5.2）
+## 内部 TLS 与 mTLS（B2 / B5.1 / B5.2 / B5.3）
 
 - 业务服务与网关挂载 `./certs/runtime:/certs:ro`，通过 `IBOOT_TLS_CERT_DIR=/certs`
   使用 `server.ssl`；每个服务再通过 `IBOOT_TLS_CERT_FILE` / `IBOOT_TLS_KEY_FILE`
@@ -224,6 +226,8 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   服务证书 EKU 同时包含 `serverAuth` 与 `clientAuth`。
 - 门户 nginx 挂载 `portal.pem` 并用 `proxy_ssl_certificate` 访问上游；Prometheus 与
   blackbox 通过 `/certs/clients/` 的专用证书抓取服务端口。
+- RocketMQ 使用 `mq` 网络 + `rocketmq-tls`（nginx `stream` + `ssl_preread`）只转发 TLS；
+  Seata 使用 `tx` 网络，仅 workflow/system 可访问。
 - MySQL 以 `--require_secure_transport=ON` 启动；Redis 只监听 TLS 端口；Silo 以
   `--certs-dir /certs` 启动；Neo4j 的 `graph` profile 启用 Bolt TLS。
 - 数据面健康检查使用本地 CA；ES/Kafka/Logstash/Nacos 只接受 TLS。

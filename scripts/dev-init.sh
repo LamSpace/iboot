@@ -339,7 +339,7 @@ start_middleware() {
     export IBOOT_PROMETHEUS_CONFIG="${IBOOT_PROMETHEUS_CONFIG:-prometheus.yml}"
     local infra=(mysql redis silo silo-init elasticsearch elasticsearch-init seata-server)
     if rocketmq_enabled; then
-        infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init)
+        infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-tls rocketmq-init)
     fi
     if logging_enabled; then
         infra+=(kafka kafka-init logstash)
@@ -385,6 +385,7 @@ start_middleware() {
         wait_healthy 'RocketMQ NameServer' iboot-rocketmq-namesrv 90 || fail 'RocketMQ NameServer 未就绪'
         wait_healthy 'RocketMQ Broker' iboot-rocketmq-broker 120 || fail 'RocketMQ Broker 未就绪'
         wait_healthy 'RocketMQ Proxy' iboot-rocketmq-proxy 60 || fail 'RocketMQ Proxy 未就绪'
+        wait_healthy 'RocketMQ TLS' iboot-rocketmq-tls 60 || fail 'RocketMQ TLS 入口未就绪'
     else
         log '  RocketMQ 已关闭（IBOOT_ROCKETMQ_ENABLED=false）'
     fi

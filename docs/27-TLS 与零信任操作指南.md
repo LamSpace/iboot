@@ -10,7 +10,8 @@
 
 - 浏览器/CLI → 门户（L1 边缘 TLS）；门户 → 网关；服务间调用与 JWKS。
 - MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面；Kafka SASL 与 Redis 命名 ACL；Grafana/Prometheus/Alertmanager/Thanos/Kibana 控制台。
-- Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 只有加密通道（见 §9.4）。
+- Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 应用入口只接受 TLS，但客户端不校验服务端且无 ACL（见 §9.4/§19）。
+- Seata 无原生 TLS/认证，作为显式例外放在 `tx` 网络，仅 workflow/system 可访问（见 §19）。
 - 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
 - 不引入本机服务网格、SPIFFE/OPA；服务端只校验“证书由本地 CA 签发”，不按调用方做授权。
@@ -304,14 +305,16 @@ scripts/regress/log-pipeline.sh --drills
 - 端到端探针必须能从 Kafka 经 Logstash 进入 ES，并按 `traceId` 检索到。
 - Kafka 或 Logstash 不可用时业务仍正常运行；恢复后日志自动续传。
 
-### 9.4 RocketMQ 加密边界
+### 9.4 RocketMQ TLS-only 入口
 
-- Proxy 加载本地证书并开启 TLS；workflow 与 notify 设置
-  `IBOOT_ROCKETMQ_SSL_ENABLED=true`。
-- **已知边界**：同一端口仍接受明文；客户端使用 `InsecureTrustManagerFactory`，
-  不校验服务端证书。该链路只提供被动窃听防护，不提供身份认证或强制 TLS。
-- 文档与回归输出统一使用“加密通道/已知边界”，不得写成零信任或 mTLS。
-- 强制 TLS 与客户端认证留待 B4/B5 或前置 TLS 终止代理。
+- 应用入口为 `rocketmq-tls`（nginx stream + `ssl_preread`）：只转发 TLS ClientHello，
+  非 TLS 连接被关闭；TLS 仍在客户端与 Proxy 之间端到端完成。
+- workflow 与 notify 连接 `rocketmq-tls:8081` 并设置 `IBOOT_ROCKETMQ_SSL_ENABLED=true`；
+  宿主机开发使用 `localhost:18081`。Proxy 原生 8080/8081 不再发布到宿主机。
+- **已知边界**：官方客户端 5.2.2 硬编码 `InsecureTrustManagerFactory`，不校验服务端
+  证书；本批也没有 ACL。该链路只提供“TLS-only 加密入口”，不提供服务端身份认证、
+  客户端认证或 mTLS 能力。
+- 文档与回归输出统一使用“TLS-only 加密入口/已知边界”，不得写成零信任或 mTLS。
 
 ### 9.5 验收与回滚
 
@@ -373,7 +376,7 @@ scripts/regress/internal-tls.sh
 - B4.7：可观测查询与控制台 TLS 已完成（`harden-observability-ui-tls`）。
 - B5.1：每服务独立服务端证书已完成（`add-service-certificates`）。
 - B5.2：服务间 mTLS、每服务工作负载身份与探针客户端身份已完成（`enforce-service-mtls`），见 §18。
-- B5 剩余：RocketMQ 强制 TLS 与 Seata 认证/例外决策。
+- B5.3：RocketMQ TLS-only 入口与 Seata 网络隔离/例外登记已完成（`harden-rocketmq-tls-and-isolate-seata`），见 §19；RocketMQ ACL 与服务端校验仍待后续。
 
 ## 12. 暴露面与网络分段
 
@@ -386,7 +389,7 @@ TLS 只保护「连上之后」的通道，不回答「谁允许连接」。本�
 |---|---|---|
 | 门户 | 80 / 443 | `0.0.0.0` |
 | 网关与业务服务 | 8080–8089 | `127.0.0.1` |
-| 数据面 | 3306、6379、9000/9001、9200、8848/9848/8849、8091、29092、18080/18081 | `127.0.0.1` |
+| 数据面 | 3306、6379、9000/9001、9200、8848/9848/8849、8091、29092、18081（RocketMQ TLS） | `127.0.0.1` |
 | 治理与可观测 UI | 8858、9090、3000、9093、5601、19192、18082、3200 | `127.0.0.1`；除 Sentinel 外均 HTTPS |
 | 图数据库（`graph` profile） | 7474、7687 | `127.0.0.1` |
 | Logstash、Thanos、exporter、SkyWalking Banyandb/OAP admin | 不发布 | — |
@@ -399,8 +402,10 @@ Docker 的端口发布会绕过常见主机防火墙，因此不能采用「先�
 | 网络 | 成员 | 边界 |
 |---|---|---|
 | `edge` | 门户、网关、系统服务、运维控制台 | 门户唯一入口 |
-| `app` | 网关、系统服务、运维控制台、八个业务服务、Prometheus | 服务间调用与指标抓取 |
-| `data` | 中间件、业务与初始化任务、Logstash/Kibana/Grafana/Thanos/exporter | 数据面 |
+| `app` | 网关、系统服务、运维控制台、八个业务服务、Prometheus、`rocketmq-tls` | 服务间调用、指标抓取与 RocketMQ TLS 入口 |
+| `data` | 中间件（不含 Seata 与 RocketMQ 集群）、业务与初始化任务、Logstash/Kibana/Grafana/Thanos/exporter | 数据面 |
+| `mq` | RocketMQ NameServer/Broker/Proxy/初始化任务、`rocketmq-tls` | 仅 RocketMQ 集群与 TLS 前置代理 |
+| `tx` | `seata-server`、`iboot-workflow`、`iboot-system` | 仅事务协调与两个事务参与方 |
 | `obs` | Prometheus、Grafana、Alertmanager、Thanos、SkyWalking、exporter | 可观测组件 |
 
 门户只加入 `edge`，无法解析 `mysql`、`redis`、`elasticsearch`、`nacos`。这不是文档约定，
@@ -413,13 +418,14 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/exposure.sh
 REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 ```
 
-`exposure.sh` 分三层：
+`exposure.sh` 分四组：
 
 1. 用 `docker inspect` 断言只有门户 80/443 绑定 `0.0.0.0`，其余已发布端口绑定 `127.0.0.1`，
    并断言已移除的映射不再出现。
-2. 用宿主机非回环 IPv4 连接 3306、6379、9200、8848、29092，必须失败；回环地址必须成功。
+2. 用宿主机非回环 IPv4 连接 3306、6379、9200、8848、29092、18081，必须失败；回环地址必须成功。
 3. 容器矩阵：门户访问网关成功，访问 MySQL/Redis/ES/Nacos 失败；业务服务访问 MySQL/Nacos 成功。
-   容器未运行时明确跳过矩阵，但端口检查仍执行。
+4. mq/tx 隔离：workflow/system 可访问 Seata，其它服务不可；应用无法直连 RocketMQ Proxy，
+   但可访问 `rocketmq-tls`。容器未运行时明确跳过矩阵，但端口检查仍执行。
 
 ### 12.4 边界
 
@@ -427,6 +433,7 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - 宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程仍按 Spring Boot 默认监听所有网卡；
   它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B5 收敛。
 - 中间件已启用账号认证，但仍是共享账号；服务间已启用 mTLS（B5.2），但服务端尚未按调用方做授权。
+- RocketMQ 入口只接受 TLS，但客户端不校验服务端且无 ACL；Seata 无原生 TLS/认证，仅靠 `tx` 网络与回环发布隔离，均为显式例外。
 - 可观测 UI 除 Sentinel 外均为 HTTPS；Sentinel 仍为回环 HTTP，作为已登记边界。
 - 工作负载 mTLS 的证书身份已落地；SPIFFE/服务网格与按调用方授权不在本节的宣称范围内。
 
@@ -505,6 +512,7 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - Silo 使用受管根凭据，尚未创建按桶授权的应用用户。
 - Nacos 控制台鉴权在本地保持关闭以支持门户内嵌；非本地必须开启，且门户不代填凭据。
 - Neo4j 使用环境注入的单一账号；社区版不支持按服务划分用户，不能据此声称工作负载身份。
+- Seata 2.6.0 无原生 TLS/认证；只有 workflow/system 加入 `tx` 网络，8091 仅回环发布。该链路是显式例外，不计入 mTLS 覆盖。
 - Neo4j 的 `NEO4J_AUTH` 只在空数据卷首次启动时生效。已有 `neo4j_data` 卷时，修改
   `NEO4J_PASSWORD` 不会改数据库内口令，需先停止 Neo4j 后执行
   `neo4j-admin dbms set-initial-password <新口令>`，或删除 graph profile 的数据卷重建
@@ -713,3 +721,52 @@ openssl x509 -in docker/certs/services/iboot-system.pem -noout -purpose
   最小权限与 SPIFFE 身份留待后续。
 - Nacos 注册客户端仍使用共享 `portal.pem`；注册通道不是业务服务端口。
 - 证书探针仍以一个服务端点反映同批签发的叶子证书到期时间；拆分不同有效期前必须扩展探针。
+
+## 19. RocketMQ TLS-only 与 Seata 例外（B5.3）
+
+B5.3 收掉两条未闭环链路：RocketMQ 应用入口只接受 TLS；Seata 因无原生 TLS/认证，登记为显式例外并做专用网络隔离。
+
+### 19.1 RocketMQ
+
+- 新增 `rocketmq-tls`（nginx `stream` + `ssl_preread`）作为唯一应用入口：TLS ClientHello 透传到
+  `rocketmq-proxy:8081`，非 TLS 连接被关闭。TLS 仍在客户端与 Proxy 之间端到端完成。
+- RocketMQ NameServer、Broker、Proxy 与初始化任务只加入 `mq` 网络；`rocketmq-tls` 同时加入
+  `app` 与 `mq`。应用连接 `rocketmq-tls:8081`，宿主机连接 `localhost:18081`。
+- Proxy 原生 8080/8081 不再发布到宿主机；`18080` 映射已移除。
+- **仍存在的边界**：官方客户端 5.2.2 硬编码 `InsecureTrustManagerFactory`，不校验服务端证书；
+  没有 ACL。只能宣称“入口拒绝明文、传输加密”，不能宣称服务端身份认证或 mTLS。
+
+验证：
+
+```bash
+scripts/regress/log-search-tls.sh
+scripts/regress/exposure.sh
+```
+
+应看到 RocketMQ TLS 握手成功、明文连接失败，以及应用容器无法直连 `rocketmq-proxy:8081`。
+
+### 19.2 Seata
+
+Seata 2.6.0 没有原生传输层 TLS/认证，本批不做 TLS 终止器，改为：
+
+- `seata-server` 只加入 `tx` 网络；只有 `iboot-workflow` 与 `iboot-system` 加入 `tx`。
+- 8091 继续只绑定宿主机 `127.0.0.1`；其余服务无法解析或连接 `seata-server:8091`。
+- 业务侧调用仍由服务 mTLS（B5.2）与 `X-Internal-Token` 保护；Seata TC 控制面本身是例外。
+- 残余风险：被攻陷的 workflow/system 仍可干扰 TC；复审触发为 Seata 原生 TLS/认证或服务网格引入。
+- 该链路不计入 mTLS 覆盖率，文档与回归不得写成零信任。
+
+验证：
+
+```bash
+scripts/regress/seata.sh
+scripts/regress/seata-tcc.sh
+scripts/regress/exposure.sh
+```
+
+`exposure.sh` 应看到 workflow/system 可访问 Seata 8091，而 `iboot-file`/`iboot-ai` 不可访问。
+
+### 19.3 回滚
+
+- RocketMQ：恢复 Proxy 的 `18080/18081` 映射与 `rocketmq-proxy:8081` 端点，移除 `rocketmq-tls`；
+  网络可保留。
+- Seata：把 `seata-server` 放回 `data`，移除 system/workflow 的 `tx` 网络；8091 回环发布不变。
