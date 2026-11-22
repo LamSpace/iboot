@@ -197,21 +197,45 @@ scrape_configs:
         replacement: 'iboot-ops:8089'
 
   - job_name: 'mysql-exporter'
+    scheme: https
+    tls_config:
+      ca_file: /certs/ca/rootCA.pem
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
+      server_name: mysql-exporter
     static_configs:
       - targets: ['mysql-exporter:9104']
     scrape_interval: 30s
 
   - job_name: 'redis-exporter'
+    scheme: https
+    tls_config:
+      ca_file: /certs/ca/rootCA.pem
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
+      server_name: redis-exporter
     static_configs:
       - targets: ['redis-exporter:9121']
     scrape_interval: 30s
 
   - job_name: 'node-exporter'
+    scheme: https
+    tls_config:
+      ca_file: /certs/ca/rootCA.pem
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
+      server_name: node-exporter
     static_configs:
       - targets: ['node-exporter:9100']
     scrape_interval: 30s
 
   - job_name: 'elasticsearch-exporter'
+    scheme: https
+    tls_config:
+      ca_file: /certs/ca/rootCA.pem
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
+      server_name: elasticsearch-exporter
     static_configs:
       - targets: ['elasticsearch-exporter:9114']
     scrape_interval: 30s

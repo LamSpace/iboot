@@ -1,0 +1,7 @@
+# elasticsearch-exporter 的 HTTPS 与客户端证书配置（exporter-toolkit）。
+tls_server_config:
+  cert_file: /certs/services/elasticsearch-exporter.pem
+  key_file: /certs/services/elasticsearch-exporter-key.pem
+  client_auth_type: RequireAndVerifyClientCert
+  client_ca_file: /certs/ca/rootCA.pem
+  min_version: TLS12

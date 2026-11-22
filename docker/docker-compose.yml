@@ -1608,6 +1608,10 @@ services:
     command:
       - '--mysqld.address=mysql:3306'
       - '--mysqld.username=${MYSQL_EXPORTER_USER:-iboot_exporter}'
+      - '--web.config.file=/etc/exporter/web.yml'
+    volumes:
+      - ./scripts/exporters/mysql-exporter.yml:/etc/exporter/web.yml:ro
+      - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
       - data
@@ -1623,7 +1627,12 @@ services:
       REDIS_ADDR: rediss://redis:6379
       REDIS_USER: iboot_exporter
       REDIS_PASSWORD: ${REDIS_EXPORTER_PASSWORD:?REDIS_EXPORTER_PASSWORD 必须在 .env 中设置}
-      REDIS_EXPORTER_TLS_CA_CERT_FILE: /certs/rootCA.pem
+      REDIS_EXPORTER_TLS_CA_CERT_FILE: /certs/ca/rootCA.pem
+    command:
+      - '--tls-server-cert-file=/certs/services/redis-exporter.pem'
+      - '--tls-server-key-file=/certs/services/redis-exporter-key.pem'
+      - '--tls-server-ca-cert-file=/certs/ca/rootCA.pem'
+      - '--tls-server-min-version=TLS1.2'
     volumes:
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
@@ -1637,15 +1646,18 @@ services:
     image: prom/node-exporter:v1.12.1
     container_name: iboot-node-exporter
     profiles: ["observability"]
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
     command:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--web.config.file=/etc/exporter/web.yml'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - ./scripts/exporters/node-exporter.yml:/etc/exporter/web.yml:ro
+      - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
       - obs
@@ -1656,10 +1668,12 @@ services:
     profiles: ["observability"]
     command:
       - '--es.uri=https://iboot_exporter:${ES_EXPORTER_PASSWORD:?ES_EXPORTER_PASSWORD 必须在 .env 中设置}@elasticsearch:9200'
-      - '--es.ca=/certs/rootCA.pem'
+      - '--es.ca=/certs/ca/rootCA.pem'
       - '--es.all'
       - '--es.indices'
+      - '--web.config.file=/etc/exporter/web.yml'
     volumes:
+      - ./scripts/exporters/elasticsearch-exporter.yml:/etc/exporter/web.yml:ro
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:

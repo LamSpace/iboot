@@ -113,8 +113,16 @@ printf '\n===== 5b. 服务间授权 =====\n'
 printf '\n===== 6. 可观测控制台 TLS =====\n'
 "$HERE/observability-tls.sh" || fail "可观测控制台 TLS 检查未通过"
 
+echo
+echo "===== 6b. Exporter mTLS ====="
+"$HERE/exporter-mtls.sh" || fail "exporter mTLS 检查未通过"
+
 printf '\n===== 7. 证书到期监控 =====\n'
 "$HERE/tls-cert-monitor.sh" || fail "证书到期监控检查未通过"
+
+echo
+echo "===== 7b. 证书轮换检查模式 ====="
+"$ROOT/scripts/tls-rotate.sh" --check || fail "证书轮换检查未通过"
 
 printf '\n===== 8. 中间件认证 =====\n'
 "$HERE/middleware-auth.sh" || fail "中间件认证检查未通过"
