@@ -5,7 +5,7 @@
 #   scripts/apm/verify.sh
 # 环境变量：
 #   APM_GATEWAY  网关地址，默认 http://localhost:8088
-#   APM_TEMPO    Tempo 地址，默认 http://localhost:3200
+#   APM_TEMPO    Tempo 地址，默认 https://localhost:3200
 #   APM_OAP      OAP HTTP/GraphQL 地址，默认 http://localhost:12800
 #   APM_EXPECT   期望出现在链路中的服务，逗号分隔，默认 iboot-gateway,iboot-system
 #   APM_WAIT     等待链路分段到齐的秒数，默认 30
@@ -18,7 +18,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$ROOT/scripts/regress/lib.sh"
 
 GATEWAY="${APM_GATEWAY:-https://localhost:8088}"
-TEMPO="${APM_TEMPO:-http://localhost:3200}"
+TEMPO="${APM_TEMPO:-https://localhost:3200}"
 OAP="${APM_OAP:-http://localhost:12800}"
 EXPECT="${APM_EXPECT:-iboot-gateway,iboot-system}"
 WAIT="${APM_WAIT:-30}"

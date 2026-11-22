@@ -175,7 +175,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - compose 的 `environment` 会覆盖 `.env` 中的宿主机地址，例如：
   - `MYSQL_HOST=mysql`、`REDIS_HOST=redis`、`NACOS_ADDR=nacos:8848`
   - `ELASTICSEARCH_URIS=https://elasticsearch:9200`、`ELASTICSEARCH_USERNAME`、`ELASTICSEARCH_PASSWORD`
-  - `TEMPO_OTLP=http://tempo:4318/v1/traces`
+  - `TEMPO_OTLP=https://tempo:4318/v1/traces`
   - `JWT_JWK_SET_URI=https://iboot-auth:8083/oauth2/jwks`
 - 网关使用 `SPRING_PROFILES_ACTIVE=nacos`。
 - 认证 issuer 与回调为 `https://localhost`、`https://localhost/callback`、

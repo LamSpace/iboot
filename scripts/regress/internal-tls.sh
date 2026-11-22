@@ -181,4 +181,32 @@ else
     reg_log "  Neo4j 未运行，跳过"
 fi
 
+reg_log "== 10. Tempo TLS =="
+for port in 3200 4317 4318; do
+    if echo | timeout 10 openssl s_client -connect "localhost:$port" -tls1_2 -CAfile "$SVC_CACERT" 2>&1 \
+        | grep -q "Verify return code: 0"; then
+        reg_pass "Tempo 端口 $port 接受 TLS 且证书通过本地 CA 校验"
+    else
+        reg_fail "Tempo 端口 $port TLS 握手或证书校验失败"
+    fi
+done
+tempo_status="$(svc_curl -o /dev/null -w '%{http_code}' "https://localhost:3200/status" 2>/dev/null || true)"
+if [ "$tempo_status" = "200" ]; then
+    reg_pass "Tempo 查询端口通过 HTTPS 提供 /status"
+else
+    reg_fail "Tempo 查询端口 HTTPS 请求失败（HTTP ${tempo_status:-无响应}）"
+fi
+tempo_plain="$(curl -sS -o /dev/null -w '%{http_code}' "http://localhost:3200/status" 2>/dev/null || true)"
+if [ "$tempo_plain" = "200" ]; then
+    reg_fail "Tempo 3200 仍接受明文 HTTP"
+else
+    reg_pass "Tempo 3200 拒绝明文（HTTP ${tempo_plain:-无响应}）"
+fi
+tempo_no_ca="$(curl -sS -o /dev/null -w '%{http_code}' --cacert "$EMPTY_CA" "https://localhost:3200/status" 2>/dev/null || true)"
+if [ "$tempo_no_ca" = "000" ] || [ -z "$tempo_no_ca" ]; then
+    reg_pass "Tempo 不带内部 CA 时证书校验失败"
+else
+    reg_fail "Tempo 不带内部 CA 仍可访问：HTTP $tempo_no_ca"
+fi
+
 reg_summary
