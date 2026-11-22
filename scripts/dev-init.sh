@@ -542,14 +542,12 @@ start_backend() {
             local short="${name#iboot-}" acct="iboot_${name#iboot-}" upper svc_pw_var
             upper="$(printf '%s' "$short" | tr '[:lower:]' '[:upper:]')"
             svc_pw_var="MIDDLEWARE_${upper}_PASSWORD"
-            # 只保留本服务的中间件口令，其余服务的变量从子进程环境中移除。
+            # 所有中间件口令变量都从子进程环境中移除；服务只通过 MYSQL_*/REDIS_*/NACOS_* 收到自己的值。
             local -a others=(system workflow file notify job monitor auth ai gateway ops)
             local other other_upper
             for other in "${others[@]}"; do
-                if [ "$other" != "$short" ]; then
-                    other_upper="$(printf '%s' "$other" | tr '[:lower:]' '[:upper:]')"
-                    env_opts+=(-u "MIDDLEWARE_${other_upper}_PASSWORD")
-                fi
+                other_upper="$(printf '%s' "$other" | tr '[:lower:]' '[:upper:]')"
+                env_opts+=(-u "MIDDLEWARE_${other_upper}_PASSWORD")
             done
             env_opts+=("NACOS_USERNAME=$acct" "NACOS_PASSWORD=${!svc_pw_var}")
             case "$short" in
