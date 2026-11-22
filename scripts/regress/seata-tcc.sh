@@ -2,7 +2,7 @@
 # Seata TCC 额度划转验收：正常划转、重复调用、Try 后取消、空回滚、并发、权限、TC/system 不可用。
 #
 # 前置条件：
-#   - MySQL / Redis / Nacos / Seata Server 已启动；
+#   - MySQL / Redis / Nacos / Seata Server 已启动，system/workflow 与 Seata 同属 tx 网络；
 #   - iboot-auth（8083）、iboot-system（8080）、iboot-workflow（8086）已启动；
 #   - system 与 workflow 使用相同的 IBOOT_SYSTEM_INTERNAL_TOKEN；
 #   - 验证“Try 后失败取消”时，workflow 必须以 seata-tcc-demo profile 启动：

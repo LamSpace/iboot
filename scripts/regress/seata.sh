@@ -2,7 +2,7 @@
 # Seata AT 跨服务验收：正常提交、额度不足、后置失败回滚、TC/RM 不可用、并发与幂等。
 #
 # 前置条件：
-#   - MySQL / Redis / Nacos / Seata Server 已启动；
+#   - MySQL / Redis / Nacos / Seata Server 已启动，system/workflow 与 Seata 同属 tx 网络；
 #   - iboot-auth（8083）、iboot-system（8080）、iboot-workflow（8086）已启动；
 #   - system 与 workflow 使用相同的 IBOOT_SYSTEM_INTERNAL_TOKEN；
 #   - 需要验证“远程扣减后失败回滚”时，workflow 必须以 seata-demo profile 启动：

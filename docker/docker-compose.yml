@@ -71,7 +71,7 @@ x-app-env: &app-env
   IBOOT_TLS_CERT_DIR: /certs
   IBOOT_INTERNAL_TLS_ENABLED: "true"
   JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dnacos.remote.client.rpc.tls.enable=true -Dnacos.remote.client.rpc.tls.trustCollectionChainPath=file:/certs/ca/rootCA.pem -Dnacos.remote.client.rpc.tls.trustAll=false -Dnacos.remote.client.rpc.tls.mutualAuth=true -Dnacos.remote.client.rpc.tls.certChainFile=file:/certs/portal.pem -Dnacos.remote.client.rpc.tls.certPrivateKey=file:/certs/portal-key.pem"
-  IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-proxy:8081
+  IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-tls:8081
   IBOOT_ROCKETMQ_SSL_ENABLED: "true"
   IBOOT_AI_SILO_ENDPOINT: https://silo:9000
   IBOOT_AI_SILO_ACCESS_KEY: ${SILO_ROOT_USER:?SILO_ROOT_USER 必须在 .env 中设置}
@@ -201,6 +201,7 @@ services:
       - edge
       - app
       - data
+      - tx
     depends_on:
       mysql:
         condition: service_healthy
@@ -407,6 +408,10 @@ services:
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-workflow.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-workflow-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
+    networks:
+      - app
+      - data
+      - tx
     volumes:
       - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
@@ -878,7 +883,7 @@ services:
       - seata_data:/seata-server/sessionStore
     restart: unless-stopped
     networks:
-      - data
+      - tx
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8091' || exit 1"]
       interval: 15s
@@ -896,7 +901,7 @@ services:
       JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     restart: unless-stopped
     networks:
-      - data
+      - mq
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/9876'"]
       interval: 10s
@@ -914,7 +919,7 @@ services:
       - rocketmq_broker_data:/home/rocketmq/store
     restart: "no"
     networks:
-      - data
+      - mq
 
   rocketmq-broker:
     image: apache/rocketmq:5.5.0
@@ -928,7 +933,7 @@ services:
       - rocketmq_broker_data:/home/rocketmq/store
     restart: unless-stopped
     networks:
-      - data
+      - mq
     depends_on:
       rocketmq-namesrv:
         condition: service_healthy
@@ -952,12 +957,9 @@ services:
     volumes:
       - ./rocketmq/rmq-proxy.json:/home/rocketmq/rocketmq-5.5.0/conf/rmq-proxy.json:ro
       - ./certs/runtime:/certs:ro
-    ports:
-      - "127.0.0.1:18080:8080"
-      - "127.0.0.1:18081:8081"
     restart: unless-stopped
     networks:
-      - data
+      - mq
     depends_on:
       rocketmq-namesrv:
         condition: service_healthy
@@ -969,6 +971,28 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
+
+  # RocketMQ 应用入口：只转发 TLS ClientHello，明文连接被拒绝。
+  rocketmq-tls:
+    image: nginx:1.30.6-alpine3.24
+    container_name: iboot-rocketmq-tls
+    volumes:
+      - ./rocketmq/tls-proxy.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "127.0.0.1:18081:8081"
+    restart: unless-stopped
+    networks:
+      - app
+      - mq
+    depends_on:
+      rocketmq-proxy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8081"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   rocketmq-init:
     image: apache/rocketmq:5.5.0
@@ -983,7 +1007,7 @@ services:
         condition: service_healthy
     restart: "no"
     networks:
-      - data
+      - mq
 
   # ==================== Kafka（日志缓冲层） ====================
   # KRaft 单节点，不部署 ZooKeeper；只作 24 小时日志缓冲，不承载业务事件。
@@ -1544,6 +1568,10 @@ networks:
   data:
     driver: bridge
   obs:
+    driver: bridge
+  mq:
+    driver: bridge
+  tx:
     driver: bridge
 
 volumes:

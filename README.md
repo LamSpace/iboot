@@ -113,7 +113,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | UI 与状态 | Element Plus 2.6、Pinia 2.1、Vue Router 4.3 |
 | 其他 | vue-i18n 9.14、axios 1.6、markdown-it、DOMPurify、Sass |
 
-**中间件**：`docker/docker-compose.yml` 提供 27 个常驻容器与 3 个可选 SkyWalking 容器（`apm` profile，默认不启动），按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo，`observability` 为 Prometheus/Grafana/Kibana/Alertmanager/Thanos 与 exporter）；`dev-init.sh` 默认启动开发核心、集中日志与 `observability` profile。Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入。SkyWalking 对比实验的启停与验收见 [docs/24](<./docs/24-SkyWalking 与 Tempo 对比实验.md>)。
+**中间件**：`docker/docker-compose.yml` 提供 27 个常驻容器与 3 个可选 SkyWalking 容器（`apm` profile，默认不启动），按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo，`observability` 为 Prometheus/Grafana/Kibana/Alertmanager/Thanos 与 exporter）；`dev-init.sh` 默认启动开发核心、集中日志与 `observability` profile。Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 常驻，宿主机通过 TLS 入口 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入。SkyWalking 对比实验的启停与验收见 [docs/24](<./docs/24-SkyWalking 与 Tempo 对比实验.md>)。
 
 ## 功能清单
 
