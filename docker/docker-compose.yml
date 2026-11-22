@@ -182,6 +182,8 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-system.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-system-key.pem
       JAVA_OPTIONS: "-Xms512m -Xmx1024m --enable-native-access=ALL-UNNAMED"
       # 门户 nginx 不代理 Nacos 控制台，容器部署固定为跳转模式；地址取浏览器可达的宿主机端口。
       # 这两个环境变量覆盖 sys_config 中的开发默认值，宿主机 Vite 开发不受影响。
@@ -223,6 +225,8 @@ services:
       - "127.0.0.1:8081:8081"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-ai.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-ai-key.pem
       JAVA_OPTIONS: "-Xms512m -Xmx1024m --enable-native-access=ALL-UNNAMED"
       # 开启智能体与智能体管理页面所需的控制器
       IBOOT_AI_AGENT_ENABLED: "true"
@@ -261,6 +265,8 @@ services:
       - "127.0.0.1:8082:8082"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-file.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-file-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
     volumes:
       - ./certs/runtime:/certs:ro
@@ -293,6 +299,8 @@ services:
       - "127.0.0.1:8083:8083"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-auth.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-auth-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
       # 持久化签名密钥：认证服务重启后仍能验证此前签发的令牌
       IBOOT_AUTH_JWK_FILE: /app/keys/iboot-auth-jwk.json
@@ -325,6 +333,8 @@ services:
       - "127.0.0.1:8084:8084"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-notify.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-notify-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
       ELASTICSEARCH_USERNAME: iboot_notify
       ELASTICSEARCH_PASSWORD: ${ES_NOTIFY_PASSWORD:?ES_NOTIFY_PASSWORD 必须在 .env 中设置}
@@ -358,6 +368,8 @@ services:
       - "127.0.0.1:8085:8085"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-job.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-job-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
       # 容器内没有 docker CLI；启用备份会触发启动自检失败
       IBOOT_BACKUP_ENABLED: "false"
@@ -392,6 +404,8 @@ services:
       - "127.0.0.1:8086:8086"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-workflow.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-workflow-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
     volumes:
       - ./certs/runtime:/certs:ro
@@ -421,6 +435,8 @@ services:
       - "127.0.0.1:8087:8087"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-monitor.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-monitor-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
       ELASTICSEARCH_USERNAME: iboot_monitor
       ELASTICSEARCH_PASSWORD: ${ES_MONITOR_PASSWORD:?ES_MONITOR_PASSWORD 必须在 .env 中设置}
@@ -454,6 +470,8 @@ services:
       - "127.0.0.1:8088:8088"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-gateway.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-gateway-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
       SPRING_PROFILES_ACTIVE: nacos
     volumes:
@@ -487,6 +505,8 @@ services:
       - "127.0.0.1:8089:8089"
     environment:
       <<: *app-env
+      IBOOT_TLS_CERT_FILE: /certs/services/iboot-ops.pem
+      IBOOT_TLS_KEY_FILE: /certs/services/iboot-ops-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
       # 本地全栈默认关闭控制台认证；生产部署必须开启并注入密码
       IBOOT_OPS_SECURITY_ENABLED: "false"

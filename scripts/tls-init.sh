@@ -26,6 +26,8 @@ TRUSTSTORE="$CERT_DIR/truststore.p12"
 ROOT_CA="$CAROOT/rootCA.pem"
 # 容器运行期证书副本：以容器用户可读权限提供，宿主私钥仍保持 0600
 RUNTIME_DIR="$CERT_DIR/runtime"
+SERVICE_DIR="$CERT_DIR/services"
+RUNTIME_SERVICE_DIR="$RUNTIME_DIR/services"
 # Kafka 需要同时包含私钥与证书链的 PKCS12 keystore；密码仅用于本地开发
 KAFKA_KEYSTORE="$RUNTIME_DIR/kafka-keystore.p12"
 KAFKA_KEY_PASSWORD_FILE="$RUNTIME_DIR/kafka-key-password"
@@ -40,6 +42,12 @@ SAN_NAMES=(
     iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops
     mysql redis kafka elasticsearch silo nacos seata-server rocketmq-proxy tempo
     prometheus alertmanager grafana thanos-query thanos-sidecar thanos-store thanos-compact kibana
+)
+
+# 可部署服务各自使用独立服务端证书；SAN 含服务名与宿主机回环地址。
+SERVICE_NAMES=(
+    iboot-system iboot-gateway iboot-auth iboot-file iboot-notify
+    iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops
 )
 
 FORCE=0
@@ -79,7 +87,12 @@ chmod 700 "$CAROOT"
 
 cert_valid() {
     [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ] && [ -f "$ROOT_CA" ] && [ -f "$TRUSTSTORE" ] || return 1
-    openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1
+    openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1 || return 1
+    local svc
+    for svc in "${SERVICE_NAMES[@]}"; do
+        [ -f "$SERVICE_DIR/$svc.pem" ] && [ -f "$SERVICE_DIR/$svc-key.pem" ] || return 1
+        openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$svc.pem" >/dev/null 2>&1 || return 1
+    done
 }
 
 # 生成容器运行期副本：容器内非 root 用户需要可读私钥；宿主私钥保持 0600。
@@ -120,6 +133,15 @@ ensure_runtime_copies() {
         "$RUNTIME_DIR/public.crt" "$RUNTIME_DIR/private.key" \
         "$KAFKA_KEYSTORE" "$KAFKA_KEY_PASSWORD_FILE" "$KAFKA_KEYSTORE_PASSWORD_FILE" \
         "$NACOS_KEYSTORE"
+    # 各服务的独立证书副本；目录整体随 /certs 挂载进容器。
+    mkdir -p "$RUNTIME_SERVICE_DIR"
+    local svc
+    for svc in "${SERVICE_NAMES[@]}"; do
+        cp -f "$SERVICE_DIR/$svc.pem" "$RUNTIME_SERVICE_DIR/$svc.pem"
+        cp -f "$SERVICE_DIR/$svc-key.pem" "$RUNTIME_SERVICE_DIR/$svc-key.pem"
+        chmod 644 "$RUNTIME_SERVICE_DIR/$svc.pem" "$RUNTIME_SERVICE_DIR/$svc-key.pem"
+    done
+    chmod 755 "$RUNTIME_SERVICE_DIR"
     chmod 755 "$RUNTIME_DIR/ca"
     chmod 644 "$RUNTIME_DIR/ca/rootCA.pem"
 }
@@ -129,9 +151,16 @@ check_expiry() {
     if openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1; then
         log "证书有效：$CERT_FILE"
         openssl x509 -noout -enddate -in "$CERT_FILE" | sed 's/^/  /'
-        return 0
+    else
+        fail "证书剩余有效期不足 30 天：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
     fi
-    fail "证书剩余有效期不足 30 天：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
+    local svc
+    for svc in "${SERVICE_NAMES[@]}"; do
+        [ -f "$SERVICE_DIR/$svc.pem" ] || fail "服务证书不存在：$SERVICE_DIR/$svc.pem（执行 scripts/tls-init.sh --force 重签）"
+        openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$svc.pem" >/dev/null 2>&1 \
+            || fail "服务证书剩余有效期不足 30 天：$SERVICE_DIR/$svc.pem"
+    done
+    log "服务证书有效：${#SERVICE_NAMES[@]} 张（$SERVICE_DIR）"
 }
 
 if [ "$CHECK_ONLY" -eq 1 ]; then
@@ -153,6 +182,17 @@ CAROOT="$CAROOT" "$MKCERT" \
     -key-file "$KEY_FILE" \
     "${SAN_NAMES[@]}"
 
+mkdir -p "$SERVICE_DIR"
+log "生成服务独立证书：$SERVICE_DIR"
+for svc in "${SERVICE_NAMES[@]}"; do
+    CAROOT="$CAROOT" "$MKCERT" \
+        -cert-file "$SERVICE_DIR/$svc.pem" \
+        -key-file "$SERVICE_DIR/$svc-key.pem" \
+        localhost 127.0.0.1 ::1 host.docker.internal "$svc"
+    chmod 600 "$SERVICE_DIR/$svc-key.pem"
+    chmod 644 "$SERVICE_DIR/$svc.pem"
+done
+
 chmod 600 "$KEY_FILE" "$CAROOT/rootCA-key.pem"
 chmod 644 "$CERT_FILE" "$ROOT_CA"
 
@@ -173,6 +213,7 @@ log "  私钥       $KEY_FILE"
 log "  PEM CA     $ROOT_CA"
 log "  Java 信任库 $TRUSTSTORE"
 log "  容器副本   $RUNTIME_DIR（私钥为容器用户可读的 0644）"
+log "  服务证书   $SERVICE_DIR（每服务一张）"
 log "  Kafka keystore $KAFKA_KEYSTORE"
 log "  Nacos keystore $NACOS_KEYSTORE"
 log ""

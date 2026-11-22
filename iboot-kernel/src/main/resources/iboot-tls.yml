@@ -19,8 +19,8 @@ spring:
       pem:
         iboot:
           keystore:
-            certificate: file:${IBOOT_TLS_CERT_DIR:docker/certs}/portal.pem
-            private-key: file:${IBOOT_TLS_CERT_DIR:docker/certs}/portal-key.pem
+            certificate: file:${IBOOT_TLS_CERT_FILE:${IBOOT_TLS_CERT_DIR:docker/certs}/portal.pem}
+            private-key: file:${IBOOT_TLS_KEY_FILE:${IBOOT_TLS_CERT_DIR:docker/certs}/portal-key.pem}
           truststore:
             certificate: file:${IBOOT_TLS_CERT_DIR:docker/certs}/ca/rootCA.pem
 server:

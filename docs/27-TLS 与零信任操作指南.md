@@ -30,7 +30,8 @@ scripts/tls-init.sh --check  # 只检查有效期
 |---|---|
 | `ca/rootCA.pem` | 本地 CA，供 nginx / Node / curl |
 | `ca/rootCA-key.pem` | CA 私钥，权限 0600，不入仓 |
-| `portal.pem` / `portal-key.pem` | 门户叶子证书与私钥 |
+| `portal.pem` / `portal-key.pem` | 门户、Nacos、Tempo 与可观测控制台的共享叶子证书 |
+| `services/<service>.pem` / `<service>-key.pem` | 十个业务服务各自的叶子证书与私钥 |
 | `truststore.p12` | Java 信任库，口令 `changeit` |
 
 叶子证书的 SAN 覆盖 `localhost`、`127.0.0.1`、`::1`、`host.docker.internal`、
@@ -189,8 +190,10 @@ B2 在不改变公开入口的前提下，把门户到网关、服务间、JWKS 
 - 九个业务服务与运维控制台通过共享 `iboot-tls.yml` 启用 `server.ssl.bundle=iboot`：
   - `iboot-kernel` 提供文件，八个业务服务通过 `spring.config.import` 引入；
   - 网关与运维控制台不依赖 kernel，各自在 `src/main/resources` 放同一份文件。
-- 证书沿用 B1 的 `portal.pem` / `portal-key.pem`，SAN 已覆盖服务名、`localhost`、
-  `127.0.0.1`；容器使用 `docker/certs/runtime/` 中容器用户可读的副本。
+- 十个业务服务通过 `IBOOT_TLS_CERT_FILE` / `IBOOT_TLS_KEY_FILE` 加载各自的
+  `services/<service>.pem` / `<service>-key.pem`；SAN 含服务名、`localhost`、`127.0.0.1`。
+- 门户、Nacos、Tempo 与可观测控制台继续使用共享的 `portal.pem` / `portal-key.pem`；
+  两者都由同一本地 CA 签发，信任链不变。
 
 ### 8.2 信任链
 
@@ -526,7 +529,8 @@ B4.4 处理 B4.3 审计中剩下的默认值和运维缺口，不改变 TLS 拓�
 - `blackbox-exporter` 用本地 CA 探测 `iboot-system:8080`（宿主机模式经
   `host.docker.internal`），暴露 `probe_ssl_earliest_cert_expiry`。
 - `tls-alerts` 规则：剩余 30 天 warning、7 天 critical、探针失败 warning。
-- 所有服务当前共用一张叶子证书，因此一个探针即可覆盖；B5 拆分证书后必须增加目标。
+- 服务端证书已按服务拆分，但十张证书同批生成、到期时间一致，因此证书探针仍只需一个目标；
+  后续若引入不同有效期的证书，必须按证书追加探针目标。
 
 验证：
 
