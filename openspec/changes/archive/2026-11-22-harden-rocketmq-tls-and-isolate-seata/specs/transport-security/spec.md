@@ -67,3 +67,61 @@ Seata 2.6.0 没有原生传输层 TLS/认证，SHALL 被登记为显式例外；
 - **WHEN** 阅读 TLS 与零信任操作指南
 - **THEN** Seata 被标注为“无原生 TLS/认证的显式例外”
 - **AND** 不计入 mTLS 覆盖率或零信任能力
+
+## MODIFIED Requirements
+
+### Requirement: 编排发布的内部端口仅绑定回环地址
+
+Docker 编排发布到宿主机的内部端口 MUST 只绑定回环地址，MUST NOT 对宿主机其它网络接口提供监听；宿主机开发模式下由开发者直接启动的进程不在本条范围内。
+
+- 业务服务、运维控制台、MySQL、Redis、Silo、Elasticsearch、Nacos、Seata、Kafka、RocketMQ TLS 入口、Neo4j 与可观测 UI 的容器发布端口 MUST 绑定 `127.0.0.1`。
+- 通过宿主机非回环地址发起连接 MUST 失败，即使目标端口在回环地址上可用。
+- 公开入口 MUST 只有门户的 80 与 443；新增任何全接口绑定 MUST 被视为安全回归。
+- 宿主机开发 MUST 使用 `localhost` 或 `127.0.0.1` 访问内部端口，MUST NOT 使用机器 LAN 地址。
+
+#### Scenario: 非回环地址无法访问内部端口
+
+- **WHEN** 使用宿主机的非回环 IP 连接 MySQL、Redis、Elasticsearch 或 Nacos 的已发布端口
+- **THEN** 连接失败
+- **AND** 使用 `localhost` 的同一连接成功
+
+#### Scenario: 内部端口不监听全部网卡
+
+- **WHEN** 检查编排的容器端口映射
+- **THEN** 内部端口只出现在回环地址上
+- **AND** 只有门户 80/443 监听 `0.0.0.0`
+
+#### Scenario: 宿主机开发不依赖 LAN 地址
+
+- **WHEN** 按文档以宿主机进程方式启动并连接中间件
+- **THEN** 所有地址均为 `localhost` 或 `127.0.0.1`
+- **AND** 不出现指向本机 LAN IP 的配置
+
+### Requirement: 日志与检索面 TLS 有负向门禁
+
+回归 SHALL 对 Elasticsearch、Kafka、日志管道与 RocketMQ 执行 TLS 负向检查，明文、缺少 CA 或错误凭据 MUST 导致失败。
+
+- 检查 MUST 覆盖 ES 的明文、无 CA、错误凭据，Kafka 的明文与无 truststore，以及 Logstash 两端连接的证书校验。
+- RocketMQ 明文连接 MUST 被拒绝并计为负向用例；MUST NOT 再以“明文仍可连接”作为边界放行。
+- 检查 MUST 接入全量回归与 CI，不得只作为手工步骤。
+- 任一检查失败 MUST 阻止把环境判定为可验收。
+
+#### Scenario: 明文 ES 被检出
+
+- **WHEN** Elasticsearch 仍接受明文请求
+- **THEN** 日志与检索面 TLS 检查失败并指出该端口
+
+#### Scenario: 明文 Kafka 被检出
+
+- **WHEN** Kafka 任一监听仍接受 PLAINTEXT
+- **THEN** 检查失败并指出该监听
+
+#### Scenario: 全部 TLS 检查通过
+
+- **WHEN** 在启用日志与检索面 TLS 的全栈环境执行回归
+- **THEN** 正向链路与负向用例全部通过
+
+#### Scenario: 明文 RocketMQ 被检出
+
+- **WHEN** RocketMQ TLS 入口仍接受明文连接
+- **THEN** 日志与检索面 TLS 检查失败并指出该端口
