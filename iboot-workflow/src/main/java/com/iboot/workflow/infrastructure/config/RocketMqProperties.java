@@ -43,6 +43,16 @@ public class RocketMqProperties {
     private boolean sslEnabled = false;
 
     /**
+     * RocketMQ ACL access key；为空表示不启用客户端认证。
+     */
+    private String accessKey = "";
+
+    /**
+     * RocketMQ ACL secret key；与 access key 同时使用。
+     */
+    private String secretKey = "";
+
+    /**
      * 通知事件主题。
      */
     private String topic = "iboot-notification";
@@ -81,6 +91,42 @@ public class RocketMqProperties {
      */
     public void setSslEnabled(final boolean sslEnabled) {
         this.sslEnabled = sslEnabled;
+    }
+
+    /**
+     * 获取 RocketMQ ACL access key。
+     *
+     * @return access key；未配置时为空串
+     */
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    /**
+     * 设置 RocketMQ ACL access key。
+     *
+     * @param accessKey access key
+     */
+    public void setAccessKey(final String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    /**
+     * 获取 RocketMQ ACL secret key。
+     *
+     * @return secret key；未配置时为空串
+     */
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    /**
+     * 设置 RocketMQ ACL secret key。
+     *
+     * @param secretKey secret key
+     */
+    public void setSecretKey(final String secretKey) {
+        this.secretKey = secretKey;
     }
 
     /**

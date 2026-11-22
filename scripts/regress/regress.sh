@@ -119,6 +119,10 @@ printf '\n===== 7. 证书到期监控 =====\n'
 printf '\n===== 8. 中间件认证 =====\n'
 "$HERE/middleware-auth.sh" || fail "中间件认证检查未通过"
 
+echo
+echo "===== 8b. RocketMQ ACL ====="
+"$HERE/rocketmq-acl.sh" || fail "RocketMQ ACL 检查未通过"
+
 printf '\n===== 9. 日志与检索 TLS =====\n'
 "$HERE/log-search-tls.sh" || fail "日志与检索 TLS 检查未通过"
 

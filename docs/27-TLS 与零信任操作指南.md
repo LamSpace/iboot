@@ -10,7 +10,7 @@
 
 - 浏览器/CLI → 门户（L1 边缘 TLS）；门户 → 网关；服务间调用与 JWKS。
 - MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面；Kafka SASL 与 Redis 命名 ACL；Grafana/Prometheus/Alertmanager/Thanos/Kibana 控制台。
-- Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 应用入口只接受 TLS，但客户端不校验服务端且无 ACL（见 §9.4/§19）。
+- Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 应用入口只接受 TLS 并启用 ACL（客户端仍不校验服务端证书，见 §9.4/§19/§22）。
 - Seata 无原生 TLS/认证，作为显式例外放在 `tx` 网络，仅 workflow/system 可访问（见 §19）。
 - 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
@@ -312,7 +312,7 @@ scripts/regress/log-pipeline.sh --drills
 - workflow 与 notify 连接 `rocketmq-tls:8081` 并设置 `IBOOT_ROCKETMQ_SSL_ENABLED=true`；
   宿主机开发使用 `localhost:18081`。Proxy 原生 8080/8081 不再发布到宿主机。
 - **已知边界**：官方客户端 5.2.2 硬编码 `InsecureTrustManagerFactory`，不校验服务端
-  证书；本批也没有 ACL。该链路只提供“TLS-only 加密入口”，不提供服务端身份认证、
+  证书；B5.6 已补 ACL 与调用方账号，但该链路仍不提供服务端身份认证、
   客户端认证或 mTLS 能力。
 - 文档与回归输出统一使用“TLS-only 加密入口/已知边界”，不得写成零信任或 mTLS。
 
@@ -435,7 +435,7 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
   它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B5 收敛。
 - 中间件已按服务拆分账号（B5.5）：MySQL、Redis、Nacos 每服务独立，Silo 由文件/备份/AI 三个桶级账号隔离；
   权限边界仍保持共享库 DML，表级授权不在本节范围内。
-- RocketMQ 入口只接受 TLS，但客户端不校验服务端且无 ACL；Seata 无原生 TLS/认证，仅靠 `tx` 网络与回环发布隔离，均为显式例外。
+- RocketMQ 入口只接受 TLS 并启用 ACL，但客户端不校验服务端证书；Seata 无原生 TLS/认证，仅靠 `tx` 网络与回环发布隔离，均为显式例外。
 - 可观测 UI 除 Sentinel 外均为 HTTPS；Sentinel 仍为回环 HTTP，作为已登记边界。
 - 工作负载 mTLS 的证书身份已落地；SPIFFE/服务网格与按调用方授权不在本节的宣称范围内。
 
@@ -763,8 +763,8 @@ B5.3 收掉两条未闭环链路：RocketMQ 应用入口只接受 TLS；Seata �
 - RocketMQ NameServer、Broker、Proxy 与初始化任务只加入 `mq` 网络；`rocketmq-tls` 同时加入
   `app` 与 `mq`。应用连接 `rocketmq-tls:8081`，宿主机连接 `localhost:18081`。
 - Proxy 原生 8080/8081 不再发布到宿主机；`18080` 映射已移除。
-- **仍存在的边界**：官方客户端 5.2.2 硬编码 `InsecureTrustManagerFactory`，不校验服务端证书；
-  没有 ACL。只能宣称“入口拒绝明文、传输加密”，不能宣称服务端身份认证或 mTLS。
+- **仍存在的边界**：官方客户端 5.2.2 硬编码 `InsecureTrustManagerFactory`，不校验服务端证书。
+  ACL 与调用方身份由 B5.6 补齐（见 §22）；仍不能宣称服务端身份认证或 mTLS。
 
 验证：
 
@@ -918,3 +918,42 @@ bash scripts/regress/regress.sh
 - 每服务口令默认在 MySQL/Redis/Nacos 间复用；生产应通过独立变量覆盖后分别轮换。
 - Kafka 日志账号保持按用途（生产/消费/运维）区分；Neo4j 社区版仍是单账号。
 - 共享库表级只读契约不变，见 [docs/23](<./23-微服务底座操作指南.md>) §11.12。
+
+## 22. RocketMQ ACL（B5.6）
+
+B5.3 只保证入口加密，没有回答“谁能发布、谁能消费”。B5.6 在 Broker 与 Proxy 上启用 ACL 2.0，
+让 workflow 与 notify 使用各自的 access key，并把运维账号限制在初始化与排障路径。
+
+### 22.1 账号与权限
+
+| 账号 | 用途 | 权限 |
+|---|---|---|
+| `iboot_rocketmq` | Broker/Proxy 初始化、`mqadmin`、排障 | SUPER；不注入业务服务 |
+| `iboot_workflow` | 审批通知生产 | `Topic:iboot-notification` 的 `PUB` |
+| `iboot_notify` | 通知消费 | `Topic:iboot-notification`、`%RETRY%iboot-notify-consumer` 的 `SUB`；`Group:iboot-notify-consumer` 的 `SUB` |
+
+- Broker 启用 `aclEnable`、认证与授权；元数据使用 Local Provider 并持久化到 `rocketmq_auth_data` 卷。
+- Proxy 通过 Broker 元数据校验调用方；`enableAclRpcHookForClusterMode=true` 用于集群模式 gRPC 校验。
+- 凭据由环境注入，入口脚本生成 `broker.conf`、`rmq-proxy.json` 与 `tools.yml`；仓库不保存口令。
+- topic 初始化与 ACL 初始化都使用运维账号生成的 `tools.yml`，不依赖镜像默认凭据。
+
+### 22.2 验收
+
+```bash
+bash scripts/regress/rocketmq-acl.sh
+bash scripts/regress/regress.sh
+```
+
+`rocketmq-acl.sh` 覆盖：
+
+- 运维账号可列出用户与 ACL；workflow/notify 账号存在且授权项正确；
+- workflow 可发布 `iboot-notification`，notify 不能发布；
+- notify 拥有消费组与 topic 授权，workflow 不能消费；
+- 无凭据与错误凭据被拒绝；
+- 镜像默认 `tools.yml` 无法管理 Broker。
+
+### 22.3 边界与回滚
+
+- 仍不校验服务端证书：客户端 5.2.2 的 `InsecureTrustManagerFactory` 是上游限制；本批只补调用方身份。
+- NameServer 未启用认证；它只服务 Broker/Proxy 的路由查询，不在应用入口路径上。
+- 回滚：移除 Broker/Proxy 的 ACL 配置与 `rocketmq-acl-init`，客户端凭据字段可保留为空。

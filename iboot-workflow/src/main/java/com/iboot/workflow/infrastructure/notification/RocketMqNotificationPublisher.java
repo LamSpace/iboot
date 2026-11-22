@@ -20,7 +20,9 @@ import com.iboot.workflow.application.service.notification.NotificationMessagePu
 import com.iboot.workflow.domain.notification.model.NotificationOutboxEvent;
 import com.iboot.workflow.infrastructure.config.RocketMqProperties;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
+import org.apache.rocketmq.client.apis.ClientConfigurationBuilder;
 import org.apache.rocketmq.client.apis.ClientServiceProvider;
+import org.apache.rocketmq.client.apis.StaticSessionCredentialsProvider;
 import org.apache.rocketmq.client.apis.message.Message;
 import org.apache.rocketmq.client.apis.producer.Producer;
 import org.apache.rocketmq.client.apis.producer.SendReceipt;
@@ -28,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -123,14 +126,27 @@ public class RocketMqNotificationPublisher implements NotificationMessagePublish
     }
 
     private Producer createProducer() throws Exception {
-        ClientConfiguration configuration = ClientConfiguration.newBuilder()
-                .setEndpoints(properties.getEndpoints())
-                .enableSsl(properties.isSslEnabled())
-                .enableVirtualThreads(true)
-                .build();
+        ClientConfiguration configuration = clientConfiguration();
         return provider.newProducerBuilder()
                 .setClientConfiguration(configuration)
                 .build();
+    }
+
+    /**
+     * 构造客户端配置；配置了 access key 时附加 ACL 凭据。
+     *
+     * @return RocketMQ 客户端配置
+     */
+    private ClientConfiguration clientConfiguration() {
+        ClientConfigurationBuilder builder = ClientConfiguration.newBuilder()
+                .setEndpoints(properties.getEndpoints())
+                .enableSsl(properties.isSslEnabled())
+                .enableVirtualThreads(true);
+        if (StringUtils.hasText(properties.getAccessKey())) {
+            builder.setCredentialProvider(new StaticSessionCredentialsProvider(
+                    properties.getAccessKey(), properties.getSecretKey()));
+        }
+        return builder.build();
     }
 
     /**

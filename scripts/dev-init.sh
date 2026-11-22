@@ -75,6 +75,9 @@ for required in MYSQL_ROOT_PASSWORD MYSQL_EXPORTER_PASSWORD \
     MIDDLEWARE_OPS_PASSWORD \
     REDIS_EXPORTER_PASSWORD SILO_ROOT_USER SILO_ROOT_PASSWORD \
     SILO_FILE_SECRET_KEY SILO_AI_SECRET_KEY \
+    ROCKETMQ_ADMIN_ACCESS_KEY ROCKETMQ_ADMIN_SECRET_KEY \
+    ROCKETMQ_WORKFLOW_ACCESS_KEY ROCKETMQ_WORKFLOW_SECRET_KEY \
+    ROCKETMQ_NOTIFY_ACCESS_KEY ROCKETMQ_NOTIFY_SECRET_KEY \
     NACOS_USERNAME NACOS_PASSWORD NACOS_ADMIN_PASSWORD NACOS_AUTH_TOKEN \
     NEO4J_PASSWORD ELASTIC_PASSWORD ES_AI_PASSWORD ES_NOTIFY_PASSWORD \
     ES_MONITOR_PASSWORD ES_LOGSTASH_PASSWORD ES_GRAFANA_PASSWORD \
@@ -394,6 +397,8 @@ start_middleware() {
         wait_healthy 'RocketMQ Broker' iboot-rocketmq-broker 120 || fail 'RocketMQ Broker 未就绪'
         wait_healthy 'RocketMQ Proxy' iboot-rocketmq-proxy 60 || fail 'RocketMQ Proxy 未就绪'
         wait_healthy 'RocketMQ TLS' iboot-rocketmq-tls 60 || fail 'RocketMQ TLS 入口未就绪'
+        "${COMPOSE[@]}" run --rm --no-deps rocketmq-acl-init >/dev/null \
+            || fail 'RocketMQ ACL 初始化失败（rocketmq-acl-init）'
     else
         log '  RocketMQ 已关闭（IBOOT_ROCKETMQ_ENABLED=false）'
     fi
@@ -538,6 +543,10 @@ start_backend() {
                 -u SILO_AI_ACCESS_KEY -u SILO_AI_SECRET_KEY
                 -u IBOOT_FILE_SILO_ACCESS_KEY -u IBOOT_FILE_SILO_SECRET_KEY
                 -u IBOOT_AI_SILO_ACCESS_KEY -u IBOOT_AI_SILO_SECRET_KEY
+                -u IBOOT_ROCKETMQ_ACCESS_KEY -u IBOOT_ROCKETMQ_SECRET_KEY
+                -u ROCKETMQ_ADMIN_ACCESS_KEY -u ROCKETMQ_ADMIN_SECRET_KEY
+                -u ROCKETMQ_WORKFLOW_ACCESS_KEY -u ROCKETMQ_WORKFLOW_SECRET_KEY
+                -u ROCKETMQ_NOTIFY_ACCESS_KEY -u ROCKETMQ_NOTIFY_SECRET_KEY
             )
             local short="${name#iboot-}" acct="iboot_${name#iboot-}" upper svc_pw_var
             upper="$(printf '%s' "$short" | tr '[:lower:]' '[:upper:]')"
@@ -573,6 +582,20 @@ start_backend() {
                         "IBOOT_AI_SILO_SECRET_KEY=$SILO_AI_SECRET_KEY"
                     )
                     ;;
+                iboot-workflow)
+                    env_opts+=(
+                        "IBOOT_ROCKETMQ_ACCESS_KEY=$ROCKETMQ_WORKFLOW_ACCESS_KEY"
+                        "IBOOT_ROCKETMQ_SECRET_KEY=$ROCKETMQ_WORKFLOW_SECRET_KEY"
+                    )
+                    ;;
+                iboot-notify)
+                    env_opts+=(
+                        "IBOOT_ROCKETMQ_ACCESS_KEY=$ROCKETMQ_NOTIFY_ACCESS_KEY"
+                        "IBOOT_ROCKETMQ_SECRET_KEY=$ROCKETMQ_NOTIFY_SECRET_KEY"
+                        ELASTICSEARCH_USERNAME=iboot_notify
+                        "ELASTICSEARCH_PASSWORD=$ES_NOTIFY_PASSWORD"
+                    )
+                    ;;
                 iboot-file)
                     env_opts+=(
                         "IBOOT_FILE_SILO_ACCESS_KEY=${SILO_FILE_ACCESS_KEY:-iboot_file}"
@@ -588,9 +611,6 @@ start_backend() {
                 iboot-system)
                     # 系统服务不再承载上传；遗留存储策略固定为本地。
                     env_opts+=(IBOOT_FILE_STORAGE_TYPE=local)
-                    ;;
-                iboot-notify)
-                    env_opts+=(ELASTICSEARCH_USERNAME=iboot_notify "ELASTICSEARCH_PASSWORD=$ES_NOTIFY_PASSWORD")
                     ;;
                 iboot-monitor)
                     env_opts+=(ELASTICSEARCH_USERNAME=iboot_monitor "ELASTICSEARCH_PASSWORD=$ES_MONITOR_PASSWORD")

@@ -101,6 +101,15 @@ x-app-env: &app-env
   JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dnacos.remote.client.rpc.tls.enable=true -Dnacos.remote.client.rpc.tls.trustCollectionChainPath=file:/certs/ca/rootCA.pem -Dnacos.remote.client.rpc.tls.trustAll=false -Dnacos.remote.client.rpc.tls.mutualAuth=true -Dnacos.remote.client.rpc.tls.certChainFile=file:/certs/portal.pem -Dnacos.remote.client.rpc.tls.certPrivateKey=file:/certs/portal-key.pem"
   IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-tls:8081
   IBOOT_ROCKETMQ_SSL_ENABLED: "true"
+  # ACL 凭据由 workflow/notify 各自注入；其它服务与运维账号不进入容器。
+  IBOOT_ROCKETMQ_ACCESS_KEY: ""
+  IBOOT_ROCKETMQ_SECRET_KEY: ""
+  ROCKETMQ_ADMIN_ACCESS_KEY: ""
+  ROCKETMQ_ADMIN_SECRET_KEY: ""
+  ROCKETMQ_WORKFLOW_ACCESS_KEY: ""
+  ROCKETMQ_WORKFLOW_SECRET_KEY: ""
+  ROCKETMQ_NOTIFY_ACCESS_KEY: ""
+  ROCKETMQ_NOTIFY_SECRET_KEY: ""
   IBOOT_AI_SILO_ENDPOINT: https://silo:9000
   # 文件与 AI 的 Silo 服务账号由各自服务块注入；根账号不进入业务服务。
   # 文件存储默认走 Silo；容器内用服务名读写，预签名地址用浏览器可达的宿主机地址
@@ -410,6 +419,8 @@ services:
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
       ELASTICSEARCH_USERNAME: iboot_notify
       ELASTICSEARCH_PASSWORD: ${ES_NOTIFY_PASSWORD:?ES_NOTIFY_PASSWORD 必须在 .env 中设置}
+      IBOOT_ROCKETMQ_ACCESS_KEY: ${ROCKETMQ_NOTIFY_ACCESS_KEY:?ROCKETMQ_NOTIFY_ACCESS_KEY 必须在 .env 中设置}
+      IBOOT_ROCKETMQ_SECRET_KEY: ${ROCKETMQ_NOTIFY_SECRET_KEY:?ROCKETMQ_NOTIFY_SECRET_KEY 必须在 .env 中设置}
     volumes:
       - ./certs/runtime:/certs:ro
       - admin_logs:/app/logs
@@ -425,6 +436,8 @@ services:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
+      rocketmq-acl-init:
+        condition: service_completed_successfully
       db-init:
         condition: service_completed_successfully
 
@@ -492,6 +505,8 @@ services:
       NACOS_PASSWORD: ${MIDDLEWARE_WORKFLOW_PASSWORD:?MIDDLEWARE_WORKFLOW_PASSWORD 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-workflow.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-workflow-key.pem
+      IBOOT_ROCKETMQ_ACCESS_KEY: ${ROCKETMQ_WORKFLOW_ACCESS_KEY:?ROCKETMQ_WORKFLOW_ACCESS_KEY 必须在 .env 中设置}
+      IBOOT_ROCKETMQ_SECRET_KEY: ${ROCKETMQ_WORKFLOW_SECRET_KEY:?ROCKETMQ_WORKFLOW_SECRET_KEY 必须在 .env 中设置}
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
     networks:
       - app
@@ -510,6 +525,8 @@ services:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
+      rocketmq-acl-init:
+        condition: service_completed_successfully
       db-init:
         condition: service_completed_successfully
 
@@ -1036,9 +1053,10 @@ services:
     image: apache/rocketmq:5.5.0
     container_name: iboot-rocketmq-store-init
     user: "0:0"
-    command: sh -c "mkdir -p /home/rocketmq/store && chown -R 3000:3000 /home/rocketmq/store"
+    command: sh -c "mkdir -p /home/rocketmq/store /home/rocketmq/auth && chown -R 3000:3000 /home/rocketmq/store /home/rocketmq/auth"
     volumes:
       - rocketmq_broker_data:/home/rocketmq/store
+      - rocketmq_auth_data:/home/rocketmq/auth
     restart: "no"
     networks:
       - mq
@@ -1046,13 +1064,17 @@ services:
   rocketmq-broker:
     image: apache/rocketmq:5.5.0
     container_name: iboot-rocketmq-broker
-    command: sh mqbroker -n rocketmq-namesrv:9876
+    entrypoint: ["/bin/sh", "/opt/rocketmq/broker-entrypoint.sh"]
     environment:
       TZ: Asia/Shanghai
       NAMESRV_ADDR: rocketmq-namesrv:9876
+      ROCKETMQ_ADMIN_ACCESS_KEY: ${ROCKETMQ_ADMIN_ACCESS_KEY:?ROCKETMQ_ADMIN_ACCESS_KEY 必须在 .env 中设置}
+      ROCKETMQ_ADMIN_SECRET_KEY: ${ROCKETMQ_ADMIN_SECRET_KEY:?ROCKETMQ_ADMIN_SECRET_KEY 必须在 .env 中设置}
       JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m -XX:MaxDirectMemorySize=256m"
     volumes:
       - rocketmq_broker_data:/home/rocketmq/store
+      - rocketmq_auth_data:/home/rocketmq/auth
+      - ./rocketmq/broker-entrypoint.sh:/opt/rocketmq/broker-entrypoint.sh:ro
     restart: unless-stopped
     networks:
       - mq
@@ -1071,13 +1093,15 @@ services:
   rocketmq-proxy:
     image: apache/rocketmq:5.5.0
     container_name: iboot-rocketmq-proxy
-    command: sh mqproxy -n rocketmq-namesrv:9876
+    entrypoint: ["/bin/sh", "/opt/rocketmq/proxy-entrypoint.sh"]
     environment:
       TZ: Asia/Shanghai
       NAMESRV_ADDR: rocketmq-namesrv:9876
+      ROCKETMQ_ADMIN_ACCESS_KEY: ${ROCKETMQ_ADMIN_ACCESS_KEY:?ROCKETMQ_ADMIN_ACCESS_KEY 必须在 .env 中设置}
+      ROCKETMQ_ADMIN_SECRET_KEY: ${ROCKETMQ_ADMIN_SECRET_KEY:?ROCKETMQ_ADMIN_SECRET_KEY 必须在 .env 中设置}
       JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     volumes:
-      - ./rocketmq/rmq-proxy.json:/home/rocketmq/rocketmq-5.5.0/conf/rmq-proxy.json:ro
+      - ./rocketmq/proxy-entrypoint.sh:/opt/rocketmq/proxy-entrypoint.sh:ro
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
@@ -1119,14 +1143,42 @@ services:
   rocketmq-init:
     image: apache/rocketmq:5.5.0
     container_name: iboot-rocketmq-init
-    command: sh /home/rocketmq/init-topics.sh
+    entrypoint: ["/bin/sh", "/opt/rocketmq/init-entrypoint.sh"]
     environment:
       TZ: Asia/Shanghai
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+      ROCKETMQ_ADMIN_ACCESS_KEY: ${ROCKETMQ_ADMIN_ACCESS_KEY:?ROCKETMQ_ADMIN_ACCESS_KEY 必须在 .env 中设置}
+      ROCKETMQ_ADMIN_SECRET_KEY: ${ROCKETMQ_ADMIN_SECRET_KEY:?ROCKETMQ_ADMIN_SECRET_KEY 必须在 .env 中设置}
     volumes:
+      - ./rocketmq/init-entrypoint.sh:/opt/rocketmq/init-entrypoint.sh:ro
       - ./rocketmq/init-topics.sh:/home/rocketmq/init-topics.sh:ro
     depends_on:
       rocketmq-broker:
         condition: service_healthy
+    restart: "no"
+    networks:
+      - mq
+
+  # 一次性创建应用账号与最小 ACL；业务服务在它完成后启动。
+  rocketmq-acl-init:
+    image: apache/rocketmq:5.5.0
+    container_name: iboot-rocketmq-acl-init
+    entrypoint: ["/bin/sh", "/opt/rocketmq/acl-init.sh"]
+    environment:
+      ROCKETMQ_ADMIN_ACCESS_KEY: ${ROCKETMQ_ADMIN_ACCESS_KEY:?ROCKETMQ_ADMIN_ACCESS_KEY 必须在 .env 中设置}
+      ROCKETMQ_ADMIN_SECRET_KEY: ${ROCKETMQ_ADMIN_SECRET_KEY:?ROCKETMQ_ADMIN_SECRET_KEY 必须在 .env 中设置}
+      ROCKETMQ_WORKFLOW_ACCESS_KEY: ${ROCKETMQ_WORKFLOW_ACCESS_KEY:?ROCKETMQ_WORKFLOW_ACCESS_KEY 必须在 .env 中设置}
+      ROCKETMQ_WORKFLOW_SECRET_KEY: ${ROCKETMQ_WORKFLOW_SECRET_KEY:?ROCKETMQ_WORKFLOW_SECRET_KEY 必须在 .env 中设置}
+      ROCKETMQ_NOTIFY_ACCESS_KEY: ${ROCKETMQ_NOTIFY_ACCESS_KEY:?ROCKETMQ_NOTIFY_ACCESS_KEY 必须在 .env 中设置}
+      ROCKETMQ_NOTIFY_SECRET_KEY: ${ROCKETMQ_NOTIFY_SECRET_KEY:?ROCKETMQ_NOTIFY_SECRET_KEY 必须在 .env 中设置}
+      ROCKETMQ_BROKER_ADDR: rocketmq-broker:10911
+    volumes:
+      - ./rocketmq/acl-init.sh:/opt/rocketmq/acl-init.sh:ro
+    depends_on:
+      rocketmq-broker:
+        condition: service_healthy
+      rocketmq-init:
+        condition: service_completed_successfully
     restart: "no"
     networks:
       - mq
@@ -1706,6 +1758,7 @@ volumes:
   alertmanager_data:
   es_data:
   rocketmq_broker_data:
+  rocketmq_auth_data:
   kafka_data:
   neo4j_data:
   neo4j_logs:

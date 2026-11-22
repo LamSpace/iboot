@@ -43,7 +43,21 @@ class RocketMqPropertiesTest {
             assertThat(properties.getEndpoints()).isEqualTo("localhost:18081");
             assertThat(properties.isSslEnabled()).isFalse();
             assertThat(properties.getTopic()).isEqualTo("iboot-notification");
+            assertThat(properties.getAccessKey()).isEmpty();
+            assertThat(properties.getSecretKey()).isEmpty();
         });
+    }
+
+    @Test
+    void bindsAclCredentials() {
+        runner.withPropertyValues(
+                        "iboot.rocketmq.access-key=iboot_workflow",
+                        "iboot.rocketmq.secret-key=secret")
+                .run(context -> {
+                    RocketMqProperties properties = context.getBean(RocketMqProperties.class);
+                    assertThat(properties.getAccessKey()).isEqualTo("iboot_workflow");
+                    assertThat(properties.getSecretKey()).isEqualTo("secret");
+                });
     }
 
     @Test
