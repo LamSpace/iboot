@@ -52,4 +52,38 @@ class ClientCertificateIdentityTest {
         assertThat(ClientCertificateIdentity.from(certificate)).isEqualTo("iboot-gateway");
         assertThat(ClientCertificateIdentity.from((X509Certificate) null)).isNull();
     }
+
+    @Test
+    void prefersSpiffeIdOverCommonName() throws Exception {
+        X509Certificate certificate = mock(X509Certificate.class);
+        when(certificate.getSubjectX500Principal())
+                .thenReturn(new X500Principal("CN=iboot-file,O=iBoot"));
+        java.util.Collection<java.util.List<?>> sans = new java.util.ArrayList<>();
+        sans.add(java.util.List.of(6, "spiffe://iboot.local/service/iboot-system"));
+        when(certificate.getSubjectAlternativeNames()).thenReturn(sans);
+
+        assertThat(ClientCertificateIdentity.from(certificate)).isEqualTo("iboot-system");
+    }
+
+    @Test
+    void extractsSpiffeClientIdentity() throws Exception {
+        X509Certificate certificate = mock(X509Certificate.class);
+        java.util.Collection<java.util.List<?>> sans = new java.util.ArrayList<>();
+        sans.add(java.util.List.of(6, "spiffe://iboot.local/client/prometheus"));
+        when(certificate.getSubjectAlternativeNames()).thenReturn(sans);
+
+        assertThat(ClientCertificateIdentity.from(certificate)).isEqualTo("prometheus");
+    }
+
+    @Test
+    void ignoresUnknownTrustDomainAndFallsBackToCommonName() throws Exception {
+        X509Certificate certificate = mock(X509Certificate.class);
+        when(certificate.getSubjectX500Principal())
+                .thenReturn(new X500Principal("CN=iboot-gateway,O=iBoot"));
+        java.util.Collection<java.util.List<?>> sans = new java.util.ArrayList<>();
+        sans.add(java.util.List.of(6, "spiffe://other.local/service/iboot-system"));
+        when(certificate.getSubjectAlternativeNames()).thenReturn(sans);
+
+        assertThat(ClientCertificateIdentity.from(certificate)).isEqualTo("iboot-gateway");
+    }
 }

@@ -42,6 +42,8 @@ KAFKA_KEYSTORE_PASSWORD_FILE="$RUNTIME_DIR/kafka-keystore-password"
 NACOS_KEYSTORE="$RUNTIME_DIR/nacos-keystore.p12"
 KAFKA_STORE_PASS="changeit"
 CERT_DAYS=825
+# SPIFFE 信任域；证书 URI SAN 与授权解析器共用该值。
+TRUST_DOMAIN="iboot.local"
 
 # 叶子证书覆盖宿主机、Docker 主机名与全部服务名；B2 可直接复用同一份信任链。
 SAN_NAMES=(
@@ -110,26 +112,46 @@ cert_has_purpose() {
         | grep -Eq "^${purpose}[[:space:]]*:[[:space:]]*Yes$"
 }
 
+# 证书必须带匹配的 SPIFFE URI SAN，例如 service/iboot-system 或 client/prometheus。
+cert_has_spiffe() {
+    local cert="$1" path="$2"
+    openssl x509 -in "$cert" -noout -text 2>/dev/null \
+        | grep -q "URI:spiffe://${TRUST_DOMAIN}/${path}"
+}
+
+# URI SAN 与 Subject CN 必须指向同一个工作负载名。
+cert_identity_matches() {
+    local cert="$1" expected="$2" cn
+    cert_has_spiffe "$cert" "$3" || return 1
+    cn="$(openssl x509 -in "$cert" -noout -subject -nameopt RFC2253 2>/dev/null \
+        | sed 's/^subject=//' | tr ',' '\n' | sed -n 's/^CN=//p' | head -1)"
+    [ "$cn" = "$expected" ]
+}
+
 cert_valid() {
     [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ] && [ -f "$ROOT_CA" ] && [ -f "$TRUSTSTORE" ] || return 1
     cert_has_purpose "$CERT_FILE" "SSL server" || return 1
     cert_has_purpose "$CERT_FILE" "SSL client" || return 1
+    cert_identity_matches "$CERT_FILE" "iboot-portal" "service/iboot-portal" || return 1
     openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1 || return 1
     local svc client
     for svc in "${SERVICE_NAMES[@]}"; do
         [ -f "$SERVICE_DIR/$svc.pem" ] && [ -f "$SERVICE_DIR/$svc-key.pem" ] || return 1
         cert_has_purpose "$SERVICE_DIR/$svc.pem" "SSL server" || return 1
         cert_has_purpose "$SERVICE_DIR/$svc.pem" "SSL client" || return 1
+        cert_identity_matches "$SERVICE_DIR/$svc.pem" "$svc" "service/$svc" || return 1
         openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$svc.pem" >/dev/null 2>&1 || return 1
     done
     for client in "${CLIENT_NAMES[@]}"; do
         [ -f "$CLIENT_DIR/$client.pem" ] && [ -f "$CLIENT_DIR/$client-key.pem" ] || return 1
         cert_has_purpose "$CLIENT_DIR/$client.pem" "SSL client" || return 1
+        cert_identity_matches "$CLIENT_DIR/$client.pem" "$client" "client/$client" || return 1
         openssl x509 -checkend 2592000 -noout -in "$CLIENT_DIR/$client.pem" >/dev/null 2>&1 || return 1
     done
     for exporter in "${EXPORTER_NAMES[@]}"; do
         [ -f "$SERVICE_DIR/$exporter.pem" ] && [ -f "$SERVICE_DIR/$exporter-key.pem" ] || return 1
         cert_has_purpose "$SERVICE_DIR/$exporter.pem" "SSL server" || return 1
+        cert_identity_matches "$SERVICE_DIR/$exporter.pem" "$exporter" "service/$exporter" || return 1
         openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$exporter.pem" >/dev/null 2>&1 || return 1
     done
 }
@@ -202,6 +224,7 @@ check_expiry() {
     [ -f "$CERT_FILE" ] || fail "证书不存在：$CERT_FILE（先执行 scripts/tls-init.sh）"
     cert_has_purpose "$CERT_FILE" "SSL server" || fail "门户证书缺少 serverAuth 用途：$CERT_FILE"
     cert_has_purpose "$CERT_FILE" "SSL client" || fail "门户证书缺少 clientAuth 用途：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
+    cert_identity_matches "$CERT_FILE" "iboot-portal" "service/iboot-portal" || fail "门户证书 SPIFFE ID 与 CN 不一致：$CERT_FILE"
     if openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1; then
         log "证书有效：$CERT_FILE"
         openssl x509 -noout -enddate -in "$CERT_FILE" | sed 's/^/  /'
@@ -212,18 +235,21 @@ check_expiry() {
         [ -f "$SERVICE_DIR/$svc.pem" ] || fail "服务证书不存在：$SERVICE_DIR/$svc.pem（执行 scripts/tls-init.sh --force 重签）"
         cert_has_purpose "$SERVICE_DIR/$svc.pem" "SSL server" || fail "服务证书缺少 serverAuth 用途：$SERVICE_DIR/$svc.pem"
         cert_has_purpose "$SERVICE_DIR/$svc.pem" "SSL client" || fail "服务证书缺少 clientAuth 用途：$SERVICE_DIR/$svc.pem（执行 scripts/tls-init.sh --force 重签）"
+        cert_identity_matches "$SERVICE_DIR/$svc.pem" "$svc" "service/$svc" || fail "服务证书 SPIFFE ID 与 CN 不一致：$SERVICE_DIR/$svc.pem"
         openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$svc.pem" >/dev/null 2>&1 \
             || fail "服务证书剩余有效期不足 30 天：$SERVICE_DIR/$svc.pem"
     done
     for client in "${CLIENT_NAMES[@]}"; do
         [ -f "$CLIENT_DIR/$client.pem" ] || fail "探针客户端证书不存在：$CLIENT_DIR/$client.pem（执行 scripts/tls-init.sh --force 重签）"
         cert_has_purpose "$CLIENT_DIR/$client.pem" "SSL client" || fail "探针客户端证书缺少 clientAuth 用途：$CLIENT_DIR/$client.pem"
+        cert_identity_matches "$CLIENT_DIR/$client.pem" "$client" "client/$client" || fail "探针证书 SPIFFE ID 与 CN 不一致：$CLIENT_DIR/$client.pem"
         openssl x509 -checkend 2592000 -noout -in "$CLIENT_DIR/$client.pem" >/dev/null 2>&1 \
             || fail "探针客户端证书剩余有效期不足 30 天：$CLIENT_DIR/$client.pem"
     done
     for exporter in "${EXPORTER_NAMES[@]}"; do
         [ -f "$SERVICE_DIR/$exporter.pem" ] || fail "exporter 证书不存在：$SERVICE_DIR/$exporter.pem（执行 scripts/tls-init.sh --force 重签）"
         cert_has_purpose "$SERVICE_DIR/$exporter.pem" "SSL server" || fail "exporter 证书缺少 serverAuth 用途：$SERVICE_DIR/$exporter.pem"
+        cert_identity_matches "$SERVICE_DIR/$exporter.pem" "$exporter" "service/$exporter" || fail "exporter 证书 SPIFFE ID 与 CN 不一致：$SERVICE_DIR/$exporter.pem"
         openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$exporter.pem" >/dev/null 2>&1 \
             || fail "exporter 证书剩余有效期不足 30 天：$SERVICE_DIR/$exporter.pem"
     done
@@ -262,6 +288,7 @@ issue_leaf() {
     local -a entries=()
     for entry in "$@"; do
         case "$entry" in
+            URI:*) entries+=("$entry") ;;
             *:*) entries+=("IP:$entry") ;;
             127.*) entries+=("IP:$entry") ;;
             *) entries+=("DNS:$entry") ;;
@@ -295,7 +322,8 @@ mkdir -p "$SERVICE_DIR"
 for exporter in "${EXPORTER_NAMES[@]}"; do
     if [ ! -f "$SERVICE_DIR/$exporter.pem" ] || [ ! -f "$SERVICE_DIR/$exporter-key.pem" ]; then
         issue_leaf "$exporter" "$SERVICE_DIR/$exporter.pem" "$SERVICE_DIR/$exporter-key.pem" \
-            "serverAuth" localhost 127.0.0.1 ::1 "$exporter"
+            "serverAuth" "URI:spiffe://$TRUST_DOMAIN/service/$exporter" \
+            localhost 127.0.0.1 ::1 "$exporter"
     fi
 done
 
@@ -307,26 +335,30 @@ if [ "$FORCE" -eq 0 ] && cert_valid; then
 fi
 
 log "生成本地 CA 与门户证书：$CERT_DIR"
-issue_leaf "iboot-portal" "$CERT_FILE" "$KEY_FILE" "serverAuth,clientAuth" "${SAN_NAMES[@]}"
+issue_leaf "iboot-portal" "$CERT_FILE" "$KEY_FILE" "serverAuth,clientAuth" \
+    "URI:spiffe://$TRUST_DOMAIN/service/iboot-portal" "${SAN_NAMES[@]}"
 
 mkdir -p "$SERVICE_DIR"
 log "生成服务独立证书：$SERVICE_DIR"
 for svc in "${SERVICE_NAMES[@]}"; do
     issue_leaf "$svc" "$SERVICE_DIR/$svc.pem" "$SERVICE_DIR/$svc-key.pem" \
-        "serverAuth,clientAuth" localhost 127.0.0.1 ::1 host.docker.internal "$svc"
+        "serverAuth,clientAuth" "URI:spiffe://$TRUST_DOMAIN/service/$svc" \
+        localhost 127.0.0.1 ::1 host.docker.internal "$svc"
 done
 
 log "生成监控 exporter 服务端证书：$SERVICE_DIR"
 for exporter in "${EXPORTER_NAMES[@]}"; do
     issue_leaf "$exporter" "$SERVICE_DIR/$exporter.pem" "$SERVICE_DIR/$exporter-key.pem" \
-        "serverAuth" localhost 127.0.0.1 ::1 "$exporter"
+        "serverAuth" "URI:spiffe://$TRUST_DOMAIN/service/$exporter" \
+        localhost 127.0.0.1 ::1 "$exporter"
 done
 
 mkdir -p "$CLIENT_DIR"
 log "生成探针客户端证书：$CLIENT_DIR"
 for client in "${CLIENT_NAMES[@]}"; do
     issue_leaf "$client" "$CLIENT_DIR/$client.pem" "$CLIENT_DIR/$client-key.pem" \
-        "clientAuth" localhost 127.0.0.1 ::1 "$client"
+        "clientAuth" "URI:spiffe://$TRUST_DOMAIN/client/$client" \
+        localhost 127.0.0.1 ::1 "$client"
 done
 
 chmod 600 "$KEY_FILE" "$CA_KEY"

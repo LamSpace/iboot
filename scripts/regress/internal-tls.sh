@@ -328,4 +328,33 @@ else
     reg_fail "Tempo 不带内部 CA 仍可访问：HTTP $tempo_no_ca"
 fi
 
+reg_log "== 11. SPIFFE 身份 =="
+SERVICES=(iboot-system iboot-gateway iboot-auth iboot-file iboot-notify iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops)
+CLIENTS=(prometheus blackbox)
+EXPORTERS=(mysql-exporter redis-exporter node-exporter elasticsearch-exporter)
+for svc in "${SERVICES[@]}"; do
+    if openssl x509 -in "$CERT_DIR/services/$svc.pem" -noout -text 2>/dev/null \
+        | grep -q "URI:spiffe://iboot.local/service/$svc"; then
+        reg_pass "$svc 证书带 SPIFFE 服务身份"
+    else
+        reg_fail "$svc 证书缺少 SPIFFE 服务身份"
+    fi
+done
+for client in "${CLIENTS[@]}"; do
+    if openssl x509 -in "$CERT_DIR/clients/$client.pem" -noout -text 2>/dev/null \
+        | grep -q "URI:spiffe://iboot.local/client/$client"; then
+        reg_pass "$client 证书带 SPIFFE 客户端身份"
+    else
+        reg_fail "$client 证书缺少 SPIFFE 客户端身份"
+    fi
+done
+for exporter in "${EXPORTERS[@]}"; do
+    if openssl x509 -in "$CERT_DIR/services/$exporter.pem" -noout -text 2>/dev/null \
+        | grep -q "URI:spiffe://iboot.local/service/$exporter"; then
+        reg_pass "$exporter 证书带 SPIFFE 服务身份"
+    else
+        reg_fail "$exporter 证书缺少 SPIFFE 服务身份"
+    fi
+done
+
 reg_summary

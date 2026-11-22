@@ -14,7 +14,7 @@
 - Seata 无原生 TLS/认证，作为显式例外放在 `tx` 网络，仅 workflow/system 可访问（见 §19）。
 - 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
-- 服务端以客户端证书 CN 做路径级服务间授权（B5.4）；仍不引入本机服务网格、SPIFFE/OPA，方法级业务权限继续由 JWT 承担。
+- 服务端以客户端证书的 SPIFFE URI SAN（CN 回退）做路径级服务间授权（B5.4/B5.8）；仍不引入本机服务网格或 OPA，方法级业务权限继续由 JWT 承担。
 
 ## 2. 证书
 
@@ -748,7 +748,7 @@ openssl x509 -in docker/certs/services/iboot-system.pem -noout -purpose
 
 ### 18.5 边界
 
-- 服务端已按客户端证书 CN 做路径级授权（B5.4）；方法级业务权限仍由 JWT 决定，SPIFFE/服务网格与中间件每服务身份留待后续。
+- 服务端已按 SPIFFE ID（CN 回退）做路径级授权（B5.4/B5.8）；方法级业务权限仍由 JWT 决定，SPIFFE Workload API 与服务网格留待后续。
 - Nacos 注册客户端仍使用共享 `portal.pem`；注册通道不是业务服务端口。
 - 证书探针仍以一个服务端点反映同批签发的叶子证书到期时间；拆分不同有效期前必须扩展探针。
 
@@ -808,7 +808,7 @@ B5.2 解决了“调用方是谁”，B5.4 进一步限制“这个调用方能�
 
 ### 20.1 身份与过滤器
 
-- 身份取自已由本地 CA 校验的客户端证书 Subject CN：服务证书 CN 为服务名，门户为
+- 身份优先取自已由本地 CA 校验的客户端证书 URI SAN（`spiffe://iboot.local/service/<name>` 或 `/client/<name>`），没有 SPIFFE ID 时回退 Subject CN：服务证书 CN 为服务名，门户为
   `iboot-portal`，探针为 `prometheus` / `blackbox`。
 - 共享模块 `iboot-service-authz` 提供 Servlet 与 WebFlux 过滤器：
   - 8 个 Servlet 服务通过 `iboot-kernel` 以最高优先级注册，早于 Spring Security；
@@ -868,7 +868,7 @@ scripts/regress/regress.sh
 ### 20.5 边界与回滚
 
 - 只做路径级工作负载授权，不替代用户权限、方法级 `@PreAuthorize` 或数据权限。
-- 不基于来源 IP、网段或请求头；证书 CN 是唯一身份来源。
+- 不基于来源 IP、网段或请求头；证书 SPIFFE ID 是首选身份，CN 仅作旧证书兼容回退。
 - 回滚：把 `IBOOT_SERVICE_AUTHORIZATION_ENABLED` 设为 `false` 并重建服务；规则与代码可保留。
 - 新增服务或调用方时，必须同步更新 `extra-rules` 与 `service-authz.sh` 的最小用例。
 
@@ -882,7 +882,7 @@ Nacos 共用 `iboot`、文件与 AI 共用 Silo 根账号，中间件的连接�
 
 | 层 | 身份来源 | 权限 |
 |---|---|---|
-| HTTP 服务间 | 客户端证书 CN（B5.2/B5.4） | 路径级调用方白名单 |
+| HTTP 服务间 | 客户端证书 SPIFFE ID（CN 回退，B5.2/B5.4/B5.8） | 路径级调用方白名单 |
 | MySQL | `iboot_<service>` | `iboot` 库 DML；无 DDL |
 | Redis | `iboot_<service>` | 命名 ACL，全部命令 |
 | Nacos | `iboot_<service>` | `iboot_role` 配置读写 |
@@ -1000,3 +1000,45 @@ scripts/tls-rotate.sh --rotate --restart host
 - 只覆盖 Prometheus → exporter；Grafana/Thanos/Kibana 的内网调用仍使用既有 HTTPS。
 - 轮换仍由操作者显式触发，不自动 reload 或滚动发布。
 - Sentinel Dashboard、宿主机进程回环绑定仍是登记边界，不在本批范围内。
+
+## 24. SPIFFE 工作负载身份（B5.8）
+
+B5.8 把工作负载身份从展示字段 CN 迁移到 SPIFFE URI SAN：证书本身携带结构化身份，授权层优先读取它，
+CN 仅作为旧证书的兼容回退。
+
+### 24.1 身份格式
+
+| 证书 | SPIFFE ID |
+|---|---|
+| 服务 | `spiffe://iboot.local/service/<service>` |
+| 探针客户端 | `spiffe://iboot.local/client/<name>` |
+| portal / exporter | `spiffe://iboot.local/service/<name>` |
+
+- URI SAN 与 CN 必须一致；`scripts/tls-init.sh --check` 会同时校验。
+- 信任域固定为 `iboot.local`；切换时必须同时修改 `tls-init.sh` 与 Java 解析器。
+- 授权规则仍使用服务名，不绑定证书序列号或有效期。
+
+### 24.2 解析顺序
+
+1. 遍历证书 URI SAN，匹配 `spiffe://iboot.local/service/<name>` 或 `/client/<name>`；
+2. 没有匹配时回退 Subject CN；
+3. 两者都不可用时视为匿名调用方，命中规则即 403。
+
+网关、八个 Servlet 服务、运维控制台与 WebFlux 网关共用同一解析器；过滤器与策略签名不变。
+
+### 24.3 验收
+
+```bash
+mvn -pl iboot-service-authz test
+bash scripts/regress/internal-tls.sh
+bash scripts/regress/service-authz.sh
+```
+
+`service-authz.sh` 用本地 CA 临时签发“CN=iboot-file、SPIFFE ID=iboot-gateway”的证书：访问
+`/api/user/**` 应按 gateway 身份通过授权（返回 401 等待 JWT），而只有 CN 的证书仍按 file 身份被 403 拒绝。
+
+### 24.4 边界
+
+- 不部署 SPIRE/SPIFFE Workload API；证书仍由本地 CA 直接签发。
+- 不引入 OPA 或服务网格；策略仍由 `ServiceAuthorizationPolicy` 执行。
+- 信任域切换需要同时改 `tls-init.sh` 与 `ClientCertificateIdentity`，当前不支持多信任域。
