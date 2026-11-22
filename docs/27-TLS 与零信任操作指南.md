@@ -9,7 +9,7 @@
 当前已完成的加密范围：
 
 - 浏览器/CLI → 门户（L1 边缘 TLS）；门户 → 网关；服务间调用与 JWKS。
-- MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面。
+- MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面。
 - Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 只有加密通道（见 §9.4）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
 - 不引入本机服务网格、SPIFFE/OPA；每服务工作负载身份与完整 mTLS 留给 B5。
@@ -345,6 +345,7 @@ scripts/regress/internal-tls.sh
 - B4：Nacos TLS、端口收敛与网络分段已完成；中间件账号鉴权由 `harden-middleware-auth`
   完成（MySQL/Redis/Silo/Nacos）；默认值与运维收尾由 `harden-operational-defaults`
   完成（ES 专用账号、Grafana/Neo4j 默认值、证书告警、明文审计）。
+- B4.5：Tempo 的 OTLP 上报与查询链路 TLS 已完成（`add-tempo-tls`）。
 - B5：服务间 mTLS、每服务工作负载身份、RocketMQ 强制 TLS 与 Seata 例外决策。
 
 ## 12. 暴露面与网络分段
@@ -532,7 +533,6 @@ curl -s 'http://127.0.0.1:9090/api/v1/query?query=probe_ssl_earliest_cert_expiry
 `scripts/regress/plaintext-audit.sh` 扫描应用配置与 Grafana 数据源；命中 `http://`
 且未登记在 `scripts/regress/plaintext-allowlist.txt` 时失败。当前例外：
 
-- Tempo OTLP 默认地址与 Grafana→Tempo 数据源（待 `add-tempo-tls`）。
 - Grafana→Prometheus / Thanos（本地后端只提供 HTTP）。
 - CLI 回环 OAuth 回调（RFC 8252，不承载业务数据）。
 
@@ -540,7 +540,27 @@ curl -s 'http://127.0.0.1:9090/api/v1/query?query=probe_ssl_earliest_cert_expiry
 
 ### 14.5 边界
 
-- Tempo OTLP/HTTP、Prometheus、Thanos 的明文链路仍未加密，属于已登记边界。
+- Prometheus、Thanos 的明文链路仍未加密，属于已登记边界；Tempo 已在 B4.5 完成 TLS。
 - Grafana 匿名只读依赖 Viewer 角色；若 Explore 权限不可用，按 `design.md` 的退路处理，
   不得回退匿名 Admin。
 - 本批次不包含服务间 mTLS、RocketMQ 强制 TLS、Seata 认证与 Kafka SASL。
+
+## 15. Tempo TLS（B4.5）
+
+Tempo 的 OTLP/HTTP（4318）、OTLP/gRPC（4317）接收端口与查询 HTTP（3200）只接受 TLS，证书复用本地叶子证书。
+
+- `docker/tempo/tempo.yaml` 用 `server.http_tls_config` 为 3200 提供 HTTPS，并在两个 OTLP receiver 上配置 `tls`。
+- 9095 是 Tempo 进程内 frontend↔querier 的 gRPC 端口，不发布到宿主机；开启 `grpc_tls_config` 会打断内部调用，因此保留明文并登记为边界。
+- 应用 `TEMPO_OTLP` 与 Grafana `Tempo` 数据源均为 `https://`；Grafana 通过 `tlsAuthWithCACert` 使用 `/certs/rootCA.pem` 校验证书。
+- 明文允许清单移除 Tempo 两条，仅保留 CLI 回环回调与 Grafana→Prometheus/Thanos。
+
+验证：
+
+```bash
+echo | openssl s_client -connect localhost:3200 -CAfile docker/certs/ca/rootCA.pem
+curl --cacert docker/certs/ca/rootCA.pem https://localhost:3200/status
+scripts/regress/internal-tls.sh
+scripts/regress/trace-chain.sh <traceId> --tempo https://localhost:3200
+```
+
+回滚：恢复上一版 Tempo 配置与 compose，重建 Tempo，并把 `TEMPO_OTLP` 与 Grafana 数据源改回 HTTP；不存在运行时明文回退开关。

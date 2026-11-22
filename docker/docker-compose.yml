@@ -43,7 +43,7 @@ x-app-env: &app-env
   # 本地开发默认值；生产通过 .env 或 KMS 注入
   IBOOT_SYSTEM_INTERNAL_TOKEN: ${IBOOT_SYSTEM_INTERNAL_TOKEN:-iboot-dev-internal-token}
   SENTINEL_DASHBOARD: sentinel-dashboard:8858
-  TEMPO_OTLP: http://tempo:4318/v1/traces
+  TEMPO_OTLP: https://tempo:4318/v1/traces
   IBOOT_LOGGING_KAFKA_ENABLED: "true"
   IBOOT_LOGGING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
   IBOOT_LOGGING_KAFKA_SECURITY_PROTOCOL: SSL
@@ -1032,6 +1032,7 @@ services:
     command: ["-config.file=/etc/tempo.yaml"]
     volumes:
       - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - ./certs/runtime:/certs:ro
       - tempo_data:/var/tempo
     restart: unless-stopped
     networks:

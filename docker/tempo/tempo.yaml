@@ -4,6 +4,12 @@
 server:
   http_listen_port: 3200
   grpc_listen_port: 9095
+  # 查询端口只提供 TLS；证书由编排挂载到 /certs。
+  http_tls_config:
+    cert_file: /certs/portal.pem
+    key_file: /certs/portal-key.pem
+  # 9095 是 Tempo 进程内 frontend↔querier 的 gRPC 端口，不发布到宿主机；
+  # 开启 grpc_tls_config 会打断内部调用，故保持明文并作为已登记边界。
 
 distributor:
   receivers:
@@ -11,8 +17,14 @@ distributor:
       protocols:
         grpc:
           endpoint: 0.0.0.0:4317
+          tls:
+            cert_file: /certs/portal.pem
+            key_file: /certs/portal-key.pem
         http:
           endpoint: 0.0.0.0:4318
+          tls:
+            cert_file: /certs/portal.pem
+            key_file: /certs/portal-key.pem
 
 storage:
   trace:

@@ -10,6 +10,10 @@
 # 复现来源是网关响应头 X-Trace-Id（应用日志的 MDC 亦可），不使用按时间范围检索，
 # 因此结论不受系统时钟与查询窗口边界影响。
 #
+# 环境变量：
+#   TEMPO_URL    追踪后端地址，默认 https://localhost:3200
+#   TEMPO_CACERT 校验 Tempo 服务端证书的本地 CA，默认 docker/certs/ca/rootCA.pem
+#
 # 追踪后端按批次导出，同一条链路的分段可能先后到达：脚本会在 --wait 指定的时间内
 # 按标识轮询，直到期望服务齐全或超时。轮询依据的仍是标识本身，不是时间窗。
 #
@@ -21,7 +25,9 @@
 
 set -uo pipefail
 
-TEMPO="${TEMPO_URL:-http://localhost:3200}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPO="${TEMPO_URL:-https://localhost:3200}"
+TEMPO_CACERT="${TEMPO_CACERT:-$(cd "$HERE/../.." && pwd)/docker/certs/ca/rootCA.pem}"
 TRACE_ID=""
 EXPECT="iboot-gateway"
 WAIT="${TRACE_WAIT:-10}"
@@ -57,6 +63,11 @@ fi
 BODY="$(mktemp)"
 REPORT="$(mktemp)"
 trap 'rm -f "$BODY" "$REPORT"' EXIT
+
+CURL_TLS=()
+case "$TEMPO" in
+    https://*) CURL_TLS=(--cacert "$TEMPO_CACERT") ;;
+esac
 
 # 解析一次查询结果；全部期望服务齐全时返回 0。
 # @param $1 追踪后端响应文件
@@ -130,7 +141,7 @@ PY
 
 DEADLINE=$(( $(date +%s) + WAIT ))
 while :; do
-    STATUS="$(curl -sS -m 10 -o "$BODY" -w '%{http_code}' "$TEMPO/api/traces/$TRACE_ID" 2>/dev/null)"
+    STATUS="$(curl -sS -m 10 "${CURL_TLS[@]}" -o "$BODY" -w '%{http_code}' "$TEMPO/api/traces/$TRACE_ID" 2>/dev/null)"
     CURL_EXIT=$?
 
     if [ "$CURL_EXIT" -ne 0 ] || [ "$STATUS" = "000" ]; then

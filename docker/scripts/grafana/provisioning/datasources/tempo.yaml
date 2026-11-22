@@ -1,14 +1,18 @@
 apiVersion: 1
 
 # 链路追踪数据源：应用经 OTLP 写入 Tempo，Grafana 直接查询
+# Tempo 只提供 HTTPS；CA 为公开证书，由编排挂载到 /certs。
 datasources:
   - name: Tempo
     uid: tempo
     type: tempo
     access: proxy
-    url: http://tempo:3200
+    url: https://tempo:3200
     isDefault: false
+    secureJsonData:
+      tlsCACert: $__file{/certs/rootCA.pem}
     jsonData:
+      tlsAuthWithCACert: true
       httpMethod: GET
       serviceMap:
         datasourceUid: PBFA97CFB590B2093
