@@ -181,6 +181,12 @@ up() {
     || fail "容器创建/启动失败，请先查看：${COMPOSE[*]} ps"
   log "等待服务健康（最多 600 秒）..."
   wait_ready 600 || fail "服务未在预期时间内达到健康"
+  # nginx 在启动时解析 gateway/ops/system 上游并缓存 IP；依赖容器重建后地址会变，
+  # 而门户自身配置未变时 compose 不会重建它。显式重建门户以刷新上游解析。
+  log "刷新门户上游地址..."
+  "${COMPOSE[@]}" "${PROFILE_ARGS[@]}" up -d --force-recreate --no-deps iboot-portal \
+    || fail "门户重建失败"
+  wait_ready 180 || fail "门户未在预期时间内达到健康"
   log "写入 Sentinel 基线规则..."
   NACOS_ADDR=localhost:8848 "$ROOT/scripts/sentinel-init.sh" --verify \
     || fail "Sentinel 基线规则初始化失败"
