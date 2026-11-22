@@ -20,7 +20,12 @@ OPS="https://localhost:8089"
 JOB="https://localhost:8085"
 INTERNAL_TOKEN="${IBOOT_SYSTEM_INTERNAL_TOKEN:-iboot-dev-internal-token}"
 BODY="$(mktemp)"
-trap 'rm -f "$BODY"' EXIT
+SPIFFE_TMP=""
+cleanup() {
+    rm -f "$BODY"
+    [ -n "$SPIFFE_TMP" ] && rm -rf "$SPIFFE_TMP"
+}
+trap cleanup EXIT
 
 svc_request() {
     local name="$1"
@@ -117,6 +122,47 @@ expect_denied "文件服务不能访问网关 Actuator" \
 if [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; then
     expect_denied "文件服务不能访问运维控制台 Actuator" \
         "$(status_of svc_request iboot-file "$OPS/actuator/health")"
+fi
+
+reg_log "== 4. SPIFFE 身份优先 =="
+CA_KEY="$CERT_DIR/ca/rootCA-key.pem"
+if [ ! -f "$CA_KEY" ]; then
+    reg_log "  [SKIP] 本地 CA 私钥不可用，跳过 SPIFFE 身份用例"
+else
+    SPIFFE_TMP="$(mktemp -d)"
+    cat > "$SPIFFE_TMP/ext.cnf" <<'EXT'
+basicConstraints=CA:FALSE
+keyUsage=critical,digitalSignature
+extendedKeyUsage=clientAuth
+subjectAltName=URI:spiffe://iboot.local/service/iboot-gateway
+EXT
+    openssl req -new -newkey rsa:2048 -nodes \
+        -keyout "$SPIFFE_TMP/mismatch-key.pem" -subj "/CN=iboot-file" \
+        -out "$SPIFFE_TMP/mismatch.csr" >/dev/null 2>&1
+    openssl x509 -req -in "$SPIFFE_TMP/mismatch.csr" \
+        -CA "$CA" -CAkey "$CA_KEY" -CAcreateserial \
+        -CAserial "$CERT_DIR/ca/rootCA.srl" -days 1 -sha256 \
+        -extfile "$SPIFFE_TMP/ext.cnf" -out "$SPIFFE_TMP/mismatch.pem" >/dev/null 2>&1
+    cat > "$SPIFFE_TMP/cn.ext.cnf" <<'EXT'
+basicConstraints=CA:FALSE
+keyUsage=critical,digitalSignature
+extendedKeyUsage=clientAuth
+EXT
+    openssl req -new -newkey rsa:2048 -nodes \
+        -keyout "$SPIFFE_TMP/cn-key.pem" -subj "/CN=iboot-file" \
+        -out "$SPIFFE_TMP/cn.csr" >/dev/null 2>&1
+    openssl x509 -req -in "$SPIFFE_TMP/cn.csr" \
+        -CA "$CA" -CAkey "$CA_KEY" -CAcreateserial \
+        -CAserial "$CERT_DIR/ca/rootCA.srl" -days 1 -sha256 \
+        -extfile "$SPIFFE_TMP/cn.ext.cnf" -out "$SPIFFE_TMP/cn.pem" >/dev/null 2>&1
+    spiffe_status="$(status_of curl --cacert "$CA" \
+        --cert "$SPIFFE_TMP/mismatch.pem" --key "$SPIFFE_TMP/mismatch-key.pem" \
+        "$SYSTEM/api/user/list")"
+    expect_status "SPIFFE ID 优先于 CN（解析为 gateway）" 401 "$spiffe_status"
+    cn_status="$(status_of curl --cacert "$CA" \
+        --cert "$SPIFFE_TMP/cn.pem" --key "$SPIFFE_TMP/cn-key.pem" \
+        "$SYSTEM/api/user/list")"
+    expect_denied "无 SPIFFE 时回退 CN（file 被拒绝）" "$cn_status"
 fi
 
 reg_summary

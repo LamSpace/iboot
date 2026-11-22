@@ -13,6 +13,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -f "$ROOT/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    . "$ROOT/.env"
+    set +a
+fi
 MODE="check"
 RESTART="none"
 
@@ -20,10 +26,20 @@ usage() {
     awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"
 }
 
+EXPECT_RESTART=0
 for arg in "$@"; do
+    if [ "$EXPECT_RESTART" -eq 1 ]; then
+        case "$arg" in
+            none|docker|host) RESTART="$arg" ;;
+            *) printf '[tls-rotate] 未知重启范围：%s\n' "$arg" >&2; exit 2 ;;
+        esac
+        EXPECT_RESTART=0
+        continue
+    fi
     case "$arg" in
         --check) MODE="check" ;;
         --rotate) MODE="rotate" ;;
+        --restart) EXPECT_RESTART=1 ;;
         --restart=none) RESTART="none" ;;
         --restart=docker) RESTART="docker" ;;
         --restart=host) RESTART="host" ;;
@@ -31,6 +47,10 @@ for arg in "$@"; do
         *) printf '[tls-rotate] 未知参数：%s\n' "$arg" >&2; exit 2 ;;
     esac
 done
+if [ "$EXPECT_RESTART" -eq 1 ]; then
+    printf '[tls-rotate] --restart 缺少取值（none|docker|host）\n' >&2
+    exit 2
+fi
 
 check_certs() {
     "$ROOT/scripts/tls-init.sh" --check
