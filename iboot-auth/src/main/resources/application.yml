@@ -54,7 +54,7 @@ spring:
       # 过渡期直连管理端 schema：认证所需的用户、角色、菜单、参数与登录日志都归系统域，
       # 本服务不建自有 schema；退出条件见设计文档 D2。
       url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?${MYSQL_SSL_PARAMS:sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8}
-      username: ${MYSQL_USERNAME:iboot_app}
+      username: ${MYSQL_USERNAME:iboot_auth}
       password: ${MYSQL_PASSWORD:}
       initial-size: 2
       min-idle: 2
@@ -71,7 +71,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      username: ${REDIS_USERNAME:iboot_app}
+      username: ${REDIS_USERNAME:iboot_auth}
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: 10s

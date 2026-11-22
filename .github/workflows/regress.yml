@@ -110,23 +110,30 @@ jobs:
           NEO4J_PASSWORD: iboot-dev-neo4j
           # 中间件账号鉴权：CI 在干净环境使用独立开发口令。
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_APP_PASSWORD: iboot-dev-app
           MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
-          MYSQL_USERNAME: iboot_app
-          MYSQL_PASSWORD: iboot-dev-app
-          REDIS_USERNAME: iboot_app
-          REDIS_PASSWORD: iboot-dev-redis
           REDIS_EXPORTER_PASSWORD: iboot-dev-redis-exporter
+          MIDDLEWARE_SYSTEM_PASSWORD: iboot-dev-system
+          MIDDLEWARE_WORKFLOW_PASSWORD: iboot-dev-workflow
+          MIDDLEWARE_FILE_PASSWORD: iboot-dev-file
+          MIDDLEWARE_NOTIFY_PASSWORD: iboot-dev-notify
+          MIDDLEWARE_JOB_PASSWORD: iboot-dev-job
+          MIDDLEWARE_MONITOR_PASSWORD: iboot-dev-monitor
+          MIDDLEWARE_AUTH_PASSWORD: iboot-dev-auth
+          MIDDLEWARE_AI_PASSWORD: iboot-dev-ai
+          MIDDLEWARE_GATEWAY_PASSWORD: iboot-dev-gateway
+          MIDDLEWARE_OPS_PASSWORD: iboot-dev-ops
           KAFKA_BROKER_PASSWORD: iboot-dev-kafka-broker
           KAFKA_LOG_PASSWORD: iboot-dev-kafka-log
           KAFKA_LOGSTASH_PASSWORD: iboot-dev-kafka-logstash
           KAFKA_TOOLS_PASSWORD: iboot-dev-kafka-tools
           SILO_ROOT_USER: ibootadmin
           SILO_ROOT_PASSWORD: iboot-dev-silo
-          IBOOT_AI_SILO_ACCESS_KEY: ibootadmin
-          IBOOT_AI_SILO_SECRET_KEY: iboot-dev-silo
-          IBOOT_FILE_SILO_ACCESS_KEY: ibootadmin
-          IBOOT_FILE_SILO_SECRET_KEY: iboot-dev-silo
+          SILO_FILE_ACCESS_KEY: iboot_file
+          SILO_FILE_SECRET_KEY: iboot-dev-file-silo
+          SILO_JOB_ACCESS_KEY: iboot_job
+          SILO_JOB_SECRET_KEY: iboot-dev-job-silo
+          SILO_AI_ACCESS_KEY: iboot_ai
+          SILO_AI_SECRET_KEY: iboot-dev-ai-silo
           NACOS_SERVER_ADDR: https://localhost:8848
           NACOS_USERNAME: iboot
           NACOS_PASSWORD: iboot-dev-nacos
@@ -158,19 +165,30 @@ jobs:
           NEO4J_PASSWORD: iboot-dev-neo4j
           # 与启动步骤一致：CI 使用同一组中间件账号。
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_APP_PASSWORD: iboot-dev-app
           MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
-          MYSQL_USERNAME: iboot_app
-          MYSQL_PASSWORD: iboot-dev-app
-          REDIS_USERNAME: iboot_app
-          REDIS_PASSWORD: iboot-dev-redis
           REDIS_EXPORTER_PASSWORD: iboot-dev-redis-exporter
+          MIDDLEWARE_SYSTEM_PASSWORD: iboot-dev-system
+          MIDDLEWARE_WORKFLOW_PASSWORD: iboot-dev-workflow
+          MIDDLEWARE_FILE_PASSWORD: iboot-dev-file
+          MIDDLEWARE_NOTIFY_PASSWORD: iboot-dev-notify
+          MIDDLEWARE_JOB_PASSWORD: iboot-dev-job
+          MIDDLEWARE_MONITOR_PASSWORD: iboot-dev-monitor
+          MIDDLEWARE_AUTH_PASSWORD: iboot-dev-auth
+          MIDDLEWARE_AI_PASSWORD: iboot-dev-ai
+          MIDDLEWARE_GATEWAY_PASSWORD: iboot-dev-gateway
+          MIDDLEWARE_OPS_PASSWORD: iboot-dev-ops
           KAFKA_BROKER_PASSWORD: iboot-dev-kafka-broker
           KAFKA_LOG_PASSWORD: iboot-dev-kafka-log
           KAFKA_LOGSTASH_PASSWORD: iboot-dev-kafka-logstash
           KAFKA_TOOLS_PASSWORD: iboot-dev-kafka-tools
           SILO_ROOT_USER: ibootadmin
           SILO_ROOT_PASSWORD: iboot-dev-silo
+          SILO_FILE_ACCESS_KEY: iboot_file
+          SILO_FILE_SECRET_KEY: iboot-dev-file-silo
+          SILO_JOB_ACCESS_KEY: iboot_job
+          SILO_JOB_SECRET_KEY: iboot-dev-job-silo
+          SILO_AI_ACCESS_KEY: iboot_ai
+          SILO_AI_SECRET_KEY: iboot-dev-ai-silo
           NACOS_SERVER_ADDR: https://localhost:8848
           NACOS_USERNAME: iboot
           NACOS_PASSWORD: iboot-dev-nacos

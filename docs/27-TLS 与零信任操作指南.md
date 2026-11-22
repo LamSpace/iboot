@@ -433,28 +433,35 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - 只收敛 Docker 编排发布的网络暴露面，不改变各组件内部的 TLS 配置。
 - 宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程仍按 Spring Boot 默认监听所有网卡；
   它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B5 收敛。
-- 中间件已启用账号认证，但仍是共享账号；服务间已启用 mTLS 与路径级授权（B5.2/B5.4），中间件层的每服务身份仍未落地。
+- 中间件已按服务拆分账号（B5.5）：MySQL、Redis、Nacos 每服务独立，Silo 由文件/备份/AI 三个桶级账号隔离；
+  权限边界仍保持共享库 DML，表级授权不在本节范围内。
 - RocketMQ 入口只接受 TLS，但客户端不校验服务端且无 ACL；Seata 无原生 TLS/认证，仅靠 `tx` 网络与回环发布隔离，均为显式例外。
 - 可观测 UI 除 Sentinel 外均为 HTTPS；Sentinel 仍为回环 HTTP，作为已登记边界。
 - 工作负载 mTLS 的证书身份已落地；SPIFFE/服务网格与按调用方授权不在本节的宣称范围内。
 
-## 13. 中间件账号与最小权限（B4.3）
+## 13. 中间件账号与最小权限（B4.3 → B5.5）
 
-B4.3 在 TLS 与网络边界之上补账号认证。它是**共享账号**方案：同一个服务账号被多个服务使用，
-因此不能证明调用方是哪个服务；每服务身份仍属于 B5。
+B4.3 在 TLS 与网络边界之上补账号认证，但当时是共享账号方案。B5.5 已把 MySQL、Redis、Nacos 与 Silo
+拆成每服务独立身份；本节描述当前矩阵，历史共享账号仅保留在归档变更中。
 
 ### 13.1 账号矩阵
 
 | 组件 | 账号 | 用途 | 权限 |
 |---|---|---|---|
-| Redis | `iboot_app` | 九个业务服务 | 命名 ACL 账号，全部命令；口令由 `REDIS_PASSWORD` 注入 |
-| Redis | `iboot_exporter` | redis-exporter | 只读监控命令集；口令由 `REDIS_EXPORTER_PASSWORD` 注入 |
+| MySQL | `iboot_<service>` | 八个数据服务（system/workflow/file/notify/job/monitor/auth/ai） | `iboot` 库 `SELECT/INSERT/UPDATE/DELETE`，无 DDL |
 | MySQL | `root` | 账号初始化与迁移 | 管理权限；不注入业务服务 |
-| MySQL | `iboot_app` | 八个业务服务 | `iboot` 库 `SELECT/INSERT/UPDATE/DELETE` |
 | MySQL | `iboot_exporter` | mysqld-exporter | `PROCESS`、`REPLICATION CLIENT`、`performance_schema` 只读 |
-| Silo | 根账号 | 服务、`silo-init`、Thanos | 由 `SILO_ROOT_USER/PASSWORD` 注入 |
-| Nacos | `iboot` | 服务注册/配置与管理脚本 | 配置读写；管理员 `nacos` 只用于初始化脚本 |
+| Redis | `iboot_<service>` | 八个数据服务 | 命名 ACL 账号，全部命令；口令同服务 MySQL 身份 |
+| Redis | `iboot_exporter` | redis-exporter 与健康检查 | 只读监控命令集 |
+| Nacos | `iboot_<service>` | 十个服务（含 gateway/ops） | 绑定 `iboot_role`，配置读写 |
+| Nacos | `iboot` | 管理脚本 | 运维账号；不注入业务服务 |
+| Silo | `iboot_file` | 文件服务 | 仅 `iboot-files` 桶 |
+| Silo | `iboot_job` | 备份任务 | 仅 `iboot-files` 桶 |
+| Silo | `iboot_ai` | AI 服务 | 仅 `iboot-ai` 桶 |
+| Silo | 根账号 | `silo-init`、Thanos、运维 | 不注入业务服务 |
 | Neo4j | `neo4j` | AI 图能力 | 社区版单账号；口令由 `NEO4J_PASSWORD` 注入，缺失时编排失败 |
+
+共享账号 `iboot_app` 已删除；服务账号名由服务名把 `-` 换成 `_` 得到（如 `iboot-system` → `iboot_system`）。
 
 ### 13.2 初始化
 
@@ -464,30 +471,48 @@ scripts/dev-init.sh
 # 或单独执行
 docker compose -f docker/docker-compose.yml run --rm --no-deps mysql-users-init
 docker compose -f docker/docker-compose.yml run --rm --no-deps nacos-init
+docker compose -f docker/docker-compose.yml run --rm --no-deps silo-init
 scripts/sentinel-init.sh --verify
 ```
 
-- `mysql-users-init` 幂等创建/更新 `iboot_app` 与 `iboot_exporter`；`db-init` 与业务服务依赖它完成。
-- `nacos-init` 首次设置 `nacos` 管理员密码，随后创建/更新 `iboot` 服务账号并授权。
-- Docker 全量部署中，`db-init` 依赖上述两个一次性任务；宿主机开发由 `dev-init.sh` 显式执行。
+- `mysql-users-init` 幂等创建/更新八个服务账号与 `iboot_exporter`，并删除共享 `iboot_app`。
+- `nacos-init` 首次设置 `nacos` 管理员密码，随后创建/更新 `iboot` 运维账号与十个服务账号。
+- `silo-init` 预创建 `thanos`、`iboot-files`、`iboot-ai` 三个桶，并创建三个桶级服务账号。
+- Docker 全量部署中，`db-init` 依赖上述初始化任务；宿主机开发由 `dev-init.sh` 显式执行。
 
 ### 13.3 凭据
 
 根 `.env` 必须提供：
 
 ```text
+MIDDLEWARE_SYSTEM_PASSWORD=
+MIDDLEWARE_WORKFLOW_PASSWORD=
+MIDDLEWARE_FILE_PASSWORD=
+MIDDLEWARE_NOTIFY_PASSWORD=
+MIDDLEWARE_JOB_PASSWORD=
+MIDDLEWARE_MONITOR_PASSWORD=
+MIDDLEWARE_AUTH_PASSWORD=
+MIDDLEWARE_AI_PASSWORD=
+MIDDLEWARE_GATEWAY_PASSWORD=
+MIDDLEWARE_OPS_PASSWORD=
 MYSQL_ROOT_PASSWORD=
-MYSQL_APP_PASSWORD=
 MYSQL_EXPORTER_PASSWORD=
-REDIS_PASSWORD=
+REDIS_EXPORTER_PASSWORD=
 SILO_ROOT_USER=
 SILO_ROOT_PASSWORD=
+SILO_FILE_ACCESS_KEY=
+SILO_FILE_SECRET_KEY=
+SILO_JOB_ACCESS_KEY=
+SILO_JOB_SECRET_KEY=
+SILO_AI_ACCESS_KEY=
+SILO_AI_SECRET_KEY=
 NACOS_USERNAME=
 NACOS_PASSWORD=
 NACOS_ADMIN_PASSWORD=
 NACOS_AUTH_TOKEN=
 ```
 
+- 每服务口令同时用于该服务的 MySQL、Redis 与 Nacos；生产可分别覆盖，本地开发不拆三套。
 - 缺失任一变量时，`dev-init.sh` 或 `docker compose` 在启动前失败。
 - 口令不写入镜像、compose 默认值或版本管理；回归输出不打印口令。
 - `NACOS_SERVER_ADDR` 必须带 `https://`，否则 Nacos 客户端会用明文调用 TLS 端口并登录失败。
@@ -499,18 +524,23 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/middleware-auth.sh
 REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 ```
 
+`middleware-auth.sh` 从中间件侧取证：MySQL `information_schema.processlist` 必须出现八个服务账号，
+Redis `CLIENT LIST` 必须按服务区分，Nacos 逐账号登录并读取配置，Silo 用文件/AI 账号做跨桶拒绝。
+同时检查每个服务进程只持有自己的 `MYSQL_*`/`REDIS_*`/`NACOS_*` 身份，且不含根或管理口令。
+
 检查覆盖：
 
-- MySQL：业务账号可查询、执行 DDL 被拒绝；exporter 不能写业务库；错误口令失败。
-- Redis：未认证、`default` 用户与错误口令被拒绝；`iboot_app` 可 `PING`；`iboot_exporter` 可读 `INFO`、不能写。
-- Silo：`minioadmin` 被拒绝；受管凭据可列举 bucket。
-- Nacos：匿名管理请求被拒绝；服务账号可登录；`sentinel-init` 缺少凭据时失败。
+- MySQL：八个服务账号各自可查询、执行 DDL 被拒绝；exporter 不能写业务库；错误口令失败。
+- Redis：八个服务账号各自可 `PING`；未认证、`default` 用户与错误口令被拒绝；exporter 可读 `INFO`、不能写。
+- Silo：`minioadmin` 被拒绝；文件/备份账号可读文件桶、AI 账号可读 AI 桶，交叉访问失败。
+- Nacos：十个服务账号逐一登录并读配置；匿名管理请求被拒绝；`sentinel-init` 缺少凭据时失败。
+- 进程环境：每个服务只持有自己的 `MYSQL_*`/`REDIS_*`/`NACOS_*` 与专属 Silo 凭据。
 
 ### 13.5 边界
 
 - MySQL root 仍允许从编排网络连接，仅用于初始化与迁移；后续可改为专用迁移账号并关闭远程 root。
-- Redis 使用 `iboot_app` 共享业务账号与受限 `iboot_exporter`，仍不是每服务 ACL 用户。
-- Silo 使用受管根凭据，尚未创建按桶授权的应用用户。
+- Redis 的每服务用户权限等价（`~*`、`+@all`），身份可区分但不是键级隔离。
+- Nacos 的十个服务账号权限等价（同绑 `iboot_role`），身份可区分但不是资源级隔离。
 - Nacos 控制台鉴权在本地保持关闭以支持门户内嵌；非本地必须开启，且门户不代填凭据。
 - Neo4j 使用环境注入的单一账号；社区版不支持按服务划分用户，不能据此声称工作负载身份。
 - Seata 2.6.0 无原生 TLS/认证；只有 workflow/system 加入 `tx` 网络，8091 仅回环发布。该链路是显式例外，不计入 mTLS 覆盖。
@@ -623,10 +653,10 @@ B4.6 在 TLS 之上补客户端身份：Kafka 从“只加密”变为“认证 
 
 | 账号 | 用途 | 权限 |
 |---|---|---|
-| `iboot_app` | 九个业务服务 | 全部命令 |
-| `iboot_exporter` | redis-exporter | 只读与监控命令，不能写 |
+| `iboot_<service>` | 八个数据服务 | 全部命令；每个服务独立口令 |
+| `iboot_exporter` | redis-exporter 与健康检查 | 只读与监控命令，不能写 |
 
-- `default` 用户关闭；服务通过 `spring.data.redis.username=iboot_app` 认证。
+- `default` 用户关闭；服务通过 `spring.data.redis.username=${REDIS_USERNAME}` 认证，值为自己的 `iboot_<service>`。
 - exporter 使用 `REDIS_USER=iboot_exporter` 与独立口令。
 - ACL 由启动参数恢复，不依赖额外文件；容器重建后自动生效。
 
@@ -841,3 +871,50 @@ scripts/regress/regress.sh
 - 不基于来源 IP、网段或请求头；证书 CN 是唯一身份来源。
 - 回滚：把 `IBOOT_SERVICE_AUTHORIZATION_ENABLED` 设为 `false` 并重建服务；规则与代码可保留。
 - 新增服务或调用方时，必须同步更新 `extra-rules` 与 `service-authz.sh` 的最小用例。
+
+## 21. 中间件每服务身份（B5.5）
+
+B4.3 解决“中间件需要认证”，B5.5 解决“认证的是哪个服务”。此前 MySQL/Redis 共用 `iboot_app`、
+Nacos 共用 `iboot`、文件与 AI 共用 Silo 根账号，中间件的连接列表与审计无法归因到服务；
+工作负载的 mTLS 身份到数据面就断开了。
+
+### 21.1 身份矩阵
+
+| 层 | 身份来源 | 权限 |
+|---|---|---|
+| HTTP 服务间 | 客户端证书 CN（B5.2/B5.4） | 路径级调用方白名单 |
+| MySQL | `iboot_<service>` | `iboot` 库 DML；无 DDL |
+| Redis | `iboot_<service>` | 命名 ACL，全部命令 |
+| Nacos | `iboot_<service>` | `iboot_role` 配置读写 |
+| Silo | `iboot_file` / `iboot_job` / `iboot_ai` | 各自桶的读写 |
+
+服务名到账号名的映射固定为把 `-` 换成 `_`，例如 `iboot-workflow` → `iboot_workflow`。
+
+### 21.2 注入方式
+
+- Docker：`x-app-env` 先清空所有每服务口令与根凭据，各服务块只注入自己的 `MYSQL_*`、`REDIS_*`、
+  `NACOS_*`；文件、备份与 AI 分别注入 `SILO_FILE_*`、`SILO_JOB_*`、`SILO_AI_*`。
+- 宿主机：`dev-init.sh` 用 `env -u` 移除其它服务的 `MIDDLEWARE_*_PASSWORD` 与根凭据，再注入本服务身份。
+- 迁移期可保留旧共享账号口令变量，但必须保持未使用；回归会断言服务进程环境不含非本服务凭据。
+
+### 21.3 验收
+
+```bash
+bash scripts/regress/middleware-auth.sh
+bash scripts/regress/regress.sh
+```
+
+身份矩阵用例覆盖：
+
+- MySQL processlist 出现八个 `iboot_<service>`，且不存在 `iboot_app` 连接或账号；
+- Redis `CLIENT LIST` 的用户标签按服务区分，且无 `iboot_app`；
+- Nacos 十个服务账号逐一登录并读取配置；
+- Silo 文件/备份账号可读文件桶、AI 账号可读 AI 桶，交叉访问被拒绝；
+- 每个服务进程环境只含自己的身份，不含根或其它服务口令。
+
+### 21.4 边界
+
+- 这是身份拆分，不是表级/键级授权重做：MySQL 仍是共享库 DML，Redis 仍允许业务键空间。
+- 每服务口令默认在 MySQL/Redis/Nacos 间复用；生产应通过独立变量覆盖后分别轮换。
+- Kafka 日志账号保持按用途（生产/消费/运维）区分；Neo4j 社区版仍是单账号。
+- 共享库表级只读契约不变，见 [docs/23](<./23-微服务底座操作指南.md>) §11.12。

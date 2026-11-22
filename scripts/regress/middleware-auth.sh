@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# 中间件账号鉴权回归：MySQL 最小权限、Redis ACL、Silo 受管凭据、Nacos 鉴权。
+# 中间件账号鉴权回归：每服务身份矩阵、最小权限、Redis ACL、Silo 桶级账号、Nacos 鉴权。
 #
-# 前置：中间件已启动，根目录 .env 或环境变量提供受管凭据。
-# 环境变量：MYSQL_ROOT_PASSWORD、MYSQL_APP_PASSWORD、MYSQL_EXPORTER_PASSWORD、
-#          REDIS_USERNAME、REDIS_PASSWORD、REDIS_EXPORTER_PASSWORD、
-#          KAFKA_LOG_PASSWORD、KAFKA_LOGSTASH_PASSWORD、KAFKA_TOOLS_PASSWORD、
-#          SILO_ROOT_USER、SILO_ROOT_PASSWORD、
+# 前置：中间件与服务已启动，根目录 .env 或环境变量提供受管凭据。
+# 环境变量：MYSQL_ROOT_PASSWORD、MYSQL_EXPORTER_PASSWORD、
+#          MIDDLEWARE_<SERVICE>_PASSWORD（十个服务）、
+#          REDIS_EXPORTER_PASSWORD、KAFKA_*_PASSWORD、
+#          SILO_ROOT_USER、SILO_ROOT_PASSWORD、SILO_FILE_*、SILO_AI_*、
 #          NACOS_USERNAME、NACOS_PASSWORD、REG_CACERT。
 
 set -uo pipefail
@@ -22,18 +22,22 @@ if [ -f "$ROOT/.env" ]; then
 fi
 
 CA="${REG_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
-MYSQL_APP_USER="${MYSQL_USERNAME:-iboot_app}"
-MYSQL_APP_PASSWORD="${MYSQL_APP_PASSWORD:-${MYSQL_PASSWORD:-}}"
+DATA_SERVICES=(system workflow file notify job monitor auth ai)
+ALL_SERVICES=(system workflow file notify job monitor auth ai gateway ops)
 MYSQL_EXPORTER_USER="${MYSQL_EXPORTER_USER:-iboot_exporter}"
 MYSQL_EXPORTER_PASSWORD="${MYSQL_EXPORTER_PASSWORD:-}"
-REDIS_USERNAME="${REDIS_USERNAME:-iboot_app}"
-REDIS_PASSWORD="${REDIS_PASSWORD:-}"
 REDIS_EXPORTER_PASSWORD="${REDIS_EXPORTER_PASSWORD:-}"
 KAFKA_LOG_PASSWORD="${KAFKA_LOG_PASSWORD:-}"
 KAFKA_LOGSTASH_PASSWORD="${KAFKA_LOGSTASH_PASSWORD:-}"
 KAFKA_TOOLS_PASSWORD="${KAFKA_TOOLS_PASSWORD:-}"
 SILO_ROOT_USER="${SILO_ROOT_USER:-}"
 SILO_ROOT_PASSWORD="${SILO_ROOT_PASSWORD:-}"
+SILO_FILE_ACCESS_KEY="${SILO_FILE_ACCESS_KEY:-iboot_file}"
+SILO_FILE_SECRET_KEY="${SILO_FILE_SECRET_KEY:-}"
+SILO_JOB_ACCESS_KEY="${SILO_JOB_ACCESS_KEY:-iboot_job}"
+SILO_JOB_SECRET_KEY="${SILO_JOB_SECRET_KEY:-}"
+SILO_AI_ACCESS_KEY="${SILO_AI_ACCESS_KEY:-iboot_ai}"
+SILO_AI_SECRET_KEY="${SILO_AI_SECRET_KEY:-}"
 NACOS_USERNAME="${NACOS_USERNAME:-}"
 NACOS_PASSWORD="${NACOS_PASSWORD:-}"
 NEO4J_PASSWORD="${NEO4J_PASSWORD:-}"
@@ -51,6 +55,34 @@ mysql_exec() {
         -h127.0.0.1 -u"$user" -e "$sql" 2>/dev/null
 }
 
+mysql_root_exec() {
+    local sql="$1"
+    docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" iboot-mysql mysql \
+        --protocol=TCP --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem \
+        -h127.0.0.1 -uroot -N -e "$sql" 2>/dev/null
+}
+
+service_account() {
+    printf 'iboot_%s' "$1"
+}
+
+service_password() {
+    local var="MIDDLEWARE_$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+    printf '%s' "${!var:-}"
+}
+
+# 读取服务进程实际收到的环境变量；compose 模式看容器，宿主机模式看 /proc。
+service_env() {
+    local name="iboot-$1"
+    if docker inspect "$name" >/dev/null 2>&1; then
+        docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$name" 2>/dev/null || true
+        return
+    fi
+    local pid
+    pid="$(pgrep -f "^java .*$name-1\\.0\\.0\\.jar" | head -1 || true)"
+    [ -n "$pid" ] && tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null || true
+}
+
 ES_CA=/usr/share/elasticsearch/config/certs/rootCA.pem
 es_status() {
     local user="$1" password="$2" method="$3" path="$4"
@@ -59,16 +91,22 @@ es_status() {
         -o /dev/null -w '%{http_code}' "https://localhost:9200$path" 2>/dev/null
 }
 
-reg_log "== 1. MySQL 最小权限 =="
-if mysql_exec "$MYSQL_APP_USER" "$MYSQL_APP_PASSWORD" "SELECT 1" >/dev/null; then
-    reg_pass "业务账号 $MYSQL_APP_USER 可以连接并查询"
-else
-    reg_fail "业务账号 $MYSQL_APP_USER 无法连接"
-fi
-if mysql_exec "$MYSQL_APP_USER" "$MYSQL_APP_PASSWORD" \
+reg_log "== 1. MySQL 每服务身份与最小权限 =="
+for service in "${DATA_SERVICES[@]}"; do
+    acct="$(service_account "$service")"
+    password="$(service_password "$service")"
+    if mysql_exec "$acct" "$password" "SELECT 1" >/dev/null; then
+        reg_pass "MySQL 账号 $acct 可以连接并查询"
+    else
+        reg_fail "MySQL 账号 $acct 无法连接"
+    fi
+done
+first_acct="$(service_account "${DATA_SERVICES[0]}")"
+first_password="$(service_password "${DATA_SERVICES[0]}")"
+if mysql_exec "$first_acct" "$first_password" \
     "CREATE TABLE iboot.__auth_probe__ (id INT)" >/dev/null; then
     reg_fail "业务账号可以执行 DDL"
-    mysql_exec "$MYSQL_APP_USER" "$MYSQL_APP_PASSWORD" "DROP TABLE IF EXISTS iboot.__auth_probe__" >/dev/null || true
+    mysql_exec "$first_acct" "$first_password" "DROP TABLE IF EXISTS iboot.__auth_probe__" >/dev/null || true
 else
     reg_pass "业务账号执行 DDL 被拒绝"
 fi
@@ -79,10 +117,31 @@ if mysql_exec "$MYSQL_EXPORTER_USER" "$MYSQL_EXPORTER_PASSWORD" \
 else
     reg_pass "exporter 账号不能写入业务库"
 fi
-if mysql_exec "$MYSQL_APP_USER" "wrong-password" "SELECT 1" >/dev/null; then
+if mysql_exec "$first_acct" "wrong-password" "SELECT 1" >/dev/null; then
     reg_fail "MySQL 错误口令仍可连接"
 else
     reg_pass "MySQL 错误口令被拒绝"
+fi
+
+# 从中间件侧取证：连接列表必须出现八个服务账号，且不能回退到共享账号。
+mysql_users="$(mysql_root_exec "SELECT DISTINCT user FROM information_schema.processlist WHERE user LIKE 'iboot\\_%' ORDER BY user" | tr -d '\r')"
+for service in "${DATA_SERVICES[@]}"; do
+    acct="$(service_account "$service")"
+    if printf '%s\n' "$mysql_users" | grep -qx "$acct"; then
+        reg_pass "MySQL 连接列表包含 $acct"
+    else
+        reg_fail "MySQL 连接列表缺少 $acct"
+    fi
+done
+if printf '%s\n' "$mysql_users" | grep -qx "iboot_app"; then
+    reg_fail "服务仍以共享账号 iboot_app 连接 MySQL"
+else
+    reg_pass "MySQL 无共享账号 iboot_app 连接"
+fi
+if [ "$(mysql_root_exec "SELECT COUNT(*) FROM mysql.user WHERE user='iboot_app'")" = "0" ]; then
+    reg_pass "共享 MySQL 账号 iboot_app 已删除"
+else
+    reg_fail "共享 MySQL 账号 iboot_app 仍存在"
 fi
 
 redis_exec() {
@@ -92,26 +151,51 @@ redis_exec() {
         --user "$user" --pass "$password" "$@" 2>/dev/null
 }
 
-reg_log "== 2. Redis ACL =="
-if redis_exec "$REDIS_USERNAME" "$REDIS_PASSWORD" ping | grep -q PONG; then
-    reg_pass "Redis 业务账号 $REDIS_USERNAME PING 成功"
-else
-    reg_fail "Redis 业务账号 $REDIS_USERNAME PING 失败"
-fi
+reg_log "== 2. Redis 每服务 ACL 身份 =="
+for service in "${DATA_SERVICES[@]}"; do
+    acct="$(service_account "$service")"
+    password="$(service_password "$service")"
+    if redis_exec "$acct" "$password" ping | grep -q PONG; then
+        reg_pass "Redis 账号 $acct PING 成功"
+    else
+        reg_fail "Redis 账号 $acct PING 失败"
+    fi
+done
 if docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem -p 6379 ping 2>/dev/null | grep -q PONG; then
     reg_fail "Redis 未认证仍可执行命令"
 else
     reg_pass "Redis 未认证被拒绝"
 fi
-if redis_exec default "$REDIS_PASSWORD" ping | grep -q PONG; then
+if redis_exec default "$(service_password "${DATA_SERVICES[0]}")" ping | grep -q PONG; then
     reg_fail "Redis default 用户仍可登录"
 else
     reg_pass "Redis default 用户被禁用"
 fi
-if redis_exec "$REDIS_USERNAME" "wrong-password" ping | grep -q PONG; then
+if redis_exec "$first_acct" "wrong-password" ping | grep -q PONG; then
     reg_fail "Redis 错误口令仍可执行命令"
 else
     reg_pass "Redis 错误口令被拒绝"
+fi
+# 触发各服务的健康检查，让惰性连接池建立 Redis 连接后再取证。
+for entry in "system:8080" "ai:8081" "file:8082" "auth:8083" "notify:8084" \
+    "job:8085" "workflow:8086" "monitor:8087" "gateway:8088" "ops:8089"; do
+    port="${entry##*:}"
+    reg_curl -o /dev/null "https://localhost:$port/actuator/health" >/dev/null 2>&1 || true
+done
+sleep 1
+redis_clients="$(redis_exec iboot_exporter "$REDIS_EXPORTER_PASSWORD" client list || true)"
+for service in "${DATA_SERVICES[@]}"; do
+    acct="$(service_account "$service")"
+    if printf '%s\n' "$redis_clients" | grep -q "user=$acct "; then
+        reg_pass "Redis 连接列表包含 $acct"
+    else
+        reg_fail "Redis 连接列表缺少 $acct"
+    fi
+done
+if printf '%s\n' "$redis_clients" | grep -q "user=iboot_app "; then
+    reg_fail "服务仍以共享账号 iboot_app 连接 Redis"
+else
+    reg_pass "Redis 无共享账号 iboot_app 连接"
 fi
 if redis_exec iboot_exporter "$REDIS_EXPORTER_PASSWORD" info server | grep -qi redis_version; then
     reg_pass "Redis exporter 账号可读取 INFO"
@@ -125,12 +209,12 @@ else
     reg_pass "Redis exporter 账号不能写入"
 fi
 
-reg_log "== 3. Silo 凭据 =="
+reg_log "== 3. Silo 凭据与桶级身份 =="
 if docker exec -e SILO_USER="$SILO_ROOT_USER" -e SILO_PASS="$SILO_ROOT_PASSWORD" iboot-silo \
     sh -c 'mcli alias set good https://127.0.0.1:9000 "$SILO_USER" "$SILO_PASS" >/dev/null && mcli ls good >/dev/null' 2>/dev/null; then
-    reg_pass "Silo 受管凭据可列举 bucket"
+    reg_pass "Silo 根凭据可列举 bucket"
 else
-    reg_fail "Silo 受管凭据无法访问"
+    reg_fail "Silo 根凭据无法访问"
 fi
 if docker exec iboot-silo sh -c \
     'mcli alias set bad https://127.0.0.1:9000 minioadmin minioadmin >/dev/null 2>&1 && mcli ls bad >/dev/null 2>&1'; then
@@ -138,16 +222,88 @@ if docker exec iboot-silo sh -c \
 else
     reg_pass "Silo 默认凭据被拒绝"
 fi
+silo_users="$(docker exec -e SILO_USER="$SILO_ROOT_USER" -e SILO_PASS="$SILO_ROOT_PASSWORD" iboot-silo \
+    sh -c 'mcli alias set local https://127.0.0.1:9000 "$SILO_USER" "$SILO_PASS" >/dev/null && mcli admin user list local' 2>/dev/null || true)"
+file_key="${SILO_FILE_ACCESS_KEY:-iboot_file}"
+job_key="${SILO_JOB_ACCESS_KEY:-iboot_job}"
+ai_key="${SILO_AI_ACCESS_KEY:-iboot_ai}"
+for key in "$file_key" "$job_key" "$ai_key"; do
+    if printf '%s\n' "$silo_users" | grep -qw "$key"; then
+        reg_pass "Silo 服务账号 $key 存在"
+    else
+        reg_fail "Silo 服务账号 $key 不存在"
+    fi
+done
+file_bucket="${IBOOT_FILE_SILO_BUCKET:-iboot-files}"
+ai_bucket="${IBOOT_AI_SILO_BUCKET:-iboot-ai}"
+if docker exec -e KEY="$file_key" -e SECRET="$SILO_FILE_SECRET_KEY" -e BUCKET="$file_bucket" iboot-silo \
+    sh -c 'mcli alias set svc https://127.0.0.1:9000 "$KEY" "$SECRET" >/dev/null && mcli ls "svc/$BUCKET" >/dev/null' 2>/dev/null; then
+    reg_pass "文件服务账号可访问自己的桶 $file_bucket"
+else
+    reg_fail "文件服务账号无法访问自己的桶 $file_bucket"
+fi
+if docker exec -e KEY="$file_key" -e SECRET="$SILO_FILE_SECRET_KEY" -e BUCKET="$ai_bucket" iboot-silo \
+    sh -c 'mcli alias set svc https://127.0.0.1:9000 "$KEY" "$SECRET" >/dev/null && mcli ls "svc/$BUCKET" >/dev/null' 2>/dev/null; then
+    reg_fail "文件服务账号可以读取 AI 桶 $ai_bucket"
+else
+    reg_pass "文件服务账号不能读取 AI 桶"
+fi
+if docker exec -e KEY="$ai_key" -e SECRET="$SILO_AI_SECRET_KEY" -e BUCKET="$file_bucket" iboot-silo \
+    sh -c 'mcli alias set svc https://127.0.0.1:9000 "$KEY" "$SECRET" >/dev/null && mcli ls "svc/$BUCKET" >/dev/null' 2>/dev/null; then
+    reg_fail "AI 服务账号可以读取文件桶 $file_bucket"
+else
+    reg_pass "AI 服务账号不能读取文件桶"
+fi
+if docker exec -e KEY="$job_key" -e SECRET="$SILO_JOB_SECRET_KEY" -e BUCKET="$file_bucket" iboot-silo \
+    sh -c 'mcli alias set svc https://127.0.0.1:9000 "$KEY" "$SECRET" >/dev/null && mcli ls "svc/$BUCKET" >/dev/null' 2>/dev/null; then
+    reg_pass "备份任务账号可访问文件桶 $file_bucket"
+else
+    reg_fail "备份任务账号无法访问文件桶 $file_bucket"
+fi
+if docker exec -e KEY="$job_key" -e SECRET="$SILO_JOB_SECRET_KEY" -e BUCKET="$ai_bucket" iboot-silo \
+    sh -c 'mcli alias set svc https://127.0.0.1:9000 "$KEY" "$SECRET" >/dev/null && mcli ls "svc/$BUCKET" >/dev/null' 2>/dev/null; then
+    reg_fail "备份任务账号可以读取 AI 桶 $ai_bucket"
+else
+    reg_pass "备份任务账号不能读取 AI 桶"
+fi
 
-reg_log "== 4. Nacos 鉴权 =="
+reg_log "== 4. Nacos 每服务身份与鉴权 =="
+for service in "${ALL_SERVICES[@]}"; do
+    acct="$(service_account "$service")"
+    password="$(service_password "$service")"
+    login_resp="$(curl -sS --cacert "$CA" -X POST \
+        "https://localhost:8848/nacos/v3/auth/user/login" \
+        --data-urlencode "username=$acct" \
+        --data-urlencode "password=$password" 2>/dev/null || true)"
+    token="$(printf '%s' "$login_resp" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("accessToken",""))' 2>/dev/null || true)"
+    if [ -n "$token" ]; then
+        status="$(curl -sS --cacert "$CA" -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $token" \
+            "https://localhost:8848/nacos/v3/client/cs/config?dataId=__iboot_probe__&groupName=DEFAULT_GROUP&namespaceId=public" 2>/dev/null || true)"
+        case "$status" in
+            200|404) reg_pass "Nacos 账号 $acct 可登录并读取配置" ;;
+            *) reg_fail "Nacos 账号 $acct 无法读取配置（HTTP $status）" ;;
+        esac
+    else
+        reg_fail "Nacos 账号 $acct 登录失败"
+    fi
+done
 login_resp="$(curl -sS --cacert "$CA" -X POST \
     "https://localhost:8848/nacos/v3/auth/user/login" \
     --data-urlencode "username=$NACOS_USERNAME" \
     --data-urlencode "password=$NACOS_PASSWORD" 2>/dev/null || true)"
 if printf '%s' "$login_resp" | grep -q accessToken; then
-    reg_pass "Nacos 服务账号登录成功"
+    reg_pass "Nacos 运维账号登录成功"
 else
-    reg_fail "Nacos 服务账号登录失败"
+    reg_fail "Nacos 运维账号登录失败"
+fi
+if curl -sS --cacert "$CA" -X POST \
+    "https://localhost:8848/nacos/v3/auth/user/login" \
+    --data-urlencode "username=iboot_system" \
+    --data-urlencode "password=wrong-password" 2>/dev/null | grep -q accessToken; then
+    reg_fail "Nacos 错误口令仍可登录"
+else
+    reg_pass "Nacos 错误口令被拒绝"
 fi
 anon_status="$(curl -sS --cacert "$CA" -o /dev/null -w '%{http_code}' -X POST \
     "https://localhost:8848/nacos/v3/admin/cs/config" \
@@ -165,6 +321,41 @@ if env -u NACOS_USERNAME -u NACOS_PASSWORD "$ROOT/scripts/sentinel-init.sh" >/de
 else
     reg_pass "sentinel-init 缺少凭据时失败"
 fi
+
+reg_log "== 4b. 服务进程环境隔离 =="
+for service in "${ALL_SERVICES[@]}"; do
+    env_dump="$(service_env "$service")"
+    if [ -z "$env_dump" ]; then
+        reg_log "  [SKIP] iboot-$service 未运行（不参与身份矩阵）"
+        continue
+    fi
+    acct="$(service_account "$service")"
+    if printf '%s\n' "$env_dump" | grep -qx "NACOS_USERNAME=$acct"; then
+        reg_pass "iboot-$service 使用 Nacos 身份 $acct"
+    else
+        reg_fail "iboot-$service 未使用自己的 Nacos 身份"
+    fi
+    case " ${DATA_SERVICES[*]} " in
+        *" $service "*)
+            if printf '%s\n' "$env_dump" | grep -qx "MYSQL_USERNAME=$acct" \
+                && printf '%s\n' "$env_dump" | grep -qx "REDIS_USERNAME=$acct"; then
+                reg_pass "iboot-$service 使用自己的 MySQL/Redis 身份 $acct"
+            else
+                reg_fail "iboot-$service 未使用自己的 MySQL/Redis 身份"
+            fi
+            ;;
+    esac
+    if printf '%s\n' "$env_dump" | grep -qE '^MIDDLEWARE_[A-Z]+_PASSWORD=..'; then
+        reg_fail "iboot-$service 仍持有其它服务的中间件口令"
+    else
+        reg_pass "iboot-$service 只持有自己的中间件口令"
+    fi
+    if printf '%s\n' "$env_dump" | grep -qE '^(SILO_ROOT_PASSWORD|MYSQL_ROOT_PASSWORD|NACOS_ADMIN_PASSWORD)=..'; then
+        reg_fail "iboot-$service 仍持有根或管理口令"
+    else
+        reg_pass "iboot-$service 不持有根或管理口令"
+    fi
+done
 
 reg_log "== 5. Elasticsearch 最小权限 =="
 if [ "$(es_status iboot_ai "$ES_AI_PASSWORD" GET '/iboot-kb-chunk-*/_search')" = "200" ]; then

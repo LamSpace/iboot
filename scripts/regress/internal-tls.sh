@@ -18,7 +18,7 @@ CERT_DIR="${IBOOT_TLS_CERT_DIR:-$(cd "$HERE/../.." && pwd)/docker/certs}"
 SVC_CLIENT_CERT="${SVC_CLIENT_CERT:-$CERT_DIR/portal.pem}"
 SVC_CLIENT_KEY="${SVC_CLIENT_KEY:-$CERT_DIR/portal-key.pem}"
 : "${MYSQL_ROOT_PASSWORD:?缺少 MYSQL_ROOT_PASSWORD（请加载根目录 .env）}"
-: "${REDIS_PASSWORD:?缺少 REDIS_PASSWORD（请加载根目录 .env）}"
+: "${REDIS_EXPORTER_PASSWORD:?缺少 REDIS_EXPORTER_PASSWORD（请加载根目录 .env）}"
 PORTS=(8080 8081 8082 8083 8084 8085 8086 8087 8088)
 if [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; then
     PORTS+=(8089)
@@ -222,7 +222,7 @@ fi
 
 reg_log "== 6. Redis TLS =="
 if docker inspect iboot-redis >/dev/null 2>&1; then
-    if [ "$(docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem --user "${REDIS_USERNAME:-iboot_app}" --pass "$REDIS_PASSWORD" -p 6379 ping 2>/dev/null)" = "PONG" ]; then
+    if [ "$(docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem --user iboot_exporter --pass "$REDIS_EXPORTER_PASSWORD" -p 6379 ping 2>/dev/null)" = "PONG" ]; then
         reg_pass "Redis TLS PING 成功"
     else
         reg_fail "Redis TLS PING 失败"
