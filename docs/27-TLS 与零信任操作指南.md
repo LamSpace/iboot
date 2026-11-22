@@ -36,10 +36,11 @@ scripts/tls-init.sh --check  # 只检查有效期与证书用途
 | `clients/prometheus.pem` / `clients/blackbox.pem` 等 | Prometheus 与 blackbox 的探针客户端证书 |
 | `truststore.p12` | Java 信任库，口令 `changeit` |
 
-叶子证书的 SAN 覆盖 `localhost`、`127.0.0.1`、`::1`、`host.docker.internal`、
-`*.iboot.local` 与全部服务名。服务与门户叶子证书的 EKU 同时包含 `serverAuth` 与
-`clientAuth`；探针客户端证书只包含 `clientAuth`。B5.2 起 `--check` 会拒绝缺少
-`clientAuth` 的旧证书，并自动重签。
+共享门户证书的 SAN 覆盖 `localhost`、`127.0.0.1`、`::1`、`host.docker.internal`、
+`*.iboot.local` 与全部服务名；每个服务证书的 SAN 覆盖自身服务名、`localhost`、
+`127.0.0.1`、`::1` 与 `host.docker.internal`。服务与门户叶子证书的 EKU 同时包含
+`serverAuth` 与 `clientAuth`；探针客户端证书只包含 `clientAuth`。B5.2 起 `--check`
+会拒绝缺少 `clientAuth` 的旧证书，并自动重签。
 
 首次生成由 `mkcert` 创建本地 CA，之后叶子证书由 `openssl` 使用同一 CA 签发；
 `truststore.p12` 与浏览器信任链保持不变。脚本依赖 `mkcert`、`openssl` 与 `keytool`。mkcert 缺失时：
@@ -702,7 +703,7 @@ curl --cacert docker/certs/ca/rootCA.pem \
 openssl x509 -in docker/certs/services/iboot-system.pem -noout -purpose
 ```
 
-出现 `SSL_ERROR_NO_CYPHER_OVERLAP`、`certificate required` 或 curl `000` 时，先确认
+出现 `certificate required`、`handshake failure` 或 curl `000` 时，先确认
 客户端证书由本地 CA 签发且未过期，再检查 `IBOOT_TLS_CERT_FILE` / `IBOOT_TLS_KEY_FILE`
 是否指向本服务文件。
 

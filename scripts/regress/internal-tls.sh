@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# 内部 TLS 回归：服务端口、网关上游、JWKS 与 MySQL/Redis/Silo/Neo4j。
+# 内部 TLS 与双向 TLS 回归：服务端口、网关上游、JWKS 与 MySQL/Redis/Silo/Neo4j。
 #
-# 前置：服务、网关与数据面已以内部 TLS 启动；证书已生成。
-# 环境变量：SVC_CACERT（默认 REG_CACERT）、REG_BASE、REG_USER、REG_PASS。
+# 前置：服务、网关与数据面已以内部 TLS 启动；证书已生成，服务证书含 clientAuth。
+# 环境变量：SVC_CACERT（默认 REG_CACERT）、SVC_CLIENT_CERT/SVC_CLIENT_KEY
+# （默认门户证书）、REG_BASE、REG_USER、REG_PASS。
 # 数据面检查使用 iboot-mysql / iboot-redis / iboot-silo 容器；Neo4j 仅在运行时检查。
 
 set -uo pipefail
