@@ -9,7 +9,7 @@
 当前已完成的加密范围：
 
 - 浏览器/CLI → 门户（L1 边缘 TLS）；门户 → 网关；服务间调用与 JWKS。
-- MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面。
+- MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面；Kafka SASL 与 Redis 命名 ACL。
 - Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 只有加密通道（见 §9.4）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
 - 不引入本机服务网格、SPIFFE/OPA；每服务工作负载身份与完整 mTLS 留给 B5。
@@ -257,14 +257,18 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:9200/_cluster/health  
 
 ### 9.2 Kafka
 
-- 三个监听全部 SSL：`SSL://kafka:9092`、`SSL_HOST://localhost:29092`、
-  `CONTROLLER://:9093`；明文客户端被拒绝。
+- 三个监听都使用 SASL_SSL：`INTERNAL://kafka:9092`、`HOST://localhost:29092`、
+  `CONTROLLER://:9093`；controller 不发布到宿主机，节点内使用 `broker` 账号。
 - `tls-init.sh` 额外生成 `runtime/kafka-keystore.p12` 与密码文件。
 - 镜像的 configure 脚本要求 `KAFKA_SSL_KEYSTORE_FILENAME`、`KAFKA_SSL_KEY_CREDENTIALS`、
   `KAFKA_SSL_KEYSTORE_CREDENTIALS`，文件放在 `/etc/kafka/secrets`。
-- client auth 为 `none` 时镜像不会自动注入 truststore；controller 出站 SSL 仍需显式传
-  `KAFKA_SSL_TRUSTSTORE_LOCATION`，否则启动时报 PKIX 失败。
-- `KafkaAppender` 默认 `security.protocol=SSL`，宿主机信任库为
+- client auth 为 `none` 时镜像不会自动注入 truststore；controller 出站仍需显式传
+  `KAFKA_SSL_TRUSTSTORE_LOCATION`，否则启动时报 PKIX 失败。监听名改为不含下划线的
+  `INTERNAL`/`HOST` 后，镜像不再自动注入 keystore，需显式设置
+  `KAFKA_SSL_KEYSTORE_LOCATION` 与口令。
+- SASL/PLAIN 账号按用途区分：`iboot_log`（写日志）、`iboot_logstash`（读日志与消费组）、
+  `iboot_tools`（初始化/运维超级用户）、`broker`（节点间）。`StandardAuthorizer` 在无 ACL 时默认拒绝。
+- `KafkaAppender` 默认 `security.protocol=SASL_SSL`，宿主机信任库为
   `docker/certs/truststore.p12`，容器内为 `/certs/truststore.p12`。
 
 验证：
@@ -276,7 +280,7 @@ scripts/regress/log-pipeline.sh --drills
 
 ### 9.3 Logstash 与日志管道
 
-- Kafka 输入使用 `security_protocol=SSL` 与 PKCS12 truststore；
+- Kafka 输入使用 `security_protocol=SASL_SSL`、`iboot_logstash` 账号与 PKCS12 truststore；
   ES 输出使用 `https://`、`ssl_certificate_authorities` 与凭据。
 - 端到端探针必须能从 Kafka 经 Logstash 进入 ES，并按 `traceId` 检索到。
 - Kafka 或 Logstash 不可用时业务仍正常运行；恢复后日志自动续传。
@@ -323,7 +327,7 @@ Nacos 3.3 的 HTTP API、控制台与 gRPC 通道已切到 TLS；gRPC 进一步�
 - gRPC 端口偏移保持不变：8848 → 9848；9849 是集群内部端口，不映射宿主机。
 - 门户 Vite 的 `/nacos-console` 代理、`sentinel-init.sh`、`dev-init.sh` 健康检查与 Docker
   控制台 URL 都改为 HTTPS + 本地 CA。
-- Nacos 用户认证与鉴权仍关闭；gRPC 已启用 mTLS，但所有服务共用同一张客户端证书，每服务身份留待 B5。
+- Nacos 的 HTTP 与 gRPC 已启用服务账号认证与鉴权（B4.3）；gRPC 已启用 mTLS，但所有服务共用同一张客户端证书，每服务身份留待 B5。本地控制台鉴权仍关闭（见 §13.5）。
 
 验证：
 
@@ -346,6 +350,7 @@ scripts/regress/internal-tls.sh
   完成（MySQL/Redis/Silo/Nacos）；默认值与运维收尾由 `harden-operational-defaults`
   完成（ES 专用账号、Grafana/Neo4j 默认值、证书告警、明文审计）。
 - B4.5：Tempo 的 OTLP 上报与查询链路 TLS 已完成（`add-tempo-tls`）。
+- B4.6：Kafka SASL/ACL 与 Redis 命名 ACL 已完成（`harden-kafka-redis-auth`）。
 - B5：服务间 mTLS、每服务工作负载身份、RocketMQ 强制 TLS 与 Seata 例外决策。
 
 ## 12. 暴露面与网络分段
@@ -398,7 +403,7 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 
 - 只收敛 Docker 编排发布的网络暴露面，不改变各组件内部的 TLS 配置。
 - 宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程仍按 Spring Boot 默认监听所有网卡；
-  它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B4.3/B5 收敛。
+  它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B5 收敛。
 - 中间件已启用账号认证，但仍是共享账号；服务间没有客户端证书。
 - 可观测 UI 仍为 HTTP，但只监听回环地址。
 - 完整身份与工作负载 mTLS 属于 B5，不在本节的宣称范围内。
@@ -412,10 +417,11 @@ B4.3 在 TLS 与网络边界之上补账号认证。它是**共享账号**方案
 
 | 组件 | 账号 | 用途 | 权限 |
 |---|---|---|---|
+| Redis | `iboot_app` | 九个业务服务 | 命名 ACL 账号，全部命令；口令由 `REDIS_PASSWORD` 注入 |
+| Redis | `iboot_exporter` | redis-exporter | 只读监控命令集；口令由 `REDIS_EXPORTER_PASSWORD` 注入 |
 | MySQL | `root` | 账号初始化与迁移 | 管理权限；不注入业务服务 |
 | MySQL | `iboot_app` | 八个业务服务 | `iboot` 库 `SELECT/INSERT/UPDATE/DELETE` |
 | MySQL | `iboot_exporter` | mysqld-exporter | `PROCESS`、`REPLICATION CLIENT`、`performance_schema` 只读 |
-| Redis | 默认用户 | 全部服务 | 正确口令后可用；口令由 `REDIS_PASSWORD` 注入 |
 | Silo | 根账号 | 服务、`silo-init`、Thanos | 由 `SILO_ROOT_USER/PASSWORD` 注入 |
 | Nacos | `iboot` | 服务注册/配置与管理脚本 | 配置读写；管理员 `nacos` 只用于初始化脚本 |
 | Neo4j | `neo4j` | AI 图能力 | 社区版单账号；口令由 `NEO4J_PASSWORD` 注入，缺失时编排失败 |
@@ -466,14 +472,14 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 检查覆盖：
 
 - MySQL：业务账号可查询、执行 DDL 被拒绝；exporter 不能写业务库；错误口令失败。
-- Redis：未认证与错误口令被拒绝；正确口令 `PING` 成功。
+- Redis：未认证、`default` 用户与错误口令被拒绝；`iboot_app` 可 `PING`；`iboot_exporter` 可读 `INFO`、不能写。
 - Silo：`minioadmin` 被拒绝；受管凭据可列举 bucket。
 - Nacos：匿名管理请求被拒绝；服务账号可登录；`sentinel-init` 缺少凭据时失败。
 
 ### 13.5 边界
 
 - MySQL root 仍允许从编排网络连接，仅用于初始化与迁移；后续可改为专用迁移账号并关闭远程 root。
-- Redis 使用单一受管口令，不是每服务 ACL 用户。
+- Redis 使用 `iboot_app` 共享业务账号与受限 `iboot_exporter`，仍不是每服务 ACL 用户。
 - Silo 使用受管根凭据，尚未创建按桶授权的应用用户。
 - Nacos 控制台鉴权在本地保持关闭以支持门户内嵌；非本地必须开启，且门户不代填凭据。
 - Neo4j 使用环境注入的单一账号；社区版不支持按服务划分用户，不能据此声称工作负载身份。
@@ -481,7 +487,7 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
   `NEO4J_PASSWORD` 不会改数据库内口令，需先停止 Neo4j 后执行
   `neo4j-admin dbms set-initial-password <新口令>`，或删除 graph profile 的数据卷重建
   （图数据可由业务重新同步）。
-- ES 应用账号最小权限、Sentinel 控制台登录、Kafka SASL、RocketMQ ACL 与 Seata 认证不在 B4.3 范围。
+- Sentinel 控制台登录、RocketMQ ACL 与 Seata 认证不在 B4.3 范围；Kafka SASL 与 Redis ACL 已在 B4.6 完成。
 
 ## 14. 默认值、账号与证书告警收尾（B4.4）
 
@@ -564,3 +570,42 @@ scripts/regress/trace-chain.sh <traceId> --tempo https://localhost:3200
 ```
 
 回滚：恢复上一版 Tempo 配置与 compose，重建 Tempo，并把 `TEMPO_OTLP` 与 Grafana 数据源改回 HTTP；不存在运行时明文回退开关。
+
+## 16. Kafka 与 Redis 账号鉴权（B4.6）
+
+B4.6 在 TLS 之上补客户端身份：Kafka 从“只加密”变为“认证 + Topic 授权”，Redis 从默认用户变为命名 ACL 账号。
+
+### 16.1 Kafka SASL 与 ACL
+
+| 账号 | 用途 | 权限 |
+|---|---|---|
+| `iboot_log` | 九个服务与运维控制台的日志生产 | 写 `iboot-logs` |
+| `iboot_logstash` | Logstash 日志消费 | 读 `iboot-logs` 与 `iboot-logstash` 消费组 |
+| `iboot_tools` | `kafka-init`、健康检查与运维 | 超级用户 |
+| `broker` | 节点间通信 | 超级用户 |
+
+- 两个客户端监听使用 `SASL_SSL` + `PLAIN`，`StandardAuthorizer` 在无 ACL 时默认拒绝。
+- `kafka-init` 以 `iboot_tools` 创建 topic，并写入生产/消费的最小 ACL；重复执行幂等。
+- 口令只允许字母、数字、`-`、`_`，避免 JAAS 解析歧义；口令由 `KAFKA_*_PASSWORD` 注入。
+
+### 16.2 Redis ACL
+
+| 账号 | 用途 | 权限 |
+|---|---|---|
+| `iboot_app` | 九个业务服务 | 全部命令 |
+| `iboot_exporter` | redis-exporter | 只读与监控命令，不能写 |
+
+- `default` 用户关闭；服务通过 `spring.data.redis.username=iboot_app` 认证。
+- exporter 使用 `REDIS_USER=iboot_exporter` 与独立口令。
+- ACL 由启动参数恢复，不依赖额外文件；容器重建后自动生效。
+
+验证：
+
+```bash
+scripts/regress/middleware-auth.sh
+scripts/regress/log-search-tls.sh
+scripts/regress/log-pipeline.sh
+```
+
+回滚：恢复旧 compose 与镜像重建 Kafka/Redis；Kafka ACL 元数据保留但在 Authorizer 关闭后不生效；
+Redis 启动参数恢复为 `--requirepass` 即回到默认用户模式。

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# 中间件账号鉴权回归：MySQL 最小权限、Redis 认证、Silo 受管凭据、Nacos 鉴权。
+# 中间件账号鉴权回归：MySQL 最小权限、Redis ACL、Silo 受管凭据、Nacos 鉴权。
 #
 # 前置：中间件已启动，根目录 .env 或环境变量提供受管凭据。
 # 环境变量：MYSQL_ROOT_PASSWORD、MYSQL_APP_PASSWORD、MYSQL_EXPORTER_PASSWORD、
-#          REDIS_PASSWORD、SILO_ROOT_USER、SILO_ROOT_PASSWORD、
+#          REDIS_USERNAME、REDIS_PASSWORD、REDIS_EXPORTER_PASSWORD、
+#          KAFKA_LOG_PASSWORD、KAFKA_LOGSTASH_PASSWORD、KAFKA_TOOLS_PASSWORD、
+#          SILO_ROOT_USER、SILO_ROOT_PASSWORD、
 #          NACOS_USERNAME、NACOS_PASSWORD、REG_CACERT。
 
 set -uo pipefail
@@ -24,7 +26,12 @@ MYSQL_APP_USER="${MYSQL_USERNAME:-iboot_app}"
 MYSQL_APP_PASSWORD="${MYSQL_APP_PASSWORD:-${MYSQL_PASSWORD:-}}"
 MYSQL_EXPORTER_USER="${MYSQL_EXPORTER_USER:-iboot_exporter}"
 MYSQL_EXPORTER_PASSWORD="${MYSQL_EXPORTER_PASSWORD:-}"
+REDIS_USERNAME="${REDIS_USERNAME:-iboot_app}"
 REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+REDIS_EXPORTER_PASSWORD="${REDIS_EXPORTER_PASSWORD:-}"
+KAFKA_LOG_PASSWORD="${KAFKA_LOG_PASSWORD:-}"
+KAFKA_LOGSTASH_PASSWORD="${KAFKA_LOGSTASH_PASSWORD:-}"
+KAFKA_TOOLS_PASSWORD="${KAFKA_TOOLS_PASSWORD:-}"
 SILO_ROOT_USER="${SILO_ROOT_USER:-}"
 SILO_ROOT_PASSWORD="${SILO_ROOT_PASSWORD:-}"
 NACOS_USERNAME="${NACOS_USERNAME:-}"
@@ -78,23 +85,44 @@ else
     reg_pass "MySQL 错误口令被拒绝"
 fi
 
-reg_log "== 2. Redis 认证 =="
-if docker exec -e REDISCLI_AUTH="$REDIS_PASSWORD" iboot-redis \
-    redis-cli --tls --cacert /certs/rootCA.pem -p 6379 ping 2>/dev/null | grep -q PONG; then
-    reg_pass "Redis 正确口令 PING 成功"
+redis_exec() {
+    local user="$1" password="$2"
+    shift 2
+    docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem -p 6379 \
+        --user "$user" --pass "$password" "$@" 2>/dev/null
+}
+
+reg_log "== 2. Redis ACL =="
+if redis_exec "$REDIS_USERNAME" "$REDIS_PASSWORD" ping | grep -q PONG; then
+    reg_pass "Redis 业务账号 $REDIS_USERNAME PING 成功"
 else
-    reg_fail "Redis 正确口令 PING 失败"
+    reg_fail "Redis 业务账号 $REDIS_USERNAME PING 失败"
 fi
 if docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem -p 6379 ping 2>/dev/null | grep -q PONG; then
     reg_fail "Redis 未认证仍可执行命令"
 else
     reg_pass "Redis 未认证被拒绝"
 fi
-if docker exec -e REDISCLI_AUTH="wrong-password" iboot-redis \
-    redis-cli --tls --cacert /certs/rootCA.pem -p 6379 ping 2>/dev/null | grep -q PONG; then
+if redis_exec default "$REDIS_PASSWORD" ping | grep -q PONG; then
+    reg_fail "Redis default 用户仍可登录"
+else
+    reg_pass "Redis default 用户被禁用"
+fi
+if redis_exec "$REDIS_USERNAME" "wrong-password" ping | grep -q PONG; then
     reg_fail "Redis 错误口令仍可执行命令"
 else
     reg_pass "Redis 错误口令被拒绝"
+fi
+if redis_exec iboot_exporter "$REDIS_EXPORTER_PASSWORD" info server | grep -qi redis_version; then
+    reg_pass "Redis exporter 账号可读取 INFO"
+else
+    reg_fail "Redis exporter 账号无法读取 INFO"
+fi
+if redis_exec iboot_exporter "$REDIS_EXPORTER_PASSWORD" set __exporter_probe__ 1 | grep -q OK; then
+    redis_exec iboot_exporter "$REDIS_EXPORTER_PASSWORD" del __exporter_probe__ >/dev/null || true
+    reg_fail "Redis exporter 账号可以写入"
+else
+    reg_pass "Redis exporter 账号不能写入"
 fi
 
 reg_log "== 3. Silo 凭据 =="
@@ -228,6 +256,90 @@ if [ "$neo4j_running" = "true" ]; then
     fi
 else
     reg_log "  [SKIP] Neo4j 未运行（graph profile 未启用）"
+fi
+
+reg_log "== 7. Kafka SASL 与授权 =="
+kafka_client_config() {
+    local user="$1" password="$2"
+    {
+        printf 'security.protocol=SASL_SSL\n'
+        printf 'sasl.mechanism=PLAIN\n'
+        printf 'sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="%s" password="%s";\n' "$user" "$password"
+        printf 'ssl.truststore.location=/etc/kafka/secrets/truststore.p12\n'
+        printf 'ssl.truststore.password=changeit\n'
+        printf 'ssl.truststore.type=PKCS12\n'
+        printf 'ssl.endpoint.identification.algorithm=HTTPS\n'
+    } | docker exec -i iboot-kafka sh -c 'cat > /tmp/iboot-regress-client.properties'
+}
+
+kafka_topics() {
+    timeout -k 3 20 docker exec iboot-kafka /opt/kafka/bin/kafka-topics.sh \
+        --bootstrap-server localhost:9092 \
+        --command-config /tmp/iboot-regress-client.properties "$@" 2>/dev/null
+}
+
+kafka_broker_versions() {
+    timeout -k 3 15 docker exec iboot-kafka /opt/kafka/bin/kafka-broker-api-versions.sh \
+        --bootstrap-server localhost:9092 \
+        --command-config /tmp/iboot-regress-client.properties 2>/dev/null
+}
+
+kafka_client_config iboot_tools "$KAFKA_TOOLS_PASSWORD"
+if kafka_topics --list | grep -qx iboot-logs; then
+    reg_pass "Kafka 运维账号可列出日志 topic"
+else
+    reg_fail "Kafka 运维账号无法列出日志 topic"
+fi
+
+kafka_client_config iboot_log "$KAFKA_LOG_PASSWORD"
+if kafka_topics --create --if-not-exists --topic __auth_probe__ --partitions 1 --replication-factor 1 >/dev/null 2>&1; then
+    reg_fail "Kafka 业务日志账号可以创建 topic"
+    kafka_client_config iboot_tools "$KAFKA_TOOLS_PASSWORD"
+    kafka_topics --delete --topic __auth_probe__ >/dev/null 2>&1 || true
+else
+    reg_pass "Kafka 业务日志账号不能创建 topic"
+fi
+
+kafka_client_config iboot_logstash "$KAFKA_LOGSTASH_PASSWORD"
+group_out="$(docker exec iboot-kafka /opt/kafka/bin/kafka-consumer-groups.sh \
+    --bootstrap-server localhost:9092 \
+    --command-config /tmp/iboot-regress-client.properties \
+    --describe --group iboot-logstash 2>&1 || true)"
+if printf '%s' "$group_out" | grep -q "iboot-logs"; then
+    reg_pass "Kafka 消费账号可查看日志消费组"
+else
+    reg_fail "Kafka 消费账号无法查看日志消费组：$(printf '%s' "$group_out" | head -1)"
+fi
+
+kafka_client_config iboot_log "$KAFKA_LOG_PASSWORD"
+consumer_out="$(docker exec iboot-kafka timeout 15 /opt/kafka/bin/kafka-console-consumer.sh \
+    --bootstrap-server localhost:9092 \
+    --command-config /tmp/iboot-regress-client.properties \
+    --topic iboot-logs --from-beginning --max-messages 1 2>&1 || true)"
+if printf '%s' "$consumer_out" | grep -qE "TopicAuthorizationException|GroupAuthorizationException"; then
+    reg_pass "Kafka 业务日志账号不能消费日志 topic"
+else
+    reg_fail "Kafka 业务日志账号可以消费日志 topic"
+fi
+
+{
+    printf 'security.protocol=SSL\n'
+    printf 'ssl.truststore.location=/etc/kafka/secrets/truststore.p12\n'
+    printf 'ssl.truststore.password=changeit\n'
+    printf 'ssl.truststore.type=PKCS12\n'
+    printf 'ssl.endpoint.identification.algorithm=HTTPS\n'
+} | docker exec -i iboot-kafka sh -c 'cat > /tmp/iboot-regress-client.properties'
+if kafka_broker_versions | grep -q .; then
+    reg_fail "Kafka 无 SASL 凭据仍可访问"
+else
+    reg_pass "Kafka 无 SASL 凭据被拒绝"
+fi
+
+kafka_client_config iboot_log "wrong-password"
+if kafka_broker_versions | grep -q .; then
+    reg_fail "Kafka 错误 SASL 口令仍可访问"
+else
+    reg_pass "Kafka 错误 SASL 口令被拒绝"
 fi
 
 reg_summary

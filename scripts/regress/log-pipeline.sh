@@ -91,7 +91,9 @@ produce_probe() {
     printf '%s\n' "{\"@timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000)\",\"app\":\"iboot-probe\",\"traceId\":\"$trace_id\",\"message\":\"log-pipeline regress probe\"}" \
         | docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-producer.sh \
             --bootstrap-server localhost:9092 --topic iboot-logs \
-            --command-property security.protocol=SSL \
+            --command-property security.protocol=SASL_SSL \
+            --command-property sasl.mechanism=PLAIN \
+            --command-property "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"iboot_log\" password=\"${KAFKA_LOG_PASSWORD}\";" \
             --command-property "ssl.truststore.location=$KAFKA_TRUSTSTORE" \
             --command-property ssl.truststore.password=changeit \
             --command-property ssl.truststore.type=PKCS12 >/dev/null 2>&1

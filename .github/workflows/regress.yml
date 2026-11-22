@@ -114,7 +114,13 @@ jobs:
           MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
           MYSQL_USERNAME: iboot_app
           MYSQL_PASSWORD: iboot-dev-app
+          REDIS_USERNAME: iboot_app
           REDIS_PASSWORD: iboot-dev-redis
+          REDIS_EXPORTER_PASSWORD: iboot-dev-redis-exporter
+          KAFKA_BROKER_PASSWORD: iboot-dev-kafka-broker
+          KAFKA_LOG_PASSWORD: iboot-dev-kafka-log
+          KAFKA_LOGSTASH_PASSWORD: iboot-dev-kafka-logstash
+          KAFKA_TOOLS_PASSWORD: iboot-dev-kafka-tools
           SILO_ROOT_USER: ibootadmin
           SILO_ROOT_PASSWORD: iboot-dev-silo
           IBOOT_AI_SILO_ACCESS_KEY: ibootadmin
@@ -156,7 +162,13 @@ jobs:
           MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
           MYSQL_USERNAME: iboot_app
           MYSQL_PASSWORD: iboot-dev-app
+          REDIS_USERNAME: iboot_app
           REDIS_PASSWORD: iboot-dev-redis
+          REDIS_EXPORTER_PASSWORD: iboot-dev-redis-exporter
+          KAFKA_BROKER_PASSWORD: iboot-dev-kafka-broker
+          KAFKA_LOG_PASSWORD: iboot-dev-kafka-log
+          KAFKA_LOGSTASH_PASSWORD: iboot-dev-kafka-logstash
+          KAFKA_TOOLS_PASSWORD: iboot-dev-kafka-tools
           SILO_ROOT_USER: ibootadmin
           SILO_ROOT_PASSWORD: iboot-dev-silo
           NACOS_SERVER_ADDR: https://localhost:8848

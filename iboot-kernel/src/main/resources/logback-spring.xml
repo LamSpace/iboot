@@ -15,6 +15,9 @@
     <springProperty scope="context" name="KAFKA_TRUSTSTORE_LOCATION" source="iboot.logging.kafka.truststore-location" defaultValue="docker/certs/truststore.p12"/>
     <springProperty scope="context" name="KAFKA_TRUSTSTORE_PASSWORD" source="iboot.logging.kafka.truststore-password" defaultValue="changeit"/>
     <springProperty scope="context" name="KAFKA_TRUSTSTORE_TYPE" source="iboot.logging.kafka.truststore-type" defaultValue="PKCS12"/>
+    <springProperty scope="context" name="KAFKA_SASL_MECHANISM" source="iboot.logging.kafka.sasl-mechanism" defaultValue=""/>
+    <springProperty scope="context" name="KAFKA_SASL_USERNAME" source="iboot.logging.kafka.sasl-username" defaultValue=""/>
+    <springProperty scope="context" name="KAFKA_SASL_PASSWORD" source="iboot.logging.kafka.sasl-password" defaultValue=""/>
 
     <!-- 控制台输出（容器与本地都能直接看到） -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -65,6 +68,9 @@
         <truststoreLocation>${KAFKA_TRUSTSTORE_LOCATION}</truststoreLocation>
         <truststorePassword>${KAFKA_TRUSTSTORE_PASSWORD}</truststorePassword>
         <truststoreType>${KAFKA_TRUSTSTORE_TYPE}</truststoreType>
+        <saslMechanism>${KAFKA_SASL_MECHANISM}</saslMechanism>
+        <saslUsername>${KAFKA_SASL_USERNAME}</saslUsername>
+        <saslPassword>${KAFKA_SASL_PASSWORD}</saslPassword>
         <topic>iboot-logs</topic>
         <clientId>${APP_NAME}</clientId>
         <ringBufferSize>8192</ringBufferSize>

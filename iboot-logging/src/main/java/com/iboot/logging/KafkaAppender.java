@@ -25,11 +25,13 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -99,6 +101,21 @@ public class KafkaAppender extends LoggingEventAsyncDisruptorAppender {
      * 信任库类型；tls-init.sh 生成 PKCS12。
      */
     private String truststoreType = "PKCS12";
+
+    /**
+     * SASL 机制；为 {@code null} 或空时不启用 SASL，仅在排障或测试中保留。
+     */
+    private String saslMechanism;
+
+    /**
+     * SASL 用户名；按用途使用独立账号，避免所有服务共用同一身份。
+     */
+    private String saslUsername;
+
+    /**
+     * SASL 口令；由环境注入，不写入 logback 配置或仓库。
+     */
+    private String saslPassword;
 
     /**
      * 事件编码器，默认输出与既有链路一致的 JSON（含 {@code app}、{@code traceId}）。
@@ -255,10 +272,11 @@ public class KafkaAppender extends LoggingEventAsyncDisruptorAppender {
     }
 
     /**
-     * 按配置写入 Kafka SSL 客户端参数。
+     * 按配置写入 Kafka 安全参数。
      *
-     * <p>明文协议只写入 {@code security.protocol}，不写信任库；SSL 协议下缺少信任库会导致
-     * 握手失败，由 Kafka 客户端按既有失败路径降级，不影响日志调用线程。
+     * <p>明文协议只写入 {@code security.protocol}，不写信任库；SSL/SASL_SSL 协议下缺少信任库会导致
+     * 握手失败，由 Kafka 客户端按既有失败路径降级，不影响日志调用线程。配置 SASL 机制时同时写入
+     * 机制与由用户名、口令构造的 JAAS 配置。
      *
      * @param properties 生产者配置
      */
@@ -270,6 +288,16 @@ public class KafkaAppender extends LoggingEventAsyncDisruptorAppender {
         if ("PLAINTEXT".equalsIgnoreCase(securityProtocol)) {
             return;
         }
+        applySslProperties(properties);
+        applySaslProperties(properties);
+    }
+
+    /**
+     * 写入信任库参数。
+     *
+     * @param properties 生产者配置
+     */
+    private void applySslProperties(Properties properties) {
         if (truststoreLocation != null && !truststoreLocation.isBlank()) {
             properties.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststoreLocation);
         }
@@ -279,6 +307,56 @@ public class KafkaAppender extends LoggingEventAsyncDisruptorAppender {
         if (truststoreType != null && !truststoreType.isBlank()) {
             properties.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, truststoreType);
         }
+    }
+
+    /**
+     * 写入 SASL 机制与登录配置。
+     *
+     * <p>支持 PLAIN 与 SCRAM-SHA-256/512；用户名和口令在拼接 JAAS 字符串前转义引号与反斜杠，
+     * 避免配置值被解释为额外的 JAAS 选项。
+     *
+     * @param properties 生产者配置
+     */
+    private void applySaslProperties(Properties properties) {
+        if (saslMechanism == null || saslMechanism.isBlank()) {
+            return;
+        }
+        String mechanism = saslMechanism.trim().toUpperCase(Locale.ROOT);
+        properties.put(SaslConfigs.SASL_MECHANISM, mechanism);
+        properties.put(SaslConfigs.SASL_JAAS_CONFIG, buildSaslJaasConfig(mechanism));
+    }
+
+    /**
+     * 构造 SASL JAAS 配置。
+     *
+     * @param mechanism 已规范化为大写的 SASL 机制
+     * @return JAAS 配置字符串
+     * @throws IllegalArgumentException 机制不在支持范围内
+     */
+    private String buildSaslJaasConfig(String mechanism) {
+        String loginModule;
+        if ("PLAIN".equals(mechanism)) {
+            loginModule = "org.apache.kafka.common.security.plain.PlainLoginModule";
+        } else if ("SCRAM-SHA-256".equals(mechanism) || "SCRAM-SHA-512".equals(mechanism)) {
+            loginModule = "org.apache.kafka.common.security.scram.ScramLoginModule";
+        } else {
+            throw new IllegalArgumentException("不支持的 Kafka SASL 机制：" + mechanism);
+        }
+        return loginModule + " required username=\"" + escapeJaasValue(saslUsername)
+                + "\" password=\"" + escapeJaasValue(saslPassword) + "\";";
+    }
+
+    /**
+     * 转义 JAAS 值中的反斜杠与双引号。
+     *
+     * @param value 原始值，允许为 {@code null}
+     * @return 可安全嵌入 JAAS 字符串的值
+     */
+    private static String escapeJaasValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     /**
@@ -423,6 +501,60 @@ public class KafkaAppender extends LoggingEventAsyncDisruptorAppender {
      */
     public void setTruststoreType(String truststoreType) {
         this.truststoreType = truststoreType;
+    }
+
+    /**
+     * 获取 SASL 机制。
+     *
+     * @return SASL 机制
+     */
+    public String getSaslMechanism() {
+        return saslMechanism;
+    }
+
+    /**
+     * 设置 SASL 机制。
+     *
+     * @param saslMechanism SASL 机制，例如 {@code PLAIN}
+     */
+    public void setSaslMechanism(String saslMechanism) {
+        this.saslMechanism = saslMechanism;
+    }
+
+    /**
+     * 获取 SASL 用户名。
+     *
+     * @return SASL 用户名
+     */
+    public String getSaslUsername() {
+        return saslUsername;
+    }
+
+    /**
+     * 设置 SASL 用户名。
+     *
+     * @param saslUsername SASL 用户名
+     */
+    public void setSaslUsername(String saslUsername) {
+        this.saslUsername = saslUsername;
+    }
+
+    /**
+     * 获取 SASL 口令。
+     *
+     * @return SASL 口令
+     */
+    public String getSaslPassword() {
+        return saslPassword;
+    }
+
+    /**
+     * 设置 SASL 口令。
+     *
+     * @param saslPassword SASL 口令
+     */
+    public void setSaslPassword(String saslPassword) {
+        this.saslPassword = saslPassword;
     }
 
     /**
