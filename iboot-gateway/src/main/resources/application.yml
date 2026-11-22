@@ -41,6 +41,9 @@ spring:
           httpclient:
             connect-timeout: 2000
             response-timeout: 10s
+            ssl:
+              # 网关到业务服务的上游为双向 TLS，出示网关自己的服务证书。
+              ssl-bundle: iboot
 
 management:
   tracing:

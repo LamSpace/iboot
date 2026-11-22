@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
-# 生成本地 TLS CA、门户证书与 Java 信任库。
+# 生成本地 TLS CA、门户/服务证书、探针客户端证书与 Java 信任库。
 #
 # 用法：
-#   scripts/tls-init.sh              证书不存在或剩余有效期不足 30 天时生成/重签
+#   scripts/tls-init.sh              证书不存在、用途不足或剩余有效期不足 30 天时生成/重签
 #   scripts/tls-init.sh --force      强制重签
 #   scripts/tls-init.sh --check      只检查证书，不生成
 #
 # 证书目录默认是 docker/certs（已在 .gitignore 中）。浏览器信任需要另外执行一次
 # `CAROOT=<证书目录>/ca mkcert -install`，该步骤可能需要管理员权限，脚本不代为执行。
+#
+# 叶子证书由 mkcert 生成的本地 CA 通过 openssl 签发，EKU 同时包含 serverAuth 与
+# clientAuth，服务证书因此可以直接作为服务间 mTLS 的客户端身份。
 #
 # 可用环境变量：
 #   IBOOT_TLS_CERT_DIR   证书输出目录，默认 <repo>/docker/certs
@@ -24,16 +27,21 @@ CERT_FILE="$CERT_DIR/portal.pem"
 KEY_FILE="$CERT_DIR/portal-key.pem"
 TRUSTSTORE="$CERT_DIR/truststore.p12"
 ROOT_CA="$CAROOT/rootCA.pem"
+CA_KEY="$CAROOT/rootCA-key.pem"
+CA_SERIAL="$CAROOT/rootCA.srl"
 # 容器运行期证书副本：以容器用户可读权限提供，宿主私钥仍保持 0600
 RUNTIME_DIR="$CERT_DIR/runtime"
 SERVICE_DIR="$CERT_DIR/services"
+CLIENT_DIR="$CERT_DIR/clients"
 RUNTIME_SERVICE_DIR="$RUNTIME_DIR/services"
+RUNTIME_CLIENT_DIR="$RUNTIME_DIR/clients"
 # Kafka 需要同时包含私钥与证书链的 PKCS12 keystore；密码仅用于本地开发
 KAFKA_KEYSTORE="$RUNTIME_DIR/kafka-keystore.p12"
 KAFKA_KEY_PASSWORD_FILE="$RUNTIME_DIR/kafka-key-password"
 KAFKA_KEYSTORE_PASSWORD_FILE="$RUNTIME_DIR/kafka-keystore-password"
 NACOS_KEYSTORE="$RUNTIME_DIR/nacos-keystore.p12"
 KAFKA_STORE_PASS="changeit"
+CERT_DAYS=825
 
 # 叶子证书覆盖宿主机、Docker 主机名与全部服务名；B2 可直接复用同一份信任链。
 SAN_NAMES=(
@@ -44,10 +52,15 @@ SAN_NAMES=(
     prometheus alertmanager grafana thanos-query thanos-sidecar thanos-store thanos-compact kibana
 )
 
-# 可部署服务各自使用独立服务端证书；SAN 含服务名与宿主机回环地址。
+# 可部署服务各自使用独立证书；同一张证书同时承担服务端与客户端身份。
 SERVICE_NAMES=(
     iboot-system iboot-gateway iboot-auth iboot-file iboot-notify
     iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops
+)
+
+# 不提供业务端口的调用方使用独立客户端证书，避免借用门户或某个服务的身份。
+CLIENT_NAMES=(
+    prometheus blackbox
 )
 
 FORCE=0
@@ -85,13 +98,29 @@ require_mkcert() {
 mkdir -p "$CERT_DIR" "$CAROOT"
 chmod 700 "$CAROOT"
 
+# 证书用途检查：服务证书要能同时做服务端和客户端，探针证书只要能做客户端。
+cert_has_purpose() {
+    local cert="$1" purpose="$2"
+    openssl x509 -in "$cert" -noout -purpose 2>/dev/null \
+        | grep -Eq "^${purpose}[[:space:]]*:[[:space:]]*Yes$"
+}
+
 cert_valid() {
     [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ] && [ -f "$ROOT_CA" ] && [ -f "$TRUSTSTORE" ] || return 1
+    cert_has_purpose "$CERT_FILE" "SSL server" || return 1
+    cert_has_purpose "$CERT_FILE" "SSL client" || return 1
     openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1 || return 1
-    local svc
+    local svc client
     for svc in "${SERVICE_NAMES[@]}"; do
         [ -f "$SERVICE_DIR/$svc.pem" ] && [ -f "$SERVICE_DIR/$svc-key.pem" ] || return 1
+        cert_has_purpose "$SERVICE_DIR/$svc.pem" "SSL server" || return 1
+        cert_has_purpose "$SERVICE_DIR/$svc.pem" "SSL client" || return 1
         openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$svc.pem" >/dev/null 2>&1 || return 1
+    done
+    for client in "${CLIENT_NAMES[@]}"; do
+        [ -f "$CLIENT_DIR/$client.pem" ] && [ -f "$CLIENT_DIR/$client-key.pem" ] || return 1
+        cert_has_purpose "$CLIENT_DIR/$client.pem" "SSL client" || return 1
+        openssl x509 -checkend 2592000 -noout -in "$CLIENT_DIR/$client.pem" >/dev/null 2>&1 || return 1
     done
 }
 
@@ -135,32 +164,50 @@ ensure_runtime_copies() {
         "$NACOS_KEYSTORE"
     # 各服务的独立证书副本；目录整体随 /certs 挂载进容器。
     mkdir -p "$RUNTIME_SERVICE_DIR"
-    local svc
+    local svc client
     for svc in "${SERVICE_NAMES[@]}"; do
         cp -f "$SERVICE_DIR/$svc.pem" "$RUNTIME_SERVICE_DIR/$svc.pem"
         cp -f "$SERVICE_DIR/$svc-key.pem" "$RUNTIME_SERVICE_DIR/$svc-key.pem"
         chmod 644 "$RUNTIME_SERVICE_DIR/$svc.pem" "$RUNTIME_SERVICE_DIR/$svc-key.pem"
     done
     chmod 755 "$RUNTIME_SERVICE_DIR"
+    mkdir -p "$RUNTIME_CLIENT_DIR"
+    for client in "${CLIENT_NAMES[@]}"; do
+        cp -f "$CLIENT_DIR/$client.pem" "$RUNTIME_CLIENT_DIR/$client.pem"
+        cp -f "$CLIENT_DIR/$client-key.pem" "$RUNTIME_CLIENT_DIR/$client-key.pem"
+        chmod 644 "$RUNTIME_CLIENT_DIR/$client.pem" "$RUNTIME_CLIENT_DIR/$client-key.pem"
+    done
+    chmod 755 "$RUNTIME_CLIENT_DIR"
     chmod 755 "$RUNTIME_DIR/ca"
     chmod 644 "$RUNTIME_DIR/ca/rootCA.pem"
 }
 
 check_expiry() {
+    local svc client
     [ -f "$CERT_FILE" ] || fail "证书不存在：$CERT_FILE（先执行 scripts/tls-init.sh）"
+    cert_has_purpose "$CERT_FILE" "SSL server" || fail "门户证书缺少 serverAuth 用途：$CERT_FILE"
+    cert_has_purpose "$CERT_FILE" "SSL client" || fail "门户证书缺少 clientAuth 用途：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
     if openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1; then
         log "证书有效：$CERT_FILE"
         openssl x509 -noout -enddate -in "$CERT_FILE" | sed 's/^/  /'
     else
         fail "证书剩余有效期不足 30 天：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
     fi
-    local svc
     for svc in "${SERVICE_NAMES[@]}"; do
         [ -f "$SERVICE_DIR/$svc.pem" ] || fail "服务证书不存在：$SERVICE_DIR/$svc.pem（执行 scripts/tls-init.sh --force 重签）"
+        cert_has_purpose "$SERVICE_DIR/$svc.pem" "SSL server" || fail "服务证书缺少 serverAuth 用途：$SERVICE_DIR/$svc.pem"
+        cert_has_purpose "$SERVICE_DIR/$svc.pem" "SSL client" || fail "服务证书缺少 clientAuth 用途：$SERVICE_DIR/$svc.pem（执行 scripts/tls-init.sh --force 重签）"
         openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$svc.pem" >/dev/null 2>&1 \
             || fail "服务证书剩余有效期不足 30 天：$SERVICE_DIR/$svc.pem"
     done
+    for client in "${CLIENT_NAMES[@]}"; do
+        [ -f "$CLIENT_DIR/$client.pem" ] || fail "探针客户端证书不存在：$CLIENT_DIR/$client.pem（执行 scripts/tls-init.sh --force 重签）"
+        cert_has_purpose "$CLIENT_DIR/$client.pem" "SSL client" || fail "探针客户端证书缺少 clientAuth 用途：$CLIENT_DIR/$client.pem"
+        openssl x509 -checkend 2592000 -noout -in "$CLIENT_DIR/$client.pem" >/dev/null 2>&1 \
+            || fail "探针客户端证书剩余有效期不足 30 天：$CLIENT_DIR/$client.pem"
+    done
     log "服务证书有效：${#SERVICE_NAMES[@]} 张（$SERVICE_DIR）"
+    log "探针客户端证书有效：${#CLIENT_NAMES[@]} 张（$CLIENT_DIR）"
 }
 
 if [ "$CHECK_ONLY" -eq 1 ]; then
@@ -175,25 +222,77 @@ if [ "$FORCE" -eq 0 ] && cert_valid; then
     exit 0
 fi
 
-require_mkcert
+# 首次生成时由 mkcert 创建本地 CA；之后叶子证书由 openssl 使用同一 CA 签发。
+ensure_ca() {
+    if [ -f "$ROOT_CA" ] && [ -f "$CA_KEY" ]; then
+        return 0
+    fi
+    require_mkcert
+    local tmp
+    tmp="$(mktemp -d)"
+    log "初始化本地 CA：$CAROOT"
+    CAROOT="$CAROOT" "$MKCERT" \
+        -cert-file "$tmp/bootstrap.pem" \
+        -key-file "$tmp/bootstrap-key.pem" \
+        localhost >/dev/null
+    rm -rf "$tmp"
+    [ -f "$ROOT_CA" ] && [ -f "$CA_KEY" ] || fail "本地 CA 初始化失败：$CAROOT"
+}
+
+# 用本地 CA 签发叶子证书；SAN 中的 IP 与 DNS 按字面值区分。
+issue_leaf() {
+    local name="$1" cert="$2" key="$3" eku="$4"
+    shift 4
+    local tmp entry san
+    local -a entries=()
+    for entry in "$@"; do
+        case "$entry" in
+            *:*) entries+=("IP:$entry") ;;
+            127.*) entries+=("IP:$entry") ;;
+            *) entries+=("DNS:$entry") ;;
+        esac
+    done
+    san="$(IFS=,; printf '%s' "${entries[*]}")"
+    tmp="$(mktemp -d)"
+    cat > "$tmp/ext.cnf" <<EOF
+basicConstraints=CA:FALSE
+keyUsage=critical,digitalSignature,keyEncipherment
+extendedKeyUsage=$eku
+subjectAltName=$san
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer
+EOF
+    openssl req -new -newkey rsa:2048 -nodes \
+        -keyout "$key" -subj "/CN=$name" -out "$tmp/leaf.csr" >/dev/null 2>&1
+    openssl x509 -req -in "$tmp/leaf.csr" \
+        -CA "$ROOT_CA" -CAkey "$CA_KEY" \
+        -CAcreateserial -CAserial "$CA_SERIAL" \
+        -days "$CERT_DAYS" -sha256 -extfile "$tmp/ext.cnf" \
+        -out "$cert" >/dev/null 2>&1
+    rm -rf "$tmp"
+    chmod 600 "$key"
+    chmod 644 "$cert"
+}
+
+ensure_ca
 log "生成本地 CA 与门户证书：$CERT_DIR"
-CAROOT="$CAROOT" "$MKCERT" \
-    -cert-file "$CERT_FILE" \
-    -key-file "$KEY_FILE" \
-    "${SAN_NAMES[@]}"
+issue_leaf "iboot-portal" "$CERT_FILE" "$KEY_FILE" "serverAuth,clientAuth" "${SAN_NAMES[@]}"
 
 mkdir -p "$SERVICE_DIR"
 log "生成服务独立证书：$SERVICE_DIR"
 for svc in "${SERVICE_NAMES[@]}"; do
-    CAROOT="$CAROOT" "$MKCERT" \
-        -cert-file "$SERVICE_DIR/$svc.pem" \
-        -key-file "$SERVICE_DIR/$svc-key.pem" \
-        localhost 127.0.0.1 ::1 host.docker.internal "$svc"
-    chmod 600 "$SERVICE_DIR/$svc-key.pem"
-    chmod 644 "$SERVICE_DIR/$svc.pem"
+    issue_leaf "$svc" "$SERVICE_DIR/$svc.pem" "$SERVICE_DIR/$svc-key.pem" \
+        "serverAuth,clientAuth" localhost 127.0.0.1 ::1 host.docker.internal "$svc"
 done
 
-chmod 600 "$KEY_FILE" "$CAROOT/rootCA-key.pem"
+mkdir -p "$CLIENT_DIR"
+log "生成探针客户端证书：$CLIENT_DIR"
+for client in "${CLIENT_NAMES[@]}"; do
+    issue_leaf "$client" "$CLIENT_DIR/$client.pem" "$CLIENT_DIR/$client-key.pem" \
+        "clientAuth" localhost 127.0.0.1 ::1 "$client"
+done
+
+chmod 600 "$KEY_FILE" "$CA_KEY"
 chmod 644 "$CERT_FILE" "$ROOT_CA"
 
 log "生成 Java 信任库：$TRUSTSTORE"
@@ -213,7 +312,8 @@ log "  私钥       $KEY_FILE"
 log "  PEM CA     $ROOT_CA"
 log "  Java 信任库 $TRUSTSTORE"
 log "  容器副本   $RUNTIME_DIR（私钥为容器用户可读的 0644）"
-log "  服务证书   $SERVICE_DIR（每服务一张）"
+log "  服务证书   $SERVICE_DIR（每服务一张，serverAuth + clientAuth）"
+log "  探针证书   $CLIENT_DIR（${CLIENT_NAMES[*]}）"
 log "  Kafka keystore $KAFKA_KEYSTORE"
 log "  Nacos keystore $NACOS_KEYSTORE"
 log ""

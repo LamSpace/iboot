@@ -26,3 +26,5 @@ spring:
 server:
   ssl:
     bundle: iboot
+    # 服务间 mTLS：只接受由本地 CA 签发的客户端证书。
+    client-auth: need

@@ -32,6 +32,13 @@ fi
 ES_URL="${LOG_ES_URL:-https://localhost:9200}"
 GATEWAY_URL="${LOG_GATEWAY_URL:-https://localhost:8088}"
 GATEWAY_CACERT="${LOG_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
+# 网关要求客户端证书；日志探针使用门户这一合法调用方的身份。
+GATEWAY_CLIENT_CERT="${LOG_CLIENT_CERT:-${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/portal.pem}"
+GATEWAY_CLIENT_KEY="${LOG_CLIENT_KEY:-${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/portal-key.pem}"
+GATEWAY_OPTS=(--cacert "$GATEWAY_CACERT")
+if [ -f "$GATEWAY_CLIENT_CERT" ] && [ -f "$GATEWAY_CLIENT_KEY" ]; then
+    GATEWAY_OPTS+=(--cert "$GATEWAY_CLIENT_CERT" --key "$GATEWAY_CLIENT_KEY")
+fi
 ES_CACERT="${LOG_ES_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
 ES_USER="${LOG_ES_USER:-elastic}"
 ES_PASSWORD="${LOG_ES_PASSWORD:-${ELASTIC_PASSWORD:-iboot-dev-elastic}}"
@@ -116,7 +123,7 @@ wait_kafka() {
 http_probe() {
     local n="$1" ok=0 total=0 code
     for _ in $(seq 1 "$n"); do
-        code="$(curl -s --cacert "$GATEWAY_CACERT" -o /dev/null -w '%{http_code} %{time_total}' "$GATEWAY_URL/actuator/health")"
+        code="$(curl -s "${GATEWAY_OPTS[@]}" -o /dev/null -w '%{http_code} %{time_total}' "$GATEWAY_URL/actuator/health")"
         total="$(printf '%s\n%s' "$total" "${code#* }" | awk '{s+=$1} END {printf "%.6f", s}')"
         [ "${code%% *}" = "200" ] && ok=$((ok + 1))
     done
@@ -168,11 +175,11 @@ if [ "$DRILLS" -eq 1 ]; then
     "${COMPOSE[@]}" start kafka >/dev/null 2>&1 || die "无法启动 Kafka"
     wait_kafka || fail "Kafka 在 90s 内未恢复健康"
     # 打开网关的包级 DEBUG，制造一条可检索的新日志
-    curl -sS --cacert "$GATEWAY_CACERT" -o /dev/null -X POST -H 'Content-Type: application/json' \
+    curl -sS "${GATEWAY_OPTS[@]}" -o /dev/null -X POST -H 'Content-Type: application/json' \
         -d '{"configuredLevel":"DEBUG"}' "$GATEWAY_URL/actuator/loggers/org.springframework.cloud.gateway" || true
     marker="$(date -u +%Y-%m-%dT%H:%M:%S)"
     sleep 1
-    curl -sS --cacert "$GATEWAY_CACERT" -o /dev/null "$GATEWAY_URL/api/system/users" || true
+    curl -sS "${GATEWAY_OPTS[@]}" -o /dev/null "$GATEWAY_URL/api/system/users" || true
     count="$(wait_count "{\"query\":{\"bool\":{\"must\":[{\"term\":{\"app.keyword\":\"iboot-gateway\"}},{\"range\":{\"@timestamp\":{\"gte\":\"$marker\"}}}]}},\"size\":0}" "恢复后日志")"
     if [ "$count" -gt 0 ]; then
         pass "Kafka 恢复后网关日志自动续投"

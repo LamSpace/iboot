@@ -11,8 +11,9 @@
 - 浏览器/CLI → 门户（L1 边缘 TLS）；门户 → 网关；服务间调用与 JWKS。
 - MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面；Kafka SASL 与 Redis 命名 ACL；Grafana/Prometheus/Alertmanager/Thanos/Kibana 控制台。
 - Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 只有加密通道（见 §9.4）。
+- 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
-- 不引入本机服务网格、SPIFFE/OPA；每服务工作负载身份与完整 mTLS 留给 B5。
+- 不引入本机服务网格、SPIFFE/OPA；服务端只校验“证书由本地 CA 签发”，不按调用方做授权。
 
 ## 2. 证书
 
@@ -21,7 +22,7 @@
 ```bash
 scripts/tls-init.sh          # 不存在或剩余有效期 < 30 天时生成/重签
 scripts/tls-init.sh --force  # 强制重签
-scripts/tls-init.sh --check  # 只检查有效期
+scripts/tls-init.sh --check  # 只检查有效期与证书用途
 ```
 
 证书写入 `docker/certs/`（已被 `.gitignore` 忽略）：
@@ -30,14 +31,19 @@ scripts/tls-init.sh --check  # 只检查有效期
 |---|---|
 | `ca/rootCA.pem` | 本地 CA，供 nginx / Node / curl |
 | `ca/rootCA-key.pem` | CA 私钥，权限 0600，不入仓 |
-| `portal.pem` / `portal-key.pem` | 门户、Nacos、Tempo 与可观测控制台的共享叶子证书 |
-| `services/<service>.pem` / `<service>-key.pem` | 十个业务服务各自的叶子证书与私钥 |
+| `portal.pem` / `portal-key.pem` | 门户、Nacos、Tempo 与可观测控制台的共享叶子证书；门户也用它作为访问上游的客户端证书 |
+| `services/<service>.pem` / `<service>-key.pem` | 十个业务服务各自的叶子证书与私钥，同时用于服务端与客户端身份 |
+| `clients/prometheus.pem` / `clients/blackbox.pem` 等 | Prometheus 与 blackbox 的探针客户端证书 |
 | `truststore.p12` | Java 信任库，口令 `changeit` |
 
-叶子证书的 SAN 覆盖 `localhost`、`127.0.0.1`、`::1`、`host.docker.internal`、
-`*.iboot.local` 与全部服务名；B2 可直接复用同一份信任链。
+共享门户证书的 SAN 覆盖 `localhost`、`127.0.0.1`、`::1`、`host.docker.internal`、
+`*.iboot.local` 与全部服务名；每个服务证书的 SAN 覆盖自身服务名、`localhost`、
+`127.0.0.1`、`::1` 与 `host.docker.internal`。服务与门户叶子证书的 EKU 同时包含
+`serverAuth` 与 `clientAuth`；探针客户端证书只包含 `clientAuth`。B5.2 起 `--check`
+会拒绝缺少 `clientAuth` 的旧证书，并自动重签。
 
-脚本依赖 `mkcert` 与 `keytool`。mkcert 缺失时：
+首次生成由 `mkcert` 创建本地 CA，之后叶子证书由 `openssl` 使用同一 CA 签发；
+`truststore.p12` 与浏览器信任链保持不变。脚本依赖 `mkcert`、`openssl` 与 `keytool`。mkcert 缺失时：
 
 ```bash
 # Ubuntu
@@ -60,8 +66,8 @@ CAROOT=docker/certs/ca mkcert -install
 
 ### 2.3 轮换与过期
 
-- 叶子证书剩余有效期小于 30 天时，`tls-init.sh` 会重签，`scripts/regress/tls.sh`
-  会失败并提示。
+- 叶子证书剩余有效期小于 30 天或缺少 `clientAuth` 用途时，`tls-init.sh` 会重签，
+  `scripts/regress/tls.sh` 会失败并提示。
 - 重签后需要重启门户（Vite/nginx）与使用证书的容器；浏览器无需重新安装 CA。
 - CA 私钥只在本机；删除 `docker/certs/ca/` 会使全部叶子证书失效，需要重新生成并重新信任。
 
@@ -192,12 +198,19 @@ B2 在不改变公开入口的前提下，把门户到网关、服务间、JWKS 
   - 网关与运维控制台不依赖 kernel，各自在 `src/main/resources` 放同一份文件。
 - 十个业务服务通过 `IBOOT_TLS_CERT_FILE` / `IBOOT_TLS_KEY_FILE` 加载各自的
   `services/<service>.pem` / `<service>-key.pem`；SAN 含服务名、`localhost`、`127.0.0.1`。
+- B5.2 起 `iboot-tls.yml` 同时设置 `server.ssl.client-auth=need`：服务端口只接受由
+  本地 CA 签发的客户端证书；不带证书的 TLS 连接在握手阶段失败。
 - 门户、Nacos、Tempo 与可观测控制台继续使用共享的 `portal.pem` / `portal-key.pem`；
-  两者都由同一本地 CA 签发，信任链不变。
+  两者都由同一本地 CA 签发，信任链不变。门户用它作为访问上游的客户端证书。
 
 ### 8.2 信任链
 
-- Spring 客户端使用 SSL bundle（`spring.http.clients.ssl.bundle=iboot`）。
+- Spring 客户端使用 SSL bundle（`spring.http.clients.ssl.bundle=iboot`），并自动把本服务证书
+  作为客户端证书发出；网关额外设置
+  `spring.cloud.gateway.server.webflux.httpclient.ssl.ssl-bundle=iboot`。
+- 门户 nginx 用 `proxy_ssl_certificate` 出示门户证书；宿主机 Vite 代理设置
+  `ca` / `cert` / `key`。Prometheus 与 blackbox 分别使用 `clients/prometheus.pem` 与
+  `clients/blackbox.pem`。
 - Druid、MinIO SDK、Neo4j 驱动等非 Spring 客户端使用 JVM 信任库：
   `-Djavax.net.ssl.trustStore=docker/certs/truststore.p12`。
 - 宿主机由 `dev-init.sh` 为每个 Java 进程注入；Docker 由 compose 的
@@ -222,8 +235,9 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/internal-tls.sh
 REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 ```
 
-`internal-tls.sh` 覆盖逐端口 TLS、明文拒绝、无 CA 失败、网关→服务、JWKS、
-MySQL cipher、Redis/Silo 明文拒绝与 Neo4j（运行 graph profile 时）。
+`internal-tls.sh` 覆盖逐端口 TLS、无客户端证书拒绝、每服务证书的 `serverAuth`/`clientAuth`
+用途、证书指纹唯一、门户证书可作为客户端、网关→服务、JWKS、MySQL cipher、Redis/Silo
+明文拒绝与 Neo4j（运行 graph profile 时）。
 
 ### 8.5 边界与回退
 
@@ -233,6 +247,8 @@ MySQL cipher、Redis/Silo 明文拒绝与 Neo4j（运行 graph profile 时）。
   定位成本高于直接回退。
 - 回滚使用上一版 commit/镜像与 compose，或 `git revert`。B1 的边缘回退
   `IBOOT_TLS_ENABLED=false` 仍只影响公开入口，不改变内部 TLS。
+- 如只需回退 B5.2 的双向认证，移除 `server.ssl.client-auth` 并重建服务即可；证书仍可保留，
+  单向 TLS 客户端恢复可用。
 
 ## 9. 日志与检索面 TLS（B3）
 
@@ -355,7 +371,9 @@ scripts/regress/internal-tls.sh
 - B4.5：Tempo 的 OTLP 上报与查询链路 TLS 已完成（`add-tempo-tls`）。
 - B4.6：Kafka SASL/ACL 与 Redis 命名 ACL 已完成（`harden-kafka-redis-auth`）。
 - B4.7：可观测查询与控制台 TLS 已完成（`harden-observability-ui-tls`）。
-- B5：服务间 mTLS、每服务工作负载身份、RocketMQ 强制 TLS 与 Seata 例外决策。
+- B5.1：每服务独立服务端证书已完成（`add-service-certificates`）。
+- B5.2：服务间 mTLS、每服务工作负载身份与探针客户端身份已完成（`enforce-service-mtls`），见 §18。
+- B5 剩余：RocketMQ 强制 TLS 与 Seata 认证/例外决策。
 
 ## 12. 暴露面与网络分段
 
@@ -408,9 +426,9 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - 只收敛 Docker 编排发布的网络暴露面，不改变各组件内部的 TLS 配置。
 - 宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程仍按 Spring Boot 默认监听所有网卡；
   它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B5 收敛。
-- 中间件已启用账号认证，但仍是共享账号；服务间没有客户端证书。
+- 中间件已启用账号认证，但仍是共享账号；服务间已启用 mTLS（B5.2），但服务端尚未按调用方做授权。
 - 可观测 UI 除 Sentinel 外均为 HTTPS；Sentinel 仍为回环 HTTP，作为已登记边界。
-- 完整身份与工作负载 mTLS 属于 B5，不在本节的宣称范围内。
+- 工作负载 mTLS 的证书身份已落地；SPIFFE/服务网格与按调用方授权不在本节的宣称范围内。
 
 ## 13. 中间件账号与最小权限（B4.3）
 
@@ -633,3 +651,65 @@ scripts/regress/regress.sh
 ```
 
 回滚：恢复上一版 Compose/配置与迁移前的控制台地址，重建可观测组件；不存在运行时明文回退开关。
+
+## 18. 服务间 mTLS（B5.2）
+
+B5.2 在 B5.1 的每服务独立证书之上启用双向 TLS：服务端口要求客户端证书，调用方以各自的
+工作负载证书证明身份。
+
+### 18.1 服务端
+
+- 三份 `iboot-tls.yml`（kernel、gateway、ops）设置 `server.ssl.client-auth=need`；
+  truststore 仍来自 `iboot` bundle 的本地 CA。
+- 服务证书 EKU 为 `serverAuth,clientAuth`；旧证书缺少 `clientAuth` 时 `tls-init.sh`
+  会自动重签。
+- 服务容器的健康检查仍只做 TCP 探活，不发起 TLS 握手，避免因缺证书误判。
+
+### 18.2 调用方身份
+
+| 调用方 | 客户端证书 |
+|---|---|
+| 十个业务服务 | 自己的 `services/<service>.pem`（Spring HTTP 客户端自动使用 `iboot` bundle） |
+| 网关 | `services/iboot-gateway.pem`；额外设置 Gateway `httpclient.ssl.ssl-bundle` |
+| 门户 nginx | `portal.pem`，通过 `proxy_ssl_certificate` |
+| 门户 Vite（宿主机） | `portal.pem`，通过 `http-proxy` 的 `cert` / `key` |
+| Prometheus | `clients/prometheus.pem`，抓取 job 的 `tls_config` |
+| blackbox | `clients/blackbox.pem`，`https_cert` 模块的 `tls_config` |
+| 回归脚本 | `portal.pem`（扮演门户这一合法调用方） |
+
+### 18.3 验收
+
+```bash
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/internal-tls.sh
+REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
+```
+
+`internal-tls.sh` 新增：
+
+- 每个服务端口不带客户端证书必须失败；
+- 每个服务证书同时具备 `SSL server` 与 `SSL client` 用途；
+- 每张服务证书都能作为客户端完成握手；
+- 门户证书可作为客户端访问服务端口。
+
+### 18.4 排障
+
+```bash
+# 带客户端证书访问服务健康检查
+curl --cacert docker/certs/ca/rootCA.pem \
+  --cert docker/certs/portal.pem --key docker/certs/portal-key.pem \
+  https://localhost:8080/actuator/health
+
+# 查看服务端证书用途
+openssl x509 -in docker/certs/services/iboot-system.pem -noout -purpose
+```
+
+出现 `certificate required`、`handshake failure` 或 curl `000` 时，先确认
+客户端证书由本地 CA 签发且未过期，再检查 `IBOOT_TLS_CERT_FILE` / `IBOOT_TLS_KEY_FILE`
+是否指向本服务文件。
+
+### 18.5 边界
+
+- 服务端只验证客户端证书链，不检查调用方是否“有权”访问某个路径；按调用方授权、
+  最小权限与 SPIFFE 身份留待后续。
+- Nacos 注册客户端仍使用共享 `portal.pem`；注册通道不是业务服务端口。
+- 证书探针仍以一个服务端点反映同批签发的叶子证书到期时间；拆分不同有效期前必须扩展探针。

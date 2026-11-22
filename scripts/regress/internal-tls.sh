@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# 内部 TLS 回归：服务端口、网关上游、JWKS 与 MySQL/Redis/Silo/Neo4j。
+# 内部 TLS 与双向 TLS 回归：服务端口、网关上游、JWKS 与 MySQL/Redis/Silo/Neo4j。
 #
-# 前置：服务、网关与数据面已以内部 TLS 启动；证书已生成。
-# 环境变量：SVC_CACERT（默认 REG_CACERT）、REG_BASE、REG_USER、REG_PASS。
+# 前置：服务、网关与数据面已以内部 TLS 启动；证书已生成，服务证书含 clientAuth。
+# 环境变量：SVC_CACERT（默认 REG_CACERT）、SVC_CLIENT_CERT/SVC_CLIENT_KEY
+# （默认门户证书）、REG_BASE、REG_USER、REG_PASS。
 # 数据面检查使用 iboot-mysql / iboot-redis / iboot-silo 容器；Neo4j 仅在运行时检查。
 
 set -uo pipefail
@@ -13,6 +14,9 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 SVC_CACERT="${SVC_CACERT:-${REG_CACERT:-}}"
 CERT_DIR="${IBOOT_TLS_CERT_DIR:-$(cd "$HERE/../.." && pwd)/docker/certs}"
+# 服务端口要求客户端证书；回归脚本以门户这一合法调用方的身份访问。
+SVC_CLIENT_CERT="${SVC_CLIENT_CERT:-$CERT_DIR/portal.pem}"
+SVC_CLIENT_KEY="${SVC_CLIENT_KEY:-$CERT_DIR/portal-key.pem}"
 : "${MYSQL_ROOT_PASSWORD:?缺少 MYSQL_ROOT_PASSWORD（请加载根目录 .env）}"
 : "${REDIS_PASSWORD:?缺少 REDIS_PASSWORD（请加载根目录 .env）}"
 PORTS=(8080 8081 8082 8083 8084 8085 8086 8087 8088)
@@ -27,8 +31,27 @@ trap cleanup EXIT
 
 svc_curl() {
     local -a args=(-sS)
-    [ -n "$SVC_CACERT" ] && args+=(--cacert "$SVC_CACERT")
+    if [ -n "$SVC_CACERT" ]; then
+        args+=(--cacert "$SVC_CACERT")
+        if [ -f "$SVC_CLIENT_CERT" ] && [ -f "$SVC_CLIENT_KEY" ]; then
+            args+=(--cert "$SVC_CLIENT_CERT" --key "$SVC_CLIENT_KEY")
+        fi
+    fi
     curl "${args[@]}" "$@"
+}
+
+# 只带 CA、不带客户端证书：用于 mTLS 负向用例。
+no_cert_curl() {
+    curl -sS --cacert "$SVC_CACERT" "$@"
+}
+
+openssl_client() {
+    local port="$1" cert="${2:-}" key="${3:-}"
+    local -a args=(-connect "localhost:$port" -tls1_2 -CAfile "$SVC_CACERT")
+    if [ -n "$cert" ] && [ -n "$key" ]; then
+        args+=(-cert "$cert" -key "$key")
+    fi
+    echo | timeout 10 openssl s_client "${args[@]}" 2>&1
 }
 
 reg_log "== 1. 内部 CA =="
@@ -40,16 +63,22 @@ fi
 
 reg_log "== 2. 服务端口 TLS =="
 for port in "${PORTS[@]}"; do
-    if echo | timeout 10 openssl s_client -connect "localhost:$port" -tls1_2 -CAfile "$SVC_CACERT" >/dev/null 2>&1; then
-        reg_pass "端口 $port 接受 TLS 1.2"
+    if openssl_client "$port" "$SVC_CLIENT_CERT" "$SVC_CLIENT_KEY" | grep -q "Verify return code: 0"; then
+        reg_pass "端口 $port 接受带客户端证书的 TLS 1.2"
     else
-        reg_fail "端口 $port TLS 1.2 握手失败"
+        reg_fail "端口 $port 带客户端证书的 TLS 1.2 握手失败"
     fi
     status="$(svc_curl -o /dev/null -w '%{http_code}' "https://localhost:$port/actuator/health" 2>/dev/null || true)"
     if [ "$status" = "200" ]; then
         reg_pass "端口 $port 的 HTTPS 健康检查通过"
     else
         reg_fail "端口 $port 的 HTTPS 健康检查失败（HTTP ${status:-无响应}）"
+    fi
+    no_cert="$(no_cert_curl -o /dev/null -w '%{http_code}' "https://localhost:$port/actuator/health" 2>/dev/null || true)"
+    if [ "$no_cert" = "000" ] || [ -z "$no_cert" ]; then
+        reg_pass "端口 $port 拒绝无客户端证书的连接"
+    else
+        reg_fail "端口 $port 仍接受无客户端证书的连接（HTTP $no_cert）"
     fi
     plain="$(curl -sS -o /dev/null -w '%{http_code}' "http://localhost:$port/actuator/health" 2>/dev/null || true)"
     if [ "$plain" = "200" ]; then
@@ -71,7 +100,8 @@ fi
 FINGERPRINTS="$(mktemp)"
 service_cert_fingerprint() {
     local port="$1" svc="$2"
-    echo | timeout 10 openssl s_client -connect "localhost:$port" -servername "$svc" 2>/dev/null \
+    echo | timeout 10 openssl s_client -connect "localhost:$port" -servername "$svc" \
+        -CAfile "$SVC_CACERT" -cert "$SVC_CLIENT_CERT" -key "$SVC_CLIENT_KEY" 2>/dev/null \
         | openssl x509 2>/dev/null
 }
 for entry in "${SERVICE_PORTS[@]}"; do
@@ -97,6 +127,16 @@ for entry in "${SERVICE_PORTS[@]}"; do
     else
         reg_fail "$svc 证书 SAN 不包含 host.docker.internal"
     fi
+    if printf '%s' "$cert" | openssl x509 -noout -purpose 2>/dev/null | grep -q 'SSL server[[:space:]]*: Yes'; then
+        reg_pass "$svc 证书可用于服务端身份"
+    else
+        reg_fail "$svc 证书缺少 serverAuth 用途"
+    fi
+    if printf '%s' "$cert" | openssl x509 -noout -purpose 2>/dev/null | grep -q 'SSL client[[:space:]]*: Yes'; then
+        reg_pass "$svc 证书可用于客户端身份"
+    else
+        reg_fail "$svc 证书缺少 clientAuth 用途"
+    fi
     printf '%s' "$cert" | openssl x509 -noout -fingerprint -sha256 \
         | sed 's/^.*=//' >> "$FINGERPRINTS"
 done
@@ -114,8 +154,32 @@ else
 fi
 rm -f "$FINGERPRINTS"
 
+if openssl x509 -in "$CERT_DIR/portal.pem" -noout -purpose 2>/dev/null | grep -q 'SSL client[[:space:]]*: Yes'; then
+    reg_pass "门户证书可用于访问服务端口"
+else
+    reg_fail "门户证书缺少 clientAuth 用途"
+fi
+
+reg_log "== 2c. 每服务证书可作为客户端 =="
+for entry in "${SERVICE_PORTS[@]}"; do
+    svc="${entry%%:*}"
+    service_cert="$CERT_DIR/services/$svc.pem"
+    service_key="$CERT_DIR/services/$svc-key.pem"
+    if [ ! -f "$service_cert" ] || [ ! -f "$service_key" ]; then
+        reg_fail "$svc 客户端证书文件缺失"
+        continue
+    fi
+    if openssl_client 8080 "$service_cert" "$service_key" | grep -q "Verify return code: 0"; then
+        reg_pass "$svc 证书可作为客户端访问系统服务端口"
+    else
+        reg_fail "$svc 证书无法作为客户端完成 mTLS 握手"
+    fi
+done
+
 reg_log "== 3. 无 CA 必须失败 =="
-status="$(curl -sS -o /dev/null -w '%{http_code}' --cacert "$EMPTY_CA" "https://localhost:8080/actuator/health" 2>/dev/null || true)"
+status="$(curl -sS -o /dev/null -w '%{http_code}' --cacert "$EMPTY_CA" \
+    --cert "$SVC_CLIENT_CERT" --key "$SVC_CLIENT_KEY" \
+    "https://localhost:8080/actuator/health" 2>/dev/null || true)"
 if [ "$status" = "000" ] || [ -z "$status" ]; then
     reg_pass "不带内部 CA 时证书校验失败"
 else

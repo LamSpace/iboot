@@ -20,7 +20,16 @@ TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 
 CA_OPTS=()
-[ -n "${SVC_CACERT:-}" ] && CA_OPTS+=(--cacert "$SVC_CACERT")
+if [ -n "${SVC_CACERT:-}" ]; then
+    CA_OPTS+=(--cacert "$SVC_CACERT")
+    # 服务端口要求客户端证书；显式参数优先，默认使用门户证书。
+    cert_dir="${IBOOT_TLS_CERT_DIR:-$HERE/../../docker/certs}"
+    client_cert="${SVC_CLIENT_CERT:-${REG_CLIENT_CERT:-$cert_dir/portal.pem}}"
+    client_key="${SVC_CLIENT_KEY:-${REG_CLIENT_KEY:-$cert_dir/portal-key.pem}}"
+    if [ -f "$client_cert" ] && [ -f "$client_key" ]; then
+        CA_OPTS+=(--cert "$client_cert" --key "$client_key")
+    fi
+fi
 
 # 部分服务的 OpenAPI 端点受鉴权保护，REG_TOKEN 存在时附带令牌
 if [ -n "${REG_TOKEN:-}" ]; then

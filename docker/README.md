@@ -128,8 +128,8 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 
 图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS），均绑定 `127.0.0.1`。
 
-B2 起 8080–8089 只提供 HTTPS；MySQL/Redis/Silo/Neo4j 只接受 TLS。B3 起 ES、Kafka、
-Logstash 也只接受 TLS；Nacos 在 B4 起同样只接受 TLS。
+B2 起 8080–8089 只提供 HTTPS；B5.2 起还要求客户端证书。MySQL/Redis/Silo/Neo4j 只接受 TLS。
+B3 起 ES、Kafka、Logstash 也只接受 TLS；Nacos 在 B4 起同样只接受 TLS。
 
 ### 网络分段
 
@@ -215,11 +215,15 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - `sys.silo.console.url` 保持 `http://localhost:9001`，因为它是浏览器访问地址；
 - 监控服务的 Silo 检查只在存储类型为 `silo` 时真正连接。
 
-## 内部 TLS（B2 / B5.1）
+## 内部 TLS 与 mTLS（B2 / B5.1 / B5.2）
 
 - 业务服务与网关挂载 `./certs/runtime:/certs:ro`，通过 `IBOOT_TLS_CERT_DIR=/certs`
   使用 `server.ssl`；每个服务再通过 `IBOOT_TLS_CERT_FILE` / `IBOOT_TLS_KEY_FILE`
   加载 `services/<服务名>.pem` 的独立证书。`JAVA_TOOL_OPTIONS` 注入 PKCS12 信任库。
+- 服务端口设置 `server.ssl.client-auth=need`，只接受本地 CA 签发的客户端证书；
+  服务证书 EKU 同时包含 `serverAuth` 与 `clientAuth`。
+- 门户 nginx 挂载 `portal.pem` 并用 `proxy_ssl_certificate` 访问上游；Prometheus 与
+  blackbox 通过 `/certs/clients/` 的专用证书抓取服务端口。
 - MySQL 以 `--require_secure_transport=ON` 启动；Redis 只监听 TLS 端口；Silo 以
   `--certs-dir /certs` 启动；Neo4j 的 `graph` profile 启用 Bolt TLS。
 - 数据面健康检查使用本地 CA；ES/Kafka/Logstash/Nacos 只接受 TLS。

@@ -38,6 +38,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['localhost:9090']
 
@@ -48,6 +51,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-system:8080']
     relabel_configs:
@@ -60,6 +66,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-ai:8081']
     relabel_configs:
@@ -72,6 +81,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-file:8082']
     relabel_configs:
@@ -84,6 +96,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-auth:8083']
     relabel_configs:
@@ -96,6 +111,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-notify:8084']
     relabel_configs:
@@ -108,6 +126,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-job:8085']
     relabel_configs:
@@ -120,6 +141,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-workflow:8086']
     relabel_configs:
@@ -132,6 +156,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-monitor:8087']
     relabel_configs:
@@ -144,6 +171,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-gateway:8088']
     relabel_configs:
@@ -156,6 +186,9 @@ scrape_configs:
     scheme: https
     tls_config:
       ca_file: /certs/rootCA.pem
+      # 服务端口要求客户端证书；探针使用自己的身份。
+      cert_file: /certs/clients/prometheus.pem
+      key_file: /certs/clients/prometheus-key.pem
     static_configs:
       - targets: ['iboot-ops:8089']
     relabel_configs:
