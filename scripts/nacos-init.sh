@@ -17,7 +17,7 @@ NACOS_USERNAME="${NACOS_USERNAME:-iboot}"
 NACOS_PASSWORD="${NACOS_PASSWORD:?NACOS_PASSWORD 必须在 .env 中设置}"
 
 BASE="${NACOS_SCHEME}://${NACOS_ADDR}"
-CURL_OPTS="-sS"
+CURL_OPTS="-sS --max-time 10"
 [ "$NACOS_SCHEME" = "https" ] && CURL_OPTS="$CURL_OPTS --cacert $NACOS_CACERT"
 
 fail() {
@@ -71,11 +71,16 @@ ensure_account() {
             || fail "账号口令同步失败（$username）：$resp"
     fi
 
-    # 角色已存在时 POST 会失败；权限授予是幂等的。
+    # 角色已存在时 POST 会失败；权限授予是幂等的。首次启动必须先建角色再授权。
     curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/role" \
         -H "Authorization: Bearer $token" \
         --data-urlencode "role=iboot_role" \
         --data-urlencode "username=$username" >/dev/null 2>&1 || true
+    curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/permission" \
+        -H "Authorization: Bearer $token" \
+        --data-urlencode "role=iboot_role" \
+        --data-urlencode "resource=*" \
+        --data-urlencode "action=rw" >/dev/null 2>&1 || true
 
     svc_resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/user/login" \
         --data-urlencode "username=$username" \
@@ -91,13 +96,6 @@ ensure_account() {
         *) fail "账号无权读取配置（$username，HTTP $probe_status）" ;;
     esac
 }
-
-curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/permission" \
-    -H "Authorization: Bearer $token" \
-    --data-urlencode "role=iboot_role" \
-    --data-urlencode "resource=*" \
-    --data-urlencode "action=rw" >/dev/null \
-    || fail "服务账号授权失败"
 
 # 运维脚本账号；管理脚本使用它，不注入业务服务。
 ensure_account "$NACOS_USERNAME" "$NACOS_PASSWORD"
