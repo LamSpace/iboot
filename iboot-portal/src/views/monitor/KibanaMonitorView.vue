@@ -43,7 +43,7 @@ import IframePanel from "@/components/IframePanel.vue";
 
 const { t } = useI18n();
 
-const defaultUrl = "http://localhost:5601";
+const defaultUrl = "https://localhost:5601";
 const kibanaUrl = ref(defaultUrl);
 const iframePanel = ref<InstanceType<typeof IframePanel>>();
 

@@ -45,7 +45,7 @@ import IframePanel from "@/components/IframePanel.vue";
 
 const { t } = useI18n();
 
-const defaultUrl = "http://localhost:3000";
+const defaultUrl = "https://localhost:3000";
 const grafanaUrl = ref(defaultUrl);
 const iframePanel = ref<InstanceType<typeof IframePanel>>();
 

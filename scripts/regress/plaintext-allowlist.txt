@@ -5,7 +5,3 @@
 #
 # 用途：CLI 本机回环 OAuth 回调；RFC 8252 要求 loopback，不承载业务数据
 IBOOT_AUTH_CLI_REDIRECT_URI:http://127.0.0.1:8765
-# 用途：Grafana → Prometheus 查询；Prometheus 本地只提供 HTTP
-url: http://prometheus:9090
-# 用途：Grafana → Thanos Query 查询；本地 Thanos 只提供 HTTP
-url: http://thanos-query:19192

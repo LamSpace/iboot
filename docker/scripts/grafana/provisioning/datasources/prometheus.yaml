@@ -4,9 +4,12 @@ datasources:
   - name: Thanos
     type: prometheus
     access: proxy
-    url: http://thanos-query:19192
+    url: https://thanos-query:19192
     isDefault: true
+    secureJsonData:
+      tlsCACert: $__file{/certs/rootCA.pem}
     jsonData:
+      tlsAuthWithCACert: true
       timeInterval: "30s"
     editable: true
 
@@ -15,8 +18,11 @@ datasources:
     uid: PBFA97CFB590B2093
     type: prometheus
     access: proxy
-    url: http://prometheus:9090
+    url: https://prometheus:9090
     isDefault: false
+    secureJsonData:
+      tlsCACert: $__file{/certs/rootCA.pem}
     jsonData:
+      tlsAuthWithCACert: true
       timeInterval: "10s"
     editable: true

@@ -10,7 +10,10 @@ rule_files:
 
 alerting:
   alertmanagers:
-    - static_configs:
+    - scheme: https
+      tls_config:
+        ca_file: /certs/rootCA.pem
+      static_configs:
         - targets:
             - alertmanager:9093
 
@@ -32,6 +35,9 @@ scrape_configs:
         replacement: 'blackbox-exporter:9115'
 
   - job_name: 'prometheus'
+    scheme: https
+    tls_config:
+      ca_file: /certs/rootCA.pem
     static_configs:
       - targets: ['localhost:9090']
 
