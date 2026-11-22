@@ -21,6 +21,12 @@ AGENT="${IBOOT_SKYWALKING_AGENT:-$ROOT/docker/skywalking/agent/skywalking-agent.
 OAP="${IBOOT_SKYWALKING_OAP:-127.0.0.1:11800}"
 GATEWAY="${APM_GATEWAY:-https://localhost:8088}"
 GATEWAY_CACERT="${APM_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
+GATEWAY_CLIENT_CERT="${APM_CLIENT_CERT:-${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/portal.pem}"
+GATEWAY_CLIENT_KEY="${APM_CLIENT_KEY:-${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/portal-key.pem}"
+GATEWAY_OPTS=(--cacert "$GATEWAY_CACERT")
+if [ -f "$GATEWAY_CLIENT_CERT" ] && [ -f "$GATEWAY_CLIENT_KEY" ]; then
+    GATEWAY_OPTS+=(--cert "$GATEWAY_CLIENT_CERT" --key "$GATEWAY_CLIENT_KEY")
+fi
 RUNS=3
 CONCURRENCY=8
 REQUESTS=100
@@ -73,7 +79,7 @@ stop_service() {
 wait_health() {
     local deadline=$(( $(date +%s) + 240 ))
     while [ "$(date +%s)" -lt "$deadline" ]; do
-        if [ "$(curl -s --cacert "$GATEWAY_CACERT" -o /dev/null -w '%{http_code}' "https://localhost:$PORT/actuator/health" 2>/dev/null)" = "200" ]; then
+        if [ "$(curl -s "${GATEWAY_OPTS[@]}" -o /dev/null -w '%{http_code}' "https://localhost:$PORT/actuator/health" 2>/dev/null)" = "200" ]; then
             return 0
         fi
         sleep 0.5
@@ -100,11 +106,11 @@ start_service() {
 
 run_load() {
     local start_ms end_ms ok total
-    export REG_TOKEN GATEWAY REQUESTS
+    export REG_TOKEN GATEWAY REQUESTS GATEWAY_CACERT GATEWAY_CLIENT_CERT GATEWAY_CLIENT_KEY
     start_ms="$(date +%s%3N)"
     seq 1 "$CONCURRENCY" | xargs -P "$CONCURRENCY" -I{} bash -c '
         for ((i = 0; i < REQUESTS; i++)); do
-            curl -s --cacert "$GATEWAY_CACERT" -o /dev/null -w "%{http_code}\n" \
+            curl -s --cacert "$GATEWAY_CACERT" --cert "$GATEWAY_CLIENT_CERT" --key "$GATEWAY_CLIENT_KEY" -o /dev/null -w "%{http_code}\n" \
                 -H "Authorization: Bearer $REG_TOKEN" "$GATEWAY/api/user/profile"
         done
     ' > "$WORK/codes"

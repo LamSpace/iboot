@@ -8,3 +8,6 @@ modules:
       preferred_ip_protocol: ip4
       tls_config:
         ca_file: /certs/rootCA.pem
+        # 服务端口要求客户端证书；探针使用自己的身份。
+        cert_file: /certs/clients/blackbox.pem
+        key_file: /certs/clients/blackbox-key.pem

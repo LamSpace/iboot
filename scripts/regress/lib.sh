@@ -11,7 +11,12 @@ REG_AI_BASE="${REG_AI_BASE:-https://localhost:5173}"
 # 登录与 API 都经门户公开入口；认证服务不再以内部端口作为浏览器/脚本入口。
 REG_AUTH_BASE="${REG_AUTH_BASE:-https://localhost:5173}"
 # 本地 CA；明文排障时显式设为空字符串。
-REG_CACERT="${REG_CACERT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/docker/certs/ca/rootCA.pem}"
+REG_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REG_CERT_DIR="${IBOOT_TLS_CERT_DIR:-$REG_ROOT/docker/certs}"
+REG_CACERT="${REG_CACERT:-$REG_CERT_DIR/ca/rootCA.pem}"
+# 服务端口要求客户端证书；回归脚本扮演门户这一合法调用方。
+REG_CLIENT_CERT="${REG_CLIENT_CERT:-$REG_CERT_DIR/portal.pem}"
+REG_CLIENT_KEY="${REG_CLIENT_KEY:-$REG_CERT_DIR/portal-key.pem}"
 REG_USER="${REG_USER:-admin}"
 REG_PASS="${REG_PASS:-admin123456}"
 
@@ -32,11 +37,19 @@ REG_OIDC_CLIENT="${REG_OIDC_CLIENT:-iboot-portal}"
 REG_OIDC_REDIRECT="${REG_OIDC_REDIRECT:-https://localhost:5173/callback}"
 
 # 统一 curl：HTTPS 请求必须使用本地 CA，禁止 -k。
+# 启用内部 TLS 时同时出示门户客户端证书；明文排障模式（REG_CACERT 为空）不发送证书。
 reg_curl() {
     local -a args=(-sS)
-    [ -n "${REG_CACERT:-}" ] && args+=(--cacert "$REG_CACERT")
+    if [ -n "${REG_CACERT:-}" ]; then
+        args+=(--cacert "$REG_CACERT")
+        if [ -f "${REG_CLIENT_CERT:-}" ] && [ -f "${REG_CLIENT_KEY:-}" ]; then
+            args+=(--cert "$REG_CLIENT_CERT" --key "$REG_CLIENT_KEY")
+        fi
+    fi
     curl "${args[@]}" "$@"
 }
+
+export REG_CLIENT_CERT REG_CLIENT_KEY
 
 # 登录并缓存令牌。
 #

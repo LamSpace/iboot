@@ -16,7 +16,23 @@ const internalTls = (process.env.IBOOT_INTERNAL_TLS_ENABLED ?? 'true') !== 'fals
 const gateway = `${internalTls ? 'https' : 'http'}://localhost:8088`
 const ops = `${internalTls ? 'https' : 'http'}://localhost:8089`
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command }) => {
+  // 服务间 mTLS：Vite 代理到网关/运维控制台时出示门户客户端证书。
+  // 构建阶段不读取证书，避免镜像构建依赖本地证书目录。
+  const proxyClientTls = command === 'serve' && internalTls
+    ? {
+        ca: fs.readFileSync(`${certDir}/ca/rootCA.pem`),
+        cert: fs.readFileSync(`${certDir}/portal.pem`),
+        key: fs.readFileSync(`${certDir}/portal-key.pem`),
+      }
+    : {}
+  // http-proxy 从 target 对象读取客户端证书，而不是代理项的顶层选项。
+  const gatewayTarget = new URL(gateway)
+  const opsTarget = new URL(ops)
+  Object.assign(gatewayTarget, proxyClientTls)
+  Object.assign(opsTarget, proxyClientTls)
+
+  return {
   plugins: [
     vue(),
   ],
@@ -38,38 +54,38 @@ export default defineConfig(({ command }) => ({
     proxy: {
       // CLI 直接使用 /api；门户自身仍使用 /iboot/api
       '/api': {
-        target: gateway,
+        target: gatewayTarget,
         changeOrigin: true,
       },
       '/oauth2': {
-        target: gateway,
+        target: gatewayTarget,
         changeOrigin: false,
         xfwd: true,
       },
       '/.well-known': {
-        target: gateway,
+        target: gatewayTarget,
         changeOrigin: false,
         xfwd: true,
       },
       '/login': {
-        target: gateway,
+        target: gatewayTarget,
         changeOrigin: false,
         xfwd: true,
       },
       '/connect': {
-        target: gateway,
+        target: gatewayTarget,
         changeOrigin: false,
         xfwd: true,
       },
       '/iboot/api': {
         // 阶段 2：统一经网关转发；回滚时改回 http://localhost:8080
-        target: gateway,
+        target: gatewayTarget,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/iboot\/api/, '/api'),
       },
       '/iboot/ai': {
         // 阶段 2：统一经网关转发；回滚时改回 http://localhost:8081
-        target: gateway,
+        target: gatewayTarget,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/iboot\/ai/, '/api/ai'),
       },
@@ -90,23 +106,24 @@ export default defineConfig(({ command }) => ({
         },
       },
       '/sba': {
-        target: ops, // 运维控制台（Spring Boot Admin）
+        target: opsTarget, // 运维控制台（Spring Boot Admin）
         // 必须保留原始 Host：SBA 用请求 Host 生成页面 base href。
         // 改成 8089 会让 SPA 的接口请求跨源，iframe 内表现为空白页。
         changeOrigin: false,
       },
       '/actuator': {
-        target: ops, // 运维控制台自身的 Actuator
+        target: opsTarget, // 运维控制台自身的 Actuator
         changeOrigin: true,
       },
       '/instances': {
-        target: ops, // 运维控制台实例端点
+        target: opsTarget, // 运维控制台实例端点
         changeOrigin: true,
       },
       '/applications': {
-        target: ops, // 运维控制台应用端点
+        target: opsTarget, // 运维控制台应用端点
         changeOrigin: true,
       },
     },
   },
-}))
+  }
+})

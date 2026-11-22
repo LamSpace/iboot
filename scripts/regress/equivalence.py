@@ -11,17 +11,32 @@ service 取 file（默认）、notify、job、workflow 或 monitor，决定采�
 import hashlib
 import io
 import json
+import os
+import ssl
 import sys
 import urllib.error
 import urllib.request
 import zipfile
 
 
+def _ssl_context():
+    """使用系统/SSL_CERT_FILE 信任链，并在环境提供客户端证书时加载它。"""
+    context = ssl.create_default_context()
+    cert = os.environ.get("REG_CLIENT_CERT")
+    key = os.environ.get("REG_CLIENT_KEY")
+    if cert and key and os.path.isfile(cert) and os.path.isfile(key):
+        context.load_cert_chain(cert, key)
+    return context
+
+
+SSL_CONTEXT = _ssl_context()
+
+
 def fetch(base, token, path):
     """发起请求，返回 (状态码, 内容类型, 字节)。"""
     request = urllib.request.Request(base + path, headers={"Authorization": "Bearer " + token})
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=30, context=SSL_CONTEXT) as response:
             return response.status, response.headers.get("Content-Type", ""), response.read()
     except urllib.error.HTTPError as error:
         return error.code, error.headers.get("Content-Type", ""), error.read()

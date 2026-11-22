@@ -284,7 +284,12 @@ wait_http() {
     local desc="$1" url="$2" timeout="${3:-180}" i
     local -a curl_opts=(-sf -m 3)
     if [ "${url#https://}" != "$url" ]; then
-        curl_opts+=(--cacert "${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/ca/rootCA.pem")
+        local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
+        curl_opts+=(--cacert "$cert_dir/ca/rootCA.pem")
+        # 服务端口要求客户端证书；门户是这些服务的合法调用方。
+        if [ -f "$cert_dir/portal.pem" ] && [ -f "$cert_dir/portal-key.pem" ]; then
+            curl_opts+=(--cert "$cert_dir/portal.pem" --key "$cert_dir/portal-key.pem")
+        fi
     fi
     for i in $(seq 1 "$timeout"); do
         if curl "${curl_opts[@]}" "$url" > /dev/null 2>&1; then
@@ -583,7 +588,11 @@ show_status() {
     scheme="$(service_scheme)"
     local -a health_opts=(-sf -m 2)
     if [ "$scheme" = "https" ]; then
-        health_opts+=(--cacert "${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/ca/rootCA.pem")
+        local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
+        health_opts+=(--cacert "$cert_dir/ca/rootCA.pem")
+        if [ -f "$cert_dir/portal.pem" ] && [ -f "$cert_dir/portal-key.pem" ]; then
+            health_opts+=(--cert "$cert_dir/portal.pem" --key "$cert_dir/portal-key.pem")
+        fi
     fi
     log '=== 中间件 ==='
     "${COMPOSE[@]}" --profile platform --profile observability ps --format '  {{.Name}}\t{{.Status}}' 2>/dev/null || true
