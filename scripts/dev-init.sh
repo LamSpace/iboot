@@ -342,7 +342,7 @@ start_middleware() {
     log '=== 1. 中间件 ==='
     # Prometheus 在宿主机开发模式抓取宿主进程；Docker 全量部署的默认配置按服务名抓取。
     export IBOOT_PROMETHEUS_CONFIG="${IBOOT_PROMETHEUS_CONFIG:-prometheus.yml}"
-    local infra=(mysql redis silo silo-init elasticsearch elasticsearch-init seata-server)
+    local infra=(mysql redis silo elasticsearch elasticsearch-init seata-server)
     if rocketmq_enabled; then
         infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-tls rocketmq-init)
     fi
@@ -376,6 +376,9 @@ start_middleware() {
     "${COMPOSE[@]}" run --rm --no-deps es-users-init >/dev/null \
         || fail 'ES 账号初始化失败（es-users-init）'
     wait_http 'Silo' "$(service_scheme)://localhost:9000/minio/health/live" 120 || fail 'Silo 未就绪'
+    # 文件、备份与 AI 使用各自的桶级账号，必须先完成账号与桶初始化。
+    "${COMPOSE[@]}" run --rm --no-deps silo-init >/dev/null \
+        || fail 'Silo 账号初始化失败（silo-init）'
     # 注册中心没就绪就启动后端，会以 ErrCode:-401 Client not connected 直接启动失败。
     # Nacos 3.x 的 v1 健康接口已下线，改用控制台的 readiness 端点（宿主机 8849）。
     wait_http 'Nacos' 'https://localhost:8849/v3/console/health/readiness' 180 || fail 'Nacos 未就绪'

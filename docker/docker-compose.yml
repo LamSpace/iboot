@@ -294,6 +294,8 @@ services:
         condition: service_healthy
       silo:
         condition: service_healthy
+      silo-init:
+        condition: service_completed_successfully
       elasticsearch:
         condition: service_healthy
       iboot-system:
@@ -338,6 +340,8 @@ services:
         condition: service_healthy
       silo:
         condition: service_healthy
+      silo-init:
+        condition: service_completed_successfully
       iboot-system:
         condition: service_healthy
       db-init:
