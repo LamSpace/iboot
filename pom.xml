@@ -36,6 +36,7 @@
 
     <modules>
         <module>iboot-kernel</module>
+        <module>iboot-service-authz</module>
         <module>iboot-logging</module>
         <module>iboot-sentinel</module>
         <module>iboot-db-init</module>
@@ -191,6 +192,11 @@
             <dependency>
                 <groupId>com.iboot</groupId>
                 <artifactId>iboot-kernel</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iboot</groupId>
+                <artifactId>iboot-service-authz</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

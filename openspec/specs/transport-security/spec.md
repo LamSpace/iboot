@@ -654,7 +654,7 @@ Grafana、Prometheus、Alertmanager、Thanos Query 与 Kibana 的 HTTP 入口 SH
 - 十个业务服务 MUST 使用自己的服务证书作为出站客户端证书。
 - 门户 nginx 与宿主机 Vite 代理 MUST 使用门户证书作为客户端身份。
 - Prometheus 与 blackbox MUST 使用各自的探针客户端证书抓取服务端口与执行证书探针。
-- 服务端 MUST 通过本地 CA 校验证书链；本变更 MUST NOT 宣称已按调用方做授权或最小权限控制。
+- 服务端 MUST 通过本地 CA 校验证书链；调用方授权 MUST 由 `service-authorization` 执行，MUST NOT 仅凭证书链放过内部路径。
 
 #### Scenario: 服务间调用携带各自身份
 
@@ -676,9 +676,9 @@ Grafana、Prometheus、Alertmanager、Thanos Query 与 Kibana 的 HTTP 入口 SH
 
 #### Scenario: 未做按调用方授权
 
-- **WHEN** 使用任一由本地 CA 签发的服务证书访问另一个服务端口
+- **WHEN** 使用任一由本地 CA 签发的服务证书访问未被允许的路径
 - **THEN** TLS 层接受该证书
-- **AND** 该结果被登记为“已认证但未按调用方授权”的边界
+- **AND** 业务层返回 403，该历史边界已由 `service-authorization` 关闭
 
 ### Requirement: 服务 mTLS 有负向门禁
 

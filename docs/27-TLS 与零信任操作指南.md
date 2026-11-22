@@ -14,7 +14,7 @@
 - Seata 无原生 TLS/认证，作为显式例外放在 `tx` 网络，仅 workflow/system 可访问（见 §19）。
 - 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
-- 不引入本机服务网格、SPIFFE/OPA；服务端只校验“证书由本地 CA 签发”，不按调用方做授权。
+- 服务端以客户端证书 CN 做路径级服务间授权（B5.4）；仍不引入本机服务网格、SPIFFE/OPA，方法级业务权限继续由 JWT 承担。
 
 ## 2. 证书
 
@@ -377,6 +377,7 @@ scripts/regress/internal-tls.sh
 - B5.1：每服务独立服务端证书已完成（`add-service-certificates`）。
 - B5.2：服务间 mTLS、每服务工作负载身份与探针客户端身份已完成（`enforce-service-mtls`），见 §18。
 - B5.3：RocketMQ TLS-only 入口与 Seata 网络隔离/例外登记已完成（`harden-rocketmq-tls-and-isolate-seata`），见 §19；RocketMQ ACL 与服务端校验仍待后续。
+- B5.4：服务间路径级授权已完成（`enforce-service-authorization`），见 §20；中间件每服务身份与 SPIFFE/服务网格仍待后续。
 
 ## 12. 暴露面与网络分段
 
@@ -432,7 +433,7 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - 只收敛 Docker 编排发布的网络暴露面，不改变各组件内部的 TLS 配置。
 - 宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程仍按 Spring Boot 默认监听所有网卡；
   它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B5 收敛。
-- 中间件已启用账号认证，但仍是共享账号；服务间已启用 mTLS（B5.2），但服务端尚未按调用方做授权。
+- 中间件已启用账号认证，但仍是共享账号；服务间已启用 mTLS 与路径级授权（B5.2/B5.4），中间件层的每服务身份仍未落地。
 - RocketMQ 入口只接受 TLS，但客户端不校验服务端且无 ACL；Seata 无原生 TLS/认证，仅靠 `tx` 网络与回环发布隔离，均为显式例外。
 - 可观测 UI 除 Sentinel 外均为 HTTPS；Sentinel 仍为回环 HTTP，作为已登记边界。
 - 工作负载 mTLS 的证书身份已落地；SPIFFE/服务网格与按调用方授权不在本节的宣称范围内。
@@ -717,8 +718,7 @@ openssl x509 -in docker/certs/services/iboot-system.pem -noout -purpose
 
 ### 18.5 边界
 
-- 服务端只验证客户端证书链，不检查调用方是否“有权”访问某个路径；按调用方授权、
-  最小权限与 SPIFFE 身份留待后续。
+- 服务端已按客户端证书 CN 做路径级授权（B5.4）；方法级业务权限仍由 JWT 决定，SPIFFE/服务网格与中间件每服务身份留待后续。
 - Nacos 注册客户端仍使用共享 `portal.pem`；注册通道不是业务服务端口。
 - 证书探针仍以一个服务端点反映同批签发的叶子证书到期时间；拆分不同有效期前必须扩展探针。
 
@@ -770,3 +770,74 @@ scripts/regress/exposure.sh
 - RocketMQ：恢复 Proxy 的 `18080/18081` 映射与 `rocketmq-proxy:8081` 端点，移除 `rocketmq-tls`；
   网络可保留。
 - Seata：把 `seata-server` 放回 `data`，移除 system/workflow 的 `tx` 网络；8091 回环发布不变。
+
+## 20. 服务间授权（B5.4）
+
+B5.2 解决了“调用方是谁”，B5.4 进一步限制“这个调用方能访问哪些路径”。授权只作用于服务间请求，
+用户 API 的权限仍由 JWT 与方法级权限决定。
+
+### 20.1 身份与过滤器
+
+- 身份取自已由本地 CA 校验的客户端证书 Subject CN：服务证书 CN 为服务名，门户为
+  `iboot-portal`，探针为 `prometheus` / `blackbox`。
+- 共享模块 `iboot-service-authz` 提供 Servlet 与 WebFlux 过滤器：
+  - 8 个 Servlet 服务通过 `iboot-kernel` 以最高优先级注册，早于 Spring Security；
+  - 网关注册 WebFlux 过滤器，在路由前执行；
+  - 运维控制台注册 Servlet 过滤器，在 Basic 认证前执行。
+- 命中规则且调用方不在白名单时返回 403 `{"code":403,"message":"调用方无权访问"}`，不进入业务逻辑。
+
+### 20.2 调用矩阵
+
+公共规则（三份 `iboot-tls.yml`）：
+
+| 路径 | 允许调用方 |
+|---|---|
+| `/actuator/**` | `iboot-ops`、`prometheus`、`blackbox`、`iboot-portal` |
+| `/oauth2/jwks` | 全部 `iboot-*` 服务、网关、门户 |
+| `/oauth2/**`、`/.well-known/**`、`/login`、`/connect/**` | 网关、门户 |
+| `/sba/**`、`/instances/**`、`/applications/**` | 门户 |
+| `/druid/**`、Swagger/OpenAPI 路径 | 门户 |
+
+服务专属规则（`application.yml` 的 `extra-rules`，先于公共规则）：
+
+| 服务 | 规则 |
+|---|---|
+| system | `/internal/leave/quota/**` → workflow；`/api/auth/scope` → file/monitor/job/ai/gateway；`/api/user/**`、`/api/log/login/**`、`/api/dept/**`、`/api/menu/**`、`/api/role/**` → ai/gateway；`/api/**` → gateway |
+| notify | `/internal/notifications/**` → workflow；`/api/**` → gateway |
+| job | `/api/monitor/backup/**` → ai/gateway；`/api/**` → gateway |
+| file/monitor/workflow/auth/ai | `/api/**` → gateway |
+| gateway | `/api/**` → portal |
+| ops | 无额外规则，依赖公共 `/sba`、`/actuator` |
+
+### 20.3 开关与默认值
+
+```yaml
+iboot:
+  security:
+    service-authorization:
+      enabled: ${IBOOT_SERVICE_AUTHORIZATION_ENABLED:false}
+```
+
+- 默认关闭，避免单元测试切片因缺少客户端证书失败。
+- Docker 公共环境与 `dev-init.sh` 显式设为 `true`；宿主机明文排障模式默认随内部 TLS 关闭。
+- 规则未覆盖的路径保持既有 JWT/白名单语义。
+
+### 20.4 验收
+
+```bash
+scripts/regress/service-authz.sh
+scripts/regress/regress.sh
+```
+
+`service-authz.sh` 覆盖：
+
+- 允许：门户→网关、门户→Actuator/文档、Prometheus/blackbox→Actuator、SBA→Actuator、
+  AI→system 用户接口、file→scope、workflow→internal；
+- 拒绝：file→网关 API、file→system 用户接口/Actuator/文档/internal、file→网关 Actuator。
+
+### 20.5 边界与回滚
+
+- 只做路径级工作负载授权，不替代用户权限、方法级 `@PreAuthorize` 或数据权限。
+- 不基于来源 IP、网段或请求头；证书 CN 是唯一身份来源。
+- 回滚：把 `IBOOT_SERVICE_AUTHORIZATION_ENABLED` 设为 `false` 并重建服务；规则与代码可保留。
+- 新增服务或调用方时，必须同步更新 `extra-rules` 与 `service-authz.sh` 的最小用例。

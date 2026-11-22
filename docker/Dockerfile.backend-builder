@@ -15,6 +15,7 @@ COPY docker/maven/settings.xml /root/.m2/settings.xml
 # 先复制 POM，尽量让依赖下载层与源码变更解耦
 COPY pom.xml ./
 COPY iboot-kernel/pom.xml iboot-kernel/pom.xml
+COPY iboot-service-authz/pom.xml iboot-service-authz/pom.xml
 COPY iboot-db-init/pom.xml iboot-db-init/pom.xml
 COPY iboot-file/pom.xml iboot-file/pom.xml
 COPY iboot-notify/pom.xml iboot-notify/pom.xml

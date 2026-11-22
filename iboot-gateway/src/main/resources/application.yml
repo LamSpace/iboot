@@ -73,3 +73,10 @@ management:
     tags:
       application: iboot-gateway
       namespace: default
+
+iboot:
+  security:
+    service-authorization:
+      extra-rules:
+        - paths: ["/api/**"]
+          callers: ["iboot-portal"]

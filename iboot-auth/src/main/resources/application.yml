@@ -117,6 +117,10 @@ iboot:
       max-days: ${IBOOT_AUTH_PAT_MAX_DAYS:90}
       max-per-user: ${IBOOT_AUTH_PAT_MAX_PER_USER:10}
   security:
+    service-authorization:
+      extra-rules:
+        - paths: ["/api/**"]
+          callers: ["iboot-gateway"]
     whitelist:
       # 根路径只做一次到门户的重定向，没有业务含义
       - /

@@ -28,3 +28,23 @@ server:
     bundle: iboot
     # 服务间 mTLS：只接受由本地 CA 签发的客户端证书。
     client-auth: need
+
+# 服务间授权：mTLS 证明调用方身份后，按证书 CN 限制可访问的路径。
+# 默认关闭以保护单元测试；Docker 全栈与 dev-init 显式启用。
+iboot:
+  security:
+    service-authorization:
+      enabled: ${IBOOT_SERVICE_AUTHORIZATION_ENABLED:false}
+      rules:
+        - paths: ["/actuator/**"]
+          callers: ["iboot-ops", "prometheus", "blackbox", "iboot-portal"]
+        - paths: ["/oauth2/jwks"]
+          callers: ["iboot-system", "iboot-ai", "iboot-file", "iboot-auth", "iboot-notify",
+                    "iboot-job", "iboot-workflow", "iboot-monitor", "iboot-gateway", "iboot-portal"]
+        - paths: ["/oauth2/**", "/.well-known/**", "/login", "/connect/**"]
+          callers: ["iboot-gateway", "iboot-portal"]
+        - paths: ["/sba/**", "/instances/**", "/applications/**"]
+          callers: ["iboot-portal"]
+        - paths: ["/druid/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
+                  "/v3/api-docs", "/v3/api-docs.yaml", "/swagger-resources/**", "/webjars/**", "/doc.html"]
+          callers: ["iboot-portal"]

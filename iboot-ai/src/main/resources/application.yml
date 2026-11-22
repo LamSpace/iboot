@@ -145,6 +145,10 @@ iboot:
     operate-log-table: sys_operate_log
   # 免鉴权路径白名单：AI 服务的管理端点在内部网络对运维控制台开放
   security:
+    service-authorization:
+      extra-rules:
+        - paths: ["/api/**"]
+          callers: ["iboot-gateway"]
     whitelist:
       - /actuator/**
 
