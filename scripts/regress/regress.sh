@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 回归总入口：契约快照 → 路由覆盖 → 公开/内部/日志 TLS → 证书到期 → 中间件认证 →
+# 回归总入口：契约快照 → 路由覆盖 → 公开/内部/日志 TLS → 服务间授权 → 证书到期 → 中间件认证 →
 # 暴露面 → 明文审计 → 冒烟 → 权限矩阵。
 #
 # 用法：
@@ -106,6 +106,9 @@ printf '\n===== 4. TLS 公开入口 =====\n'
 
 printf '\n===== 5. 内部 TLS =====\n'
 "$HERE/internal-tls.sh" || fail "内部 TLS 检查未通过"
+
+printf '\n===== 5b. 服务间授权 =====\n'
+"$HERE/service-authz.sh" || fail "服务间授权检查未通过"
 
 printf '\n===== 6. 可观测控制台 TLS =====\n'
 "$HERE/observability-tls.sh" || fail "可观测控制台 TLS 检查未通过"

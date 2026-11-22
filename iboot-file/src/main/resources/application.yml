@@ -97,6 +97,10 @@ iboot:
       scope-url: ${IBOOT_FILE_SCOPE_URL:https://iboot-system/api/auth/scope}
       cache-seconds: ${IBOOT_FILE_SCOPE_CACHE_SECONDS:60}
   security:
+    service-authorization:
+      extra-rules:
+        - paths: ["/api/**"]
+          callers: ["iboot-gateway"]
     whitelist:
       - /swagger-ui/**
       - /swagger-ui.html

@@ -16,10 +16,14 @@
 
 package com.iboot.ops.infrastructure.config;
 
+import com.iboot.authz.ServiceAuthorizationFilter;
+import com.iboot.authz.ServiceAuthorizationProperties;
 import jakarta.servlet.DispatcherType;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -46,7 +50,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
  * @see OpsSecurityProperties
  */
 @Configuration
-@EnableConfigurationProperties(OpsSecurityProperties.class)
+@EnableConfigurationProperties({OpsSecurityProperties.class, ServiceAuthorizationProperties.class})
 public class OpsSecurityConfig {
 
     /**
@@ -85,6 +89,25 @@ public class OpsSecurityConfig {
                 .roles("OPS")
                 .build();
         return new InMemoryUserDetailsManager(user);
+    }
+
+    /**
+     * 注册服务间授权过滤器。
+     *
+     * <p>运维控制台的页面、实例与 Actuator 端点都由门户访问；过滤器在 Basic
+     * 认证之前按客户端证书 CN 限制调用方。开关关闭时直接放行。
+     *
+     * @param properties 授权配置
+     * @return 过滤器注册
+     */
+    @Bean
+    public FilterRegistrationBean<ServiceAuthorizationFilter> serviceAuthorizationFilter(
+            final ServiceAuthorizationProperties properties) {
+        FilterRegistrationBean<ServiceAuthorizationFilter> registration =
+                new FilterRegistrationBean<>(new ServiceAuthorizationFilter(properties));
+        registration.addUrlPatterns("/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
     }
 
     /**

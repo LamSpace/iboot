@@ -127,6 +127,12 @@ iboot:
   logging:
     operate-log-table: sys_operate_log
   security:
+    service-authorization:
+      extra-rules:
+        - paths: ["/internal/notifications/**"]
+          callers: ["iboot-workflow"]
+        - paths: ["/api/**"]
+          callers: ["iboot-gateway"]
     whitelist:
       - /swagger-ui/**
       - /swagger-ui.html

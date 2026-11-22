@@ -94,6 +94,10 @@ iboot:
     # 审计表归本服务所有，写入本 schema
     operate-log-table: sys_operate_log
   security:
+    service-authorization:
+      extra-rules:
+        - paths: ["/api/**"]
+          callers: ["iboot-gateway"]
     whitelist:
       - /swagger-ui/**
       - /swagger-ui.html

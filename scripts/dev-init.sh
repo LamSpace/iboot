@@ -141,8 +141,11 @@ export IBOOT_LOGGING_KAFKA_TRUSTSTORE_LOCATION="${IBOOT_LOGGING_KAFKA_TRUSTSTORE
 export IBOOT_LOGGING_KAFKA_TRUSTSTORE_PASSWORD="${IBOOT_LOGGING_KAFKA_TRUSTSTORE_PASSWORD:-changeit}"
 export IBOOT_LOGGING_KAFKA_TRUSTSTORE_TYPE="${IBOOT_LOGGING_KAFKA_TRUSTSTORE_TYPE:-PKCS12}"
 
-# RocketMQ 仅启用加密通道；客户端不校验服务端证书。
+# RocketMQ 使用 TLS-only 入口；客户端不校验服务端证书。
 export IBOOT_ROCKETMQ_SSL_ENABLED="${IBOOT_ROCKETMQ_SSL_ENABLED:-true}"
+
+# 服务间授权依赖客户端证书；明文排障模式默认关闭，可显式覆盖。
+export IBOOT_SERVICE_AUTHORIZATION_ENABLED="${IBOOT_SERVICE_AUTHORIZATION_ENABLED:-${IBOOT_INTERNAL_TLS_ENABLED:-true}}"
 
 # 可观测平台：默认随开发环境启动；资源紧张时可关闭。
 observability_enabled() { [ "${IBOOT_OBSERVABILITY_ENABLED:-true}" = "true" ]; }
@@ -165,7 +168,7 @@ export IBOOT_FILE_SILO_ENDPOINT="${IBOOT_FILE_SILO_ENDPOINT:-https://localhost:9
 export IBOOT_FILE_SILO_PUBLIC_ENDPOINT="${IBOOT_FILE_SILO_PUBLIC_ENDPOINT:-https://localhost:9000}"
 export IBOOT_AI_SILO_ENDPOINT="${IBOOT_AI_SILO_ENDPOINT:-https://localhost:9000}"
 
-# 宿主机进程连接容器内 RocketMQ Proxy 的映射端口；容器内由 compose 注入服务名。
+# 宿主机进程连接 RocketMQ TLS 入口的映射端口；容器内由 compose 注入服务名。
 export IBOOT_ROCKETMQ_ENDPOINTS="${IBOOT_ROCKETMQ_ENDPOINTS:-localhost:18081}"
 
 # 审批额度内部端点共享密钥；未配置时使用仅限本地的开发默认值，两端保持一致。

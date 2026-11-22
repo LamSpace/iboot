@@ -16,6 +16,8 @@
 
 package com.iboot.kernel.security;
 
+import com.iboot.authz.ServiceAuthorizationFilter;
+import com.iboot.authz.ServiceAuthorizationProperties;
 import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,10 +28,12 @@ import org.springframework.boot.ssl.SslBundles;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -57,7 +61,8 @@ import org.springframework.web.client.RestClient;
  * @since 1.0.0
  */
 @AutoConfiguration(afterName = "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration")
-@EnableConfigurationProperties({JwtSecurityConfig.class, SecurityWhitelistProperties.class})
+@EnableConfigurationProperties({JwtSecurityConfig.class, SecurityWhitelistProperties.class,
+        ServiceAuthorizationProperties.class})
 public class KernelSecurityAutoConfiguration {
 
     /**
@@ -170,6 +175,25 @@ public class KernelSecurityAutoConfiguration {
                                                                 JwtSecurityConfig jwtSecurityConfig,
                                                                 SecurityWhitelistProperties whitelistProperties) {
             return new JwtAuthenticationFilter(tokenVerifier, redisTemplate, jwtSecurityConfig, whitelistProperties);
+        }
+
+        /**
+         * 服务间授权过滤器。
+         *
+         * <p>注册为最高优先级的 Servlet 过滤器，早于 Spring Security 链；命中规则且
+         * 调用方不在白名单时直接返回 403。开关关闭时过滤器内部直接放行。
+         *
+         * @param properties 授权配置
+         * @return 过滤器注册
+         */
+        @Bean
+        public FilterRegistrationBean<ServiceAuthorizationFilter> serviceAuthorizationFilter(
+                ServiceAuthorizationProperties properties) {
+            FilterRegistrationBean<ServiceAuthorizationFilter> registration =
+                    new FilterRegistrationBean<>(new ServiceAuthorizationFilter(properties));
+            registration.addUrlPatterns("/*");
+            registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+            return registration;
         }
 
         /**

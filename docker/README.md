@@ -228,6 +228,8 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   blackbox 通过 `/certs/clients/` 的专用证书抓取服务端口。
 - RocketMQ 使用 `mq` 网络 + `rocketmq-tls`（nginx `stream` + `ssl_preread`）只转发 TLS；
   Seata 使用 `tx` 网络，仅 workflow/system 可访问。
+- 服务间请求按客户端证书 CN 做路径级授权（`iboot-service-authz`）；
+  `IBOOT_SERVICE_AUTHORIZATION_ENABLED=true` 由 compose 公共环境注入，矩阵见 [docs/27 §20](<../docs/27-TLS 与零信任操作指南.md>)。
 - MySQL 以 `--require_secure_transport=ON` 启动；Redis 只监听 TLS 端口；Silo 以
   `--certs-dir /certs` 启动；Neo4j 的 `graph` profile 启用 Bolt TLS。
 - 数据面健康检查使用本地 CA；ES/Kafka/Logstash/Nacos 只接受 TLS。
