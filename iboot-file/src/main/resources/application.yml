@@ -47,7 +47,7 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
       # 独立 schema：sys_file 归本服务所有，结构由本服务的 Flyway 管理
       url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/iboot?${MYSQL_SSL_PARAMS:sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8}
-      username: ${MYSQL_USERNAME:iboot_app}
+      username: ${MYSQL_USERNAME:iboot_file}
       password: ${MYSQL_PASSWORD:}
       initial-size: 2
       min-idle: 2
@@ -67,7 +67,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      username: ${REDIS_USERNAME:iboot_app}
+      username: ${REDIS_USERNAME:iboot_file}
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: 10s

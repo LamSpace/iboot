@@ -56,25 +56,41 @@ login_resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/user/login" \
 token="$(printf '%s' "$login_resp" | json_get accessToken)"
 [ -n "$token" ] || fail "管理员登录失败：$login_resp"
 
-# 创建服务账号；已存在时用 PUT 同步口令。
-user_resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/user" \
-    -H "Authorization: Bearer $token" \
-    --data-urlencode "username=$NACOS_USERNAME" \
-    --data-urlencode "password=$NACOS_PASSWORD" || true)"
-user_code="$(printf '%s' "$user_resp" | json_get code)"
-if [ "$user_code" != "0" ]; then
-    curl $CURL_OPTS -X PUT "$BASE/nacos/v3/auth/user" \
+ensure_account() {
+    local username="$1" password="$2" resp code svc_resp svc_token probe_status
+    resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/user" \
         -H "Authorization: Bearer $token" \
-        --data-urlencode "username=$NACOS_USERNAME" \
-        --data-urlencode "newPassword=$NACOS_PASSWORD" >/dev/null \
-        || fail "服务账号口令同步失败：$user_resp"
-fi
+        --data-urlencode "username=$username" \
+        --data-urlencode "password=$password" || true)"
+    code="$(printf '%s' "$resp" | json_get code)"
+    if [ "$code" != "0" ]; then
+        curl $CURL_OPTS -X PUT "$BASE/nacos/v3/auth/user" \
+            -H "Authorization: Bearer $token" \
+            --data-urlencode "username=$username" \
+            --data-urlencode "newPassword=$password" >/dev/null \
+            || fail "账号口令同步失败（$username）：$resp"
+    fi
 
-# 角色已存在时 POST 会失败；权限授予是幂等的。
-curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/role" \
-    -H "Authorization: Bearer $token" \
-    --data-urlencode "role=iboot_role" \
-    --data-urlencode "username=$NACOS_USERNAME" >/dev/null 2>&1 || true
+    # 角色已存在时 POST 会失败；权限授予是幂等的。
+    curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/role" \
+        -H "Authorization: Bearer $token" \
+        --data-urlencode "role=iboot_role" \
+        --data-urlencode "username=$username" >/dev/null 2>&1 || true
+
+    svc_resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/user/login" \
+        --data-urlencode "username=$username" \
+        --data-urlencode "password=$password" || true)"
+    svc_token="$(printf '%s' "$svc_resp" | json_get accessToken)"
+    [ -n "$svc_token" ] || fail "账号登录失败（$username）：$svc_resp"
+
+    probe_status="$(curl $CURL_OPTS -o /dev/null -w '%{http_code}' \
+        -H "Authorization: Bearer $svc_token" \
+        "$BASE/nacos/v3/client/cs/config?dataId=__iboot_probe__&groupName=DEFAULT_GROUP&namespaceId=public" || true)"
+    case "$probe_status" in
+        200|404) ;;
+        *) fail "账号无权读取配置（$username，HTTP $probe_status）" ;;
+    esac
+}
 
 curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/permission" \
     -H "Authorization: Bearer $token" \
@@ -83,19 +99,15 @@ curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/permission" \
     --data-urlencode "action=rw" >/dev/null \
     || fail "服务账号授权失败"
 
-# 用服务账号登录并执行一次配置读取，确认账号可用且授权生效。
-svc_resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/user/login" \
-    --data-urlencode "username=$NACOS_USERNAME" \
-    --data-urlencode "password=$NACOS_PASSWORD" || true)"
-svc_token="$(printf '%s' "$svc_resp" | json_get accessToken)"
-[ -n "$svc_token" ] || fail "服务账号登录失败：$svc_resp"
+# 运维脚本账号；管理脚本使用它，不注入业务服务。
+ensure_account "$NACOS_USERNAME" "$NACOS_PASSWORD"
 
-probe_status="$(curl $CURL_OPTS -o /dev/null -w '%{http_code}' \
-    -H "Authorization: Bearer $svc_token" \
-    "$BASE/nacos/v3/client/cs/config?dataId=__iboot_probe__&groupName=DEFAULT_GROUP&namespaceId=public" || true)"
-case "$probe_status" in
-    200|404) ;;
-    *) fail "服务账号无权读取配置（HTTP $probe_status）" ;;
-esac
+# 每服务账号：账号名 iboot_<service>，口令由 MIDDLEWARE_<SERVICE>_PASSWORD 注入。
+for service in system workflow file notify job monitor auth ai gateway ops; do
+    var="MIDDLEWARE_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+    eval "password=\${$var:-}"
+    [ -n "$password" ] || fail "缺少 $var"
+    ensure_account "iboot_$service" "$password"
+done
 
-printf '[nacos-init] 管理员与服务账号已就绪：%s\n' "$NACOS_USERNAME"
+printf '[nacos-init] 管理员、运维与服务账号已就绪（%s + 10 个服务账号）\n' "$NACOS_USERNAME"

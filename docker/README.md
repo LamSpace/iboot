@@ -240,17 +240,20 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 [docs/27](<../docs/27-TLS 与零信任操作指南.md>) 与
 [`scripts/regress/internal-tls.sh`](../scripts/regress/internal-tls.sh)。
 
-## 中间件账号（B4.3 / B4.4 / B4.6）
+## 中间件账号（B4.3 → B5.5）
 
 | 组件 | 账号 | 用途 |
 |---|---|---|
 | MySQL | `root` | 仅初始化与迁移 |
-| MySQL | `iboot_app` | 八个业务服务，`iboot` 库 DML |
+| MySQL | `iboot_<service>` | 八个数据服务各自账号，`iboot` 库 DML，无 DDL |
 | MySQL | `iboot_exporter` | mysqld-exporter 只读 |
-| Redis | `iboot_app` | 九个业务服务，`REDIS_PASSWORD` 认证；`default` 已禁用 |
-| Redis | `iboot_exporter` | redis-exporter 只读监控命令 |
-| Silo | 根账号 | 服务、`silo-init`、Thanos |
-| Nacos | `iboot` | 服务注册/配置；管理员 `nacos` 仅初始化脚本使用 |
+| Redis | `iboot_<service>` | 八个数据服务各自 ACL 用户；`default` 已禁用 |
+| Redis | `iboot_exporter` | redis-exporter 与健康检查只读监控命令 |
+| Silo | `iboot_file` / `iboot_job` | 文件服务与备份任务，仅 `iboot-files` 桶 |
+| Silo | `iboot_ai` | AI 服务，仅 `iboot-ai` 桶 |
+| Silo | 根账号 | 仅 `silo-init`、Thanos 与运维 |
+| Nacos | `iboot_<service>` | 十个服务各自注册/配置账号 |
+| Nacos | `iboot` | 管理脚本；管理员 `nacos` 仅初始化脚本使用 |
 | Neo4j | `neo4j` | AI 图能力；`NEO4J_PASSWORD` 必填，缺失时编排失败 |
 | Kafka | `iboot_log` | 九个服务日志生产，只能写 `iboot-logs` |
 | Kafka | `iboot_logstash` | Logstash 消费，只能读该 topic 与消费组 |
@@ -261,20 +264,22 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 | ES | `iboot_exporter` | 集群与索引只读监控 |
 | ES | `elastic` | 仅 `es-users-init`、初始化与运维脚本 |
 
-- `.env` 必须提供 `MYSQL_ROOT_PASSWORD`、`MYSQL_APP_PASSWORD`、`MYSQL_EXPORTER_PASSWORD`、
-  `REDIS_PASSWORD`、`REDIS_EXPORTER_PASSWORD`、`KAFKA_BROKER_PASSWORD`、`KAFKA_LOG_PASSWORD`、
-  `KAFKA_LOGSTASH_PASSWORD`、`KAFKA_TOOLS_PASSWORD`、`SILO_ROOT_USER/PASSWORD`、
+- `.env` 必须提供 `MIDDLEWARE_<SERVICE>_PASSWORD`（十个服务）、`MYSQL_ROOT_PASSWORD`、
+  `MYSQL_EXPORTER_PASSWORD`、`REDIS_EXPORTER_PASSWORD`、`KAFKA_BROKER_PASSWORD`、
+  `KAFKA_LOG_PASSWORD`、`KAFKA_LOGSTASH_PASSWORD`、`KAFKA_TOOLS_PASSWORD`、
+  `SILO_ROOT_USER/PASSWORD`、`SILO_FILE_*`、`SILO_JOB_*`、`SILO_AI_*`、
   `NACOS_USERNAME/PASSWORD`、`NACOS_ADMIN_PASSWORD`、`NACOS_AUTH_TOKEN`、`NEO4J_PASSWORD`、
   `ES_*_PASSWORD` 与 `GRAFANA_ADMIN_PASSWORD`。
-- `mysql-users-init`、`nacos-init` 与 `es-users-init` 是一次性任务；`db-init` 依赖它们完成后再
-  迁移与启动服务。
-- 业务服务只拿自己的 ES 账号口令；`ELASTIC_PASSWORD` 在业务容器中被显式清空。
+- `mysql-users-init`、`nacos-init`、`silo-init` 与 `es-users-init` 是一次性任务；`db-init` 依赖它们
+  完成后再迁移与启动服务。
+- 业务服务只拿自己的 MySQL/Redis/Nacos 与 Silo 账号口令；`x-app-env` 会清空其它服务与根凭据。
 - Nacos 客户端必须使用 `NACOS_SERVER_ADDR=https://nacos:8848`；`NACOS_ADDR` 仍是脚本使用的
   `host:port`。
 - Grafana 匿名只读（Viewer），管理员口令来自 `GRAFANA_ADMIN_PASSWORD`；本地 Sentinel
   保持关闭登录，生产必须在 `docker-compose.prod.yml` 开启。
-- 验收：`scripts/regress/middleware-auth.sh`，覆盖 MySQL 越权、Redis `default` 用户与 exporter
-  命令集、Kafka 无凭据/越权 topic、Silo 默认凭据、Nacos 匿名请求与 ES 各账号边界。
+- 验收：`scripts/regress/middleware-auth.sh`，覆盖每服务身份矩阵（MySQL processlist、Redis
+  `CLIENT LIST`、Nacos 逐账号登录、Silo 跨桶拒绝）、进程环境隔离、Kafka 无凭据/越权 topic 与
+  ES 各账号边界。
 
 ## Sentinel 治理
 

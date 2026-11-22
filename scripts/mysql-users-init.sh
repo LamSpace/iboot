@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# 幂等创建/更新 MySQL 最小权限账号。
+# 幂等创建/更新 MySQL 每服务账号与 exporter 账号。
 #
 # 由 compose 的一次性服务 mysql-users-init 执行，也可在宿主机开发时通过
 # `docker compose run --rm mysql-users-init` 复用同一份脚本。
 #
+# 每个数据服务使用自己的账号 iboot_<service>，只拥有 iboot 库的 DML 权限；
+# 共享账号 iboot_app 会被删除，避免服务回退到共享身份。
+#
 # 环境变量：
 #   MYSQL_HOST / MYSQL_PORT / MYSQL_ROOT_PASSWORD
-#   MYSQL_APP_USER / MYSQL_APP_PASSWORD
+#   MIDDLEWARE_SYSTEM_PASSWORD ... MIDDLEWARE_AI_PASSWORD
 #   MYSQL_EXPORTER_USER / MYSQL_EXPORTER_PASSWORD
 
 set -euo pipefail
@@ -14,32 +17,44 @@ set -euo pipefail
 MYSQL_HOST="${MYSQL_HOST:-mysql}"
 MYSQL_PORT="${MYSQL_PORT:-3306}"
 MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}"
-MYSQL_APP_USER="${MYSQL_APP_USER:-iboot_app}"
-MYSQL_APP_PASSWORD="${MYSQL_APP_PASSWORD:?MYSQL_APP_PASSWORD 必须在 .env 中设置}"
 MYSQL_EXPORTER_USER="${MYSQL_EXPORTER_USER:-iboot_exporter}"
 MYSQL_EXPORTER_PASSWORD="${MYSQL_EXPORTER_PASSWORD:?MYSQL_EXPORTER_PASSWORD 必须在 .env 中设置}"
+
+# 只有真正连接 MySQL 的服务在此登记；网关与运维控制台不建库账号。
+SERVICES=(system workflow file notify job monitor auth ai)
 
 sql_escape() {
     printf '%s' "$1" | sed "s/'/''/g"
 }
 
-APP_USER_SQL="$(sql_escape "$MYSQL_APP_USER")"
-APP_PASSWORD_SQL="$(sql_escape "$MYSQL_APP_PASSWORD")"
 EXPORTER_USER_SQL="$(sql_escape "$MYSQL_EXPORTER_USER")"
 EXPORTER_PASSWORD_SQL="$(sql_escape "$MYSQL_EXPORTER_PASSWORD")"
 
-SQL="
-CREATE USER IF NOT EXISTS '${APP_USER_SQL}'@'%' IDENTIFIED BY '${APP_PASSWORD_SQL}';
-ALTER USER '${APP_USER_SQL}'@'%' IDENTIFIED BY '${APP_PASSWORD_SQL}';
-GRANT SELECT, INSERT, UPDATE, DELETE ON \`iboot\`.* TO '${APP_USER_SQL}'@'%';
-
+SQL="DROP USER IF EXISTS 'iboot_app'@'%';
 CREATE USER IF NOT EXISTS '${EXPORTER_USER_SQL}'@'%' IDENTIFIED BY '${EXPORTER_PASSWORD_SQL}';
 ALTER USER '${EXPORTER_USER_SQL}'@'%' IDENTIFIED BY '${EXPORTER_PASSWORD_SQL}';
 GRANT PROCESS, REPLICATION CLIENT ON *.* TO '${EXPORTER_USER_SQL}'@'%';
 GRANT SELECT ON \`performance_schema\`.* TO '${EXPORTER_USER_SQL}'@'%';
-
-FLUSH PRIVILEGES;
 "
+
+for service in "${SERVICES[@]}"; do
+    var="MIDDLEWARE_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+    password="${!var:-}"
+    if [ -z "$password" ]; then
+        printf '[mysql-users-init] ERROR: 缺少 %s\n' "$var" >&2
+        exit 1
+    fi
+    user="iboot_${service}"
+    user_sql="$(sql_escape "$user")"
+    password_sql="$(sql_escape "$password")"
+    SQL+="
+CREATE USER IF NOT EXISTS '${user_sql}'@'%' IDENTIFIED BY '${password_sql}';
+ALTER USER '${user_sql}'@'%' IDENTIFIED BY '${password_sql}';
+GRANT SELECT, INSERT, UPDATE, DELETE ON \`iboot\`.* TO '${user_sql}'@'%';
+"
+done
+
+SQL+="FLUSH PRIVILEGES;"
 
 for _ in $(seq 1 60); do
     if MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql \
@@ -62,4 +77,5 @@ MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql \
     -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u root \
     -e "$SQL"
 
-printf '[mysql-users-init] 账号已就绪：%s、%s\n' "$MYSQL_APP_USER" "$MYSQL_EXPORTER_USER"
+printf '[mysql-users-init] 账号已就绪：%s 个服务账号、%s\n' \
+    "${#SERVICES[@]}" "$MYSQL_EXPORTER_USER"

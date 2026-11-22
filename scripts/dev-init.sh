@@ -68,8 +68,13 @@ if [ -f "$ROOT/.env" ]; then
 fi
 
 # 中间件账号鉴权：缺少凭据时不启动，避免回退到默认口令。
-for required in MYSQL_APP_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_EXPORTER_PASSWORD \
-    REDIS_PASSWORD REDIS_EXPORTER_PASSWORD SILO_ROOT_USER SILO_ROOT_PASSWORD \
+for required in MYSQL_ROOT_PASSWORD MYSQL_EXPORTER_PASSWORD \
+    MIDDLEWARE_SYSTEM_PASSWORD MIDDLEWARE_WORKFLOW_PASSWORD MIDDLEWARE_FILE_PASSWORD \
+    MIDDLEWARE_NOTIFY_PASSWORD MIDDLEWARE_JOB_PASSWORD MIDDLEWARE_MONITOR_PASSWORD \
+    MIDDLEWARE_AUTH_PASSWORD MIDDLEWARE_AI_PASSWORD MIDDLEWARE_GATEWAY_PASSWORD \
+    MIDDLEWARE_OPS_PASSWORD \
+    REDIS_EXPORTER_PASSWORD SILO_ROOT_USER SILO_ROOT_PASSWORD \
+    SILO_FILE_SECRET_KEY SILO_AI_SECRET_KEY \
     NACOS_USERNAME NACOS_PASSWORD NACOS_ADMIN_PASSWORD NACOS_AUTH_TOKEN \
     NEO4J_PASSWORD ELASTIC_PASSWORD ES_AI_PASSWORD ES_NOTIFY_PASSWORD \
     ES_MONITOR_PASSWORD ES_LOGSTASH_PASSWORD ES_GRAFANA_PASSWORD \
@@ -81,10 +86,7 @@ if [ "${IBOOT_LOGGING_KAFKA_ENABLED:-true}" = "true" ]; then
         [ -n "${!required:-}" ] || fail "缺少 Kafka 凭据：$required（请检查根目录 .env）"
     done
 fi
-export REDIS_USERNAME="${REDIS_USERNAME:-iboot_app}"
-# 宿主机进程直接读 MYSQL_USERNAME/MYSQL_PASSWORD；仅填写 *_APP_* 时也保持一致。
-export MYSQL_USERNAME="${MYSQL_USERNAME:-${MYSQL_APP_USER:-iboot_app}}"
-export MYSQL_PASSWORD="${MYSQL_PASSWORD:-$MYSQL_APP_PASSWORD}"
+# 每服务账号在 start_backend 中按进程注入；这里不再导出共享身份。
 # 图数据库口令与 Neo4j 服务端同源，避免两处维护后漂移。
 export IBOOT_AI_GRAPH_PASSWORD="${IBOOT_AI_GRAPH_PASSWORD:-$NEO4J_PASSWORD}"
 
@@ -454,7 +456,7 @@ run_db_init() {
     else
         export MYSQL_TLS_ENABLED=false
     fi
-    # 迁移需要 DDL；业务服务仍使用 .env 中的 iboot_app 账号。
+    # 迁移需要 DDL；业务服务使用各自的 iboot_<service> 账号。
     MYSQL_USERNAME=root MYSQL_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
         java "${java_opts[@]}" -jar "iboot-db-init/target/iboot-db-init-$VERSION-exec.jar" \
         || fail '数据库初始化失败（iboot-db-init）'
@@ -523,7 +525,38 @@ start_backend() {
                 -u KAFKA_BROKER_PASSWORD -u KAFKA_LOG_PASSWORD
                 -u KAFKA_LOGSTASH_PASSWORD -u KAFKA_TOOLS_PASSWORD
                 -u REDIS_EXPORTER_PASSWORD
+                # 清空共享身份与 Silo 根凭据，避免子进程继承 .env 中的其它身份。
+                -u MYSQL_USERNAME -u MYSQL_PASSWORD -u REDIS_USERNAME -u REDIS_PASSWORD
+                -u MYSQL_ROOT_PASSWORD -u MYSQL_EXPORTER_PASSWORD
+                -u SILO_ROOT_USER -u SILO_ROOT_PASSWORD -u NACOS_ADMIN_PASSWORD
+                -u NACOS_USERNAME -u NACOS_PASSWORD
+                -u SILO_FILE_ACCESS_KEY -u SILO_FILE_SECRET_KEY
+                -u SILO_JOB_ACCESS_KEY -u SILO_JOB_SECRET_KEY
+                -u SILO_AI_ACCESS_KEY -u SILO_AI_SECRET_KEY
+                -u IBOOT_FILE_SILO_ACCESS_KEY -u IBOOT_FILE_SILO_SECRET_KEY
+                -u IBOOT_AI_SILO_ACCESS_KEY -u IBOOT_AI_SILO_SECRET_KEY
             )
+            local short="${name#iboot-}" acct="iboot_${name#iboot-}" upper svc_pw_var
+            upper="$(printf '%s' "$short" | tr '[:lower:]' '[:upper:]')"
+            svc_pw_var="MIDDLEWARE_${upper}_PASSWORD"
+            # 只保留本服务的中间件口令，其余服务的变量从子进程环境中移除。
+            local -a others=(system workflow file notify job monitor auth ai gateway ops)
+            local other other_upper
+            for other in "${others[@]}"; do
+                if [ "$other" != "$short" ]; then
+                    other_upper="$(printf '%s' "$other" | tr '[:lower:]' '[:upper:]')"
+                    env_opts+=(-u "MIDDLEWARE_${other_upper}_PASSWORD")
+                fi
+            done
+            env_opts+=("NACOS_USERNAME=$acct" "NACOS_PASSWORD=${!svc_pw_var}")
+            case "$short" in
+                system|workflow|file|notify|job|monitor|auth|ai)
+                    env_opts+=(
+                        "MYSQL_USERNAME=$acct" "MYSQL_PASSWORD=${!svc_pw_var}"
+                        "REDIS_USERNAME=$acct" "REDIS_PASSWORD=${!svc_pw_var}"
+                    )
+                    ;;
+            esac
             if internal_tls_enabled; then
                 local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
                 env_opts+=(
@@ -534,6 +567,26 @@ start_backend() {
             case "$name" in
                 iboot-ai)
                     env_opts+=(ELASTICSEARCH_USERNAME=iboot_ai "ELASTICSEARCH_PASSWORD=$ES_AI_PASSWORD")
+                    env_opts+=(
+                        "IBOOT_AI_SILO_ACCESS_KEY=${SILO_AI_ACCESS_KEY:-iboot_ai}"
+                        "IBOOT_AI_SILO_SECRET_KEY=$SILO_AI_SECRET_KEY"
+                    )
+                    ;;
+                iboot-file)
+                    env_opts+=(
+                        "IBOOT_FILE_SILO_ACCESS_KEY=${SILO_FILE_ACCESS_KEY:-iboot_file}"
+                        "IBOOT_FILE_SILO_SECRET_KEY=$SILO_FILE_SECRET_KEY"
+                    )
+                    ;;
+                iboot-job)
+                    env_opts+=(
+                        "IBOOT_FILE_SILO_ACCESS_KEY=${SILO_JOB_ACCESS_KEY:-iboot_job}"
+                        "IBOOT_FILE_SILO_SECRET_KEY=$SILO_JOB_SECRET_KEY"
+                    )
+                    ;;
+                iboot-system)
+                    # 系统服务不再承载上传；遗留存储策略固定为本地。
+                    env_opts+=(IBOOT_FILE_STORAGE_TYPE=local)
                     ;;
                 iboot-notify)
                     env_opts+=(ELASTICSEARCH_USERNAME=iboot_notify "ELASTICSEARCH_PASSWORD=$ES_NOTIFY_PASSWORD")
