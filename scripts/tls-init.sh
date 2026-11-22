@@ -58,6 +58,11 @@ SERVICE_NAMES=(
     iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops
 )
 
+# 监控 exporter 只承担服务端身份；证书只看 serverAuth。
+EXPORTER_NAMES=(
+    mysql-exporter redis-exporter node-exporter elasticsearch-exporter
+)
+
 # 不提供业务端口的调用方使用独立客户端证书，避免借用门户或某个服务的身份。
 CLIENT_NAMES=(
     prometheus blackbox
@@ -122,6 +127,11 @@ cert_valid() {
         cert_has_purpose "$CLIENT_DIR/$client.pem" "SSL client" || return 1
         openssl x509 -checkend 2592000 -noout -in "$CLIENT_DIR/$client.pem" >/dev/null 2>&1 || return 1
     done
+    for exporter in "${EXPORTER_NAMES[@]}"; do
+        [ -f "$SERVICE_DIR/$exporter.pem" ] && [ -f "$SERVICE_DIR/$exporter-key.pem" ] || return 1
+        cert_has_purpose "$SERVICE_DIR/$exporter.pem" "SSL server" || return 1
+        openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$exporter.pem" >/dev/null 2>&1 || return 1
+    done
 }
 
 # 生成容器运行期副本：容器内非 root 用户需要可读私钥；宿主私钥保持 0600。
@@ -177,6 +187,11 @@ ensure_runtime_copies() {
         cp -f "$CLIENT_DIR/$client-key.pem" "$RUNTIME_CLIENT_DIR/$client-key.pem"
         chmod 644 "$RUNTIME_CLIENT_DIR/$client.pem" "$RUNTIME_CLIENT_DIR/$client-key.pem"
     done
+    for exporter in "${EXPORTER_NAMES[@]}"; do
+        cp -f "$SERVICE_DIR/$exporter.pem" "$RUNTIME_SERVICE_DIR/$exporter.pem"
+        cp -f "$SERVICE_DIR/$exporter-key.pem" "$RUNTIME_SERVICE_DIR/$exporter-key.pem"
+        chmod 644 "$RUNTIME_SERVICE_DIR/$exporter.pem" "$RUNTIME_SERVICE_DIR/$exporter-key.pem"
+    done
     chmod 755 "$RUNTIME_CLIENT_DIR"
     chmod 755 "$RUNTIME_DIR/ca"
     chmod 644 "$RUNTIME_DIR/ca/rootCA.pem"
@@ -206,19 +221,19 @@ check_expiry() {
         openssl x509 -checkend 2592000 -noout -in "$CLIENT_DIR/$client.pem" >/dev/null 2>&1 \
             || fail "探针客户端证书剩余有效期不足 30 天：$CLIENT_DIR/$client.pem"
     done
+    for exporter in "${EXPORTER_NAMES[@]}"; do
+        [ -f "$SERVICE_DIR/$exporter.pem" ] || fail "exporter 证书不存在：$SERVICE_DIR/$exporter.pem（执行 scripts/tls-init.sh --force 重签）"
+        cert_has_purpose "$SERVICE_DIR/$exporter.pem" "SSL server" || fail "exporter 证书缺少 serverAuth 用途：$SERVICE_DIR/$exporter.pem"
+        openssl x509 -checkend 2592000 -noout -in "$SERVICE_DIR/$exporter.pem" >/dev/null 2>&1 \
+            || fail "exporter 证书剩余有效期不足 30 天：$SERVICE_DIR/$exporter.pem"
+    done
     log "服务证书有效：${#SERVICE_NAMES[@]} 张（$SERVICE_DIR）"
     log "探针客户端证书有效：${#CLIENT_NAMES[@]} 张（$CLIENT_DIR）"
+    log "exporter 证书有效：${#EXPORTER_NAMES[@]} 张（$SERVICE_DIR）"
 }
 
 if [ "$CHECK_ONLY" -eq 1 ]; then
     check_expiry
-    exit 0
-fi
-
-if [ "$FORCE" -eq 0 ] && cert_valid; then
-    ensure_runtime_copies
-    log "证书仍然有效，跳过生成：$CERT_FILE"
-    log "需要重签时执行：scripts/tls-init.sh --force"
     exit 0
 fi
 
@@ -274,7 +289,23 @@ EOF
     chmod 644 "$cert"
 }
 
+# 已有环境补齐 exporter 证书时只签发缺失项，避免无谓地重签全部服务证书。
 ensure_ca
+mkdir -p "$SERVICE_DIR"
+for exporter in "${EXPORTER_NAMES[@]}"; do
+    if [ ! -f "$SERVICE_DIR/$exporter.pem" ] || [ ! -f "$SERVICE_DIR/$exporter-key.pem" ]; then
+        issue_leaf "$exporter" "$SERVICE_DIR/$exporter.pem" "$SERVICE_DIR/$exporter-key.pem" \
+            "serverAuth" localhost 127.0.0.1 ::1 "$exporter"
+    fi
+done
+
+if [ "$FORCE" -eq 0 ] && cert_valid; then
+    ensure_runtime_copies
+    log "证书仍然有效，跳过生成：$CERT_FILE"
+    log "需要重签时执行：scripts/tls-init.sh --force"
+    exit 0
+fi
+
 log "生成本地 CA 与门户证书：$CERT_DIR"
 issue_leaf "iboot-portal" "$CERT_FILE" "$KEY_FILE" "serverAuth,clientAuth" "${SAN_NAMES[@]}"
 
@@ -283,6 +314,12 @@ log "生成服务独立证书：$SERVICE_DIR"
 for svc in "${SERVICE_NAMES[@]}"; do
     issue_leaf "$svc" "$SERVICE_DIR/$svc.pem" "$SERVICE_DIR/$svc-key.pem" \
         "serverAuth,clientAuth" localhost 127.0.0.1 ::1 host.docker.internal "$svc"
+done
+
+log "生成监控 exporter 服务端证书：$SERVICE_DIR"
+for exporter in "${EXPORTER_NAMES[@]}"; do
+    issue_leaf "$exporter" "$SERVICE_DIR/$exporter.pem" "$SERVICE_DIR/$exporter-key.pem" \
+        "serverAuth" localhost 127.0.0.1 ::1 "$exporter"
 done
 
 mkdir -p "$CLIENT_DIR"

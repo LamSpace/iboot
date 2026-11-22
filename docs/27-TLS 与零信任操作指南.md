@@ -957,3 +957,46 @@ bash scripts/regress/regress.sh
 - 仍不校验服务端证书：客户端 5.2.2 的 `InsecureTrustManagerFactory` 是上游限制；本批只补调用方身份。
 - NameServer 未启用认证；它只服务 Broker/Proxy 的路由查询，不在应用入口路径上。
 - 回滚：移除 Broker/Proxy 的 ACL 配置与 `rocketmq-acl-init`，客户端凭据字段可保留为空。
+
+## 23. Exporter mTLS 与证书轮换（B5.7）
+
+B5.7 把指标采集链路从“容器网络内明文”收紧为 HTTPS + 客户端证书，并给出可重复的证书轮换入口。
+
+### 23.1 Exporter mTLS
+
+- `mysql-exporter`、`node-exporter`、`elasticsearch-exporter` 使用 exporter-toolkit
+  `--web.config.file`：`client_auth_type: RequireAndVerifyClientCert`，CA 为本地根证书。
+- `redis-exporter` 使用原生 `--tls-server-cert-file/key-file/ca-cert-file`，最低 TLS 1.2。
+- 四个 exporter 各用独立服务端证书（`docker/certs/services/<name>.pem`，仅 serverAuth）。
+- Prometheus 用 `clients/prometheus.pem` 作为客户端身份，抓取配置为 HTTPS + CA + 客户端证书 +
+  `server_name`。
+- exporter 不发布到宿主机；回归通过临时 curl 容器在对应 Docker 网络内取证。
+
+验收：
+
+```bash
+scripts/regress/exporter-mtls.sh
+scripts/regress/regress.sh
+```
+
+应看到四个 exporter 的携带证书请求 200、明文 400、无客户端证书与错误 CA 失败，以及 Prometheus
+四个抓取目标 `up=1`。
+
+### 23.2 证书轮换
+
+```bash
+scripts/tls-rotate.sh --check                  # 只检查，失败退出
+scripts/tls-rotate.sh --rotate --restart none  # 显式重签，不重启
+scripts/tls-rotate.sh --rotate --restart docker
+scripts/tls-rotate.sh --rotate --restart host
+```
+
+- 普通启动只补发缺失的 exporter 证书，不重签既有服务证书；`--rotate` 才调用 `tls-init.sh --force`。
+- Docker 重启调用 `scripts/docker-deploy.sh up`；宿主机重启调用 `dev-init.sh --stop` 后再启动。
+- 建议 cron 每周执行 `--check`，到期前手工执行 `--rotate`；脚本不内置定时器。
+
+### 23.3 边界
+
+- 只覆盖 Prometheus → exporter；Grafana/Thanos/Kibana 的内网调用仍使用既有 HTTPS。
+- 轮换仍由操作者显式触发，不自动 reload 或滚动发布。
+- Sentinel Dashboard、宿主机进程回环绑定仍是登记边界，不在本批范围内。

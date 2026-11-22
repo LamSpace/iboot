@@ -226,6 +226,8 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   服务证书 EKU 同时包含 `serverAuth` 与 `clientAuth`。
 - 门户 nginx 挂载 `portal.pem` 并用 `proxy_ssl_certificate` 访问上游；Prometheus 与
   blackbox 通过 `/certs/clients/` 的专用证书抓取服务端口。
+- 四个 exporter 只提供 HTTPS + 客户端证书；Prometheus 用自己的客户端证书抓取，配置见
+  `scripts/exporters/`。证书轮换入口为 `scripts/tls-rotate.sh`。
 - RocketMQ 使用 `mq` 网络 + `rocketmq-tls`（nginx `stream` + `ssl_preread`）只转发 TLS；
   Broker/Proxy 启用 ACL 2.0，workflow/notify 各自持有 access key，运维账号只用于初始化；
   Seata 使用 `tx` 网络，仅 workflow/system 可访问。
