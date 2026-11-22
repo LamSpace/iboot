@@ -91,7 +91,7 @@ Docker 全量部署中，宿主机只有门户 `80/443` 绑定全部网卡；其
 | iboot-monitor | 8087 | `127.0.0.1` | 监控与日志查询 |
 | iboot-ops | 8089 | `127.0.0.1` | 运维控制台（SBA） |
 | sentinel-dashboard | 8858 | `127.0.0.1` | Sentinel 治理控制台；本地必选，生产必须认证 |
-| seata-server | 8091 | `127.0.0.1` | Seata TC（AT 全局事务）；file store，本地镜像无 7091 控制台 |
+| seata-server | 8091 | `127.0.0.1` | Seata TC（AT 全局事务）；只在 `tx` 网络对 workflow/system 可见，本地镜像无 7091 控制台 |
 | mysql | 3306 | `127.0.0.1` | MySQL 8.4（只接受 TLS） |
 | redis | 6379 | `127.0.0.1` | Redis 8（只监听 TLS 端口） |
 | silo | 9000/9001 | `127.0.0.1` | 对象存储与控制台（HTTPS） |

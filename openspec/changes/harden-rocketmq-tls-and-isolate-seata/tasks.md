@@ -28,7 +28,7 @@
 ## 5. 集成验证
 
 - [x] 5.1 重建 RocketMQ、Seata、system、workflow、notify，执行全量 `scripts/regress/regress.sh`；验证公开入口、内部 TLS、日志、暴露面、冒烟全部通过
-- [ ] 5.2 在 CI 分支运行全栈回归，确认 host 模式与 Docker 模式均通过；记录已知备份冒烟例外
+- [x] 5.2 在 CI 分支运行全栈回归，确认 host 模式与 Docker 模式均通过；记录已知备份冒烟例外
 
 ## Workflow follow-up
 

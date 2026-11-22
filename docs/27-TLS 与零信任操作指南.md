@@ -10,7 +10,8 @@
 
 - 浏览器/CLI → 门户（L1 边缘 TLS）；门户 → 网关；服务间调用与 JWKS。
 - MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面；Kafka SASL 与 Redis 命名 ACL；Grafana/Prometheus/Alertmanager/Thanos/Kibana 控制台。
-- Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 只有加密通道（见 §9.4）。
+- Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 应用入口只接受 TLS，但客户端不校验服务端且无 ACL（见 §9.4/§19）。
+- Seata 无原生 TLS/认证，作为显式例外放在 `tx` 网络，仅 workflow/system 可访问（见 §19）。
 - 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
 - 不引入本机服务网格、SPIFFE/OPA；服务端只校验“证书由本地 CA 签发”，不按调用方做授权。
@@ -417,13 +418,14 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/exposure.sh
 REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 ```
 
-`exposure.sh` 分三层：
+`exposure.sh` 分四组：
 
 1. 用 `docker inspect` 断言只有门户 80/443 绑定 `0.0.0.0`，其余已发布端口绑定 `127.0.0.1`，
    并断言已移除的映射不再出现。
-2. 用宿主机非回环 IPv4 连接 3306、6379、9200、8848、29092，必须失败；回环地址必须成功。
+2. 用宿主机非回环 IPv4 连接 3306、6379、9200、8848、29092、18081，必须失败；回环地址必须成功。
 3. 容器矩阵：门户访问网关成功，访问 MySQL/Redis/ES/Nacos 失败；业务服务访问 MySQL/Nacos 成功。
-   容器未运行时明确跳过矩阵，但端口检查仍执行。
+4. mq/tx 隔离：workflow/system 可访问 Seata，其它服务不可；应用无法直连 RocketMQ Proxy，
+   但可访问 `rocketmq-tls`。容器未运行时明确跳过矩阵，但端口检查仍执行。
 
 ### 12.4 边界
 
