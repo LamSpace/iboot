@@ -63,13 +63,4 @@ public final class ServiceAuthorizationPolicy {
         }
         return false;
     }
-
-    /**
-     * 获取规则数量，便于诊断。
-     *
-     * @return 规则数量
-     */
-    public int ruleCount() {
-        return rules.size();
-    }
 }

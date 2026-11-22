@@ -81,6 +81,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | `iboot-ops` | 8089 | 运维控制台：注册中心发现实例、单实例巡检、运行期日志级别调整 | — |
 | `sentinel-dashboard` | 8858 | 治理控制台：单资源流量、阻塞与规则查看；本地必选，生产必须认证 | — |
 | `iboot-kernel` | — | 共享内核库（统一响应、鉴权、审计写入），不独立部署 | — |
+| `iboot-service-authz` | — | 服务间授权库（证书 CN 身份 + 路径白名单），不独立部署 | — |
 | `iboot-sentinel` | — | 治理指标桥接库（MetricExtension → Micrometer），不独立部署 | — |
 
 **数据边界**：所有服务共用一个数据库 `iboot`；每张表只有一个所有者，其余服务只读登记的表与列。
@@ -226,7 +227,7 @@ MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root \
 
 ```
 iboot/
-├── pom.xml                  # 父 POM，聚合 15 个 Maven 模块
+├── pom.xml                  # 父 POM，聚合 16 个 Maven 模块
 ├── bin/iboot                # 开发者 CLI 启动脚本
 ├── docker/                  # 中间件编排与初始化脚本
 │   ├── docker-compose.yml
@@ -237,6 +238,7 @@ iboot/
 │   ├── pull-docker-images.sh
 │   └── regress/             # 契约快照、路由覆盖、冒烟、权限矩阵
 ├── iboot-kernel/            # 共享内核库：统一响应、鉴权、审计写入
+├── iboot-service-authz/     # 服务间授权库（不独立部署）
 ├── iboot-db-init/           # 数据库初始化：建库与集中式迁移，运行后退出
 ├── iboot-gateway/           # 网关 :8088
 ├── iboot-system/            # 系统域 :8080

@@ -27,7 +27,7 @@
 ## 5. 集成验证
 
 - [x] 5.1 重建 8 个服务、网关与 ops，执行 `service-authz.sh`、`internal-tls.sh`、冒烟与全量回归；验证门户、探针、SBA、AI、scope、internal 链路全部通过
-- [ ] 5.2 在 CI 分支运行全栈回归，确认 host 模式与 Docker 模式均通过；记录已知备份冒烟例外
+- [x] 5.2 在 CI 分支运行全栈回归，确认 host 模式与 Docker 模式均通过；记录已知备份冒烟例外
 
 ## Workflow follow-up
 

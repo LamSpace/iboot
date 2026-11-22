@@ -17,6 +17,7 @@ CERT_DIR="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
 SYSTEM="https://localhost:8080"
 GATEWAY="https://localhost:8088"
 OPS="https://localhost:8089"
+JOB="https://localhost:8085"
 INTERNAL_TOKEN="${IBOOT_SYSTEM_INTERNAL_TOKEN:-iboot-dev-internal-token}"
 BODY="$(mktemp)"
 trap 'rm -f "$BODY"' EXIT
@@ -85,6 +86,8 @@ expect_status "AI 访问系统用户列表" 200 \
     "$(status_of svc_request iboot-ai -H "Authorization: Bearer $REG_TOKEN" "$SYSTEM/api/user/list")"
 expect_status "AI 访问系统部门列表" 200 \
     "$(status_of svc_request iboot-ai -H "Authorization: Bearer $REG_TOKEN" "$SYSTEM/api/dept/list")"
+expect_status "AI 访问调度备份摘要" 200 \
+    "$(status_of svc_request iboot-ai -H "Authorization: Bearer $REG_TOKEN" "$JOB/api/monitor/backup/summary")"
 expect_status "文件服务访问系统数据权限范围" 200 \
     "$(status_of svc_request iboot-file -H "Authorization: Bearer $REG_TOKEN" "$SYSTEM/api/auth/scope")"
 expect_status "审批服务访问系统内部额度" 200 \

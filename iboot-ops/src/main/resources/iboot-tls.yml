@@ -46,5 +46,5 @@ iboot:
         - paths: ["/sba/**", "/instances/**", "/applications/**"]
           callers: ["iboot-portal"]
         - paths: ["/druid/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
-                  "/v3/api-docs", "/swagger-resources/**", "/webjars/**", "/doc.html"]
+                  "/v3/api-docs", "/v3/api-docs.yaml", "/swagger-resources/**", "/webjars/**", "/doc.html"]
           callers: ["iboot-portal"]
