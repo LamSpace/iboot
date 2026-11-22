@@ -18,7 +18,7 @@ CERT_DIR="${IBOOT_TLS_CERT_DIR:-$(cd "$HERE/../.." && pwd)/docker/certs}"
 SVC_CLIENT_CERT="${SVC_CLIENT_CERT:-$CERT_DIR/portal.pem}"
 SVC_CLIENT_KEY="${SVC_CLIENT_KEY:-$CERT_DIR/portal-key.pem}"
 : "${MYSQL_ROOT_PASSWORD:?缺少 MYSQL_ROOT_PASSWORD（请加载根目录 .env）}"
-: "${REDIS_PASSWORD:?缺少 REDIS_PASSWORD（请加载根目录 .env）}"
+: "${REDIS_EXPORTER_PASSWORD:?缺少 REDIS_EXPORTER_PASSWORD（请加载根目录 .env）}"
 PORTS=(8080 8081 8082 8083 8084 8085 8086 8087 8088)
 if [ "${IBOOT_OPS_ENABLED:-true}" = "true" ]; then
     PORTS+=(8089)

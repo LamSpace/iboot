@@ -183,6 +183,12 @@ jobs:
           KAFKA_TOOLS_PASSWORD: iboot-dev-kafka-tools
           SILO_ROOT_USER: ibootadmin
           SILO_ROOT_PASSWORD: iboot-dev-silo
+          SILO_FILE_ACCESS_KEY: iboot_file
+          SILO_FILE_SECRET_KEY: iboot-dev-file-silo
+          SILO_JOB_ACCESS_KEY: iboot_job
+          SILO_JOB_SECRET_KEY: iboot-dev-job-silo
+          SILO_AI_ACCESS_KEY: iboot_ai
+          SILO_AI_SECRET_KEY: iboot-dev-ai-silo
           NACOS_SERVER_ADDR: https://localhost:8848
           NACOS_USERNAME: iboot
           NACOS_PASSWORD: iboot-dev-nacos
