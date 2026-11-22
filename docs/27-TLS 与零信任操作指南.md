@@ -992,7 +992,7 @@ scripts/tls-rotate.sh --rotate --restart host
 ```
 
 - 普通启动只补发缺失的 exporter 证书，不重签既有服务证书；`--rotate` 才调用 `tls-init.sh --force`。
-- Docker 重启调用 `scripts/docker-deploy.sh up`；宿主机重启调用 `dev-init.sh --stop` 后再启动。
+- Docker 重启对当前运行的 compose 服务执行 `up -d --force-recreate`；宿主机重启调用 `dev-init.sh --stop` 后再启动。
 - 建议 cron 每周执行 `--check`，到期前手工执行 `--rotate`；脚本不内置定时器。
 
 ### 23.3 边界
