@@ -24,6 +24,7 @@ import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
@@ -171,11 +172,36 @@ class KafkaAppenderTest {
     }
 
     /**
+     * SASL 机制、用户名与口令必须写入生产者参数，并防止值中的引号破坏 JAAS 结构。
+     */
+    @Test
+    void appliesSaslProperties() throws Exception {
+        MockProducer<String, byte[]> producer = newMockProducer();
+        TestAppender appender = new TestAppender(producer);
+        appender.setSecurityProtocol("SASL_SSL");
+        appender.setTruststoreLocation("/tmp/iboot-truststore.p12");
+        appender.setSaslMechanism("PLAIN");
+        appender.setSaslUsername("iboot_log");
+        appender.setSaslPassword("to\"ken");
+        Logger logger = startAppender(appender);
+
+        logger.info("sasl properties");
+        awaitHistory(producer, 1, appender);
+
+        Properties properties = appender.capturedProperties;
+        assertEquals("SASL_SSL", properties.getProperty("security.protocol"));
+        assertEquals("PLAIN", properties.getProperty(SaslConfigs.SASL_MECHANISM));
+        assertEquals("org.apache.kafka.common.security.plain.PlainLoginModule required "
+                + "username=\"iboot_log\" password=\"to\\\"ken\";",
+                properties.getProperty(SaslConfigs.SASL_JAAS_CONFIG));
+        appender.stop();
+    }
+
+    /**
      * 关闭态不创建生产者、不投递任何事件，宿主机调试与自动化测试因此不受影响。
      */
     @Test
-    void disabledAppenderCreatesNoProducer() throws Exception {
-        MockProducer<String, byte[]> producer = newMockProducer();
+    void disabledAppenderCreatesNoProducer() throws Exception {        MockProducer<String, byte[]> producer = newMockProducer();
         TestAppender appender = new TestAppender(producer);
         appender.setEnabled(false);
         Logger logger = startAppender(appender);

@@ -17,7 +17,10 @@ x-app-env: &app-env
   MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?MYSQL_APP_PASSWORD 必须在 .env 中设置}
   REDIS_HOST: redis
   REDIS_PORT: "6379"
+  REDIS_USERNAME: ${REDIS_USERNAME:-iboot_app}
   REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD 必须在 .env 中设置}
+  # 业务服务只保留自身 Redis 账号；exporter 口令不进入业务容器。
+  REDIS_EXPORTER_PASSWORD: ""
   ELASTICSEARCH_URIS: https://elasticsearch:9200
   # 默认不注入任何 ES 凭据；使用 ES 的服务在自身 environment 中覆盖专用账号。
   ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME:-}
@@ -46,7 +49,14 @@ x-app-env: &app-env
   TEMPO_OTLP: https://tempo:4318/v1/traces
   IBOOT_LOGGING_KAFKA_ENABLED: "true"
   IBOOT_LOGGING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-  IBOOT_LOGGING_KAFKA_SECURITY_PROTOCOL: SSL
+  IBOOT_LOGGING_KAFKA_SECURITY_PROTOCOL: SASL_SSL
+  IBOOT_LOGGING_KAFKA_SASL_MECHANISM: PLAIN
+  IBOOT_LOGGING_KAFKA_SASL_USERNAME: iboot_log
+  IBOOT_LOGGING_KAFKA_SASL_PASSWORD: ${KAFKA_LOG_PASSWORD:?KAFKA_LOG_PASSWORD 必须在 .env 中设置}
+  # 其余 Kafka 账号口令不进入业务容器。
+  KAFKA_BROKER_PASSWORD: ""
+  KAFKA_LOGSTASH_PASSWORD: ""
+  KAFKA_TOOLS_PASSWORD: ""
   IBOOT_LOGGING_KAFKA_TRUSTSTORE_LOCATION: /certs/truststore.p12
   IBOOT_LOGGING_KAFKA_TRUSTSTORE_PASSWORD: changeit
   IBOOT_LOGGING_KAFKA_TRUSTSTORE_TYPE: PKCS12
@@ -582,9 +592,13 @@ services:
       --tls-key-file /certs/portal-key.pem
       --tls-ca-cert-file /certs/rootCA.pem
       --tls-auth-clients no
-      --requirepass "$$REDIS_PASSWORD"'
+      --user default off
+      --user iboot_app on ">$$REDIS_PASSWORD" "~*" "&*" "+@all"
+      --user iboot_exporter on ">$$REDIS_EXPORTER_PASSWORD" "~*" "+@read" "+@connection"
+      "+info" "+dbsize" "+slowlog" "+memory" "+client|list" "+config|get" "+command" "+ping" "+cluster|info" "+latency"'
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD 必须在 .env 中设置}
+      REDIS_EXPORTER_PASSWORD: ${REDIS_EXPORTER_PASSWORD:?REDIS_EXPORTER_PASSWORD 必须在 .env 中设置}
     volumes:
       - redis_data:/data
       - ./certs/runtime:/certs:ro
@@ -592,7 +606,7 @@ services:
     networks:
       - data
     healthcheck:
-      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli --tls --cacert /certs/rootCA.pem -p 6379 ping"]
+      test: ["CMD-SHELL", "redis-cli --user iboot_app --pass \"$$REDIS_PASSWORD\" --tls --cacert /certs/rootCA.pem -p 6379 ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -726,6 +740,7 @@ services:
       - LS_JAVA_OPTS=-Xms256m -Xmx256m
       - XPACK_MONITORING_ENABLED=false
       - ES_LOGSTASH_PASSWORD=${ES_LOGSTASH_PASSWORD:?ES_LOGSTASH_PASSWORD 必须在 .env 中设置}
+      - KAFKA_LOGSTASH_PASSWORD=${KAFKA_LOGSTASH_PASSWORD:?KAFKA_LOGSTASH_PASSWORD 必须在 .env 中设置}
     restart: unless-stopped
     networks:
       - data
@@ -952,7 +967,7 @@ services:
 
   # ==================== Kafka（日志缓冲层） ====================
   # KRaft 单节点，不部署 ZooKeeper；只作 24 小时日志缓冲，不承载业务事件。
-  # 三个监听全部 SSL：kafka:9092 给容器内服务，localhost:29092 给宿主机进程与工具，9093 为 controller。
+  # 两个客户端监听使用 SASL_SSL：kafka:9092 给容器内服务，localhost:29092 给宿主机进程与工具；9093 为 controller。
   kafka:
     image: apache/kafka:4.4.0
     container_name: iboot-kafka
@@ -961,17 +976,49 @@ services:
       CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw
       KAFKA_NODE_ID: "1"
       KAFKA_PROCESS_ROLES: broker,controller
-      # 三个监听全部 SSL；9092 容器内、29092 宿主机、9093 controller。
-      KAFKA_LISTENERS: SSL://:9092,SSL_HOST://:29092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: SSL://kafka:9092,SSL_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SSL:SSL,SSL_HOST:SSL,CONTROLLER:SSL
+      # 三个监听都使用 SASL_SSL：INTERNAL 容器内、HOST 宿主机、CONTROLLER 节点内；controller 不发布。
+      KAFKA_LISTENERS: INTERNAL://:9092,HOST://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:SASL_SSL,HOST:SASL_SSL,CONTROLLER:SASL_SSL
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: SSL
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      # SASL/PLAIN 账号按用途区分；broker 账号同时用于节点间与 controller 通信。
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_SASL_MECHANISM_CONTROLLER_PROTOCOL: PLAIN
+      KAFKA_LISTENER_NAME_INTERNAL_PLAIN_SASL_JAAS_CONFIG: >-
+        org.apache.kafka.common.security.plain.PlainLoginModule required
+        username="broker" password="${KAFKA_BROKER_PASSWORD:?KAFKA_BROKER_PASSWORD 必须在 .env 中设置}"
+        user_broker="${KAFKA_BROKER_PASSWORD:?KAFKA_BROKER_PASSWORD 必须在 .env 中设置}"
+        user_iboot_log="${KAFKA_LOG_PASSWORD:?KAFKA_LOG_PASSWORD 必须在 .env 中设置}"
+        user_iboot_logstash="${KAFKA_LOGSTASH_PASSWORD:?KAFKA_LOGSTASH_PASSWORD 必须在 .env 中设置}"
+        user_iboot_tools="${KAFKA_TOOLS_PASSWORD:?KAFKA_TOOLS_PASSWORD 必须在 .env 中设置}";
+      KAFKA_LISTENER_NAME_HOST_PLAIN_SASL_JAAS_CONFIG: >-
+        org.apache.kafka.common.security.plain.PlainLoginModule required
+        username="broker" password="${KAFKA_BROKER_PASSWORD:?KAFKA_BROKER_PASSWORD 必须在 .env 中设置}"
+        user_broker="${KAFKA_BROKER_PASSWORD:?KAFKA_BROKER_PASSWORD 必须在 .env 中设置}"
+        user_iboot_log="${KAFKA_LOG_PASSWORD:?KAFKA_LOG_PASSWORD 必须在 .env 中设置}"
+        user_iboot_logstash="${KAFKA_LOGSTASH_PASSWORD:?KAFKA_LOGSTASH_PASSWORD 必须在 .env 中设置}"
+        user_iboot_tools="${KAFKA_TOOLS_PASSWORD:?KAFKA_TOOLS_PASSWORD 必须在 .env 中设置}";
+      KAFKA_LISTENER_NAME_CONTROLLER_PLAIN_SASL_JAAS_CONFIG: >-
+        org.apache.kafka.common.security.plain.PlainLoginModule required
+        username="broker" password="${KAFKA_BROKER_PASSWORD:?KAFKA_BROKER_PASSWORD 必须在 .env 中设置}"
+        user_broker="${KAFKA_BROKER_PASSWORD:?KAFKA_BROKER_PASSWORD 必须在 .env 中设置}";
+      # 无 ACL 默认拒绝；broker 与初始化工具是超级用户。
+      KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "false"
+      KAFKA_SUPER_USERS: "User:broker;User:iboot_tools"
+      KAFKA_TOOLS_PASSWORD: ${KAFKA_TOOLS_PASSWORD:?KAFKA_TOOLS_PASSWORD 必须在 .env 中设置}
       # 镜像的 configure 脚本要求 /etc/kafka/secrets 下的文件名与密码文件
       KAFKA_SSL_KEYSTORE_FILENAME: kafka-keystore.p12
       KAFKA_SSL_KEY_CREDENTIALS: kafka-key-password
       KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka-keystore-password
+      # 镜像只在 advertised listeners 含字面量 SSL:// 时自动注入 keystore；
+      # 监听已改名为 INTERNAL/HOST，因此显式给出路径与口令。
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka-keystore.p12
+      KAFKA_SSL_KEYSTORE_PASSWORD: changeit
+      KAFKA_SSL_KEY_PASSWORD: changeit
       KAFKA_SSL_CLIENT_AUTH: none
       KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: HTTPS
       # client auth 为 none 时镜像不会自动注入 truststore；controller 出站 SSL 仍需要它
@@ -994,7 +1041,7 @@ services:
     networks:
       - data
     healthcheck:
-      test: ["CMD-SHELL", "printf '%s\n' 'security.protocol=SSL' 'ssl.truststore.location=/etc/kafka/secrets/truststore.p12' 'ssl.truststore.password=changeit' 'ssl.truststore.type=PKCS12' > /tmp/kafka-client.properties && /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 --command-config /tmp/kafka-client.properties >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "printf '%s\n' 'security.protocol=SASL_SSL' 'sasl.mechanism=PLAIN' 'sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"iboot_tools\" password=\"'$${KAFKA_TOOLS_PASSWORD}'\";' 'ssl.truststore.location=/etc/kafka/secrets/truststore.p12' 'ssl.truststore.password=changeit' 'ssl.truststore.type=PKCS12' > /tmp/kafka-client.properties && /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 --command-config /tmp/kafka-client.properties >/dev/null 2>&1"]
       interval: 10s
       timeout: 10s
       retries: 12
@@ -1008,7 +1055,10 @@ services:
     environment:
       TZ: Asia/Shanghai
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      KAFKA_SECURITY_PROTOCOL: SSL
+      KAFKA_SECURITY_PROTOCOL: SASL_SSL
+      KAFKA_SASL_MECHANISM: PLAIN
+      KAFKA_SASL_USERNAME: iboot_tools
+      KAFKA_SASL_PASSWORD: ${KAFKA_TOOLS_PASSWORD:?KAFKA_TOOLS_PASSWORD 必须在 .env 中设置}
       KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/truststore.p12
       KAFKA_SSL_TRUSTSTORE_PASSWORD: changeit
       KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
@@ -1340,8 +1390,12 @@ services:
     container_name: iboot-redis-exporter
     profiles: ["observability"]
     environment:
-      REDIS_ADDR: redis://redis:6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD 必须在 .env 中设置}
+      REDIS_ADDR: rediss://redis:6379
+      REDIS_USER: iboot_exporter
+      REDIS_PASSWORD: ${REDIS_EXPORTER_PASSWORD:?REDIS_EXPORTER_PASSWORD 必须在 .env 中设置}
+      REDIS_EXPORTER_TLS_CA_CERT_FILE: /certs/rootCA.pem
+    volumes:
+      - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:
       - data

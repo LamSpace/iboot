@@ -11,6 +11,8 @@
 #   LOG_ES_URL              ES 地址，默认 https://localhost:9200
 #   LOG_ES_USER / LOG_ES_PASSWORD  ES 凭据
 #   LOG_KAFKA_CONTAINER     默认 iboot-kafka
+#   KAFKA_LOG_PASSWORD      iboot_log 的 SASL 口令
+#   KAFKA_TOOLS_PASSWORD    iboot_tools 的 SASL 口令
 #   LOG_LOGSTASH_CONTAINER  默认 iboot-logstash
 #   LOG_ROCKETMQ_PORT       默认 18081；为空时跳过
 
@@ -27,6 +29,12 @@ ES_URL="${LOG_ES_URL:-https://localhost:9200}"
 ES_USER="${LOG_ES_USER:-elastic}"
 ES_PASSWORD="${LOG_ES_PASSWORD:-${ELASTIC_PASSWORD:-iboot-dev-elastic}}"
 KAFKA_CONTAINER="${LOG_KAFKA_CONTAINER:-iboot-kafka}"
+KAFKA_LOG_PASSWORD="${KAFKA_LOG_PASSWORD:-}"
+KAFKA_TOOLS_PASSWORD="${KAFKA_TOOLS_PASSWORD:-}"
+if [ -f "$ROOT/.env" ]; then
+    [ -n "$KAFKA_LOG_PASSWORD" ] || KAFKA_LOG_PASSWORD="$(sed -n 's/^KAFKA_LOG_PASSWORD=//p' "$ROOT/.env" | tail -1)"
+    [ -n "$KAFKA_TOOLS_PASSWORD" ] || KAFKA_TOOLS_PASSWORD="$(sed -n 's/^KAFKA_TOOLS_PASSWORD=//p' "$ROOT/.env" | tail -1)"
+fi
 LOGSTASH_CONTAINER="${LOG_LOGSTASH_CONTAINER:-iboot-logstash}"
 ROCKETMQ_PORT="${LOG_ROCKETMQ_PORT:-18081}"
 CA="${REG_CACERT:-$ROOT/docker/certs/ca/rootCA.pem}"
@@ -93,27 +101,36 @@ if docker inspect "$KAFKA_CONTAINER" >/dev/null 2>&1; then
     else
         reg_fail "Kafka 宿主机监听 TLS 握手失败"
     fi
-    if docker exec "$KAFKA_CONTAINER" bash -lc 'cat > /tmp/regress-kafka-client.properties <<EOF
-security.protocol=SSL
-ssl.truststore.location=/etc/kafka/secrets/truststore.p12
-ssl.truststore.password=changeit
-ssl.truststore.type=PKCS12
-ssl.endpoint.identification.algorithm=HTTPS
-EOF
-/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 --command-config /tmp/regress-kafka-client.properties >/dev/null 2>&1'; then
-        reg_pass "Kafka SSL 客户端可读取 broker API 版本"
+    kafka_client_config() {
+        local user="$1" password="$2"
+        {
+            printf 'security.protocol=SASL_SSL\n'
+            printf 'sasl.mechanism=PLAIN\n'
+            printf 'sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="%s" password="%s";\n' "$user" "$password"
+            printf 'ssl.truststore.location=/etc/kafka/secrets/truststore.p12\n'
+            printf 'ssl.truststore.password=changeit\n'
+            printf 'ssl.truststore.type=PKCS12\n'
+            printf 'ssl.endpoint.identification.algorithm=HTTPS\n'
+        } | docker exec -i "$KAFKA_CONTAINER" sh -c 'cat > /tmp/regress-kafka-client.properties'
+    }
+
+    kafka_client_config iboot_tools "$KAFKA_TOOLS_PASSWORD"
+    if docker exec "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-broker-api-versions.sh \
+        --bootstrap-server localhost:9092 \
+        --command-config /tmp/regress-kafka-client.properties >/dev/null 2>&1; then
+        reg_pass "Kafka SASL_SSL 客户端可读取 broker API 版本"
     else
-        reg_fail "Kafka SSL 客户端连接失败"
+        reg_fail "Kafka SASL_SSL 客户端连接失败"
     fi
     if docker exec "$KAFKA_CONTAINER" bash -lc 'timeout 10 /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1'; then
         reg_fail "Kafka 仍接受 PLAINTEXT 客户端"
     else
         reg_pass "Kafka 拒绝 PLAINTEXT 客户端"
     fi
-    if docker exec "$KAFKA_CONTAINER" bash -lc 'printf "security.protocol=SSL\n" > /tmp/regress-kafka-no-trust.properties; timeout 10 /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 --command-config /tmp/regress-kafka-no-trust.properties >/dev/null 2>&1'; then
-        reg_fail "Kafka SSL 客户端无 truststore 仍成功"
+    if docker exec "$KAFKA_CONTAINER" bash -lc 'printf "security.protocol=SASL_SSL\nsasl.mechanism=PLAIN\n" > /tmp/regress-kafka-no-trust.properties; timeout 10 /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 --command-config /tmp/regress-kafka-no-trust.properties >/dev/null 2>&1'; then
+        reg_fail "Kafka SASL 客户端无 truststore 仍成功"
     else
-        reg_pass "Kafka SSL 客户端无 truststore 失败"
+        reg_pass "Kafka SASL 客户端无 truststore 失败"
     fi
 else
     reg_fail "找不到 Kafka 容器：$KAFKA_CONTAINER"
@@ -125,7 +142,9 @@ if docker inspect "$LOGSTASH_CONTAINER" >/dev/null 2>&1; then
     printf '%s\n' "{\"@timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\",\"app\":\"iboot-probe\",\"traceId\":\"$trace_id\",\"message\":\"log-search tls regress\"}" \
         | docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-producer.sh \
             --bootstrap-server localhost:9092 --topic iboot-logs \
-            --command-property security.protocol=SSL \
+            --command-property security.protocol=SASL_SSL \
+            --command-property sasl.mechanism=PLAIN \
+            --command-property "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"iboot_log\" password=\"${KAFKA_LOG_PASSWORD}\";" \
             --command-property ssl.truststore.location=/etc/kafka/secrets/truststore.p12 \
             --command-property ssl.truststore.password=changeit \
             --command-property ssl.truststore.type=PKCS12 >/dev/null 2>&1
