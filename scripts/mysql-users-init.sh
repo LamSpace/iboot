@@ -9,7 +9,7 @@
 #
 # 环境变量：
 #   MYSQL_HOST / MYSQL_PORT / MYSQL_ADMIN_USER / MYSQL_ADMIN_PASSWORD
-#   MIDDLEWARE_SYSTEM_PASSWORD ... MIDDLEWARE_AI_PASSWORD
+#   MYSQL_SYSTEM_PASSWORD ... MYSQL_AI_PASSWORD
 #   MYSQL_EXPORTER_USER / MYSQL_EXPORTER_PASSWORD
 
 set -euo pipefail
@@ -39,7 +39,7 @@ GRANT SELECT ON \`performance_schema\`.* TO '${EXPORTER_USER_SQL}'@'%';
 "
 
 for service in "${SERVICES[@]}"; do
-    var="MIDDLEWARE_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+    var="MYSQL_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
     password="${!var:-}"
     if [ -z "$password" ]; then
         printf '[mysql-users-init] ERROR: 缺少 %s\n' "$var" >&2

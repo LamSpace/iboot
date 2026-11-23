@@ -100,9 +100,9 @@ ensure_account() {
 # 运维脚本账号；管理脚本使用它，不注入业务服务。
 ensure_account "$NACOS_USERNAME" "$NACOS_PASSWORD"
 
-# 每服务账号：账号名 iboot_<service>，口令由 MIDDLEWARE_<SERVICE>_PASSWORD 注入。
+# 每服务账号：账号名 iboot_<service>，口令由 NACOS_<SERVICE>_PASSWORD 注入。
 for service in system workflow file notify job monitor auth ai gateway ops; do
-    var="MIDDLEWARE_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+    var="NACOS_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
     eval "password=\${$var:-}"
     [ -n "$password" ] || fail "缺少 $var"
     ensure_account "iboot_$service" "$password"

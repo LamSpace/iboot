@@ -70,10 +70,16 @@ fi
 # 中间件账号鉴权：缺少凭据时不启动，避免回退到默认口令。
 for required in MYSQL_ROOT_PASSWORD MYSQL_MIGRATOR_PASSWORD MYSQL_PROVISIONER_PASSWORD \
     MYSQL_EXPORTER_PASSWORD \
-    MIDDLEWARE_SYSTEM_PASSWORD MIDDLEWARE_WORKFLOW_PASSWORD MIDDLEWARE_FILE_PASSWORD \
-    MIDDLEWARE_NOTIFY_PASSWORD MIDDLEWARE_JOB_PASSWORD MIDDLEWARE_MONITOR_PASSWORD \
-    MIDDLEWARE_AUTH_PASSWORD MIDDLEWARE_AI_PASSWORD MIDDLEWARE_GATEWAY_PASSWORD \
-    MIDDLEWARE_OPS_PASSWORD \
+    MYSQL_SYSTEM_PASSWORD MYSQL_WORKFLOW_PASSWORD MYSQL_FILE_PASSWORD \
+    MYSQL_NOTIFY_PASSWORD MYSQL_JOB_PASSWORD MYSQL_MONITOR_PASSWORD \
+    MYSQL_AUTH_PASSWORD MYSQL_AI_PASSWORD \
+    REDIS_SYSTEM_PASSWORD REDIS_WORKFLOW_PASSWORD REDIS_FILE_PASSWORD \
+    REDIS_NOTIFY_PASSWORD REDIS_JOB_PASSWORD REDIS_MONITOR_PASSWORD \
+    REDIS_AUTH_PASSWORD REDIS_AI_PASSWORD \
+    NACOS_SYSTEM_PASSWORD NACOS_WORKFLOW_PASSWORD NACOS_FILE_PASSWORD \
+    NACOS_NOTIFY_PASSWORD NACOS_JOB_PASSWORD NACOS_MONITOR_PASSWORD \
+    NACOS_AUTH_PASSWORD NACOS_AI_PASSWORD NACOS_GATEWAY_PASSWORD \
+    NACOS_OPS_PASSWORD \
     REDIS_EXPORTER_PASSWORD SILO_ROOT_USER SILO_ROOT_PASSWORD \
     SILO_FILE_SECRET_KEY SILO_AI_SECRET_KEY \
     ROCKETMQ_ADMIN_ACCESS_KEY ROCKETMQ_ADMIN_SECRET_KEY \
@@ -660,22 +666,29 @@ start_backend() {
                 -u ROCKETMQ_WORKFLOW_ACCESS_KEY -u ROCKETMQ_WORKFLOW_SECRET_KEY
                 -u ROCKETMQ_NOTIFY_ACCESS_KEY -u ROCKETMQ_NOTIFY_SECRET_KEY
             )
-            local short="${name#iboot-}" acct="iboot_${name#iboot-}" upper svc_pw_var
+            local short="${name#iboot-}" acct="iboot_${name#iboot-}" upper mysql_pw_var redis_pw_var nacos_pw_var
             upper="$(printf '%s' "$short" | tr '[:lower:]' '[:upper:]')"
-            svc_pw_var="MIDDLEWARE_${upper}_PASSWORD"
-            # 所有中间件口令变量都从子进程环境中移除；服务只通过 MYSQL_*/REDIS_*/NACOS_* 收到自己的值。
+            mysql_pw_var="MYSQL_${upper}_PASSWORD"
+            redis_pw_var="REDIS_${upper}_PASSWORD"
+            nacos_pw_var="NACOS_${upper}_PASSWORD"
+            # 所有组件口令变量都从子进程环境中移除；服务只通过 MYSQL_PASSWORD/REDIS_PASSWORD/NACOS_PASSWORD 收到自己的值。
             local -a others=(system workflow file notify job monitor auth ai gateway ops)
             local other other_upper
             for other in "${others[@]}"; do
                 other_upper="$(printf '%s' "$other" | tr '[:lower:]' '[:upper:]')"
-                env_opts+=(-u "MIDDLEWARE_${other_upper}_PASSWORD")
+                env_opts+=(
+                    -u "MIDDLEWARE_${other_upper}_PASSWORD"
+                    -u "MYSQL_${other_upper}_PASSWORD"
+                    -u "REDIS_${other_upper}_PASSWORD"
+                    -u "NACOS_${other_upper}_PASSWORD"
+                )
             done
-            env_opts+=("NACOS_USERNAME=$acct" "NACOS_PASSWORD=${!svc_pw_var}")
+            env_opts+=("NACOS_USERNAME=$acct" "NACOS_PASSWORD=${!nacos_pw_var}")
             case "$short" in
                 system|workflow|file|notify|job|monitor|auth|ai)
                     env_opts+=(
-                        "MYSQL_USERNAME=$acct" "MYSQL_PASSWORD=${!svc_pw_var}"
-                        "REDIS_USERNAME=$acct" "REDIS_PASSWORD=${!svc_pw_var}"
+                        "MYSQL_USERNAME=$acct" "MYSQL_PASSWORD=${!mysql_pw_var}"
+                        "REDIS_USERNAME=$acct" "REDIS_PASSWORD=${!redis_pw_var}"
                     )
                     ;;
             esac

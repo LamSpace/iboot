@@ -4,7 +4,7 @@
 # 前置：中间件与服务已启动，根目录 .env 或环境变量提供受管凭据。
 # 环境变量：MYSQL_ROOT_PASSWORD、MYSQL_MIGRATOR_PASSWORD、MYSQL_PROVISIONER_PASSWORD、
 #          MYSQL_EXPORTER_PASSWORD、
-#          MIDDLEWARE_<SERVICE>_PASSWORD（十个服务）、
+#          MYSQL_/REDIS_/NACOS_<SERVICE>_PASSWORD（按组件独立）、
 #          REDIS_EXPORTER_PASSWORD、KAFKA_*_PASSWORD、
 #          SILO_ROOT_USER、SILO_ROOT_PASSWORD、SILO_FILE_*、SILO_AI_*、
 #          NACOS_USERNAME、NACOS_PASSWORD、REG_CACERT。
@@ -69,8 +69,18 @@ service_account() {
     printf 'iboot_%s' "$1"
 }
 
-service_password() {
-    local var="MIDDLEWARE_$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+service_mysql_password() {
+    local var="MYSQL_$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+    printf '%s' "${!var:-}"
+}
+
+service_redis_password() {
+    local var="REDIS_$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+    printf '%s' "${!var:-}"
+}
+
+service_nacos_password() {
+    local var="NACOS_$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')_PASSWORD"
     printf '%s' "${!var:-}"
 }
 
@@ -97,15 +107,28 @@ es_status() {
 reg_log "== 1. MySQL 每服务身份与最小权限 =="
 for service in "${DATA_SERVICES[@]}"; do
     acct="$(service_account "$service")"
-    password="$(service_password "$service")"
+    password="$(service_mysql_password "$service")"
     if mysql_exec "$acct" "$password" "SELECT 1" >/dev/null; then
         reg_pass "MySQL 账号 $acct 可以连接并查询"
     else
         reg_fail "MySQL 账号 $acct 无法连接"
     fi
 done
+for service in "${DATA_SERVICES[@]}"; do
+    mysql_pw="$(service_mysql_password "$service")"
+    redis_pw="$(service_redis_password "$service")"
+    nacos_pw="$(service_nacos_password "$service")"
+    if [ -n "$mysql_pw" ] && [ -n "$redis_pw" ] && [ -n "$nacos_pw" ] \
+        && [ "$mysql_pw" != "$redis_pw" ] && [ "$mysql_pw" != "$nacos_pw" ] \
+        && [ "$redis_pw" != "$nacos_pw" ]; then
+        reg_pass "$service 的 MySQL/Redis/Nacos 口令互不相同"
+    else
+        reg_fail "$service 的 MySQL/Redis/Nacos 口令未独立"
+    fi
+done
+
 first_acct="$(service_account "${DATA_SERVICES[0]}")"
-first_password="$(service_password "${DATA_SERVICES[0]}")"
+first_password="$(service_mysql_password "${DATA_SERVICES[0]}")"
 if mysql_exec "$first_acct" "$first_password" \
     "CREATE TABLE iboot.__auth_probe__ (id INT)" >/dev/null; then
     reg_fail "业务账号可以执行 DDL"
@@ -124,6 +147,11 @@ if mysql_exec "$first_acct" "wrong-password" "SELECT 1" >/dev/null; then
     reg_fail "MySQL 错误口令仍可连接"
 else
     reg_pass "MySQL 错误口令被拒绝"
+fi
+if mysql_exec "$first_acct" "$(service_redis_password "${DATA_SERVICES[0]}")" "SELECT 1" >/dev/null; then
+    reg_fail "MySQL 接受 Redis 组件口令"
+else
+    reg_pass "MySQL 拒绝 Redis 组件口令"
 fi
 
 # 从中间件侧取证：连接列表必须出现八个服务账号，且不能回退到共享账号。
@@ -231,7 +259,7 @@ redis_exec() {
 reg_log "== 2. Redis 每服务 ACL 身份 =="
 for service in "${DATA_SERVICES[@]}"; do
     acct="$(service_account "$service")"
-    password="$(service_password "$service")"
+    password="$(service_redis_password "$service")"
     if redis_exec "$acct" "$password" ping | grep -q PONG; then
         reg_pass "Redis 账号 $acct PING 成功"
     else
@@ -243,7 +271,7 @@ if docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem -p 6379 pi
 else
     reg_pass "Redis 未认证被拒绝"
 fi
-if redis_exec default "$(service_password "${DATA_SERVICES[0]}")" ping | grep -q PONG; then
+if redis_exec default "$(service_redis_password "${DATA_SERVICES[0]}")" ping | grep -q PONG; then
     reg_fail "Redis default 用户仍可登录"
 else
     reg_pass "Redis default 用户被禁用"
@@ -252,6 +280,11 @@ if redis_exec "$first_acct" "wrong-password" ping | grep -q PONG; then
     reg_fail "Redis 错误口令仍可执行命令"
 else
     reg_pass "Redis 错误口令被拒绝"
+fi
+if redis_exec "$first_acct" "$(service_mysql_password "${DATA_SERVICES[0]}")" ping | grep -q PONG; then
+    reg_fail "Redis 接受 MySQL 组件口令"
+else
+    reg_pass "Redis 拒绝 MySQL 组件口令"
 fi
 # 触发各服务的健康检查，让惰性连接池建立 Redis 连接后再取证。
 for entry in "system:8080" "ai:8081" "file:8082" "auth:8083" "notify:8084" \
@@ -347,7 +380,7 @@ fi
 reg_log "== 4. Nacos 每服务身份与鉴权 =="
 for service in "${ALL_SERVICES[@]}"; do
     acct="$(service_account "$service")"
-    password="$(service_password "$service")"
+    password="$(service_nacos_password "$service")"
     login_resp="$(curl -sS --cacert "$CA" -X POST \
         "https://localhost:8848/nacos/v3/auth/user/login" \
         --data-urlencode "username=$acct" \
@@ -382,6 +415,14 @@ if curl -sS --cacert "$CA" -X POST \
 else
     reg_pass "Nacos 错误口令被拒绝"
 fi
+if curl -sS --cacert "$CA" -X POST \
+    "https://localhost:8848/nacos/v3/auth/user/login" \
+    --data-urlencode "username=iboot_system" \
+    --data-urlencode "password=$(service_redis_password system)" 2>/dev/null | grep -q accessToken; then
+    reg_fail "Nacos 接受 Redis 组件口令"
+else
+    reg_pass "Nacos 拒绝 Redis 组件口令"
+fi
 anon_status="$(curl -sS --cacert "$CA" -o /dev/null -w '%{http_code}' -X POST \
     "https://localhost:8848/nacos/v3/admin/cs/config" \
     --data-urlencode "dataId=__auth_probe__" \
@@ -412,6 +453,11 @@ for service in "${ALL_SERVICES[@]}"; do
     else
         reg_fail "iboot-$service 未使用自己的 Nacos 身份"
     fi
+    if printf '%s\n' "$env_dump" | grep -qx "NACOS_PASSWORD=$(service_nacos_password "$service")"; then
+        reg_pass "iboot-$service 使用自己的 Nacos 组件口令"
+    else
+        reg_fail "iboot-$service 的 Nacos 组件口令不正确"
+    fi
     case " ${DATA_SERVICES[*]} " in
         *" $service "*)
             if printf '%s\n' "$env_dump" | grep -qx "MYSQL_USERNAME=$acct" \
@@ -419,6 +465,12 @@ for service in "${ALL_SERVICES[@]}"; do
                 reg_pass "iboot-$service 使用自己的 MySQL/Redis 身份 $acct"
             else
                 reg_fail "iboot-$service 未使用自己的 MySQL/Redis 身份"
+            fi
+            if printf '%s\n' "$env_dump" | grep -qx "MYSQL_PASSWORD=$(service_mysql_password "$service")" \
+                && printf '%s\n' "$env_dump" | grep -qx "REDIS_PASSWORD=$(service_redis_password "$service")"; then
+                reg_pass "iboot-$service 使用独立的 MySQL/Redis 组件口令"
+            else
+                reg_fail "iboot-$service 的 MySQL/Redis 组件口令不正确"
             fi
             ;;
     esac
