@@ -58,6 +58,53 @@ for entry in "${CHECKS[@]}"; do
     fi
 done
 
+reg_log "== Sentinel Dashboard =="
+SENTINEL_PORT=8858
+if echo | timeout 10 openssl s_client -connect "localhost:$SENTINEL_PORT" -tls1_2 -CAfile "$CA" 2>&1 \
+    | grep -q "Verify return code: 0"; then
+    reg_pass "Sentinel Dashboard 端口 $SENTINEL_PORT 接受 TLS 且证书通过本地 CA 校验"
+else
+    reg_fail "Sentinel Dashboard 端口 $SENTINEL_PORT TLS 握手或证书校验失败"
+fi
+sentinel_code="$(curl -sS --cacert "$CA" -o /dev/null -w '%{http_code}' "https://localhost:$SENTINEL_PORT/" 2>/dev/null || true)"
+if [ "$sentinel_code" = "200" ] || [ "$sentinel_code" = "302" ]; then
+    reg_pass "Sentinel Dashboard HTTPS 入口可访问（HTTP $sentinel_code）"
+else
+    reg_fail "Sentinel Dashboard HTTPS 入口失败（HTTP ${sentinel_code:-无响应}）"
+fi
+sentinel_plain="$(curl -sS -o /dev/null -w '%{http_code}' "http://localhost:$SENTINEL_PORT/" 2>/dev/null || true)"
+if [ "$sentinel_plain" = "200" ]; then
+    reg_fail "Sentinel Dashboard 仍接受明文 HTTP"
+else
+    reg_pass "Sentinel Dashboard 拒绝明文（HTTP ${sentinel_plain:-无响应}）"
+fi
+sentinel_no_ca="$(curl -sS --cacert "$EMPTY_CA" -o /dev/null -w '%{http_code}' "https://localhost:$SENTINEL_PORT/" 2>/dev/null || true)"
+if [ "$sentinel_no_ca" = "000" ] || [ -z "$sentinel_no_ca" ]; then
+    reg_pass "Sentinel Dashboard 不带内部 CA 时证书校验失败"
+else
+    reg_fail "Sentinel Dashboard 不带内部 CA 仍可访问：HTTP $sentinel_no_ca"
+fi
+sentinel_anon="$(curl -sS --cacert "$CA" -o /dev/null -w '%{http_code}' "https://localhost:$SENTINEL_PORT/app/briefinfos.json" 2>/dev/null || true)"
+if [ "$sentinel_anon" = "200" ]; then
+    reg_fail "Sentinel Dashboard 匿名可读取机器列表（登录未生效）"
+else
+    reg_pass "Sentinel Dashboard 匿名管理接口被拒绝（HTTP ${sentinel_anon:-无响应}）"
+fi
+sentinel_jar="$(mktemp)"
+curl -sS --cacert "$CA" -c "$sentinel_jar" -o /dev/null "https://localhost:$SENTINEL_PORT/" 2>/dev/null || true
+curl -sS --cacert "$CA" -b "$sentinel_jar" -c "$sentinel_jar" -o /dev/null \
+    -X POST --data-urlencode "username=${SENTINEL_DASHBOARD_USER:-sentinel}" \
+    --data-urlencode "password=${SENTINEL_DASHBOARD_PASSWORD:-sentinel123}" \
+    "https://localhost:$SENTINEL_PORT/auth/login" 2>/dev/null || true
+sentinel_auth="$(curl -sS --cacert "$CA" -b "$sentinel_jar" -o /dev/null -w '%{http_code}' \
+    "https://localhost:$SENTINEL_PORT/app/briefinfos.json" 2>/dev/null || true)"
+rm -f "$sentinel_jar"
+if [ "$sentinel_auth" = "200" ]; then
+    reg_pass "Sentinel Dashboard 登录后可读取机器列表"
+else
+    reg_fail "Sentinel Dashboard 登录后仍不可用（HTTP ${sentinel_auth:-无响应}）"
+fi
+
 if [ -n "${GRAFANA_ADMIN_PASSWORD:-}" ]; then
     ds_json="$(curl -sS --cacert "$CA" -u "admin:$GRAFANA_ADMIN_PASSWORD" \
         "https://localhost:3000/api/datasources" 2>/dev/null || true)"

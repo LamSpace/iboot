@@ -41,6 +41,7 @@ KAFKA_KEY_PASSWORD_FILE="$RUNTIME_DIR/kafka-key-password"
 KAFKA_KEYSTORE_PASSWORD_FILE="$RUNTIME_DIR/kafka-keystore-password"
 NACOS_KEYSTORE="$RUNTIME_DIR/nacos-keystore.p12"
 KAFKA_STORE_PASS="changeit"
+SENTINEL_KEYSTORE="$RUNTIME_DIR/sentinel-keystore.p12"
 CERT_DAYS=825
 # SPIFFE 信任域；证书 URI SAN 与授权解析器共用该值。
 TRUST_DOMAIN="iboot.local"
@@ -52,6 +53,7 @@ SAN_NAMES=(
     iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops
     mysql redis kafka elasticsearch silo nacos seata-server rocketmq-proxy tempo
     prometheus alertmanager grafana thanos-query thanos-sidecar thanos-store thanos-compact kibana
+    sentinel-dashboard
 )
 
 # 可部署服务各自使用独立证书；同一张证书同时承担服务端与客户端身份。
@@ -119,6 +121,12 @@ cert_has_spiffe() {
         | grep -q "URI:spiffe://${TRUST_DOMAIN}/${path}"
 }
 
+# 证书必须覆盖指定 DNS 主机名。
+cert_has_san() {
+    local cert="$1" name="$2"
+    openssl x509 -in "$cert" -noout -checkhost "$name" >/dev/null 2>&1
+}
+
 # URI SAN 与 Subject CN 必须指向同一个工作负载名。
 cert_identity_matches() {
     local cert="$1" expected="$2" cn
@@ -133,6 +141,7 @@ cert_valid() {
     cert_has_purpose "$CERT_FILE" "SSL server" || return 1
     cert_has_purpose "$CERT_FILE" "SSL client" || return 1
     cert_identity_matches "$CERT_FILE" "iboot-portal" "service/iboot-portal" || return 1
+    cert_has_san "$CERT_FILE" "sentinel-dashboard" || return 1
     openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1 || return 1
     local svc client
     for svc in "${SERVICE_NAMES[@]}"; do
@@ -189,11 +198,20 @@ ensure_runtime_copies() {
         -name nacos \
         -out "$NACOS_KEYSTORE" \
         -passout "pass:$KAFKA_STORE_PASS"
+    # Sentinel Dashboard 使用 Spring Boot server.ssl；复用门户证书，alias 固定为 sentinel
+    rm -f "$SENTINEL_KEYSTORE"
+    openssl pkcs12 -export \
+        -in "$CERT_FILE" \
+        -inkey "$KEY_FILE" \
+        -certfile "$ROOT_CA" \
+        -name sentinel \
+        -out "$SENTINEL_KEYSTORE" \
+        -passout "pass:$KAFKA_STORE_PASS"
     chmod 644 "$RUNTIME_DIR/portal.pem" "$RUNTIME_DIR/portal-key.pem" \
         "$RUNTIME_DIR/rootCA.pem" "$RUNTIME_DIR/truststore.p12" \
         "$RUNTIME_DIR/public.crt" "$RUNTIME_DIR/private.key" \
         "$KAFKA_KEYSTORE" "$KAFKA_KEY_PASSWORD_FILE" "$KAFKA_KEYSTORE_PASSWORD_FILE" \
-        "$NACOS_KEYSTORE"
+        "$NACOS_KEYSTORE" "$SENTINEL_KEYSTORE"
     # 各服务的独立证书副本；目录整体随 /certs 挂载进容器。
     mkdir -p "$RUNTIME_SERVICE_DIR"
     local svc client
@@ -225,6 +243,7 @@ check_expiry() {
     cert_has_purpose "$CERT_FILE" "SSL server" || fail "门户证书缺少 serverAuth 用途：$CERT_FILE"
     cert_has_purpose "$CERT_FILE" "SSL client" || fail "门户证书缺少 clientAuth 用途：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
     cert_identity_matches "$CERT_FILE" "iboot-portal" "service/iboot-portal" || fail "门户证书 SPIFFE ID 与 CN 不一致：$CERT_FILE"
+    cert_has_san "$CERT_FILE" "sentinel-dashboard" || fail "门户证书 SAN 不包含 sentinel-dashboard：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
     if openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1; then
         log "证书有效：$CERT_FILE"
         openssl x509 -noout -enddate -in "$CERT_FILE" | sed 's/^/  /'
@@ -385,6 +404,7 @@ log "  服务证书   $SERVICE_DIR（每服务一张，serverAuth + clientAuth�
 log "  探针证书   $CLIENT_DIR（${CLIENT_NAMES[*]}）"
 log "  Kafka keystore $KAFKA_KEYSTORE"
 log "  Nacos keystore $NACOS_KEYSTORE"
+log "  Sentinel keystore $SENTINEL_KEYSTORE"
 log ""
 log "浏览器信任（一次性，可能需要管理员权限）："
 log "  CAROOT=$CAROOT $MKCERT -install"

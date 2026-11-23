@@ -162,7 +162,7 @@ export IBOOT_OPS_PASSWORD="${IBOOT_OPS_PASSWORD:-ops123}"
 export IBOOT_OPS_SECURITY_ENABLED="${IBOOT_OPS_SECURITY_ENABLED:-false}"
 
 # 宿主机开发进程连接容器内的 Sentinel Dashboard（必选治理控制台）。
-export SENTINEL_DASHBOARD="${SENTINEL_DASHBOARD:-localhost:8858}"
+export SENTINEL_DASHBOARD="${SENTINEL_DASHBOARD:-https://localhost:8858}"
 
 # 宿主机服务通过 Nacos 以回环地址互相发现，证书 SAN 覆盖 127.0.0.1；
 # Docker 部署不设置该变量，实例地址回落到服务名。
@@ -493,7 +493,7 @@ start_middleware() {
     # 先初始化管理员与服务账号，再注册服务与写入 Sentinel 基线规则。
     "${COMPOSE[@]}" run --rm --no-deps nacos-init >/dev/null 2>&1 \
         || fail 'Nacos 账号初始化失败（nacos-init）'
-    wait_http 'Sentinel Dashboard' 'http://localhost:8858/' 120 || fail 'Sentinel Dashboard 未就绪'
+    wait_http 'Sentinel Dashboard' 'https://localhost:8858/' 120 || fail 'Sentinel Dashboard 未就绪'
     # 审批通过依赖全局事务协调器；必须在 workflow/system 启动前就绪
     wait_healthy 'Seata Server' iboot-seata-server 60 || fail 'Seata Server 未就绪'
     "$ROOT/scripts/sentinel-init.sh" || fail 'Sentinel 基线规则初始化失败'
@@ -849,12 +849,12 @@ case "$ACTION" in
         show_status
         log ''
         if ops_enabled; then
-            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 $(service_scheme)://localhost:8088，系统服务 $(service_scheme)://localhost:8080，AI $(service_scheme)://localhost:8081，认证 $(service_scheme)://localhost:8083，运维控制台 $(service_scheme)://localhost:8089/sba，Sentinel Dashboard http://localhost:8858"
+            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 $(service_scheme)://localhost:8088，系统服务 $(service_scheme)://localhost:8080，AI $(service_scheme)://localhost:8081，认证 $(service_scheme)://localhost:8083，运维控制台 $(service_scheme)://localhost:8089/sba，Sentinel Dashboard https://localhost:8858"
         else
-            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 $(service_scheme)://localhost:8088，系统服务 $(service_scheme)://localhost:8080，AI $(service_scheme)://localhost:8081，认证 $(service_scheme)://localhost:8083，Sentinel Dashboard http://localhost:8858（运维控制台已关闭）"
+            log "开发环境已就绪：门户 $IBOOT_PUBLIC_ORIGIN，网关 $(service_scheme)://localhost:8088，系统服务 $(service_scheme)://localhost:8080，AI $(service_scheme)://localhost:8081，认证 $(service_scheme)://localhost:8083，Sentinel Dashboard https://localhost:8858（运维控制台已关闭）"
         fi
         log '登录账号 admin / admin123456'
-        log '服务治理控制台：Nacos https://localhost:8849/next/，Sentinel http://localhost:8858；门户“微服务治理”菜单提供内嵌入口'
+        log '服务治理控制台：Nacos https://localhost:8849/next/，Sentinel https://localhost:8858；门户“微服务治理”菜单改为新窗口打开'
         if observability_enabled; then
             log '可观测平台：Grafana https://localhost:3000，Prometheus https://localhost:9090，Kibana https://localhost:5601，Alertmanager https://localhost:9093'
         fi
