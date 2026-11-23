@@ -3,7 +3,7 @@
 > 本文只保留**尚未完成**的路线与**仍然生效**的约束；已完成能力见 [§2 能力索引](#2-能力索引)，
 > 用户视角的功能清单与启动方式见 [README](README.md)，每次交付的完整过程见 `openspec/changes/archive/`。
 > 项目性质：技术栈练习项目，在可运行的管理系统之上逐步长出**微服务**、**云原生**、**智能 Agent** 三块能力。
-> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-11
+> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-23
 
 ## 目录
 
@@ -63,6 +63,7 @@
 | 分布式事务 | Seata AT：审批通过与请假额度扣减的跨服务原子提交与回滚；Seata TCC：管理员额度划转的冻结/确认/取消 | `iboot-workflow`、`iboot-system` | [docs/23 §16/§17](<./docs/23-微服务底座操作指南.md>) |
 | 可靠日志管道 | 服务日志经 Kafka 缓冲（24h）后由 Logstash 写入 ES，索引与字段不变 | 全部服务 | [docs/11 §11.11.1](<./docs/11-可观测性设计.md>)、[docs/23 §15](<./docs/23-微服务底座操作指南.md>) |
 | 运维控制台 | 独立 SBA 控制台，经 Nacos 发现全部实例，支持单实例巡检与运行期日志级别调整 | `iboot-ops` | [docs/11](<./docs/11-可观测性设计.md>) |
+| 本地 TLS 与零信任基线 | 全链路 HTTPS/mTLS、每服务证书与 SPIFFE 身份、路径级授权、证书轮换、表/键级最小权限、OPA 与 SPIRE 演示 | 全部服务与中间件 | [docs/27](<./docs/27-TLS 与零信任操作指南.md>)、[docs/23 §19](<./docs/23-微服务底座操作指南.md>) |
 
 ---
 
@@ -142,8 +143,8 @@ v0–v4 已完成：登录与只读查询（v1）、运维写命令（v2，含�
 | B1 | 边缘 TLS：本地 CA、门户 443、Vite HTTPS、OAuth2/CLI/回归 HTTPS | 已完成：`openspec/changes/archive/2026-11-20-add-edge-tls/` |
 | B2 | 门户→网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j | 已完成：`openspec/changes/archive/2026-11-20-add-internal-tls/`；Nacos/ES/Kafka/RocketMQ/Seata 不在本批 |
 | B3 | ES/Kafka/Logstash 日志与检索面；RocketMQ 仅作为加密通道 | 已完成：`openspec/changes/archive/2026-11-21-add-log-search-tls/` |
-| B4 | 入口收敛、中间件认证、网络分段、每服务 DB 账号 | 进行中：先做 Nacos TLS（`openspec/changes/add-nacos-tls/`） |
-| B5 | 服务间 mTLS、工作负载身份、中间件身份收尾 | 进行中：B5.1 每服务证书、B5.2 服务间 mTLS、B5.3 RocketMQ TLS-only 与 Seata 例外隔离、B5.4 服务间路径级授权、B5.5 中间件每服务身份、B5.1–B5.14 已完成：每服务证书、服务间 mTLS、RocketMQ TLS-only 与 ACL、路径级授权、中间件每服务身份、exporter mTLS、证书轮换与 SPIFFE 身份、证书轮换自动调度、宿主机进程回环绑定、Sentinel Dashboard TLS 与登录、RocketMQ 服务端证书校验、表级/键级最小权限、OPA 集中决策与 SPIRE Workload API；Kubernetes 服务网格不在本项目范围，Compose 以 SPIFFE+OPA+mTLS 为 L3 平面；残余边界清单见 docs/27 §29 |
+| B4 | 入口收敛、中间件认证、网络分段、每服务 DB 账号 | 已完成：Nacos TLS（`openspec/changes/archive/2026-11-21-add-nacos-tls/`）、入口收敛、中间件认证、网络分段与每服务账号 |
+| B5 | 服务间 mTLS、工作负载身份、中间件身份收尾 | 已完成：B5.1–B5.14：每服务证书、服务间 mTLS、RocketMQ TLS-only 与 ACL、路径级授权、中间件每服务身份、exporter mTLS、证书轮换与 SPIFFE 身份、证书轮换自动调度、宿主机进程回环绑定、Sentinel Dashboard TLS 与登录、RocketMQ 服务端证书校验、表级/键级最小权限、OPA 集中决策与 SPIRE Workload API；Kubernetes 服务网格不在本项目范围，Compose 以 SPIFFE+OPA+mTLS 为 L3 平面；残余边界清单见 docs/27 §29 |
 
 边界：B1 只加密公开入口；B2 加密门户→网关、服务间与核心数据面，网关 `8088` 改为
 HTTPS 但仍是内部地址；Nacos 的 TLS 在 B4 完成。不在本地手搓服务网格，
@@ -161,20 +162,21 @@ L3 留给阶段 3/4 的 ASM/Istio。
 | Spring Boot | **4.0.x（锁死，不升 4.1）** | SCA 对 Boot 4.1 适配仍在进行（#4339 / #4358） |
 | Spring Cloud / SCA | 2025.1.x / **2025.1.0.0** | SCA 首个支持 Boot 4.0.x 的版本线 |
 | Nacos | 3.3.0（client/server） | bootstrap 方式已移除，必须用 `spring.config.import`；控制台鉴权独立于客户端/管理端鉴权 |
-| Sentinel / Seata | 1.8.10 / **2.5.0**（`org.apache.seata`） | 随 SCA 2025.1.0.0 BOM；客户端支持 Boot 4 / JDK 25 |
-| Kafka | **4.1.x（KRaft，无 ZK）** | Boot 4.0.3 托管 kafka-clients 4.1.1 / spring-kafka 4.0.3；4.0 起移除 ZooKeeper |
-| RocketMQ | **5.3.1（服务端）/ 5.2.2（`rocketmq-client-java`）** | 阶段 2 收尾：审批通知 outbox；Spring Boot Starter 仍停留在 Boot 2.7，不使用 |
+| Sentinel / Seata | Sentinel Dashboard **1.8.10**（客户端 1.8.9）；Seata **2.5.0 客户端 / 2.6.0 TC**（`org.apache.seata`） | 客户端随 SCA 2025.1.0.0 BOM；Dashboard 与 TC 使用独立镜像 |
+| Kafka | **4.4.0 服务端（KRaft，无 ZK）** | Boot 4.0.3 托管 kafka-clients 4.1.1 / spring-kafka 4.0.3；4.0 起移除 ZooKeeper |
+| RocketMQ | **5.5.0（服务端）/ 5.2.2（`rocketmq-client-java`）** | 阶段 2 收尾：审批通知 outbox；Spring Boot Starter 仍停留在 Boot 2.7，不使用 |
 | Spring AI | **2.0.1（GA）** | Boot 4 必需；1.1.x 仅到 Boot 3.5 |
 | AgentScope Java | 2.0.1（GA） | JDK 25 已 Spike 通过；starter 构建于 Boot 4.0.3 |
 | Spring AI Alibaba | **暂不引入** | 仅 M 版预发布 |
 | Spring Boot Admin | **4.0.2** | 运维控制台；4.x 对应 Boot 4，勿与 Boot 3 的 3.x 混搭 |
-| SkyWalking | OAP **11.0.0** + Horizon UI **1.0.0** + BanyanDB **0.11.0** + Java Agent **9.8.0** | 阶段 2 辅助对比实验（已完成，不转正）；镜像站可获取的官方配套组合，11.1.0 未同步；OAP 与 BanyanDB 的 server API 精确锁定 0.11，不可混搭；ES 9.2 不在官方支持矩阵 |
+| SkyWalking | OAP **11.1.0** + Horizon UI **1.1.0** + BanyanDB **0.11.2** + Java Agent **9.8.0** | 阶段 2 辅助对比实验（已完成，不转正）；OAP 与 BanyanDB 的 server API 精确锁定 0.11；ES 9.x 不在官方支持矩阵 |
 | 对话模型 | **百炼 `qwen3.8-flash`**（备用 `qwen3.7-flash`） | thinking 默认开启，须显式关闭 |
 | DeepSeek（备用） | `deepseek-flash`（OpenAI 兼容端点） | 仅用于故障切换，不默认启用 |
 | Embedding | 百炼 `text-embedding-v4` 或本地 BGE-M3 | 第二供应商必然存在 |
 | OCR 模型 | 百炼 `qwen3.5-ocr`（可回退 `qwen-vl-ocr-2025-11-20`） | 默认关闭 |
-| MySQL / Redis / ES / Silo | 8.0.45 / 7.0.14 / 9.2.3 / RELEASE.2026-11；ES 客户端 **9.2.5**（Boot 托管） | 客户端与服务端同属 9.2.x |
-| Flowable / Neo4j | **8.0.0** / **5.26.29-community**（驱动 6.0.2） | Flowable 8 是唯一支持 Boot 4 的版本线；Neo4j 5.26 为 5.x LTS |
+| MySQL / Redis / ES / Silo | 8.4.13 / 8.8.4 / 9.5.5 / RELEASE.2026-11-12；ES 客户端 **9.2.5**（Boot 托管） | 客户端可连接 9.x 服务端；以 Compose 镜像为准 |
+| Flowable / Neo4j | **8.0.0** / **5.26.33-community**（驱动 6.0.2） | Flowable 8 是唯一支持 Boot 4 的版本线；Neo4j 5.26 为 5.x LTS |
+| OPA / SPIRE | **1.8.0** / **1.12.4** | 服务间授权集中决策；SPIRE 仅 `spire` profile 演示 Workload API，不进入默认启动路径 |
 | Apache Dubbo | **阻塞** | 无 Boot 4 支持 |
 | GraalVM（若做 native） | 工具链必须 **25** | Boot 4 native 构建要求 |
 
@@ -189,7 +191,7 @@ L3 留给阶段 3/4 的 ASM/Istio。
 | ID | 风险 | 影响阶段 | 处置 |
 |---|---|---|---|
 | R2 | Dubbo 不支持 Boot 4 | 3 / 4 | 服务间 HTTP 先行；延后至出现 Boot 4 兼容版本后重评 |
-| R4 | 本机内存：N×JVM + 27 个常驻中间件容器（含 Sentinel Dashboard、RocketMQ 三组件、Kafka 与 Seata Server；SkyWalking 实验再 +3 共 30 个），且单服务挂 Agent 后 RSS +约 470MB | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；RocketMQ Broker 堆 512MB、Proxy/NameServer 256MB，且不参与业务启动依赖；Seata Server 堆上限 512MB、直接内存 256MB；SkyWalking 实验按需启停（OAP 堆上限 1GB），实验数据见 docs/24；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
+| R4 | 本机内存：N×JVM + 28 个常驻中间件容器（含 Sentinel Dashboard、RocketMQ 三组件、Kafka、Seata Server 与 OPA；SkyWalking 实验再 +3 共 31 个），且单服务挂 Agent 后 RSS +约 470MB | 全阶段 | 按需 profiles 只跑改动服务；`IBOOT_OPS_ENABLED=false` 可跳过运维控制台；Sentinel Dashboard 堆上限 256MB 且不参与业务启动依赖；RocketMQ Broker 堆 512MB、Proxy/NameServer 256MB，且不参与业务启动依赖；Seata Server 堆上限 512MB、直接内存 256MB；SkyWalking 实验按需启停（OAP 堆上限 1GB），实验数据见 docs/24；Neo4j 置于 `graph` profile 且堆/页缓存显式限制；mock 依赖服务；native 列为阶段 4 缓解手段 |
 | R6 | LLM token 与云账单失控 | 全阶段 | 配额 + 用量看板 + Alertmanager 告警 |
 | R12 | 存量文档与实现漂移 | 全程 | 新增或修改能力时文档与代码同 PR |
 | R13 | 对话与 Embedding 同属百炼，单一供应商故障 | 3 / 4 | base-url 与模型配置化；对话可切 DeepSeek，Embedding 暂无等价兜底 |
@@ -211,7 +213,7 @@ L3 留给阶段 3/4 的 ASM/Istio。
 
 本地开发策略：
 
-- 中间件：`docker/docker-compose.yml`，`dev-init.sh` 默认启动 mysql / redis / silo / es / nacos / tempo / sentinel-dashboard / seata-server、集中日志链路（kafka / kafka-init / logstash）以及 observability profile（Prometheus / Grafana / Kibana / Alertmanager / Thanos 与 exporter）；资源紧张时用 `IBOOT_OBSERVABILITY_ENABLED=false`、`IBOOT_LOGGING_KAFKA_ENABLED=false` 裁剪；阶段 3 起本地增加 Kind 集群。
+- 中间件：`docker/docker-compose.yml`，`dev-init.sh` 默认启动 mysql / mysql-users-init / mysql-grants-init / redis / silo / es / nacos / tempo / sentinel-dashboard / seata-server / OPA、RocketMQ（NameServer / Broker / Proxy / TLS 入口）、集中日志链路（kafka / kafka-init / logstash）以及 observability profile（Prometheus / Grafana / Kibana / Alertmanager / Thanos 与 exporter）；资源紧张时用 `IBOOT_OBSERVABILITY_ENABLED=false`、`IBOOT_LOGGING_KAFKA_ENABLED=false` 裁剪；阶段 3 起本地增加 Kind 集群。
 - 分布式事务：审批通过依赖 `seata-server`（8091），`dev-init.sh` 等待其健康后再拉起 workflow/system；内部令牌由 `.env` 的 `IBOOT_SYSTEM_INTERNAL_TOKEN` 注入，缺省使用本地开发值。
 - 应用：`scripts/dev-init.sh` 一键拉起九个业务服务与运维控制台并按依赖顺序等待健康；也可单独 `mvn spring-boot:run` 调试。
 - 运维控制台：默认随开发环境启动，`IBOOT_OPS_ENABLED=false` 可跳过；生产环境不经公网网关暴露。

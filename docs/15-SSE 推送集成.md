@@ -1236,13 +1236,13 @@ onMounted(() => {
 
 **方法 1**：使用 curl 命令
 ```bash
-curl http://localhost:8080/api/push/connect?t=<YOUR_TOKEN>
+curl https://localhost:8080/api/push/connect?t=<YOUR_TOKEN>
 ```
 
 **方法 2**：使用浏览器控制台
 ```javascript
 const token = localStorage.getItem('token')
-const es = new EventSource(`http://localhost:8080/api/push/connect?t=${token}`)
+const es = new EventSource(`https://localhost:8080/api/push/connect?t=${token}`)
 es.onmessage = (e) => console.log('收到消息:', e.data)
 es.addEventListener('message.new', (e) => console.log('新消息:', JSON.parse(e.data)))
 ```

@@ -145,11 +145,16 @@ public class UserController {
 
 **请求示例：**
 ```bash
+# 服务端口只提供 HTTPS 并要求客户端证书；示例省略 --cacert/--cert/--key（见 docs/27 §4）
 # 请求 v1 版本
-curl -H "Accept-Version: 1" http://localhost:8080/api/user/1
+curl --cacert docker/certs/ca/rootCA.pem \
+     --cert docker/certs/services/system.pem --key docker/certs/services/system-key.pem \
+     -H "Accept-Version: 1" https://localhost:8080/api/user/1
 
 # 请求 v2 版本
-curl -H "Accept-Version: 2" http://localhost:8080/api/user/1
+curl --cacert docker/certs/ca/rootCA.pem \
+     --cert docker/certs/services/system.pem --key docker/certs/services/system-key.pem \
+     -H "Accept-Version: 2" https://localhost:8080/api/user/1
 ```
 
 #### 版本兼容性说明
@@ -536,8 +541,10 @@ Content-Type: application/json
 **SSE 连接示例：**
 
 ```bash
-# 使用 curl 连接 SSE（t 参数传递 Token）
-curl http://localhost:8080/api/push/connect?t=<YOUR_JWT_TOKEN>
+# 使用 curl 连接 SSE（t 参数传递 Token；同样需要 CA 与客户端证书）
+curl --cacert docker/certs/ca/rootCA.pem \
+     --cert docker/certs/services/system.pem --key docker/certs/services/system-key.pem \
+     https://localhost:8080/api/push/connect?t=<YOUR_JWT_TOKEN>
 ```
 
 **SSE 连接响应格式（text/event-stream）：**
@@ -1498,5 +1505,5 @@ public class SwaggerConfig {
 - **[10-后端配置详解](./10-后端配置详解.md)** - JWT 认证配置、Swagger/OpenAPI 配置详解
 
 **访问地址：**
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- API Docs: `http://localhost:8080/v3/api-docs`
+- Swagger UI: `https://localhost:8080/swagger-ui.html`（需客户端证书，或经门户入口）
+- API Docs: `https://localhost:8080/v3/api-docs`

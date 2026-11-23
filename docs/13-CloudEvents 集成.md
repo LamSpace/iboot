@@ -1165,10 +1165,10 @@ groups:
 ```bash
 # 使用 curl 测试接口
 curl -H "Authorization: Bearer <token>" \
-     http://localhost:8080/api/user/1 | jq
+     https://localhost:8080/api/user/1 | jq
 
 # 验证 CloudEvents 字段
-curl -s http://localhost:8080/api/user/1 | \
+curl -s https://localhost:8080/api/user/1 | \
   jq 'has("specversion") and has("id") and has("type") and has("source")'
 ```
 
