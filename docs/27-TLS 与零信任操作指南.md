@@ -14,6 +14,7 @@
 - Seata 无原生 TLS/认证，作为显式例外放在 `tx` 网络，仅 workflow/system 可访问（见 §19）。
 - 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
+  宿主机开发模式下 Java 进程也只监听回环地址（B5.10）。
 - 服务端以客户端证书的 SPIFFE URI SAN（CN 回退）做路径级服务间授权（B5.4/B5.8）；仍不引入本机服务网格或 OPA，方法级业务权限继续由 JWT 承担。
 
 ## 2. 证书
@@ -431,8 +432,11 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 ### 12.4 边界
 
 - 只收敛 Docker 编排发布的网络暴露面，不改变各组件内部的 TLS 配置。
-- 宿主机开发模式下由 `dev-init.sh` 直接启动的 Java 进程仍按 Spring Boot 默认监听所有网卡；
-  它与 Prometheus 的 `host-gateway` 采集方式耦合，其绑定地址留待 B5 收敛。
+- 宿主机开发模式下由 `dev-init.sh` 启动的 Java 进程只监听 `127.0.0.1`，不再按 Spring Boot 默认绑定全部网卡。
+  Prometheus/blackbox 通过 `host.docker.internal` 访问宿主机回环：Docker Desktop 自带代理；
+  原生 Docker 无法直连时，`dev-init.sh` 启动只绑定 Docker 网桥网关的 TCP relay（8080-8089），
+  不扩大 LAN 暴露面。relay 随 `--stop/down/purge` 停止。
+- Sentinel 客户端命令端口 8719 仍由 Sentinel 自身绑定策略决定，不承载业务请求，作为残余边界登记。
 - 中间件已按服务拆分账号（B5.5）：MySQL、Redis、Nacos 每服务独立，Silo 由文件/备份/AI 三个桶级账号隔离；
   权限边界仍保持共享库 DML，表级授权不在本节范围内。
 - RocketMQ 入口只接受 TLS 并启用 ACL，但客户端不校验服务端证书；Seata 无原生 TLS/认证，仅靠 `tx` 网络与回环发布隔离，均为显式例外。
@@ -1012,7 +1016,7 @@ scripts/tls-rotate-schedule.sh --print                     # 只输出将安装�
 
 - 只覆盖 Prometheus → exporter；Grafana/Thanos/Kibana 的内网调用仍使用既有 HTTPS。
 - 调度只负责检查、重签与按范围重启；CA 轮换、跨主机调度与滚动发布不在本批范围内。
-- Sentinel Dashboard、宿主机进程回环绑定仍是登记边界，不在本批范围内。
+- Sentinel Dashboard 仍是登记边界，不在本批范围内。
 
 ## 24. SPIFFE 工作负载身份（B5.8）
 

@@ -141,6 +141,10 @@ printf '\n===== 9. 日志与检索 TLS =====\n'
 printf '\n===== 10. 暴露面与网络分段 =====\n'
 "$HERE/exposure.sh" || fail "暴露面检查未通过"
 
+echo
+echo "===== 10b. 宿主机回环绑定 ====="
+"$HERE/host-loopback.sh" || fail "宿主机回环绑定检查未通过"
+
 printf '\n===== 11. 明文默认地址审计 =====\n'
 "$HERE/plaintext-audit.sh" || fail "明文默认地址审计未通过"
 

@@ -243,8 +243,113 @@ stop_frontend() {
     rm -f "$pidfile"
 }
 
+# 宿主回环 relay：原生 Docker 无法访问宿主机 127.0.0.1 时，把 Docker 网桥网关的同端口转发到回环。
+relay_pid() {
+    local pidfile="$LOG_DIR/host-loopback-relay.pid" pid
+    [ -f "$pidfile" ] || return 1
+    pid="$(cat "$pidfile")"
+    kill -0 "$pid" 2>/dev/null && printf '%s' "$pid"
+}
+
+stop_host_loopback_relay() {
+    local pid
+    pid="$(relay_pid)" || {
+        rm -f "$LOG_DIR/host-loopback-relay.pid"
+        return 0
+    }
+    log "  停止宿主回环 relay（pid $pid）"
+    kill "$pid" 2>/dev/null
+    for _ in $(seq 1 10); do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 1
+    done
+    kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
+    rm -f "$LOG_DIR/host-loopback-relay.pid"
+}
+
+docker_gateways() {
+    local net
+    docker network ls --format '{{.Name}}' 2>/dev/null | while IFS= read -r net; do
+        docker network inspect "$net" -f '{{range .IPAM.Config}}{{.Gateway}}{{"\n"}}{{end}}' 2>/dev/null
+    done | grep -E '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' | grep -v '^127\.' | sort -u | paste -sd, -
+}
+
+# 用临时回环监听器判断容器能否经 host.docker.internal 访问宿主机回环。
+# 返回 0 表示 Docker Desktop 代理可用，不需要 relay；返回 1 表示需要 relay。
+host_loopback_reachable_from_docker() {
+    local probe_port="${IBOOT_HOST_LOOPBACK_PROBE_PORT:-18099}" pid
+    python3 - "$probe_port" <<'PY' >/dev/null 2>&1 &
+import socket, sys
+s = socket.socket()
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(("127.0.0.1", int(sys.argv[1])))
+s.listen(1)
+s.settimeout(5)
+try:
+    s.accept()
+except OSError:
+    pass
+PY
+    pid=$!
+    sleep 1
+    if docker exec iboot-prometheus busybox nc -z -w 2 host.docker.internal "$probe_port" >/dev/null 2>&1; then
+        kill "$pid" 2>/dev/null || true
+        wait "$pid" 2>/dev/null || true
+        return 0
+    fi
+    kill "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+    return 1
+}
+
+start_host_loopback_relay() {
+    observability_enabled || {
+        log '  可观测平台未启用，跳过宿主回环 relay'
+        return 0
+    }
+    if [ "${IBOOT_HOST_LOOPBACK_RELAY:-auto}" = "false" ]; then
+        log '  宿主回环 relay 已禁用（IBOOT_HOST_LOOPBACK_RELAY=false）'
+        return 0
+    fi
+    local running
+    running="$(relay_pid)" || true
+    if [ -n "$running" ]; then
+        log "  宿主回环 relay 已在运行（pid $running）"
+        return 0
+    fi
+    command -v python3 >/dev/null 2>&1 || fail '缺少 python3，无法启动宿主回环 relay'
+    if ! docker inspect iboot-prometheus >/dev/null 2>&1; then
+        log '  Prometheus 未运行，跳过宿主回环 relay'
+        return 0
+    fi
+    if host_loopback_reachable_from_docker; then
+        log '  容器已可经 host.docker.internal 访问宿主机回环，跳过 relay'
+        return 0
+    fi
+    local binds
+    binds="$(docker_gateways || true)"
+    if [ -z "$binds" ]; then
+        log '  未发现 Docker 网桥网关，跳过宿主回环 relay'
+        return 0
+    fi
+    log "  启动宿主回环 relay：$binds -> 127.0.0.1:8080-8089"
+    nohup python3 "$ROOT/scripts/host-loopback-relay.py" \
+        --bind "$binds" --ports 8080-8089 \
+        --pid-file "$LOG_DIR/host-loopback-relay.pid" \
+        --log-file "$LOG_DIR/host-loopback-relay.log" >/dev/null 2>&1 &
+    local i
+    for i in $(seq 1 10); do
+        running="$(relay_pid)" || true
+        [ -n "$running" ] && break
+        sleep 1
+    done
+    [ -n "$running" ] || fail "宿主回环 relay 未启动，详见 $LOG_DIR/host-loopback-relay.log"
+    log "  宿主回环 relay 就绪（pid $running）"
+}
+
 stop_all_services() {
     local entry
+    stop_host_loopback_relay
     for entry in "${SERVICES[@]}"; do
         stop_service "${entry%%:*}"
     done
@@ -616,7 +721,8 @@ start_backend() {
                     env_opts+=(ELASTICSEARCH_USERNAME=iboot_monitor "ELASTICSEARCH_PASSWORD=$ES_MONITOR_PASSWORD")
                     ;;
             esac
-            nohup env "${env_opts[@]}" java "${java_opts[@]}" -jar "$name/target/$name-$VERSION.jar" > "$LOG_DIR/$name.log" 2>&1 &
+            nohup env "${env_opts[@]}" java "${java_opts[@]}" -jar "$name/target/$name-$VERSION.jar" \
+                --server.address=127.0.0.1 > "$LOG_DIR/$name.log" 2>&1 &
             echo $! > "$pidfile"
             log "  $name 启动中（pid $!，端口 $port）"
         fi
@@ -696,6 +802,13 @@ show_status() {
     else
         printf '  %-16s %-24s %s  %s\n' "iboot-portal" "未运行" "-" "$origin"
     fi
+    local relay
+    relay="$(relay_pid)" || true
+    if [ -n "$relay" ]; then
+        printf '  %-16s %-24s %s  %s\n' "host-relay" "运行中（pid $relay）" "回环转发" "8080-8089"
+    else
+        printf '  %-16s %-24s %s  %s\n' "host-relay" "未运行" "-" "8080-8089"
+    fi
 }
 
 case "$ACTION" in
@@ -729,6 +842,7 @@ case "$ACTION" in
         build_backend
         run_db_init
         start_backend
+        start_host_loopback_relay
         wait_backend || fail '服务未在预期时间内就绪'
         [ "$WITH_FRONTEND" -eq 1 ] && start_frontend
         log ''
