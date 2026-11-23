@@ -282,6 +282,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - `mysql-users-init`、`nacos-init`、`silo-init` 与 `es-users-init` 是一次性任务；`db-init` 依赖它们
   完成后再迁移与启动服务。
 - 业务服务只拿自己的 MySQL/Redis/Nacos 与 Silo 账号口令；`x-app-env` 会清空其它服务与根凭据。
+- MySQL 写权限按 `scripts/mysql-table-grants.tsv` 的表级矩阵授予，`db-init` 后由 `mysql-grants-init` 应用；Redis 命名用户限制键/频道前缀。
 - Nacos 客户端必须使用 `NACOS_SERVER_ADDR=https://nacos:8848`；`NACOS_ADDR` 仍是脚本使用的
   `host:port`。
 - Grafana 匿名只读（Viewer），管理员口令来自 `GRAFANA_ADMIN_PASSWORD`；本地 Sentinel

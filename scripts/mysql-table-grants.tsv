@@ -1,0 +1,56 @@
+# 每服务 MySQL 写表授权矩阵。
+#
+# 格式：service <TAB> table <TAB> privileges
+# table 支持末尾 * 通配（ACT_* / FLW_* / QRTZ_*），由 mysql-grants-init.sh 展开。
+# 所有数据服务另授予 iboot.* 的 SELECT（共享只读契约），不在此表重复。
+iboot_system	sys_config	INSERT,UPDATE,DELETE
+iboot_system	sys_dept	INSERT,UPDATE,DELETE
+iboot_system	sys_dict_data	INSERT,UPDATE,DELETE
+iboot_system	sys_dict_type	INSERT,UPDATE,DELETE
+iboot_system	sys_leave_quota_log	INSERT,UPDATE,DELETE
+iboot_system	sys_leave_quota_transfer	INSERT,UPDATE,DELETE
+iboot_system	sys_login_log	INSERT,UPDATE,DELETE
+iboot_system	sys_menu	INSERT,UPDATE,DELETE
+iboot_system	sys_operate_log	INSERT,UPDATE,DELETE
+iboot_system	sys_post	INSERT,UPDATE,DELETE
+iboot_system	sys_role	INSERT,UPDATE,DELETE
+iboot_system	sys_role_dept	INSERT,UPDATE,DELETE
+iboot_system	sys_role_menu	INSERT,UPDATE,DELETE
+iboot_system	sys_user	INSERT,UPDATE,DELETE
+iboot_system	sys_user_leave_quota	INSERT,UPDATE,DELETE
+iboot_system	sys_user_pat	INSERT,UPDATE,DELETE
+iboot_system	sys_user_post	INSERT,UPDATE,DELETE
+iboot_system	sys_user_role	INSERT,UPDATE,DELETE
+iboot_workflow	biz_leave_application	INSERT,UPDATE,DELETE
+iboot_workflow	biz_notification_outbox	INSERT,UPDATE,DELETE
+iboot_workflow	ACT_*	INSERT,UPDATE,DELETE
+iboot_workflow	FLW_*	INSERT,UPDATE,DELETE
+iboot_workflow	sys_operate_log	INSERT
+iboot_file	sys_file	INSERT,UPDATE,DELETE
+iboot_file	sys_operate_log	INSERT
+iboot_notify	sys_message	INSERT,UPDATE,DELETE
+iboot_notify	sys_message_receiver	INSERT,UPDATE,DELETE
+iboot_notify	sys_message_template	INSERT,UPDATE,DELETE
+iboot_notify	sys_notice	INSERT,UPDATE,DELETE
+iboot_notify	sys_notice_read	INSERT,UPDATE,DELETE
+iboot_notify	sys_notification_delivery	INSERT,UPDATE,DELETE
+iboot_notify	sys_operate_log	INSERT
+iboot_job	db_backup_record	INSERT,UPDATE,DELETE
+iboot_job	db_restore_record	INSERT,UPDATE,DELETE
+iboot_job	sys_job	INSERT,UPDATE,DELETE
+iboot_job	sys_job_log	INSERT,UPDATE,DELETE
+iboot_job	QRTZ_*	INSERT,UPDATE,DELETE
+iboot_job	sys_operate_log	INSERT
+iboot_monitor	sys_login_log	INSERT,UPDATE,DELETE
+iboot_monitor	sys_operate_log	INSERT,UPDATE,DELETE
+iboot_auth	sys_login_log	INSERT
+iboot_auth	sys_user	INSERT,UPDATE,DELETE
+iboot_auth	sys_user_pat	INSERT,UPDATE,DELETE
+iboot_auth	sys_operate_log	INSERT
+iboot_ai	ai_agent	INSERT,UPDATE,DELETE
+iboot_ai	ai_agent_run	INSERT,UPDATE,DELETE
+iboot_ai	ai_document	INSERT,UPDATE,DELETE
+iboot_ai	ai_document_chunk	INSERT,UPDATE,DELETE
+iboot_ai	ai_kb_share_dept	INSERT,UPDATE,DELETE
+iboot_ai	ai_knowledge_base	INSERT,UPDATE,DELETE
+iboot_ai	sys_operate_log	INSERT

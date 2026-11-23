@@ -4,8 +4,8 @@
 # 由 compose 的一次性服务 mysql-users-init 执行，也可在宿主机开发时通过
 # `docker compose run --rm mysql-users-init` 复用同一份脚本。
 #
-# 每个数据服务使用自己的账号 iboot_<service>，只拥有 iboot 库的 DML 权限；
-# 共享账号 iboot_app 会被删除，避免服务回退到共享身份。
+# 每个数据服务使用自己的账号 iboot_<service>；账号在此只创建与更新，具体表级写权限由
+# db-init 建表后执行的 mysql-grants-init.sh 授予。
 #
 # 环境变量：
 #   MYSQL_HOST / MYSQL_PORT / MYSQL_ROOT_PASSWORD
@@ -50,7 +50,7 @@ for service in "${SERVICES[@]}"; do
     SQL+="
 CREATE USER IF NOT EXISTS '${user_sql}'@'%' IDENTIFIED BY '${password_sql}';
 ALTER USER '${user_sql}'@'%' IDENTIFIED BY '${password_sql}';
-GRANT SELECT, INSERT, UPDATE, DELETE ON \`iboot\`.* TO '${user_sql}'@'%';
+GRANT USAGE ON *.* TO '${user_sql}'@'%';
 "
 done
 

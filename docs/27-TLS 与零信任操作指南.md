@@ -452,10 +452,10 @@ B4.3 在 TLS 与网络边界之上补账号认证，但当时是共享账号方�
 
 | 组件 | 账号 | 用途 | 权限 |
 |---|---|---|---|
-| MySQL | `iboot_<service>` | 八个数据服务（system/workflow/file/notify/job/monitor/auth/ai） | `iboot` 库 `SELECT/INSERT/UPDATE/DELETE`，无 DDL |
+| MySQL | `iboot_<service>` | 八个数据服务（system/workflow/file/notify/job/monitor/auth/ai） | 共享表 `SELECT` + 本服务写表 `INSERT/UPDATE/DELETE`；无库级 DML、无 DDL |
 | MySQL | `root` | 账号初始化与迁移 | 管理权限；不注入业务服务 |
 | MySQL | `iboot_exporter` | mysqld-exporter | `PROCESS`、`REPLICATION CLIENT`、`performance_schema` 只读 |
-| Redis | `iboot_<service>` | 八个数据服务 | 命名 ACL 账号，全部命令；口令同服务 MySQL 身份 |
+| Redis | `iboot_<service>` | 八个数据服务 | 命名 ACL 账号，按登记键/频道模式限制；monitor 键空间浏览例外 |
 | Redis | `iboot_exporter` | redis-exporter 与健康检查 | 只读监控命令集 |
 | Nacos | `iboot_<service>` | 十个服务（含 gateway/ops） | 绑定 `iboot_role`，配置读写 |
 | Nacos | `iboot` | 管理脚本 | 运维账号；不注入业务服务 |
@@ -466,6 +466,9 @@ B4.3 在 TLS 与网络边界之上补账号认证，但当时是共享账号方�
 | Neo4j | `neo4j` | AI 图能力 | 社区版单账号；口令由 `NEO4J_PASSWORD` 注入，缺失时编排失败 |
 
 共享账号 `iboot_app` 已删除；服务账号名由服务名把 `-` 换成 `_` 得到（如 `iboot-system` → `iboot_system`）。
+
+B5.13 起，MySQL 写权限由 `scripts/mysql-table-grants.tsv` 与 `scripts/mysql-grants-init.sh` 在建表后授予；
+账号创建脚本不再授予库级 DML。Redis 键模式在 compose 的 ACL 用户定义中维护。
 
 ### 13.2 初始化
 
@@ -918,7 +921,7 @@ bash scripts/regress/regress.sh
 
 ### 21.4 边界
 
-- 这是身份拆分，不是表级/键级授权重做：MySQL 仍是共享库 DML，Redis 仍允许业务键空间。
+- B5.13 已完成表级/键级授权：MySQL 写权限按表授予，Redis 按前缀限制；monitor 的键空间浏览是显式例外。
 - 每服务口令默认在 MySQL/Redis/Nacos 间复用；生产应通过独立变量覆盖后分别轮换。
 - Kafka 日志账号保持按用途（生产/消费/运维）区分；Neo4j 社区版仍是单账号。
 - 共享库表级只读契约不变，见 [docs/23](<./23-微服务底座操作指南.md>) §11.12。
