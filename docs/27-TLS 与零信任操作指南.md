@@ -468,7 +468,8 @@ B4.3 在 TLS 与网络边界之上补账号认证，但当时是共享账号方�
 共享账号 `iboot_app` 已删除；服务账号名由服务名把 `-` 换成 `_` 得到（如 `iboot-system` → `iboot_system`）。
 
 B5.13 起，MySQL 写权限由 `scripts/mysql-table-grants.tsv` 与 `scripts/mysql-grants-init.sh` 在建表后授予；
-账号创建脚本不再授予库级 DML。Redis 键模式在 compose 的 ACL 用户定义中维护。
+账号创建脚本不再授予库级 DML。Seata 参与方 `system`/`workflow` 额外拥有共享 `undo_log` 的 DML；
+Redis 键模式在 compose 的 ACL 用户定义中维护。
 
 ### 13.2 初始化
 

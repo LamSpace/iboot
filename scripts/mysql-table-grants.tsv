@@ -21,11 +21,13 @@ iboot_system	sys_user_leave_quota	INSERT,UPDATE,DELETE
 iboot_system	sys_user_pat	INSERT,UPDATE,DELETE
 iboot_system	sys_user_post	INSERT,UPDATE,DELETE
 iboot_system	sys_user_role	INSERT,UPDATE,DELETE
+iboot_system	undo_log	INSERT,UPDATE,DELETE
 iboot_workflow	biz_leave_application	INSERT,UPDATE,DELETE
 iboot_workflow	biz_notification_outbox	INSERT,UPDATE,DELETE
 iboot_workflow	ACT_*	INSERT,UPDATE,DELETE
 iboot_workflow	FLW_*	INSERT,UPDATE,DELETE
 iboot_workflow	sys_operate_log	INSERT
+iboot_workflow	undo_log	INSERT,UPDATE,DELETE
 iboot_file	sys_file	INSERT,UPDATE,DELETE
 iboot_file	sys_operate_log	INSERT
 iboot_notify	sys_message	INSERT,UPDATE,DELETE
