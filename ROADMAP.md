@@ -143,7 +143,7 @@ v0–v4 已完成：登录与只读查询（v1）、运维写命令（v2，含�
 | B2 | 门户→网关、服务间、JWKS、MySQL/Redis/Silo/Neo4j | 已完成：`openspec/changes/archive/2026-11-20-add-internal-tls/`；Nacos/ES/Kafka/RocketMQ/Seata 不在本批 |
 | B3 | ES/Kafka/Logstash 日志与检索面；RocketMQ 仅作为加密通道 | 已完成：`openspec/changes/archive/2026-11-21-add-log-search-tls/` |
 | B4 | 入口收敛、中间件认证、网络分段、每服务 DB 账号 | 进行中：先做 Nacos TLS（`openspec/changes/add-nacos-tls/`） |
-| B5 | 服务间 mTLS、工作负载身份、中间件身份收尾 | 进行中：B5.1 每服务证书、B5.2 服务间 mTLS、B5.3 RocketMQ TLS-only 与 Seata 例外隔离、B5.4 服务间路径级授权、B5.5 中间件每服务身份、B5.1–B5.9 已完成：每服务证书、服务间 mTLS、RocketMQ TLS-only 与 ACL、路径级授权、中间件每服务身份、exporter mTLS、证书轮换与 SPIFFE 身份、证书轮换自动调度；剩余 RocketMQ 服务端证书校验、宿主机进程回环绑定、Sentinel Dashboard TLS、表级/键级最小权限、SPIRE/OPA/服务网格 |
+| B5 | 服务间 mTLS、工作负载身份、中间件身份收尾 | 进行中：B5.1 每服务证书、B5.2 服务间 mTLS、B5.3 RocketMQ TLS-only 与 Seata 例外隔离、B5.4 服务间路径级授权、B5.5 中间件每服务身份、B5.1–B5.10 已完成：每服务证书、服务间 mTLS、RocketMQ TLS-only 与 ACL、路径级授权、中间件每服务身份、exporter mTLS、证书轮换与 SPIFFE 身份、证书轮换自动调度、宿主机进程回环绑定；剩余 RocketMQ 服务端证书校验、Sentinel Dashboard TLS、表级/键级最小权限、SPIRE/OPA/服务网格 |
 
 边界：B1 只加密公开入口；B2 加密门户→网关、服务间与核心数据面，网关 `8088` 改为
 HTTPS 但仍是内部地址；Nacos 的 TLS 在 B4 完成。不在本地手搓服务网格，
