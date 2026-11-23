@@ -79,9 +79,9 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | `iboot-workflow` | 8086 | 请假审批与 Flowable 流程引擎 | `ACT_*` / `FLW_RU_*` / 审批表 |
 | `iboot-monitor` | 8087 | 操作/登录/运行日志、在线会话、资源监控 | `sys_operate_log` / `sys_login_log` |
 | `iboot-ops` | 8089 | 运维控制台：注册中心发现实例、单实例巡检、运行期日志级别调整 | — |
-| `sentinel-dashboard` | 8858 | 治理控制台：单资源流量、阻塞与规则查看；本地必选，生产必须认证 | — |
+| `sentinel-dashboard` | 8858 | 治理控制台：单资源流量、阻塞与规则查看；HTTPS + 登录，本地必选 | — |
 | `iboot-kernel` | — | 共享内核库（统一响应、鉴权、审计写入），不独立部署 | — |
-| `iboot-service-authz` | — | 服务间授权库（证书 CN 身份 + 路径白名单），不独立部署 | — |
+| `iboot-service-authz` | — | 服务间授权库（SPIFFE/CN 身份 + 路径规则 + OPA 决策），不独立部署 | — |
 | `iboot-sentinel` | — | 治理指标桥接库（MetricExtension → Micrometer），不独立部署 | — |
 
 **数据边界**：所有服务共用一个数据库 `iboot`；每张表只有一个所有者，其余服务只读登记的表与列。
@@ -96,13 +96,14 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 |---|---|
 | 运行时 | Java 25（虚拟线程已启用） |
 | 框架 | Spring Boot 4.0.3、Spring Framework 7、Spring Security 7 |
-| 微服务 | Spring Cloud 2025.1.0、Spring Cloud Alibaba 2025.1.0.0（Nacos 3.3.0、Sentinel 1.8.10、Seata 2.5.0）、Spring Cloud Gateway |
-| 持久层 | MyBatis 4.0.1 + PageHelper 2.1.1、Druid 1.2.28、Flyway、MySQL 8.0.45 |
-| 缓存 | Redis 7.0.14 + Caffeine 3.1.8（二级缓存，Pub/Sub 失效广播） |
+| 微服务 | Spring Cloud 2025.1.0、Spring Cloud Alibaba 2025.1.0.0（Nacos 3.3.0、Sentinel Dashboard 1.8.10 / 客户端 1.8.9、Seata 2.5.0 客户端 / 2.6.0 TC）、Spring Cloud Gateway |
+| 持久层 | MyBatis 4.0.1 + PageHelper 2.1.1、Druid 1.2.28、Flyway、MySQL 8.4.13 |
+| 缓存 | Redis 8.8.4 + Caffeine 3.1.8（二级缓存，Pub/Sub 失效广播） |
 | 认证 | OAuth2 / OIDC 授权码 + PKCE（Spring Authorization Server）、JWT、RBAC 与五级数据权限 |
-| 文件与检索 | Silo（MinIO 兼容，io.minio 8.5.7 客户端；另有本地与 OSS 实现）、Elasticsearch 9.2.3（客户端 9.2.5） |
+| 服务间安全 | 每服务 mTLS 证书、SPIFFE 工作负载身份、路径级授权、OPA 集中决策；SPIRE 为 opt-in 演示 profile |
+| 文件与检索 | Silo（MinIO 兼容，io.minio 8.5.7 客户端；另有本地与 OSS 实现）、Elasticsearch 9.5.5（客户端 9.2.5） |
 | 流程与调度 | Flowable 8.0.0、Quartz（集群模式） |
-| AI | Spring AI 2.0.1、AgentScope Java 2.0.1、Neo4j 5.26.29（驱动 6.0.2）、PDFBox 3.0.5、Apache POI 5.4.1 |
+| AI | Spring AI 2.0.1、AgentScope Java 2.0.1、Neo4j 5.26.33（驱动 6.0.2）、PDFBox 3.0.5、Apache POI 5.4.1 |
 | 其他 | MapStruct 1.6.3、FastExcel 0.19.0、CloudEvents 4.0.1、Springdoc 3.0.2、Testcontainers 2.0.5 |
 | 可观测 | Actuator + Micrometer、Prometheus / Grafana / Alertmanager / Thanos、ELK、Tempo 链路追踪；SkyWalking 作为可选的 APM 对比实验栈 |
 
@@ -114,7 +115,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | UI 与状态 | Element Plus 2.6、Pinia 2.1、Vue Router 4.3 |
 | 其他 | vue-i18n 9.14、axios 1.6、markdown-it、DOMPurify、Sass |
 
-**中间件**：`docker/docker-compose.yml` 提供 28 个常驻容器与 3 个可选 SkyWalking 容器（`apm` profile，默认不启动），按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo，`observability` 为 Prometheus/Grafana/Kibana/Alertmanager/Thanos 与 exporter）；`dev-init.sh` 默认启动开发核心、集中日志与 `observability` profile。Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 与 TLS 入口 `rocketmq-tls` 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入。SkyWalking 对比实验的启停与验收见 [docs/24](<./docs/24-SkyWalking 与 Tempo 对比实验.md>)。
+**中间件**：`docker/docker-compose.yml` 提供 29 个常驻容器与 3 个可选 SkyWalking 容器（`apm` profile，默认不启动），按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo，`observability` 为 Prometheus/Grafana/Kibana/Alertmanager/Thanos 与 exporter，`spire` 为 Workload API 演示）；`dev-init.sh` 默认启动开发核心、集中日志与 `observability` profile。Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 与 TLS 入口 `rocketmq-tls` 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入；OPA 默认常驻，服务通过 `IBOOT_SERVICE_AUTHORIZATION_OPA_URL` 获取集中授权决策。SkyWalking 对比实验的启停与验收见 [docs/24](<./docs/24-SkyWalking 与 Tempo 对比实验.md>)。
 
 ## 功能清单
 
@@ -122,7 +123,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 
 **认证 `iboot-auth`**：OIDC 发现文档与 JWK 公钥集；浏览器授权码 + PKCE 登录；登出与自助注册；认证服务托管的登录页。
 
-**文件 `iboot-file`**：上传、下载、预览、分类；Silo / 本地 / OSS 三种存储实现按配置切换。全量 Docker 部署默认使用 Silo：容器内 endpoint 为 `http://silo:9000`，预签名地址为浏览器可达的 `http://localhost:9000`；宿主机开发读取 `sys_config` 中的 `http://localhost:9000`，可在 `.env` 用 `IBOOT_FILE_STORAGE_TYPE=local` 切回本地磁盘。
+**文件 `iboot-file`**：上传、下载、预览、分类；Silo / 本地 / OSS 三种存储实现按配置切换。全量 Docker 部署默认使用 Silo：容器内 endpoint 为 `https://silo:9000`，预签名地址为浏览器可达的 `https://localhost:9000`；宿主机开发由 `dev-init.sh` 导出 `https://localhost:9000`，可在 `.env` 用 `IBOOT_FILE_STORAGE_TYPE=local` 切回本地磁盘。
 
 **消息与通知 `iboot-notify`**：站内消息、公告、消息模板、已读同步；站内 / 邮件 / 钉钉 / 短信四个投递渠道（短信默认关闭）；SSE 单播、组播、广播；公告与消息的全文检索。
 
@@ -205,19 +206,24 @@ cnpm install
 cnpm run dev --host
 ```
 
-启动服务前先运行 `iboot-db-init` 建库建表；`scripts/dev-init.sh` 会自动完成这一步：
+启动服务前先运行 `iboot-db-init` 建库建表，并由 `mysql-users-init` / `mysql-grants-init`
+创建每服务账号与表级授权；`scripts/dev-init.sh` 会自动完成这三步：
 
 ```bash
+set -a; source .env; set +a
 mvn -pl iboot-db-init -am package
-MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root MYSQL_PASSWORD=root \
-  java -jar iboot-db-init/target/iboot-db-init-1.0.0-exec.jar
+MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root \
+  MYSQL_PASSWORD="$MYSQL_ROOT_PASSWORD" MYSQL_TLS_ENABLED=true \
+  java -Djavax.net.ssl.trustStore=docker/certs/truststore.p12 \
+       -Djavax.net.ssl.trustStorePassword=changeit \
+       -jar iboot-db-init/target/iboot-db-init-1.0.0-exec.jar
 ```
 
 **访问与验证**
 
 - 前端开发地址：<https://localhost:5173>，API 经 Vite 反代到网关 `8088`；浏览器需信任本地 CA
-- 网关健康检查：<http://localhost:8088/actuator/health>（内部地址，不是客户端入口）
-- Sentinel Dashboard：<http://localhost:8858>（本地开发必选，生产需认证）
+- 网关健康检查：<https://localhost:8088/actuator/health>（内部地址，不是客户端入口；需客户端证书）
+- Sentinel Dashboard：<https://localhost:8858>（HTTPS + 登录，本地开发必选）
 - Nacos 控制台：<https://localhost:8849/next/>（本地开发默认关闭控制台登录）
 - 门户“微服务治理”：登录后访问 <https://localhost:5173/dashboard/nacos> 与 <https://localhost:5173/dashboard/sentinel>
 - 证书、信任与排障见 [docs/27](<./docs/27-TLS 与零信任操作指南.md>)

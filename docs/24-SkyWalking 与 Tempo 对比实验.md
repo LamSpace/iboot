@@ -23,6 +23,9 @@
 | Tempo | `grafana/tempo:2.10.8` | 既有主链路，未改动 |
 | 应用侧 | `spring-boot-starter-opentelemetry` | 既有 SDK 埋点，未改动 |
 
+> 上表是实验记录版本。当前 `docker-compose.yml` 已升级到 OAP 11.1.0 / Horizon UI 1.1.0 /
+> BanyanDB 0.11.2 / Tempo 2.10.9；OAP 与 BanyanDB 仍锁定 server API `0.11`，结论不变。
+
 ## 24.3 启动与验收
 
 ```bash
