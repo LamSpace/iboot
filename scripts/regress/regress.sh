@@ -124,6 +124,10 @@ echo
 echo "===== 7b. 证书轮换检查模式 ====="
 "$ROOT/scripts/tls-rotate.sh" --check || fail "证书轮换检查未通过"
 
+echo
+echo "===== 7c. 证书轮换调度 ====="
+"$HERE/tls-rotation-schedule.sh" || fail "证书轮换调度检查未通过"
+
 printf '\n===== 8. 中间件认证 =====\n'
 "$HERE/middleware-auth.sh" || fail "中间件认证检查未通过"
 
