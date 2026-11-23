@@ -73,15 +73,28 @@ if ! pgrep -f 'iboot-.*\.jar' >/dev/null 2>&1; then
 else
     host_ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") {print $(i+1); exit}}')"
     [ -n "$host_ip" ] || host_ip="$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2; exit}' | cut -d/ -f1)"
+    relay_pid="$(cat "$ROOT/logs/host-loopback-relay.pid" 2>/dev/null || true)"
     for port in 8080 8081 8082 8083 8084 8085 8086 8087 8088 8089; do
-        addrs="$(ss -ltnH "sport = :$port" 2>/dev/null | awk '{print $4}' | sort -u)"
-        if [ -z "$addrs" ]; then
+        lines="$(ss -ltnpH "sport = :$port" 2>/dev/null)"
+        if [ -z "$lines" ]; then
             reg_log "  端口 $port 未监听，跳过"
             continue
         fi
-        bad="$(printf '%s\n' "$addrs" | grep -vE '^(127\.0\.0\.1|\[::1\]):'"$port"'$' || true)"
+        bad=""
+        while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            addr="$(printf '%s\n' "$line" | awk '{print $4}')"
+            case "$addr" in
+                "127.0.0.1:$port"|"[::1]:$port"|"[::ffff:127.0.0.1]:$port") continue ;;
+            esac
+            # relay 绑定 Docker 网桥网关是预期行为；按 PID 排除，避免把转发器当成服务端口。
+            if [ -n "$relay_pid" ] && printf '%s\n' "$line" | grep -q "pid=$relay_pid,"; then
+                continue
+            fi
+            bad="$bad $addr"
+        done <<< "$lines"
         if [ -z "$bad" ]; then
-            reg_pass "端口 $port 只绑定回环地址"
+            reg_pass "端口 $port 只绑定回环地址（relay 网关监听已排除）"
         else
             reg_fail "端口 $port 绑定到非回环地址：$bad"
         fi
@@ -98,7 +111,8 @@ fi
 reg_log "== 4. relay 绑定范围 =="
 if [ -f "$ROOT/logs/host-loopback-relay.pid" ] \
     && kill -0 "$(cat "$ROOT/logs/host-loopback-relay.pid")" 2>/dev/null; then
-    relay_addrs="$(ss -ltnH 2>/dev/null | awk '$4 ~ /:(808[0-9]|8089)$/ {print $4}' | sort -u | grep -vE '^(127\.0\.0\.1|\[::1\]):' || true)"
+    relay_addrs="$(ss -ltnH 2>/dev/null | awk '$4 ~ /:(808[0-9]|8089)$/ {print $4}' | sort -u \
+        | grep -vE '^(127\.0\.0\.1|\[::1\]|\[::ffff:127\.0\.0\.1\]):' || true)"
     if [ -z "$relay_addrs" ]; then
         reg_log "  [SKIP] relay 运行但未发现非回环监听（可能尚未转发）"
     elif printf '%s\n' "$relay_addrs" | grep -qE '^(0\.0\.0\.0|\*|\[::\]):'; then
