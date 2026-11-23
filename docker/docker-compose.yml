@@ -209,7 +209,29 @@ services:
     networks:
       - data
 
-  # ==================== 应用服务 ====================
+    # 建表后应用表级写权限；业务服务依赖它完成。
+  mysql-grants-init:
+    image: mysql:8.4.13
+    container_name: iboot-mysql-grants-init
+    entrypoint: ["/bin/bash", "/scripts/mysql-grants-init.sh"]
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}
+      MYSQL_DATABASE: iboot
+      MYSQL_GRANTS_FILE: /scripts/mysql-table-grants.tsv
+    volumes:
+      - ../scripts/mysql-grants-init.sh:/scripts/mysql-grants-init.sh:ro
+      - ../scripts/mysql-table-grants.tsv:/scripts/mysql-table-grants.tsv:ro
+      - ./certs/runtime:/certs:ro
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - data
+
+# ==================== 应用服务 ====================
   iboot-system:
     <<: *app-common
     container_name: iboot-system
@@ -259,7 +281,7 @@ services:
         condition: service_healthy
       silo:
         condition: service_healthy
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-ai:
@@ -309,7 +331,7 @@ services:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-file:
@@ -353,7 +375,7 @@ services:
         condition: service_completed_successfully
       iboot-system:
         condition: service_healthy
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-auth:
@@ -393,7 +415,7 @@ services:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-notify:
@@ -438,7 +460,7 @@ services:
         condition: service_healthy
       rocketmq-acl-init:
         condition: service_completed_successfully
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-job:
@@ -482,7 +504,7 @@ services:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-workflow:
@@ -527,7 +549,7 @@ services:
         condition: service_healthy
       rocketmq-acl-init:
         condition: service_completed_successfully
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-monitor:
@@ -568,7 +590,7 @@ services:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-gateway:
@@ -605,7 +627,7 @@ services:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-ops:
@@ -643,7 +665,7 @@ services:
         condition: service_healthy
       iboot-system:
         condition: service_healthy
-      db-init:
+      mysql-grants-init:
         condition: service_completed_successfully
 
   iboot-portal:
@@ -730,14 +752,14 @@ services:
       --tls-ca-cert-file /certs/rootCA.pem
       --tls-auth-clients no
       --user default off
-      --user iboot_system on ">$$MIDDLEWARE_SYSTEM_PASSWORD" "~*" "&*" "+@all"
-      --user iboot_workflow on ">$$MIDDLEWARE_WORKFLOW_PASSWORD" "~*" "&*" "+@all"
-      --user iboot_file on ">$$MIDDLEWARE_FILE_PASSWORD" "~*" "&*" "+@all"
-      --user iboot_notify on ">$$MIDDLEWARE_NOTIFY_PASSWORD" "~*" "&*" "+@all"
-      --user iboot_job on ">$$MIDDLEWARE_JOB_PASSWORD" "~*" "&*" "+@all"
+      --user iboot_system on ">$$MIDDLEWARE_SYSTEM_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_tokens:*" "~pat_last_used:*" "~sys_config::*" "&cache:evict" "+@all"
+      --user iboot_workflow on ">$$MIDDLEWARE_WORKFLOW_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
+      --user iboot_file on ">$$MIDDLEWARE_FILE_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
+      --user iboot_notify on ">$$MIDDLEWARE_NOTIFY_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "~iboot:notify:*" "&iboot:push:events" "+@all"
+      --user iboot_job on ">$$MIDDLEWARE_JOB_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
       --user iboot_monitor on ">$$MIDDLEWARE_MONITOR_PASSWORD" "~*" "&*" "+@all"
-      --user iboot_auth on ">$$MIDDLEWARE_AUTH_PASSWORD" "~*" "&*" "+@all"
-      --user iboot_ai on ">$$MIDDLEWARE_AI_PASSWORD" "~*" "&*" "+@all"
+      --user iboot_auth on ">$$MIDDLEWARE_AUTH_PASSWORD" "~login_tokens:*" "~online_token:*" "~login_retry:*" "%R~pat_tokens:*" "~pat_tokens:*" "~pat_last_used:*" "+@all"
+      --user iboot_ai on ">$$MIDDLEWARE_AI_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "~iboot:ai:*" "+@all"
       --user iboot_exporter on ">$$REDIS_EXPORTER_PASSWORD" "~*" "+@read" "+@connection"
       "+info" "+dbsize" "+slowlog" "+memory" "+client|list" "+config|get" "+command" "+ping" "+cluster|info" "+latency"'
     environment:

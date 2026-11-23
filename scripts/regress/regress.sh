@@ -132,6 +132,10 @@ printf '\n===== 8. 中间件认证 =====\n'
 "$HERE/middleware-auth.sh" || fail "中间件认证检查未通过"
 
 echo
+echo "===== 8a. 表级/键级最小权限 ====="
+"$HERE/middleware-least-privilege.sh" || fail "最小权限检查未通过"
+
+echo
 echo "===== 8b. RocketMQ ACL ====="
 "$HERE/rocketmq-acl.sh" || fail "RocketMQ ACL 检查未通过"
 

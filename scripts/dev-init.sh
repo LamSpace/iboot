@@ -573,6 +573,9 @@ run_db_init() {
     MYSQL_USERNAME=root MYSQL_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
         java "${java_opts[@]}" -jar "iboot-db-init/target/iboot-db-init-$VERSION-exec.jar" \
         || fail '数据库初始化失败（iboot-db-init）'
+    log '  应用 MySQL 表级授权...'
+    "${COMPOSE[@]}" run --rm --no-deps mysql-grants-init >/dev/null \
+        || fail 'MySQL 表级授权失败（mysql-grants-init）'
     log '  数据库就绪'
 }
 
