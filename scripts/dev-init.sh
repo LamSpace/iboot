@@ -68,7 +68,8 @@ if [ -f "$ROOT/.env" ]; then
 fi
 
 # 中间件账号鉴权：缺少凭据时不启动，避免回退到默认口令。
-for required in MYSQL_ROOT_PASSWORD MYSQL_EXPORTER_PASSWORD \
+for required in MYSQL_ROOT_PASSWORD MYSQL_MIGRATOR_PASSWORD MYSQL_PROVISIONER_PASSWORD \
+    MYSQL_EXPORTER_PASSWORD \
     MIDDLEWARE_SYSTEM_PASSWORD MIDDLEWARE_WORKFLOW_PASSWORD MIDDLEWARE_FILE_PASSWORD \
     MIDDLEWARE_NOTIFY_PASSWORD MIDDLEWARE_JOB_PASSWORD MIDDLEWARE_MONITOR_PASSWORD \
     MIDDLEWARE_AUTH_PASSWORD MIDDLEWARE_AI_PASSWORD MIDDLEWARE_GATEWAY_PASSWORD \
@@ -571,8 +572,8 @@ run_db_init() {
     else
         export MYSQL_TLS_ENABLED=false
     fi
-    # 迁移需要 DDL；业务服务使用各自的 iboot_<service> 账号。
-    MYSQL_USERNAME=root MYSQL_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
+    # 迁移需要 DDL；使用专用迁移账号，业务服务使用各自的 iboot_<service>。
+    MYSQL_USERNAME=iboot_migrator MYSQL_PASSWORD="${MYSQL_MIGRATOR_PASSWORD}" \
         java "${java_opts[@]}" -jar "iboot-db-init/target/iboot-db-init-$VERSION-exec.jar" \
         || fail '数据库初始化失败（iboot-db-init）'
     log '  应用 MySQL 表级授权...'
@@ -645,7 +646,8 @@ start_backend() {
                 -u REDIS_EXPORTER_PASSWORD
                 # 清空共享身份与 Silo 根凭据，避免子进程继承 .env 中的其它身份。
                 -u MYSQL_USERNAME -u MYSQL_PASSWORD -u REDIS_USERNAME -u REDIS_PASSWORD
-                -u MYSQL_ROOT_PASSWORD -u MYSQL_EXPORTER_PASSWORD
+                -u MYSQL_ROOT_PASSWORD -u MYSQL_MIGRATOR_PASSWORD -u MYSQL_PROVISIONER_PASSWORD
+                -u MYSQL_EXPORTER_PASSWORD
                 -u SILO_ROOT_USER -u SILO_ROOT_PASSWORD -u NACOS_ADMIN_PASSWORD
                 -u NACOS_USERNAME -u NACOS_PASSWORD
                 -u SILO_FILE_ACCESS_KEY -u SILO_FILE_SECRET_KEY

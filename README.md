@@ -212,8 +212,8 @@ cnpm run dev --host
 ```bash
 set -a; source .env; set +a
 mvn -pl iboot-db-init -am package
-MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=root \
-  MYSQL_PASSWORD="$MYSQL_ROOT_PASSWORD" MYSQL_TLS_ENABLED=true \
+MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=iboot_migrator \
+  MYSQL_PASSWORD="$MYSQL_MIGRATOR_PASSWORD" MYSQL_TLS_ENABLED=true \
   java -Djavax.net.ssl.trustStore=docker/certs/truststore.p12 \
        -Djavax.net.ssl.trustStorePassword=changeit \
        -jar iboot-db-init/target/iboot-db-init-1.0.0-exec.jar

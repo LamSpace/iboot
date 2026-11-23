@@ -5,14 +5,15 @@
 # 账号本身由 mysql-users-init 创建；本脚本先撤销旧授权，再按 scripts/mysql-table-grants.tsv 授予。
 #
 # 环境变量：
-#   MYSQL_HOST / MYSQL_PORT / MYSQL_ROOT_PASSWORD / MYSQL_DATABASE
+#   MYSQL_HOST / MYSQL_PORT / MYSQL_ADMIN_USER / MYSQL_ADMIN_PASSWORD / MYSQL_DATABASE
 #   MYSQL_GRANTS_FILE（默认 /scripts/mysql-table-grants.tsv）
 
 set -euo pipefail
 
 MYSQL_HOST="${MYSQL_HOST:-mysql}"
 MYSQL_PORT="${MYSQL_PORT:-3306}"
-MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}"
+MYSQL_ADMIN_USER="${MYSQL_ADMIN_USER:-iboot_provisioner}"
+MYSQL_ADMIN_PASSWORD="${MYSQL_ADMIN_PASSWORD:?MYSQL_ADMIN_PASSWORD 必须在 .env 中设置}"
 MYSQL_DATABASE="${MYSQL_DATABASE:-iboot}"
 GRANTS_FILE="${MYSQL_GRANTS_FILE:-/scripts/mysql-table-grants.tsv}"
 
@@ -26,12 +27,12 @@ sql_quote() {
 }
 
 mysql_exec() {
-    MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql \
+    MYSQL_PWD="$MYSQL_ADMIN_PASSWORD" mysql \
         --protocol=TCP \
         --connect-timeout=5 \
         --ssl-mode=VERIFY_IDENTITY \
         --ssl-ca=/certs/rootCA.pem \
-        -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u root "$@"
+        -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_ADMIN_USER" "$@"
 }
 
 for _ in $(seq 1 60); do

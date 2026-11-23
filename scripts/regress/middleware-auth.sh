@@ -2,7 +2,8 @@
 # 中间件账号鉴权回归：每服务身份矩阵、最小权限、Redis ACL、Silo 桶级账号、Nacos 鉴权。
 #
 # 前置：中间件与服务已启动，根目录 .env 或环境变量提供受管凭据。
-# 环境变量：MYSQL_ROOT_PASSWORD、MYSQL_EXPORTER_PASSWORD、
+# 环境变量：MYSQL_ROOT_PASSWORD、MYSQL_MIGRATOR_PASSWORD、MYSQL_PROVISIONER_PASSWORD、
+#          MYSQL_EXPORTER_PASSWORD、
 #          MIDDLEWARE_<SERVICE>_PASSWORD（十个服务）、
 #          REDIS_EXPORTER_PASSWORD、KAFKA_*_PASSWORD、
 #          SILO_ROOT_USER、SILO_ROOT_PASSWORD、SILO_FILE_*、SILO_AI_*、
@@ -26,6 +27,8 @@ DATA_SERVICES=(system workflow file notify job monitor auth ai)
 ALL_SERVICES=(system workflow file notify job monitor auth ai gateway ops)
 MYSQL_EXPORTER_USER="${MYSQL_EXPORTER_USER:-iboot_exporter}"
 MYSQL_EXPORTER_PASSWORD="${MYSQL_EXPORTER_PASSWORD:-}"
+MYSQL_MIGRATOR_PASSWORD="${MYSQL_MIGRATOR_PASSWORD:-}"
+MYSQL_PROVISIONER_PASSWORD="${MYSQL_PROVISIONER_PASSWORD:-}"
 REDIS_EXPORTER_PASSWORD="${REDIS_EXPORTER_PASSWORD:-}"
 KAFKA_LOG_PASSWORD="${KAFKA_LOG_PASSWORD:-}"
 KAFKA_LOGSTASH_PASSWORD="${KAFKA_LOGSTASH_PASSWORD:-}"
@@ -142,6 +145,80 @@ if [ "$(mysql_root_exec "SELECT COUNT(*) FROM mysql.user WHERE user='iboot_app'"
     reg_pass "共享 MySQL 账号 iboot_app 已删除"
 else
     reg_fail "共享 MySQL 账号 iboot_app 仍存在"
+fi
+
+reg_log "== 1b. MySQL 管理面 =="
+if mysql_root_exec "SELECT 1" >/dev/null; then
+    reg_pass "容器内 localhost root 可用于首次引导"
+else
+    reg_fail "容器内 localhost root 不可用"
+fi
+
+mysql_container_ip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' iboot-mysql 2>/dev/null | awk '{print $1}')"
+if [ -n "$mysql_container_ip" ] && docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" iboot-mysql mysql \
+    --protocol=TCP --connect-timeout=5 --ssl-mode=VERIFY_CA --ssl-ca=/certs/rootCA.pem \
+    -h "$mysql_container_ip" -uroot -e "SELECT 1" >/dev/null 2>&1; then
+    reg_fail "root 可从非回环地址登录 MySQL"
+else
+    reg_pass "root 从非回环地址登录被拒绝"
+fi
+
+if mysql_exec iboot_migrator "$MYSQL_MIGRATOR_PASSWORD" \
+    "CREATE TABLE iboot.__migrator_probe__ (id INT)" >/dev/null; then
+    reg_pass "迁移账号可以执行 DDL"
+    mysql_exec iboot_migrator "$MYSQL_MIGRATOR_PASSWORD" \
+        "DROP TABLE iboot.__migrator_probe__" >/dev/null || true
+else
+    reg_fail "迁移账号无法执行 DDL"
+fi
+if mysql_exec iboot_migrator "$MYSQL_MIGRATOR_PASSWORD" \
+    "CREATE USER 'iboot_migrator_probe'@'%' IDENTIFIED BY 'probe'" >/dev/null; then
+    reg_fail "迁移账号可以创建账号"
+else
+    reg_pass "迁移账号创建账号被拒绝"
+fi
+
+if mysql_exec iboot_provisioner "$MYSQL_PROVISIONER_PASSWORD" \
+    "CREATE USER 'iboot_provisioner_probe'@'%' IDENTIFIED BY 'probe'; GRANT SELECT ON iboot.sys_user TO 'iboot_provisioner_probe'@'%'" >/dev/null; then
+    reg_pass "管理账号可以创建并授权服务账号"
+else
+    reg_fail "管理账号无法创建并授权服务账号"
+fi
+if mysql_exec iboot_provisioner "$MYSQL_PROVISIONER_PASSWORD" \
+    "GRANT ALL PRIVILEGES ON *.* TO 'iboot_provisioner_probe'@'%'" >/dev/null 2>&1; then
+    reg_fail "管理账号可以授予全局管理权限"
+else
+    reg_pass "管理账号授予全局管理权限被拒绝"
+fi
+if mysql_exec iboot_provisioner "$MYSQL_PROVISIONER_PASSWORD" \
+    "GRANT FILE ON *.* TO 'iboot_provisioner_probe'@'%'" >/dev/null 2>&1; then
+    reg_fail "管理账号可以授予 FILE 权限"
+else
+    reg_pass "管理账号授予 FILE 权限被拒绝"
+fi
+if mysql_exec iboot_provisioner "$MYSQL_PROVISIONER_PASSWORD" \
+    "CREATE TABLE iboot.__provisioner_probe__ (id INT)" >/dev/null 2>&1; then
+    reg_fail "管理账号可以执行 DDL"
+else
+    reg_pass "管理账号执行 DDL 被拒绝"
+fi
+mysql_root_exec "DROP USER IF EXISTS 'iboot_migrator_probe'@'%'; DROP USER IF EXISTS 'iboot_provisioner_probe'@'%'; DROP TABLE IF EXISTS iboot.__migrator_probe__; DROP TABLE IF EXISTS iboot.__provisioner_probe__" >/dev/null 2>&1 || true
+
+if docker compose -f "$ROOT/docker/docker-compose.yml" config --format json 2>/dev/null | python3 -c '
+import json, sys
+services = json.load(sys.stdin)["services"]
+def env(name):
+    return services.get(name, {}).get("environment") or {}
+assert env("mysql").get("MYSQL_ROOT_HOST") == "localhost", "mysql MYSQL_ROOT_HOST"
+for name in ("db-init", "mysql-users-init", "mysql-grants-init"):
+    assert "MYSQL_ROOT_PASSWORD" not in env(name), name + " 仍注入 root 口令"
+assert env("db-init").get("MYSQL_USERNAME") == "iboot_migrator", "db-init 未使用迁移账号"
+for name in ("mysql-users-init", "mysql-grants-init"):
+    assert env(name).get("MYSQL_ADMIN_USER") == "iboot_provisioner", name + " 未使用管理账号"
+'; then
+    reg_pass "初始化容器不再注入 root，且分别使用迁移/管理账号"
+else
+    reg_fail "初始化容器凭据注入不符合最小权限"
 fi
 
 redis_exec() {

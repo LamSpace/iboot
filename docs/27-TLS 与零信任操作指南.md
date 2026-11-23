@@ -454,7 +454,9 @@ B4.3 在 TLS 与网络边界之上补账号认证，但当时是共享账号方�
 | 组件 | 账号 | 用途 | 权限 |
 |---|---|---|---|
 | MySQL | `iboot_<service>` | 八个数据服务（system/workflow/file/notify/job/monitor/auth/ai） | 共享表 `SELECT` + 本服务写表 `INSERT/UPDATE/DELETE`；无库级 DML、无 DDL |
-| MySQL | `root` | 账号初始化与迁移 | 管理权限；不注入业务服务 |
+| MySQL | `iboot_migrator` | `db-init` 的 Flyway 迁移 | `iboot` 库 DDL/DML；无账号管理权限；不注入业务服务 |
+| MySQL | `iboot_provisioner` | 服务账号与表级授权初始化 | 创建/修改账号、授予既有业务权限；不能取得全局管理能力；不注入业务服务 |
+| MySQL | `root` | 仅容器内回环首次引导 | 无网络登录；不注入业务服务 |
 | MySQL | `iboot_exporter` | mysqld-exporter | `PROCESS`、`REPLICATION CLIENT`、`performance_schema` 只读 |
 | Redis | `iboot_<service>` | 八个数据服务 | 命名 ACL 账号，按登记键/频道模式限制；monitor 键空间浏览例外 |
 | Redis | `iboot_exporter` | redis-exporter 与健康检查 | 只读监控命令集 |
@@ -487,7 +489,10 @@ docker compose -f docker/docker-compose.yml run --rm --no-deps silo-init
 scripts/sentinel-init.sh --verify
 ```
 
-- `mysql-users-init` 幂等创建/更新八个服务账号与 `iboot_exporter`，并删除共享 `iboot_app`。
+- MySQL 空数据卷首次启动时由 `/docker-entrypoint-initdb.d/20-init-accounts.sh` 删除 `root@'%'`
+  并创建 `iboot_migrator` 与 `iboot_provisioner`；已有数据卷可手工执行
+  `docker exec iboot-mysql /scripts/mysql-init-accounts.sh`。
+- `mysql-users-init` 以 `iboot_provisioner` 幂等创建/更新八个服务账号与 `iboot_exporter`，并删除共享 `iboot_app`。
 - `nacos-init` 首次设置 `nacos` 管理员密码，随后创建/更新 `iboot` 运维账号与十个服务账号。
 - `silo-init` 预创建 `thanos`、`iboot-files`、`iboot-ai` 三个桶，并创建三个桶级服务账号。
 - Docker 全量部署中，`db-init` 依赖上述初始化任务；宿主机开发由 `dev-init.sh` 显式执行。
@@ -508,6 +513,8 @@ MIDDLEWARE_AI_PASSWORD=
 MIDDLEWARE_GATEWAY_PASSWORD=
 MIDDLEWARE_OPS_PASSWORD=
 MYSQL_ROOT_PASSWORD=
+MYSQL_MIGRATOR_PASSWORD=
+MYSQL_PROVISIONER_PASSWORD=
 MYSQL_EXPORTER_PASSWORD=
 REDIS_EXPORTER_PASSWORD=
 SILO_ROOT_USER=
@@ -548,9 +555,15 @@ Redis `CLIENT LIST` 必须按服务区分，Nacos 逐账号登录并读取配置
 - Nacos：十个服务账号逐一登录并读配置；匿名管理请求被拒绝；`sentinel-init` 缺少凭据时失败。
 - 进程环境：每个服务只持有自己的 `MYSQL_*`/`REDIS_*`/`NACOS_*` 与专属 Silo 凭据。
 
+MySQL 管理面同时收口：`root@'%'` 已删除，root 只在 MySQL 容器内回环（`localhost` / `127.0.0.1`）用于首次引导；
+`iboot-db-init` 使用 `iboot_migrator`（仅 `iboot` 库 DDL/DML），账号与表级授权初始化使用
+`iboot_provisioner`（创建/修改账号与授予既有业务权限，但不能取得全局管理能力）。两者都不注入业务服务。
+`middleware-auth.sh` 断言：非回环地址 root 登录失败、迁移账号不能建账号、管理账号不能授予
+`ALL ON *.*` 或 `FILE`，以及三个初始化容器不含 root 口令。已有数据卷可在容器内执行
+`docker exec iboot-mysql /scripts/mysql-init-accounts.sh` 完成同样的引导。
+
 ### 13.5 边界
 
-- MySQL root 仍允许从编排网络连接，仅用于初始化与迁移；后续可改为专用迁移账号并关闭远程 root。
 - Redis 的每服务用户权限等价（`~*`、`+@all`），身份可区分但不是键级隔离。
 - Nacos 的十个服务账号权限等价（同绑 `iboot_role`），身份可区分但不是资源级隔离。
 - Nacos 控制台鉴权在本地保持关闭以支持门户内嵌；非本地必须开启，且门户不代填凭据。

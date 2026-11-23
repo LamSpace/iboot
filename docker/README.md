@@ -254,7 +254,9 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 
 | 组件 | 账号 | 用途 |
 |---|---|---|
-| MySQL | `root` | 仅初始化与迁移 |
+| MySQL | `root` | 仅容器内回环首次引导；无网络登录 |
+| MySQL | `iboot_migrator` | `db-init` 的迁移账号，`iboot` 库 DDL/DML，无账号管理 |
+| MySQL | `iboot_provisioner` | 账号与表级授权初始化，无全局管理能力 |
 | MySQL | `iboot_<service>` | 八个数据服务各自账号，`iboot` 库 DML，无 DDL |
 | MySQL | `iboot_exporter` | mysqld-exporter 只读 |
 | Redis | `iboot_<service>` | 八个数据服务各自 ACL 用户；`default` 已禁用 |
@@ -278,6 +280,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 | ES | `elastic` | 仅 `es-users-init`、初始化与运维脚本 |
 
 - `.env` 必须提供 `MIDDLEWARE_<SERVICE>_PASSWORD`（十个服务）、`MYSQL_ROOT_PASSWORD`、
+  `MYSQL_MIGRATOR_PASSWORD`、`MYSQL_PROVISIONER_PASSWORD`、
   `MYSQL_EXPORTER_PASSWORD`、`REDIS_EXPORTER_PASSWORD`、`KAFKA_BROKER_PASSWORD`、
   `KAFKA_LOG_PASSWORD`、`KAFKA_LOGSTASH_PASSWORD`、`KAFKA_TOOLS_PASSWORD`、
   `SILO_ROOT_USER/PASSWORD`、`SILO_FILE_*`、`SILO_JOB_*`、`SILO_AI_*`、

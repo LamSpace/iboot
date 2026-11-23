@@ -18,7 +18,10 @@
 - 账号创建 MUST 在业务表创建前完成；表级授权 MUST 在建表完成后执行，且 MUST 可重复执行。
 - 共享业务账号 MUST NOT 再注入业务服务；保留时只能作为兼容工具账号，并由回归断言服务未使用它。
 - 监控 exporter MUST 使用独立只读账号；MUST NOT 复用服务账号或 root。
-- 建表、迁移与账号初始化 MAY 使用 root 或专用迁移账号，该账号 MUST NOT 注入业务服务。
+- root MUST 只在 MySQL 容器内回环地址（`localhost` / `127.0.0.1`）可用；MUST NOT 存在可从编排网络或宿主机端口登录的 root 账号。
+- 建表与迁移 MUST 使用专用账号 `iboot_migrator`；账号与授权初始化 MUST 使用专用账号 `iboot_provisioner`；两者 MUST NOT 注入业务服务。
+- `iboot_migrator` MUST 只拥有 `iboot` 库的 DDL/DML；MUST NOT 创建或修改账号。
+- `iboot_provisioner` MUST 只拥有创建/修改账号、授予既有业务权限与读取元数据所需的最小权限；MUST NOT 拥有 `iboot` 库的 DDL、root 或等价的全库任意授权能力。
 - 凭据 MUST 从环境或密钥注入；MUST NOT 在应用配置中保留可用的 root 默认值。
 
 #### Scenario: 业务账号执行数据操作
@@ -80,6 +83,36 @@
 - **WHEN** 在已有表结构上再次执行授权脚本
 - **THEN** 授权矩阵保持不变
 - **AND** 不产生重复授权或失败
+
+#### Scenario: 远程 root 被拒绝
+
+- **WHEN** 从编排网络中的其它容器，或从宿主机映射端口，以 root 连接 MySQL
+- **THEN** 认证失败
+- **AND** 该连接不能执行任何 SQL
+
+#### Scenario: 本地 root 仍可完成首次引导
+
+- **WHEN** MySQL 容器首次初始化，在容器内通过本地 socket 以 root 执行引导脚本
+- **THEN** 引导成功
+- **AND** 创建迁移账号与管理账号，并删除 `root@'%'`
+
+#### Scenario: 迁移账号不能管理账号
+
+- **WHEN** `iboot_migrator` 执行 `CREATE USER`、`GRANT` 或 `DROP USER`
+- **THEN** MySQL 拒绝操作
+- **AND** 迁移账号仍可对 `iboot` 库执行 DDL
+
+#### Scenario: 管理账号不能取得 root 等价权限
+
+- **WHEN** `iboot_provisioner` 尝试授予全局管理权限、读取任意文件、关闭实例或对 `iboot` 库执行 DDL
+- **THEN** MySQL 拒绝操作
+- **AND** 管理账号仍可创建服务账号并授予登记的表级权限
+
+#### Scenario: 管理凭据缺失时启动失败
+
+- **WHEN** 编排缺少 `MYSQL_MIGRATOR_PASSWORD` 或 `MYSQL_PROVISIONER_PASSWORD`
+- **THEN** 启动在拉起容器前失败
+- **AND** 输出指出缺失的变量
 
 ### Requirement: Redis 必须认证
 
