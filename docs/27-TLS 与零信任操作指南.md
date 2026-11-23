@@ -392,7 +392,7 @@ TLS 只保护「连上之后」的通道，不回答「谁允许连接」。本�
 | 门户 | 80 / 443 | `0.0.0.0` |
 | 网关与业务服务 | 8080–8089 | `127.0.0.1` |
 | 数据面 | 3306、6379、9000/9001、9200、8848/9848/8849、8091、29092、18081（RocketMQ TLS） | `127.0.0.1` |
-| 治理与可观测 UI | 8858、9090、3000、9093、5601、19192、18082、3200 | `127.0.0.1`；除 Sentinel 外均 HTTPS |
+| 治理与可观测 UI | 8858、9090、3000、9093、5601、19192、18082、3200 | `127.0.0.1`；均为 HTTPS |
 | 图数据库（`graph` profile） | 7474、7687 | `127.0.0.1` |
 | Logstash、Thanos、exporter、SkyWalking Banyandb/OAP admin | 不发布 | — |
 
@@ -440,7 +440,7 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - 中间件已按服务拆分账号（B5.5）：MySQL、Redis、Nacos 每服务独立，Silo 由文件/备份/AI 三个桶级账号隔离；
   权限边界仍保持共享库 DML，表级授权不在本节范围内。
 - RocketMQ 入口只接受 TLS 并启用 ACL，但客户端不校验服务端证书；Seata 无原生 TLS/认证，仅靠 `tx` 网络与回环发布隔离，均为显式例外。
-- 可观测 UI 除 Sentinel 外均为 HTTPS；Sentinel 仍为回环 HTTP，作为已登记边界。
+- 可观测 UI 均为 HTTPS；Sentinel Dashboard 在 B5.11 完成 TLS 与登录。
 - 工作负载 mTLS 的证书身份已落地；SPIFFE/服务网格与按调用方授权不在本节的宣称范围内。
 
 ## 13. 中间件账号与最小权限（B4.3 → B5.5）
@@ -611,7 +611,7 @@ curl -s 'http://127.0.0.1:9090/api/v1/query?query=probe_ssl_earliest_cert_expiry
 
 ### 14.5 边界
 
-- Prometheus、Thanos 的明文链路已在 B4.7 收敛为 TLS；Sentinel Dashboard 仍为回环 HTTP，属于已登记边界。
+- Prometheus、Thanos 的明文链路已在 B4.7 收敛为 TLS；Sentinel Dashboard 已在 B5.11 收敛为 HTTPS。
 - Grafana 匿名只读依赖 Viewer 角色；若 Explore 权限不可用，按 `design.md` 的退路处理，
   不得回退匿名 Admin。
 - 本批次不包含服务间 mTLS、RocketMQ 强制 TLS、Seata 认证与 Kafka SASL。
@@ -683,7 +683,7 @@ Grafana、Prometheus、Alertmanager、Thanos Query 与 Kibana 的 HTTP 入口只
 - Grafana 使用 `[server] protocol=https`；Kibana 使用 `SERVER_SSL_ENABLED=true`。
 - Grafana 的 Prometheus/Thanos 数据源、Thanos sidecar 到 Prometheus、Prometheus 到 Alertmanager 均使用 HTTPS + 本地 CA。
 - `sys_config` 中五个控制台地址由 `V16__observability_https_urls.sql` 迁移为 `https://`。
-- Sentinel Dashboard 仍为回环 HTTP，未挂载证书，作为已登记边界。
+- Sentinel Dashboard 使用 HTTPS 并要求登录（B5.11）。
 
 验证：
 
@@ -1016,7 +1016,7 @@ scripts/tls-rotate-schedule.sh --print                     # 只输出将安装�
 
 - 只覆盖 Prometheus → exporter；Grafana/Thanos/Kibana 的内网调用仍使用既有 HTTPS。
 - 调度只负责检查、重签与按范围重启；CA 轮换、跨主机调度与滚动发布不在本批范围内。
-- Sentinel Dashboard 仍是登记边界，不在本批范围内。
+- Dashboard 的反向探测命令端口 8719 仍为 HTTP，只在 Docker 网络内使用，不发布到宿主机。
 
 ## 24. SPIFFE 工作负载身份（B5.8）
 
@@ -1059,3 +1059,48 @@ bash scripts/regress/service-authz.sh
 - 不部署 SPIRE/SPIFFE Workload API；证书仍由本地 CA 直接签发。
 - 不引入 OPA 或服务网格；策略仍由 `ServiceAuthorizationPolicy` 执行。
 - 信任域切换需要同时改 `tls-init.sh` 与 `ClientCertificateIdentity`，当前不支持多信任域。
+
+## 25. Sentinel Dashboard TLS 与登录（B5.11）
+
+Sentinel Dashboard 是最后收敛的可观测控制台：此前是回环 HTTP 且本地关闭登录。B5.11 让它与
+Grafana/Kibana 使用同一条基线。
+
+### 25.1 HTTPS
+
+- `tls-init.sh` 在门户证书 SAN 中增加 `sentinel-dashboard`，并生成
+  `docker/certs/runtime/sentinel-keystore.p12`（alias `sentinel`，口令 `changeit`）。
+- Dashboard 通过 Spring Boot 属性开启 HTTPS：
+
+```text
+-Dserver.ssl.enabled=true
+-Dserver.ssl.key-store=file:/certs/sentinel-keystore.p12
+-Dserver.ssl.key-store-password=changeit
+-Dserver.ssl.key-store-type=PKCS12
+-Dserver.ssl.key-alias=sentinel
+```
+
+- 宿主机入口 `https://localhost:8858`；Docker 内客户端使用 `https://sentinel-dashboard:8858`。
+- 健康检查与 `dev-init.sh` 都使用本地 CA 校验，不使用 `-k`。
+
+### 25.2 登录
+
+- 本地与生产都开启 `auth.enabled=true`；基础 compose 默认 `sentinel` / `sentinel123`。
+- 生产叠加 `docker-compose.prod.yml` 时必须显式提供 `SENTINEL_DASHBOARD_USER` 与
+  `SENTINEL_DASHBOARD_PASSWORD`，缺失时 compose 直接失败。
+- 门户 `sys.sentinel.dashboard.url` 改为 HTTPS，`sys.sentinel.dashboard.embed` 改为 `false`；
+  登录会话不能可靠跨源 iframe 复用，页面改为新窗口打开。
+
+### 25.3 验收
+
+```bash
+scripts/tls-init.sh --check
+bash scripts/regress/observability-tls.sh
+```
+
+应看到 Dashboard TLS 握手通过、明文失败、不带 CA 失败，以及匿名访问
+`/app/briefinfos.json` 被重定向或拒绝。
+
+### 25.4 边界
+
+- Dashboard 反向探测服务命令端口 8719 仍是 HTTP，只在 Docker 网络内使用，不发布到宿主机。
+- 规则仍从 Nacos 下发；Dashboard 重启不影响运行中的限流规则。

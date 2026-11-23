@@ -90,7 +90,7 @@ Docker 全量部署中，宿主机只有门户 `80/443` 绑定全部网卡；其
 | iboot-workflow | 8086 | `127.0.0.1` | 审批工作流 |
 | iboot-monitor | 8087 | `127.0.0.1` | 监控与日志查询 |
 | iboot-ops | 8089 | `127.0.0.1` | 运维控制台（SBA） |
-| sentinel-dashboard | 8858 | `127.0.0.1` | Sentinel 治理控制台；本地必选，生产必须认证 |
+| sentinel-dashboard | 8858 | `127.0.0.1` | Sentinel 治理控制台；HTTPS + 登录 |
 | seata-server | 8091 | `127.0.0.1` | Seata TC（AT 全局事务）；只在 `tx` 网络对 workflow/system 可见，本地镜像无 7091 控制台 |
 | mysql | 3306 | `127.0.0.1` | MySQL 8.4（只接受 TLS） |
 | redis | 6379 | `127.0.0.1` | Redis 8（只监听 TLS 端口） |
@@ -124,7 +124,7 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 | thanos-sidecar / store / compact | — | — | 不发布；Grafana 经 `obs` 网络以 HTTPS 访问 `thanos-query` |
 | mysql/redis/node/elasticsearch exporter | — | — | 不发布；Prometheus 在编排网络内抓取 |
 
-> 五个可观测控制台只提供 HTTPS，使用本地 CA 校验；Sentinel Dashboard 仍为回环 HTTP，属于已登记边界。
+> 五个可观测控制台只提供 HTTPS，使用本地 CA 校验；Sentinel Dashboard 已在 B5.11 收敛为 HTTPS。
 
 图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS），均绑定 `127.0.0.1`。
 
@@ -198,7 +198,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   `auth_keys` 卷。不要删除该卷，否则所有已签发令牌会在认证服务重启后失效。
 - 本地全栈默认关闭运维控制台认证（`IBOOT_OPS_SECURITY_ENABLED=false`）；生产部署必须开启
   并注入 `IBOOT_OPS_PASSWORD`。
-- 本地全栈默认关闭 Sentinel Dashboard 登录（`auth.enabled=false`）；非本地环境必须叠加
+- 本地全栈默认开启 Sentinel Dashboard 登录（`sentinel` / `sentinel123`）；非本地环境必须叠加
   `docker/docker-compose.prod.yml` 并注入 `SENTINEL_DASHBOARD_USER` / `SENTINEL_DASHBOARD_PASSWORD`。
 - Docker 部署默认关闭 `iboot-job` 备份（`IBOOT_BACKUP_ENABLED=false`），因为运行期镜像没有
   docker CLI，备份自检会失败。需要备份时应另行为该服务挂载 Docker Socket 并安装客户端；
@@ -285,14 +285,14 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 - Nacos 客户端必须使用 `NACOS_SERVER_ADDR=https://nacos:8848`；`NACOS_ADDR` 仍是脚本使用的
   `host:port`。
 - Grafana 匿名只读（Viewer），管理员口令来自 `GRAFANA_ADMIN_PASSWORD`；本地 Sentinel
-  保持关闭登录，生产必须在 `docker-compose.prod.yml` 开启。
+  也开启登录，生产必须在 `docker-compose.prod.yml` 显式注入账号密码。
 - 验收：`scripts/regress/middleware-auth.sh`，覆盖每服务身份矩阵（MySQL processlist、Redis
   `CLIENT LIST`、Nacos 逐账号登录、Silo 跨桶拒绝）、进程环境隔离、Kafka 无凭据/越权 topic 与
   ES 各账号边界。
 
 ## Sentinel 治理
 
-- `sentinel-dashboard` 常驻 `8858`；本地关闭登录，生产叠加 `docker-compose.prod.yml` 并注入账号密码。
+- `sentinel-dashboard` 常驻 `8858`；本地与生产都开启登录，生产叠加 `docker-compose.prod.yml` 并显式注入账号密码；只提供 HTTPS。
 - `scripts/docker-deploy.sh up` 在健康检查后写入 Nacos 基线规则；手动校验：
   `bash scripts/sentinel-init.sh --verify`。
 - 规则 data-id：`iboot-gateway-flow-rules`、`iboot-notify-flow-rules`
@@ -303,7 +303,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 
 门户“微服务治理”菜单提供 Nacos 与 Sentinel 控制台入口。
 
-- **宿主机 Vite 开发**：两个控制台都关闭登录，门户直接内嵌；Nacos 经 Vite 的
+- **宿主机 Vite 开发**：Nacos 控制台关闭登录、门户内嵌；Sentinel 控制台开启登录、门户新窗口打开；Nacos 经 Vite 的
   `/nacos-console` 代理访问。
 - **Docker 全栈**：门户由 nginx 提供，不代理 Nacos 控制台，因此 compose 用
   `SYS_NACOS_CONSOLE_URL=https://localhost:8849` 与 `SYS_NACOS_CONSOLE_EMBED=false`
@@ -315,7 +315,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 
 - Nacos 开发环境经门户同源代理 `/nacos-console/` 内嵌；Vite 代理转发控制台 SPA 与 `/v3` API 并剥离 `X-Frame-Options`，生产 nginx 不配置该代理；
 - `NACOS_AUTH_CONSOLE_ENABLE=false` 只用于本地 compose，不要带到生产；
-- Sentinel 开发环境沿用 `auth.enabled=false`，生产由 `docker-compose.prod.yml` 开启登录；
+- Sentinel 本地也开启登录，生产必须显式注入账号密码；
 - 详细说明见 [docs/23 §8.6](../docs/23-微服务底座操作指南.md)。
 
 ## 卷

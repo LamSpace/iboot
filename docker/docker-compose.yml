@@ -71,7 +71,7 @@ x-app-env: &app-env
   IBOOT_SYSTEM_BASE_URL: https://iboot-system
   # 本地开发默认值；生产通过 .env 或 KMS 注入
   IBOOT_SYSTEM_INTERNAL_TOKEN: ${IBOOT_SYSTEM_INTERNAL_TOKEN:-iboot-dev-internal-token}
-  SENTINEL_DASHBOARD: sentinel-dashboard:8858
+  SENTINEL_DASHBOARD: https://sentinel-dashboard:8858
   TEMPO_OTLP: https://tempo:4318/v1/traces
   IBOOT_LOGGING_KAFKA_ENABLED: "true"
   IBOOT_LOGGING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -990,8 +990,20 @@ services:
       - "127.0.0.1:8858:8858"
     environment:
       TZ: Asia/Shanghai
-      # 本地开发关闭登录；非本地部署必须用 docker-compose.prod.yml 覆盖并注入账号密码
-      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -Dauth.enabled=false"
+      # 本地也开启登录；生产覆盖文件继续要求显式非空口令。
+      # 服务端只提供 HTTPS，keystore 由 tls-init.sh 生成并随 /certs 挂载。
+      JAVA_TOOL_OPTIONS: >-
+        -Xms128m -Xmx256m
+        -Dauth.enabled=true
+        -Dauth.username=${SENTINEL_DASHBOARD_USER:-sentinel}
+        -Dauth.password=${SENTINEL_DASHBOARD_PASSWORD:-sentinel123}
+        -Dserver.ssl.enabled=true
+        -Dserver.ssl.key-store=file:/certs/sentinel-keystore.p12
+        -Dserver.ssl.key-store-password=changeit
+        -Dserver.ssl.key-store-type=PKCS12
+        -Dserver.ssl.key-alias=sentinel
+    volumes:
+      - ./certs/runtime:/certs:ro
     # 宿主机开发进程场景下，Dashboard 反向探测的兜底地址
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -999,7 +1011,7 @@ services:
     networks:
       - data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8858/ >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "curl -sf --cacert /certs/ca/rootCA.pem https://localhost:8858/ >/dev/null || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

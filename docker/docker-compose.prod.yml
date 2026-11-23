@@ -11,6 +11,11 @@ services:
         -Dauth.enabled=true
         -Dauth.username=${SENTINEL_DASHBOARD_USER:?SENTINEL_DASHBOARD_USER is required}
         -Dauth.password=${SENTINEL_DASHBOARD_PASSWORD:?SENTINEL_DASHBOARD_PASSWORD is required}
+        -Dserver.ssl.enabled=true
+        -Dserver.ssl.key-store=file:/certs/sentinel-keystore.p12
+        -Dserver.ssl.key-store-password=changeit
+        -Dserver.ssl.key-store-type=PKCS12
+        -Dserver.ssl.key-alias=sentinel
 
   # 审批额度内部端点的共享密钥：生产必须显式注入，禁止回退到 compose 中的本地默认值。
   iboot-system:
