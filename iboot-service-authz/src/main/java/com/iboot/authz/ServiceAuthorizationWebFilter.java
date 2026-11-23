@@ -66,10 +66,17 @@ public class ServiceAuthorizationWebFilter implements WebFilter, Ordered {
         }
         String path = exchange.getRequest().getPath().value();
         String caller = WebFluxClientCertificateIdentity.from(exchange.getRequest());
-        if (!policy.isDenied(path, caller)) {
-            return chain.filter(exchange);
-        }
-        log.warn("拒绝服务间调用，caller={}, path={}", caller, path);
+        return Mono.fromFuture(policy.isDeniedAsync(path, caller))
+                .flatMap(denied -> {
+                    if (!denied) {
+                        return chain.filter(exchange);
+                    }
+                    log.warn("拒绝服务间调用，caller={}, path={}", caller, path);
+                    return deny(exchange);
+                });
+    }
+
+    private Mono<Void> deny(final ServerWebExchange exchange) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(HttpStatus.FORBIDDEN);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);

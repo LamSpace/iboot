@@ -91,6 +91,7 @@ Docker 全量部署中，宿主机只有门户 `80/443` 绑定全部网卡；其
 | iboot-monitor | 8087 | `127.0.0.1` | 监控与日志查询 |
 | iboot-ops | 8089 | `127.0.0.1` | 运维控制台（SBA） |
 | sentinel-dashboard | 8858 | `127.0.0.1` | Sentinel 治理控制台；HTTPS + 登录 |
+| opa | 8181 | `127.0.0.1` | 服务间授权决策；`IBOOT_SERVICE_AUTHORIZATION_OPA_URL` 非空时启用 |
 | seata-server | 8091 | `127.0.0.1` | Seata TC（AT 全局事务）；只在 `tx` 网络对 workflow/system 可见，本地镜像无 7091 控制台 |
 | mysql | 3306 | `127.0.0.1` | MySQL 8.4（只接受 TLS） |
 | redis | 6379 | `127.0.0.1` | Redis 8（只监听 TLS 端口） |
@@ -127,6 +128,9 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 > 五个可观测控制台只提供 HTTPS，使用本地 CA 校验；Sentinel Dashboard 已在 B5.11 收敛为 HTTPS。
 
 图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS），均绑定 `127.0.0.1`。
+
+SPIRE profile（`spire`，默认不启动）：`spire-server`、`spire-agent` 与 `spire-demo` 验证 Workload API/SVID；
+不发布宿主机端口，启动与验收见 `scripts/spire-up.sh` 与 `scripts/regress/spire-svid.sh`。
 
 B2 起 8080–8089 只提供 HTTPS；B5.2 起还要求客户端证书。MySQL/Redis/Silo/Neo4j 只接受 TLS。
 B3 起 ES、Kafka、Logstash 也只接受 TLS；Nacos 在 B4 起同样只接受 TLS。
