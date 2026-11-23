@@ -993,12 +993,25 @@ scripts/tls-rotate.sh --rotate --restart host
 
 - 普通启动只补发缺失的 exporter 证书，不重签既有服务证书；`--rotate` 才调用 `tls-init.sh --force`。
 - Docker 重启对当前运行的 compose 服务执行 `up -d --force-recreate`；宿主机重启调用 `dev-init.sh --stop` 后再启动。
-- 建议 cron 每周执行 `--check`，到期前手工执行 `--rotate`；脚本不内置定时器。
+- 周期调度由独立入口安装，不与普通启动耦合：
+
+```bash
+scripts/tls-rotate-schedule.sh --install --restart=docker  # 每日检查，失败才重签并重建当前 Docker 服务
+scripts/tls-rotate-schedule.sh --install --restart=host    # 宿主机进程场景
+scripts/tls-rotate-schedule.sh --status
+scripts/tls-rotate-schedule.sh --uninstall
+scripts/tls-rotate-schedule.sh --print                     # 只输出将安装的内容
+```
+
+- 优先安装 systemd user timer；当前会话不可用时回退到当前用户 crontab。默认每日 `03:30` 执行。
+- 定时任务先跑 `--check`：通过则只写日志，不碰证书；失败才执行 `--rotate --restart=<scope>`。
+- 默认 `--restart=none`，需要自动生效时必须显式选择 `docker` 或 `host`。
+- 日志写入 `logs/tls-rotate.log`，目录锁防止并发重签。
 
 ### 23.3 边界
 
 - 只覆盖 Prometheus → exporter；Grafana/Thanos/Kibana 的内网调用仍使用既有 HTTPS。
-- 轮换仍由操作者显式触发，不自动 reload 或滚动发布。
+- 调度只负责检查、重签与按范围重启；CA 轮换、跨主机调度与滚动发布不在本批范围内。
 - Sentinel Dashboard、宿主机进程回环绑定仍是登记边界，不在本批范围内。
 
 ## 24. SPIFFE 工作负载身份（B5.8）
