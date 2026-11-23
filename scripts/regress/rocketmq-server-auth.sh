@@ -42,8 +42,7 @@ for module in iboot-workflow iboot-notify; do
         continue
     fi
     listing="$(unzip -l "$jar" 2>/dev/null || true)"
-    if printf '%s\n' "$listing" \
-        | grep -q 'BOOT-INF/classes/org/apache/rocketmq/shaded/io/grpc/netty/shaded/io/netty/handler/ssl/util/InsecureTrustManagerFactory.class'; then
+    if [[ "$listing" == *"BOOT-INF/classes/org/apache/rocketmq/shaded/io/grpc/netty/shaded/io/netty/handler/ssl/util/InsecureTrustManagerFactory.class"* ]]; then
         reg_pass "$module 的 BOOT-INF/classes 包含信任管理器兼容层"
     else
         reg_fail "$module 的兼容层未进入 BOOT-INF/classes"
