@@ -279,7 +279,8 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 | ES | `iboot_exporter` | 集群与索引只读监控 |
 | ES | `elastic` | 仅 `es-users-init`、初始化与运维脚本 |
 
-- `.env` 必须提供 `MIDDLEWARE_<SERVICE>_PASSWORD`（十个服务）、`MYSQL_ROOT_PASSWORD`、
+- `.env` 必须提供 `MYSQL_<SERVICE>_PASSWORD`（八个数据服务）、
+  `REDIS_<SERVICE>_PASSWORD`（八个数据服务）、`NACOS_<SERVICE>_PASSWORD`（十个服务）、`MYSQL_ROOT_PASSWORD`、
   `MYSQL_MIGRATOR_PASSWORD`、`MYSQL_PROVISIONER_PASSWORD`、
   `MYSQL_EXPORTER_PASSWORD`、`REDIS_EXPORTER_PASSWORD`、`KAFKA_BROKER_PASSWORD`、
   `KAFKA_LOG_PASSWORD`、`KAFKA_LOGSTASH_PASSWORD`、`KAFKA_TOOLS_PASSWORD`、

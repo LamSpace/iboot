@@ -10,7 +10,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 . "$HERE/lib.sh"
 
-if [ -z "${MIDDLEWARE_FILE_PASSWORD:-}" ] && [ -f "$ROOT/.env" ]; then
+if [ -z "${MYSQL_FILE_PASSWORD:-}" ] && [ -f "$ROOT/.env" ]; then
     set -a
     # shellcheck disable=SC1091
     . "$ROOT/.env"
@@ -30,15 +30,21 @@ redis_as() {
         redis-cli --tls --cacert /certs/ca/rootCA.pem --no-auth-warning --user "$user" "$@" 2>&1
 }
 
-password_of() {
+mysql_password_of() {
     local service="$1" var
-    var="MIDDLEWARE_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+    var="MYSQL_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
+    printf '%s' "${!var:-}"
+}
+
+redis_password_of() {
+    local service="$1" var
+    var="REDIS_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
     printf '%s' "${!var:-}"
 }
 
 expect_mysql_ok() {
     local desc="$1" user="$2" sql="$3" out
-    out="$(mysql_as "$user" "$(password_of "${user#iboot_}")" "$sql")"
+    out="$(mysql_as "$user" "$(mysql_password_of "${user#iboot_}")" "$sql")"
     if printf '%s' "$out" | grep -qi '^ERROR'; then
         reg_fail "$desc（$out）"
     else
@@ -48,7 +54,7 @@ expect_mysql_ok() {
 
 expect_mysql_denied() {
     local desc="$1" user="$2" sql="$3" out
-    out="$(mysql_as "$user" "$(password_of "${user#iboot_}")" "$sql")"
+    out="$(mysql_as "$user" "$(mysql_password_of "${user#iboot_}")" "$sql")"
     if printf '%s' "$out" | grep -qiE '^ERROR (1142|1044)|command denied|access denied'; then
         reg_pass "$desc"
     else
@@ -59,7 +65,7 @@ expect_mysql_denied() {
 reg_log "== 1. MySQL 库级 DML 已撤销 =="
 for svc in system workflow file notify job monitor auth ai; do
     user="iboot_$svc"
-    grants="$(mysql_as "$user" "$(password_of "$svc")" 'SHOW GRANTS FOR CURRENT_USER()')"
+    grants="$(mysql_as "$user" "$(mysql_password_of "$svc")" 'SHOW GRANTS FOR CURRENT_USER()')"
     if printf '%s' "$grants" | grep -Eq 'GRANT .*(INSERT|UPDATE|DELETE).* ON `iboot`\.\*'; then
         reg_fail "$user 仍拥有 iboot 库级 DML"
     else
@@ -87,10 +93,10 @@ expect_mysql_ok "file 可读共享 sys_user" iboot_file "SELECT COUNT(*) FROM sy
 expect_mysql_denied "file 不能执行 DDL" iboot_file "CREATE TABLE _least_privilege_deny (id INT)"
 
 reg_log "== 4. Redis 键前缀 =="
-ai_pw="$(password_of ai)"
-file_pw="$(password_of file)"
-notify_pw="$(password_of notify)"
-monitor_pw="$(password_of monitor)"
+ai_pw="$(redis_password_of ai)"
+file_pw="$(redis_password_of file)"
+notify_pw="$(redis_password_of notify)"
+monitor_pw="$(redis_password_of monitor)"
 
 out="$(redis_as iboot_ai "$ai_pw" SET iboot:ai:least-privilege-test 1)"
 if [ "$out" = "OK" ]; then reg_pass "ai 可写 iboot:ai:*"; else reg_fail "ai 写本前缀失败（$out）"; fi

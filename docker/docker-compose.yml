@@ -22,6 +22,7 @@ x-app-env: &app-env
   # 业务服务只保留自身 Redis 账号；exporter 口令不进入业务容器。
   REDIS_EXPORTER_PASSWORD: ""
   # .env 会整文件进入容器；显式清空所有每服务口令，各服务只填自己的那一组。
+  # 旧共享变量只清空、不读取；每服务凭据按组件独立注入。
   MIDDLEWARE_SYSTEM_PASSWORD: ""
   MIDDLEWARE_WORKFLOW_PASSWORD: ""
   MIDDLEWARE_FILE_PASSWORD: ""
@@ -32,6 +33,32 @@ x-app-env: &app-env
   MIDDLEWARE_AI_PASSWORD: ""
   MIDDLEWARE_GATEWAY_PASSWORD: ""
   MIDDLEWARE_OPS_PASSWORD: ""
+  MYSQL_SYSTEM_PASSWORD: ""
+  MYSQL_WORKFLOW_PASSWORD: ""
+  MYSQL_FILE_PASSWORD: ""
+  MYSQL_NOTIFY_PASSWORD: ""
+  MYSQL_JOB_PASSWORD: ""
+  MYSQL_MONITOR_PASSWORD: ""
+  MYSQL_AUTH_PASSWORD: ""
+  MYSQL_AI_PASSWORD: ""
+  REDIS_SYSTEM_PASSWORD: ""
+  REDIS_WORKFLOW_PASSWORD: ""
+  REDIS_FILE_PASSWORD: ""
+  REDIS_NOTIFY_PASSWORD: ""
+  REDIS_JOB_PASSWORD: ""
+  REDIS_MONITOR_PASSWORD: ""
+  REDIS_AUTH_PASSWORD: ""
+  REDIS_AI_PASSWORD: ""
+  NACOS_SYSTEM_PASSWORD: ""
+  NACOS_WORKFLOW_PASSWORD: ""
+  NACOS_FILE_PASSWORD: ""
+  NACOS_NOTIFY_PASSWORD: ""
+  NACOS_JOB_PASSWORD: ""
+  NACOS_MONITOR_PASSWORD: ""
+  NACOS_AUTH_PASSWORD: ""
+  NACOS_AI_PASSWORD: ""
+  NACOS_GATEWAY_PASSWORD: ""
+  NACOS_OPS_PASSWORD: ""
   SILO_FILE_ACCESS_KEY: ""
   SILO_FILE_SECRET_KEY: ""
   SILO_JOB_ACCESS_KEY: ""
@@ -196,14 +223,14 @@ services:
       MYSQL_ADMIN_PASSWORD: ${MYSQL_PROVISIONER_PASSWORD:?MYSQL_PROVISIONER_PASSWORD 必须在 .env 中设置}
       MYSQL_EXPORTER_USER: ${MYSQL_EXPORTER_USER:-iboot_exporter}
       MYSQL_EXPORTER_PASSWORD: ${MYSQL_EXPORTER_PASSWORD:?MYSQL_EXPORTER_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_SYSTEM_PASSWORD: ${MIDDLEWARE_SYSTEM_PASSWORD:?MIDDLEWARE_SYSTEM_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_WORKFLOW_PASSWORD: ${MIDDLEWARE_WORKFLOW_PASSWORD:?MIDDLEWARE_WORKFLOW_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_FILE_PASSWORD: ${MIDDLEWARE_FILE_PASSWORD:?MIDDLEWARE_FILE_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_NOTIFY_PASSWORD: ${MIDDLEWARE_NOTIFY_PASSWORD:?MIDDLEWARE_NOTIFY_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_JOB_PASSWORD: ${MIDDLEWARE_JOB_PASSWORD:?MIDDLEWARE_JOB_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_MONITOR_PASSWORD: ${MIDDLEWARE_MONITOR_PASSWORD:?MIDDLEWARE_MONITOR_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_AUTH_PASSWORD: ${MIDDLEWARE_AUTH_PASSWORD:?MIDDLEWARE_AUTH_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_AI_PASSWORD: ${MIDDLEWARE_AI_PASSWORD:?MIDDLEWARE_AI_PASSWORD 必须在 .env 中设置}
+      MYSQL_SYSTEM_PASSWORD: ${MYSQL_SYSTEM_PASSWORD:?MYSQL_SYSTEM_PASSWORD 必须在 .env 中设置}
+      MYSQL_WORKFLOW_PASSWORD: ${MYSQL_WORKFLOW_PASSWORD:?MYSQL_WORKFLOW_PASSWORD 必须在 .env 中设置}
+      MYSQL_FILE_PASSWORD: ${MYSQL_FILE_PASSWORD:?MYSQL_FILE_PASSWORD 必须在 .env 中设置}
+      MYSQL_NOTIFY_PASSWORD: ${MYSQL_NOTIFY_PASSWORD:?MYSQL_NOTIFY_PASSWORD 必须在 .env 中设置}
+      MYSQL_JOB_PASSWORD: ${MYSQL_JOB_PASSWORD:?MYSQL_JOB_PASSWORD 必须在 .env 中设置}
+      MYSQL_MONITOR_PASSWORD: ${MYSQL_MONITOR_PASSWORD:?MYSQL_MONITOR_PASSWORD 必须在 .env 中设置}
+      MYSQL_AUTH_PASSWORD: ${MYSQL_AUTH_PASSWORD:?MYSQL_AUTH_PASSWORD 必须在 .env 中设置}
+      MYSQL_AI_PASSWORD: ${MYSQL_AI_PASSWORD:?MYSQL_AI_PASSWORD 必须在 .env 中设置}
     volumes:
       - ../scripts/mysql-users-init.sh:/scripts/mysql-users-init.sh:ro
       - ./certs/runtime:/certs:ro
@@ -328,11 +355,11 @@ services:
     environment:
       <<: *app-env
       MYSQL_USERNAME: "iboot_system"
-      MYSQL_PASSWORD: ${MIDDLEWARE_SYSTEM_PASSWORD:?MIDDLEWARE_SYSTEM_PASSWORD 必须在 .env 中设置}
+      MYSQL_PASSWORD: ${MYSQL_SYSTEM_PASSWORD:?MYSQL_SYSTEM_PASSWORD 必须在 .env 中设置}
       REDIS_USERNAME: "iboot_system"
-      REDIS_PASSWORD: ${MIDDLEWARE_SYSTEM_PASSWORD:?MIDDLEWARE_SYSTEM_PASSWORD 必须在 .env 中设置}
+      REDIS_PASSWORD: ${REDIS_SYSTEM_PASSWORD:?REDIS_SYSTEM_PASSWORD 必须在 .env 中设置}
       NACOS_USERNAME: "iboot_system"
-      NACOS_PASSWORD: ${MIDDLEWARE_SYSTEM_PASSWORD:?MIDDLEWARE_SYSTEM_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_SYSTEM_PASSWORD:?NACOS_SYSTEM_PASSWORD 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-system.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-system-key.pem
       # 系统服务不再承载文件上传；遗留存储策略切到本地，避免占用 Silo 服务账号。
@@ -382,11 +409,11 @@ services:
     environment:
       <<: *app-env
       MYSQL_USERNAME: "iboot_ai"
-      MYSQL_PASSWORD: ${MIDDLEWARE_AI_PASSWORD:?MIDDLEWARE_AI_PASSWORD 必须在 .env 中设置}
+      MYSQL_PASSWORD: ${MYSQL_AI_PASSWORD:?MYSQL_AI_PASSWORD 必须在 .env 中设置}
       REDIS_USERNAME: "iboot_ai"
-      REDIS_PASSWORD: ${MIDDLEWARE_AI_PASSWORD:?MIDDLEWARE_AI_PASSWORD 必须在 .env 中设置}
+      REDIS_PASSWORD: ${REDIS_AI_PASSWORD:?REDIS_AI_PASSWORD 必须在 .env 中设置}
       NACOS_USERNAME: "iboot_ai"
-      NACOS_PASSWORD: ${MIDDLEWARE_AI_PASSWORD:?MIDDLEWARE_AI_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_AI_PASSWORD:?NACOS_AI_PASSWORD 必须在 .env 中设置}
       IBOOT_AI_SILO_ACCESS_KEY: ${SILO_AI_ACCESS_KEY:?SILO_AI_ACCESS_KEY 必须在 .env 中设置}
       IBOOT_AI_SILO_SECRET_KEY: ${SILO_AI_SECRET_KEY:?SILO_AI_SECRET_KEY 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-ai.pem
@@ -434,11 +461,11 @@ services:
     environment:
       <<: *app-env
       MYSQL_USERNAME: "iboot_file"
-      MYSQL_PASSWORD: ${MIDDLEWARE_FILE_PASSWORD:?MIDDLEWARE_FILE_PASSWORD 必须在 .env 中设置}
+      MYSQL_PASSWORD: ${MYSQL_FILE_PASSWORD:?MYSQL_FILE_PASSWORD 必须在 .env 中设置}
       REDIS_USERNAME: "iboot_file"
-      REDIS_PASSWORD: ${MIDDLEWARE_FILE_PASSWORD:?MIDDLEWARE_FILE_PASSWORD 必须在 .env 中设置}
+      REDIS_PASSWORD: ${REDIS_FILE_PASSWORD:?REDIS_FILE_PASSWORD 必须在 .env 中设置}
       NACOS_USERNAME: "iboot_file"
-      NACOS_PASSWORD: ${MIDDLEWARE_FILE_PASSWORD:?MIDDLEWARE_FILE_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_FILE_PASSWORD:?NACOS_FILE_PASSWORD 必须在 .env 中设置}
       IBOOT_FILE_SILO_ACCESS_KEY: ${SILO_FILE_ACCESS_KEY:?SILO_FILE_ACCESS_KEY 必须在 .env 中设置}
       IBOOT_FILE_SILO_SECRET_KEY: ${SILO_FILE_SECRET_KEY:?SILO_FILE_SECRET_KEY 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-file.pem
@@ -480,11 +507,11 @@ services:
     environment:
       <<: *app-env
       MYSQL_USERNAME: "iboot_auth"
-      MYSQL_PASSWORD: ${MIDDLEWARE_AUTH_PASSWORD:?MIDDLEWARE_AUTH_PASSWORD 必须在 .env 中设置}
+      MYSQL_PASSWORD: ${MYSQL_AUTH_PASSWORD:?MYSQL_AUTH_PASSWORD 必须在 .env 中设置}
       REDIS_USERNAME: "iboot_auth"
-      REDIS_PASSWORD: ${MIDDLEWARE_AUTH_PASSWORD:?MIDDLEWARE_AUTH_PASSWORD 必须在 .env 中设置}
+      REDIS_PASSWORD: ${REDIS_AUTH_PASSWORD:?REDIS_AUTH_PASSWORD 必须在 .env 中设置}
       NACOS_USERNAME: "iboot_auth"
-      NACOS_PASSWORD: ${MIDDLEWARE_AUTH_PASSWORD:?MIDDLEWARE_AUTH_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_AUTH_PASSWORD:?NACOS_AUTH_PASSWORD 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-auth.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-auth-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -522,11 +549,11 @@ services:
     environment:
       <<: *app-env
       MYSQL_USERNAME: "iboot_notify"
-      MYSQL_PASSWORD: ${MIDDLEWARE_NOTIFY_PASSWORD:?MIDDLEWARE_NOTIFY_PASSWORD 必须在 .env 中设置}
+      MYSQL_PASSWORD: ${MYSQL_NOTIFY_PASSWORD:?MYSQL_NOTIFY_PASSWORD 必须在 .env 中设置}
       REDIS_USERNAME: "iboot_notify"
-      REDIS_PASSWORD: ${MIDDLEWARE_NOTIFY_PASSWORD:?MIDDLEWARE_NOTIFY_PASSWORD 必须在 .env 中设置}
+      REDIS_PASSWORD: ${REDIS_NOTIFY_PASSWORD:?REDIS_NOTIFY_PASSWORD 必须在 .env 中设置}
       NACOS_USERNAME: "iboot_notify"
-      NACOS_PASSWORD: ${MIDDLEWARE_NOTIFY_PASSWORD:?MIDDLEWARE_NOTIFY_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_NOTIFY_PASSWORD:?NACOS_NOTIFY_PASSWORD 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-notify.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-notify-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -569,11 +596,11 @@ services:
     environment:
       <<: *app-env
       MYSQL_USERNAME: "iboot_job"
-      MYSQL_PASSWORD: ${MIDDLEWARE_JOB_PASSWORD:?MIDDLEWARE_JOB_PASSWORD 必须在 .env 中设置}
+      MYSQL_PASSWORD: ${MYSQL_JOB_PASSWORD:?MYSQL_JOB_PASSWORD 必须在 .env 中设置}
       REDIS_USERNAME: "iboot_job"
-      REDIS_PASSWORD: ${MIDDLEWARE_JOB_PASSWORD:?MIDDLEWARE_JOB_PASSWORD 必须在 .env 中设置}
+      REDIS_PASSWORD: ${REDIS_JOB_PASSWORD:?REDIS_JOB_PASSWORD 必须在 .env 中设置}
       NACOS_USERNAME: "iboot_job"
-      NACOS_PASSWORD: ${MIDDLEWARE_JOB_PASSWORD:?MIDDLEWARE_JOB_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_JOB_PASSWORD:?NACOS_JOB_PASSWORD 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-job.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-job-key.pem
       IBOOT_FILE_SILO_ACCESS_KEY: ${SILO_JOB_ACCESS_KEY:-iboot_job}
@@ -615,11 +642,11 @@ services:
     environment:
       <<: *app-env
       MYSQL_USERNAME: "iboot_workflow"
-      MYSQL_PASSWORD: ${MIDDLEWARE_WORKFLOW_PASSWORD:?MIDDLEWARE_WORKFLOW_PASSWORD 必须在 .env 中设置}
+      MYSQL_PASSWORD: ${MYSQL_WORKFLOW_PASSWORD:?MYSQL_WORKFLOW_PASSWORD 必须在 .env 中设置}
       REDIS_USERNAME: "iboot_workflow"
-      REDIS_PASSWORD: ${MIDDLEWARE_WORKFLOW_PASSWORD:?MIDDLEWARE_WORKFLOW_PASSWORD 必须在 .env 中设置}
+      REDIS_PASSWORD: ${REDIS_WORKFLOW_PASSWORD:?REDIS_WORKFLOW_PASSWORD 必须在 .env 中设置}
       NACOS_USERNAME: "iboot_workflow"
-      NACOS_PASSWORD: ${MIDDLEWARE_WORKFLOW_PASSWORD:?MIDDLEWARE_WORKFLOW_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_WORKFLOW_PASSWORD:?NACOS_WORKFLOW_PASSWORD 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-workflow.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-workflow-key.pem
       IBOOT_ROCKETMQ_ACCESS_KEY: ${ROCKETMQ_WORKFLOW_ACCESS_KEY:?ROCKETMQ_WORKFLOW_ACCESS_KEY 必须在 .env 中设置}
@@ -662,11 +689,11 @@ services:
     environment:
       <<: *app-env
       MYSQL_USERNAME: "iboot_monitor"
-      MYSQL_PASSWORD: ${MIDDLEWARE_MONITOR_PASSWORD:?MIDDLEWARE_MONITOR_PASSWORD 必须在 .env 中设置}
+      MYSQL_PASSWORD: ${MYSQL_MONITOR_PASSWORD:?MYSQL_MONITOR_PASSWORD 必须在 .env 中设置}
       REDIS_USERNAME: "iboot_monitor"
-      REDIS_PASSWORD: ${MIDDLEWARE_MONITOR_PASSWORD:?MIDDLEWARE_MONITOR_PASSWORD 必须在 .env 中设置}
+      REDIS_PASSWORD: ${REDIS_MONITOR_PASSWORD:?REDIS_MONITOR_PASSWORD 必须在 .env 中设置}
       NACOS_USERNAME: "iboot_monitor"
-      NACOS_PASSWORD: ${MIDDLEWARE_MONITOR_PASSWORD:?MIDDLEWARE_MONITOR_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_MONITOR_PASSWORD:?NACOS_MONITOR_PASSWORD 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-monitor.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-monitor-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -705,7 +732,7 @@ services:
     environment:
       <<: *app-env
       NACOS_USERNAME: "iboot_gateway"
-      NACOS_PASSWORD: ${MIDDLEWARE_GATEWAY_PASSWORD:?MIDDLEWARE_GATEWAY_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_GATEWAY_PASSWORD:?NACOS_GATEWAY_PASSWORD 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-gateway.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-gateway-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -744,7 +771,7 @@ services:
     environment:
       <<: *app-env
       NACOS_USERNAME: "iboot_ops"
-      NACOS_PASSWORD: ${MIDDLEWARE_OPS_PASSWORD:?MIDDLEWARE_OPS_PASSWORD 必须在 .env 中设置}
+      NACOS_PASSWORD: ${NACOS_OPS_PASSWORD:?NACOS_OPS_PASSWORD 必须在 .env 中设置}
       IBOOT_TLS_CERT_FILE: /certs/services/iboot-ops.pem
       IBOOT_TLS_KEY_FILE: /certs/services/iboot-ops-key.pem
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
@@ -859,25 +886,25 @@ services:
       --tls-ca-cert-file /certs/rootCA.pem
       --tls-auth-clients no
       --user default off
-      --user iboot_system on ">$$MIDDLEWARE_SYSTEM_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_tokens:*" "~pat_last_used:*" "~sys_config::*" "&cache:evict" "+@all"
-      --user iboot_workflow on ">$$MIDDLEWARE_WORKFLOW_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
-      --user iboot_file on ">$$MIDDLEWARE_FILE_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
-      --user iboot_notify on ">$$MIDDLEWARE_NOTIFY_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "~iboot:notify:*" "&iboot:push:events" "+@all"
-      --user iboot_job on ">$$MIDDLEWARE_JOB_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
-      --user iboot_monitor on ">$$MIDDLEWARE_MONITOR_PASSWORD" "~*" "&*" "+@all"
-      --user iboot_auth on ">$$MIDDLEWARE_AUTH_PASSWORD" "~login_tokens:*" "~online_token:*" "~login_retry:*" "%R~pat_tokens:*" "~pat_tokens:*" "~pat_last_used:*" "+@all"
-      --user iboot_ai on ">$$MIDDLEWARE_AI_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "~iboot:ai:*" "+@all"
+      --user iboot_system on ">$$REDIS_SYSTEM_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_tokens:*" "~pat_last_used:*" "~sys_config::*" "&cache:evict" "+@all"
+      --user iboot_workflow on ">$$REDIS_WORKFLOW_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
+      --user iboot_file on ">$$REDIS_FILE_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
+      --user iboot_notify on ">$$REDIS_NOTIFY_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "~iboot:notify:*" "&iboot:push:events" "+@all"
+      --user iboot_job on ">$$REDIS_JOB_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
+      --user iboot_monitor on ">$$REDIS_MONITOR_PASSWORD" "~*" "&*" "+@all"
+      --user iboot_auth on ">$$REDIS_AUTH_PASSWORD" "~login_tokens:*" "~online_token:*" "~login_retry:*" "%R~pat_tokens:*" "~pat_tokens:*" "~pat_last_used:*" "+@all"
+      --user iboot_ai on ">$$REDIS_AI_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "~iboot:ai:*" "+@all"
       --user iboot_exporter on ">$$REDIS_EXPORTER_PASSWORD" "~*" "+@read" "+@connection"
       "+info" "+dbsize" "+slowlog" "+memory" "+client|list" "+config|get" "+command" "+ping" "+cluster|info" "+latency"'
     environment:
-      MIDDLEWARE_SYSTEM_PASSWORD: ${MIDDLEWARE_SYSTEM_PASSWORD:?MIDDLEWARE_SYSTEM_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_WORKFLOW_PASSWORD: ${MIDDLEWARE_WORKFLOW_PASSWORD:?MIDDLEWARE_WORKFLOW_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_FILE_PASSWORD: ${MIDDLEWARE_FILE_PASSWORD:?MIDDLEWARE_FILE_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_NOTIFY_PASSWORD: ${MIDDLEWARE_NOTIFY_PASSWORD:?MIDDLEWARE_NOTIFY_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_JOB_PASSWORD: ${MIDDLEWARE_JOB_PASSWORD:?MIDDLEWARE_JOB_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_MONITOR_PASSWORD: ${MIDDLEWARE_MONITOR_PASSWORD:?MIDDLEWARE_MONITOR_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_AUTH_PASSWORD: ${MIDDLEWARE_AUTH_PASSWORD:?MIDDLEWARE_AUTH_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_AI_PASSWORD: ${MIDDLEWARE_AI_PASSWORD:?MIDDLEWARE_AI_PASSWORD 必须在 .env 中设置}
+      REDIS_SYSTEM_PASSWORD: ${REDIS_SYSTEM_PASSWORD:?REDIS_SYSTEM_PASSWORD 必须在 .env 中设置}
+      REDIS_WORKFLOW_PASSWORD: ${REDIS_WORKFLOW_PASSWORD:?REDIS_WORKFLOW_PASSWORD 必须在 .env 中设置}
+      REDIS_FILE_PASSWORD: ${REDIS_FILE_PASSWORD:?REDIS_FILE_PASSWORD 必须在 .env 中设置}
+      REDIS_NOTIFY_PASSWORD: ${REDIS_NOTIFY_PASSWORD:?REDIS_NOTIFY_PASSWORD 必须在 .env 中设置}
+      REDIS_JOB_PASSWORD: ${REDIS_JOB_PASSWORD:?REDIS_JOB_PASSWORD 必须在 .env 中设置}
+      REDIS_MONITOR_PASSWORD: ${REDIS_MONITOR_PASSWORD:?REDIS_MONITOR_PASSWORD 必须在 .env 中设置}
+      REDIS_AUTH_PASSWORD: ${REDIS_AUTH_PASSWORD:?REDIS_AUTH_PASSWORD 必须在 .env 中设置}
+      REDIS_AI_PASSWORD: ${REDIS_AI_PASSWORD:?REDIS_AI_PASSWORD 必须在 .env 中设置}
       REDIS_EXPORTER_PASSWORD: ${REDIS_EXPORTER_PASSWORD:?REDIS_EXPORTER_PASSWORD 必须在 .env 中设置}
     volumes:
       - redis_data:/data
@@ -1092,16 +1119,16 @@ services:
       NACOS_ADMIN_PASSWORD: ${NACOS_ADMIN_PASSWORD:?NACOS_ADMIN_PASSWORD 必须在 .env 中设置}
       NACOS_USERNAME: ${NACOS_USERNAME:?NACOS_USERNAME 必须在 .env 中设置}
       NACOS_PASSWORD: ${NACOS_PASSWORD:?NACOS_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_SYSTEM_PASSWORD: ${MIDDLEWARE_SYSTEM_PASSWORD:?MIDDLEWARE_SYSTEM_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_WORKFLOW_PASSWORD: ${MIDDLEWARE_WORKFLOW_PASSWORD:?MIDDLEWARE_WORKFLOW_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_FILE_PASSWORD: ${MIDDLEWARE_FILE_PASSWORD:?MIDDLEWARE_FILE_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_NOTIFY_PASSWORD: ${MIDDLEWARE_NOTIFY_PASSWORD:?MIDDLEWARE_NOTIFY_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_JOB_PASSWORD: ${MIDDLEWARE_JOB_PASSWORD:?MIDDLEWARE_JOB_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_MONITOR_PASSWORD: ${MIDDLEWARE_MONITOR_PASSWORD:?MIDDLEWARE_MONITOR_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_AUTH_PASSWORD: ${MIDDLEWARE_AUTH_PASSWORD:?MIDDLEWARE_AUTH_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_AI_PASSWORD: ${MIDDLEWARE_AI_PASSWORD:?MIDDLEWARE_AI_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_GATEWAY_PASSWORD: ${MIDDLEWARE_GATEWAY_PASSWORD:?MIDDLEWARE_GATEWAY_PASSWORD 必须在 .env 中设置}
-      MIDDLEWARE_OPS_PASSWORD: ${MIDDLEWARE_OPS_PASSWORD:?MIDDLEWARE_OPS_PASSWORD 必须在 .env 中设置}
+      NACOS_SYSTEM_PASSWORD: ${NACOS_SYSTEM_PASSWORD:?NACOS_SYSTEM_PASSWORD 必须在 .env 中设置}
+      NACOS_WORKFLOW_PASSWORD: ${NACOS_WORKFLOW_PASSWORD:?NACOS_WORKFLOW_PASSWORD 必须在 .env 中设置}
+      NACOS_FILE_PASSWORD: ${NACOS_FILE_PASSWORD:?NACOS_FILE_PASSWORD 必须在 .env 中设置}
+      NACOS_NOTIFY_PASSWORD: ${NACOS_NOTIFY_PASSWORD:?NACOS_NOTIFY_PASSWORD 必须在 .env 中设置}
+      NACOS_JOB_PASSWORD: ${NACOS_JOB_PASSWORD:?NACOS_JOB_PASSWORD 必须在 .env 中设置}
+      NACOS_MONITOR_PASSWORD: ${NACOS_MONITOR_PASSWORD:?NACOS_MONITOR_PASSWORD 必须在 .env 中设置}
+      NACOS_AUTH_PASSWORD: ${NACOS_AUTH_PASSWORD:?NACOS_AUTH_PASSWORD 必须在 .env 中设置}
+      NACOS_AI_PASSWORD: ${NACOS_AI_PASSWORD:?NACOS_AI_PASSWORD 必须在 .env 中设置}
+      NACOS_GATEWAY_PASSWORD: ${NACOS_GATEWAY_PASSWORD:?NACOS_GATEWAY_PASSWORD 必须在 .env 中设置}
+      NACOS_OPS_PASSWORD: ${NACOS_OPS_PASSWORD:?NACOS_OPS_PASSWORD 必须在 .env 中设置}
     volumes:
       - ../scripts/nacos-init.sh:/scripts/nacos-init.sh:ro
       - ./certs/runtime:/certs:ro

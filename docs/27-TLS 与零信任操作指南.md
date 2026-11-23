@@ -469,6 +469,8 @@ B4.3 在 TLS 与网络边界之上补账号认证，但当时是共享账号方�
 | Neo4j | `neo4j` | AI 图能力 | 社区版单账号；口令由 `NEO4J_PASSWORD` 注入，缺失时编排失败 |
 
 共享账号 `iboot_app` 已删除；服务账号名由服务名把 `-` 换成 `_` 得到（如 `iboot-system` → `iboot_system`）。
+每个服务在三类组件上的口令分别来自 `MYSQL_<SERVICE>_PASSWORD`、`REDIS_<SERVICE>_PASSWORD` 与
+`NACOS_<SERVICE>_PASSWORD`，不得复用同一值。
 
 B5.13 起，MySQL 写权限由 `scripts/mysql-table-grants.tsv` 与 `scripts/mysql-grants-init.sh` 在建表后授予；
 账号创建脚本不再授予库级 DML。Seata 参与方 `system`/`workflow` 额外拥有共享 `undo_log` 的 DML；
@@ -502,16 +504,32 @@ scripts/sentinel-init.sh --verify
 根 `.env` 必须提供：
 
 ```text
-MIDDLEWARE_SYSTEM_PASSWORD=
-MIDDLEWARE_WORKFLOW_PASSWORD=
-MIDDLEWARE_FILE_PASSWORD=
-MIDDLEWARE_NOTIFY_PASSWORD=
-MIDDLEWARE_JOB_PASSWORD=
-MIDDLEWARE_MONITOR_PASSWORD=
-MIDDLEWARE_AUTH_PASSWORD=
-MIDDLEWARE_AI_PASSWORD=
-MIDDLEWARE_GATEWAY_PASSWORD=
-MIDDLEWARE_OPS_PASSWORD=
+MYSQL_SYSTEM_PASSWORD=          # 数据服务 MySQL 口令，8 个
+MYSQL_WORKFLOW_PASSWORD=
+MYSQL_FILE_PASSWORD=
+MYSQL_NOTIFY_PASSWORD=
+MYSQL_JOB_PASSWORD=
+MYSQL_MONITOR_PASSWORD=
+MYSQL_AUTH_PASSWORD=
+MYSQL_AI_PASSWORD=
+REDIS_SYSTEM_PASSWORD=          # 数据服务 Redis 口令，8 个
+REDIS_WORKFLOW_PASSWORD=
+REDIS_FILE_PASSWORD=
+REDIS_NOTIFY_PASSWORD=
+REDIS_JOB_PASSWORD=
+REDIS_MONITOR_PASSWORD=
+REDIS_AUTH_PASSWORD=
+REDIS_AI_PASSWORD=
+NACOS_SYSTEM_PASSWORD=          # 十个服务的 Nacos 口令
+NACOS_WORKFLOW_PASSWORD=
+NACOS_FILE_PASSWORD=
+NACOS_NOTIFY_PASSWORD=
+NACOS_JOB_PASSWORD=
+NACOS_MONITOR_PASSWORD=
+NACOS_AUTH_PASSWORD=
+NACOS_AI_PASSWORD=
+NACOS_GATEWAY_PASSWORD=
+NACOS_OPS_PASSWORD=
 MYSQL_ROOT_PASSWORD=
 MYSQL_MIGRATOR_PASSWORD=
 MYSQL_PROVISIONER_PASSWORD=
@@ -920,7 +938,7 @@ Nacos 共用 `iboot`、文件与 AI 共用 Silo 根账号，中间件的连接�
 
 - Docker：`x-app-env` 先清空所有每服务口令与根凭据，各服务块只注入自己的 `MYSQL_*`、`REDIS_*`、
   `NACOS_*`；文件、备份与 AI 分别注入 `SILO_FILE_*`、`SILO_JOB_*`、`SILO_AI_*`。
-- 宿主机：`dev-init.sh` 用 `env -u` 移除其它服务的 `MIDDLEWARE_*_PASSWORD` 与根凭据，再注入本服务身份。
+- 宿主机：`dev-init.sh` 用 `env -u` 移除其它服务的 `MYSQL_*`/`REDIS_*`/`NACOS_*` 口令与根凭据，再注入本服务身份。
 - 迁移期可保留旧共享账号口令变量，但必须保持未使用；回归会断言服务进程环境不含非本服务凭据。
 
 ### 21.3 验收
@@ -941,7 +959,8 @@ bash scripts/regress/regress.sh
 ### 21.4 边界
 
 - B5.13 已完成表级/键级授权：MySQL 写权限按表授予，Redis 按前缀限制；monitor 的键空间浏览是显式例外。
-- 每服务口令默认在 MySQL/Redis/Nacos 间复用；生产应通过独立变量覆盖后分别轮换。
+- 每服务在 MySQL/Redis/Nacos 上使用独立口令（`MYSQL_*`、`REDIS_*`、`NACOS_*`），可按组件分别轮换；
+  回归断言三类口令不同，跨组件使用同一口令时认证失败。
 - Kafka 日志账号保持按用途（生产/消费/运维）区分；Neo4j 社区版仍是单账号。
 - 共享库表级只读契约不变，见 [docs/23](<./23-微服务底座操作指南.md>) §11.12。
 

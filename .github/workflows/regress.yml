@@ -114,16 +114,32 @@ jobs:
           MYSQL_PROVISIONER_PASSWORD: iboot-dev-provisioner
           MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
           REDIS_EXPORTER_PASSWORD: iboot-dev-redis-exporter
-          MIDDLEWARE_SYSTEM_PASSWORD: iboot-dev-system
-          MIDDLEWARE_WORKFLOW_PASSWORD: iboot-dev-workflow
-          MIDDLEWARE_FILE_PASSWORD: iboot-dev-file
-          MIDDLEWARE_NOTIFY_PASSWORD: iboot-dev-notify
-          MIDDLEWARE_JOB_PASSWORD: iboot-dev-job
-          MIDDLEWARE_MONITOR_PASSWORD: iboot-dev-monitor
-          MIDDLEWARE_AUTH_PASSWORD: iboot-dev-auth
-          MIDDLEWARE_AI_PASSWORD: iboot-dev-ai
-          MIDDLEWARE_GATEWAY_PASSWORD: iboot-dev-gateway
-          MIDDLEWARE_OPS_PASSWORD: iboot-dev-ops
+          MYSQL_SYSTEM_PASSWORD: iboot-dev-mysql-system
+          MYSQL_WORKFLOW_PASSWORD: iboot-dev-mysql-workflow
+          MYSQL_FILE_PASSWORD: iboot-dev-mysql-file
+          MYSQL_NOTIFY_PASSWORD: iboot-dev-mysql-notify
+          MYSQL_JOB_PASSWORD: iboot-dev-mysql-job
+          MYSQL_MONITOR_PASSWORD: iboot-dev-mysql-monitor
+          MYSQL_AUTH_PASSWORD: iboot-dev-mysql-auth
+          MYSQL_AI_PASSWORD: iboot-dev-mysql-ai
+          REDIS_SYSTEM_PASSWORD: iboot-dev-redis-system
+          REDIS_WORKFLOW_PASSWORD: iboot-dev-redis-workflow
+          REDIS_FILE_PASSWORD: iboot-dev-redis-file
+          REDIS_NOTIFY_PASSWORD: iboot-dev-redis-notify
+          REDIS_JOB_PASSWORD: iboot-dev-redis-job
+          REDIS_MONITOR_PASSWORD: iboot-dev-redis-monitor
+          REDIS_AUTH_PASSWORD: iboot-dev-redis-auth
+          REDIS_AI_PASSWORD: iboot-dev-redis-ai
+          NACOS_SYSTEM_PASSWORD: iboot-dev-nacos-system
+          NACOS_WORKFLOW_PASSWORD: iboot-dev-nacos-workflow
+          NACOS_FILE_PASSWORD: iboot-dev-nacos-file
+          NACOS_NOTIFY_PASSWORD: iboot-dev-nacos-notify
+          NACOS_JOB_PASSWORD: iboot-dev-nacos-job
+          NACOS_MONITOR_PASSWORD: iboot-dev-nacos-monitor
+          NACOS_AUTH_PASSWORD: iboot-dev-nacos-auth
+          NACOS_AI_PASSWORD: iboot-dev-nacos-ai
+          NACOS_GATEWAY_PASSWORD: iboot-dev-nacos-gateway
+          NACOS_OPS_PASSWORD: iboot-dev-nacos-ops
           KAFKA_BROKER_PASSWORD: iboot-dev-kafka-broker
           KAFKA_LOG_PASSWORD: iboot-dev-kafka-log
           KAFKA_LOGSTASH_PASSWORD: iboot-dev-kafka-logstash
@@ -180,16 +196,32 @@ jobs:
           MYSQL_PROVISIONER_PASSWORD: iboot-dev-provisioner
           MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
           REDIS_EXPORTER_PASSWORD: iboot-dev-redis-exporter
-          MIDDLEWARE_SYSTEM_PASSWORD: iboot-dev-system
-          MIDDLEWARE_WORKFLOW_PASSWORD: iboot-dev-workflow
-          MIDDLEWARE_FILE_PASSWORD: iboot-dev-file
-          MIDDLEWARE_NOTIFY_PASSWORD: iboot-dev-notify
-          MIDDLEWARE_JOB_PASSWORD: iboot-dev-job
-          MIDDLEWARE_MONITOR_PASSWORD: iboot-dev-monitor
-          MIDDLEWARE_AUTH_PASSWORD: iboot-dev-auth
-          MIDDLEWARE_AI_PASSWORD: iboot-dev-ai
-          MIDDLEWARE_GATEWAY_PASSWORD: iboot-dev-gateway
-          MIDDLEWARE_OPS_PASSWORD: iboot-dev-ops
+          MYSQL_SYSTEM_PASSWORD: iboot-dev-mysql-system
+          MYSQL_WORKFLOW_PASSWORD: iboot-dev-mysql-workflow
+          MYSQL_FILE_PASSWORD: iboot-dev-mysql-file
+          MYSQL_NOTIFY_PASSWORD: iboot-dev-mysql-notify
+          MYSQL_JOB_PASSWORD: iboot-dev-mysql-job
+          MYSQL_MONITOR_PASSWORD: iboot-dev-mysql-monitor
+          MYSQL_AUTH_PASSWORD: iboot-dev-mysql-auth
+          MYSQL_AI_PASSWORD: iboot-dev-mysql-ai
+          REDIS_SYSTEM_PASSWORD: iboot-dev-redis-system
+          REDIS_WORKFLOW_PASSWORD: iboot-dev-redis-workflow
+          REDIS_FILE_PASSWORD: iboot-dev-redis-file
+          REDIS_NOTIFY_PASSWORD: iboot-dev-redis-notify
+          REDIS_JOB_PASSWORD: iboot-dev-redis-job
+          REDIS_MONITOR_PASSWORD: iboot-dev-redis-monitor
+          REDIS_AUTH_PASSWORD: iboot-dev-redis-auth
+          REDIS_AI_PASSWORD: iboot-dev-redis-ai
+          NACOS_SYSTEM_PASSWORD: iboot-dev-nacos-system
+          NACOS_WORKFLOW_PASSWORD: iboot-dev-nacos-workflow
+          NACOS_FILE_PASSWORD: iboot-dev-nacos-file
+          NACOS_NOTIFY_PASSWORD: iboot-dev-nacos-notify
+          NACOS_JOB_PASSWORD: iboot-dev-nacos-job
+          NACOS_MONITOR_PASSWORD: iboot-dev-nacos-monitor
+          NACOS_AUTH_PASSWORD: iboot-dev-nacos-auth
+          NACOS_AI_PASSWORD: iboot-dev-nacos-ai
+          NACOS_GATEWAY_PASSWORD: iboot-dev-nacos-gateway
+          NACOS_OPS_PASSWORD: iboot-dev-nacos-ops
           KAFKA_BROKER_PASSWORD: iboot-dev-kafka-broker
           KAFKA_LOG_PASSWORD: iboot-dev-kafka-log
           KAFKA_LOGSTASH_PASSWORD: iboot-dev-kafka-logstash
