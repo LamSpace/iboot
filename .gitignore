@@ -134,3 +134,7 @@ lerna-debug.log*
 *.ntvs*
 *.njsproj
 *.sln
+
+# Python 缓存
+__pycache__/
+*.pyc
