@@ -97,7 +97,7 @@ Docker 全量部署中，宿主机只有门户 `80/443` 绑定全部网卡；其
 | silo | 9000/9001 | `127.0.0.1` | 对象存储与控制台（HTTPS） |
 | elasticsearch | 9200 | `127.0.0.1` | 检索（HTTPS + 认证） |
 | kafka | 29092 | `127.0.0.1` | 宿主机监听；容器内使用 `kafka:9092`，全部监听 SSL |
-| rocketmq-tls | 18081 | `127.0.0.1` | RocketMQ TLS-only 入口；Proxy 原生端口只在 `mq` 网络内，边界见 [docs/27 §9.4](<../docs/27-TLS 与零信任操作指南.md>) |
+| rocketmq-tls | 18081 | `127.0.0.1` | RocketMQ TLS-only 入口；Proxy 原生端口只在 `mq` 网络内，服务端证书校验见 [docs/27 §26](<../docs/27-TLS 与零信任操作指南.md>) |
 | logstash | — | — | 不发布；在编排网络内从 Kafka 读取并写入 Elasticsearch |
 | nacos | 8848/9848/8849 | `127.0.0.1` | HTTPS API / gRPC TLS / 控制台（8849） |
 | tempo | 4317/4318/3200 | `127.0.0.1` | OTLP gRPC / OTLP HTTP / UI |

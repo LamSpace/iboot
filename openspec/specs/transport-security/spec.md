@@ -722,11 +722,11 @@ Grafana、Prometheus、Alertmanager、Thanos Query 与 Kibana 的 HTTP 入口 SH
 
 ### Requirement: RocketMQ 应用入口只接受 TLS
 
-RocketMQ 的应用入口 SHALL 由只接受 TLS 的前置代理提供；明文连接 MUST NOT 获得代理响应。客户端仍不校验服务端证书，MUST NOT 被描述为 mTLS 或零信任链路。
+RocketMQ 的应用入口 SHALL 由只接受 TLS 的前置代理提供；明文连接 MUST NOT 获得代理响应。
 
 - 前置代理 MUST 只转发 TLS ClientHello；非 TLS 字节 MUST 被拒绝或立即关闭。
 - Proxy 原生端口 MUST NOT 直接暴露给应用容器或宿主机；应用 MUST 只通过前置代理访问。
-- 客户端 MUST 使用 `enableSsl=true`；官方 5.2.2 客户端硬编码 `InsecureTrustManager`，服务端证书校验 MUST 登记为已知边界。
+- 客户端 MUST 使用 `enableSsl=true`，并按“RocketMQ 客户端校验服务端证书”要求校验服务端。
 - Broker 与 Proxy MUST 启用认证与授权；未携带凭据或凭据错误的客户端 MUST NOT 生产或消费消息。
 - 每个应用 MUST 使用独立账号；生产方 MUST 只能发布其业务 topic，消费方 MUST 只能订阅其消费组与 topic。
 - 运维账号 MUST 只用于 topic/ACL 初始化与排障，MUST NOT 注入业务服务。
@@ -940,3 +940,43 @@ RocketMQ 镜像自带的 `rocketmq2/12345678` 等默认凭据 MUST NOT 能访问
 - **WHEN** 执行 `dev-init.sh --stop`、`--down` 或 `--purge`
 - **THEN** relay 进程被停止
 - **AND** 不残留 PID 文件对应的运行进程
+
+### Requirement: RocketMQ 客户端校验服务端证书
+
+RocketMQ Java 客户端 SHALL 校验 Proxy 服务端证书链与主机名，MUST NOT 使用信任所有证书的实现。
+
+- 客户端 MUST 使用本地 CA 信任库（或部署方显式配置的信任库）初始化 `TrustManagerFactory`。
+- 信任库缺失、损坏或不可读时，客户端 MUST 失败关闭，MUST NOT 回退到信任所有证书。
+- 服务端证书 MUST 覆盖客户端实际连接的 `rocketmq-tls` 主机名；主机名不匹配时握手 MUST 失败。
+- 兼容层 MUST 只修补客户端 5.2.2 的信任管理器，MUST NOT 关闭 gRPC 的 HTTPS 主机名校验。
+- 回归 MUST 证明正确 CA 可投递、错误 CA 被拒绝，并检查兼容层被打包到 `BOOT-INF/classes`。
+- 客户端升级到已修复的版本后，兼容层 MUST 被删除。
+
+#### Scenario: 正确 CA 可投递
+
+- **WHEN** workflow 使用包含本地 CA 的信任库连接 `rocketmq-tls:8081`
+- **THEN** TLS 握手完成证书链与主机名校验
+- **AND** 消息投递成功
+
+#### Scenario: 错误 CA 被拒绝
+
+- **WHEN** 客户端使用不含本地 CA 的信任库连接同一入口
+- **THEN** TLS 握手失败
+- **AND** 生产或消费请求不成功
+
+#### Scenario: 主机名不匹配被拒绝
+
+- **WHEN** 客户端连接的主机名不在服务端证书 SAN 中
+- **THEN** gRPC 的 HTTPS 主机名校验失败
+
+#### Scenario: 信任库不可用时失败关闭
+
+- **WHEN** 显式配置的信任库路径不存在或无法加载
+- **THEN** 客户端初始化失败
+- **AND** 不建立到 Proxy 的连接
+
+#### Scenario: 兼容层随 fat jar 生效
+
+- **WHEN** 解包 workflow 或 notify 的 Spring Boot fat jar
+- **THEN** `BOOT-INF/classes` 中存在兼容层类
+- **AND** 客户端运行时优先加载该类而不是内置的不安全实现
