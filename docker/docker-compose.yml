@@ -49,6 +49,8 @@ x-app-env: &app-env
   # .env 会整文件进入容器；显式清空超级用户口令，避免绕过专用账号。
   ELASTIC_PASSWORD: ""
   MYSQL_ROOT_PASSWORD: ""
+  MYSQL_MIGRATOR_PASSWORD: ""
+  MYSQL_PROVISIONER_PASSWORD: ""
   MYSQL_EXPORTER_PASSWORD: ""
   SILO_ROOT_USER: ""
   SILO_ROOT_PASSWORD: ""
@@ -161,9 +163,9 @@ services:
       TZ: Asia/Shanghai
       MYSQL_HOST: mysql
       MYSQL_PORT: "3306"
-      # 迁移需要 DDL，使用 root；业务服务使用 iboot_app。
-      MYSQL_USERNAME: root
-      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}
+      # 迁移需要 DDL，使用专用迁移账号；业务服务使用各自的 iboot_<service>。
+      MYSQL_USERNAME: iboot_migrator
+      MYSQL_PASSWORD: ${MYSQL_MIGRATOR_PASSWORD:?MYSQL_MIGRATOR_PASSWORD 必须在 .env 中设置}
       IBOOT_DB_NAME: iboot
       MYSQL_TLS_ENABLED: "true"
       JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
@@ -190,7 +192,8 @@ services:
     environment:
       MYSQL_HOST: mysql
       MYSQL_PORT: "3306"
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}
+      MYSQL_ADMIN_USER: iboot_provisioner
+      MYSQL_ADMIN_PASSWORD: ${MYSQL_PROVISIONER_PASSWORD:?MYSQL_PROVISIONER_PASSWORD 必须在 .env 中设置}
       MYSQL_EXPORTER_USER: ${MYSQL_EXPORTER_USER:-iboot_exporter}
       MYSQL_EXPORTER_PASSWORD: ${MYSQL_EXPORTER_PASSWORD:?MYSQL_EXPORTER_PASSWORD 必须在 .env 中设置}
       MIDDLEWARE_SYSTEM_PASSWORD: ${MIDDLEWARE_SYSTEM_PASSWORD:?MIDDLEWARE_SYSTEM_PASSWORD 必须在 .env 中设置}
@@ -219,7 +222,8 @@ services:
     environment:
       MYSQL_HOST: mysql
       MYSQL_PORT: "3306"
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}
+      MYSQL_ADMIN_USER: iboot_provisioner
+      MYSQL_ADMIN_PASSWORD: ${MYSQL_PROVISIONER_PASSWORD:?MYSQL_PROVISIONER_PASSWORD 必须在 .env 中设置}
       MYSQL_DATABASE: iboot
       MYSQL_GRANTS_FILE: /scripts/mysql-table-grants.tsv
     volumes:
@@ -819,12 +823,16 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 必须在 .env 中设置}
       MYSQL_DATABASE: iboot
-      # root 仅用于账号初始化与迁移；业务服务使用 iboot_app
-      MYSQL_ROOT_HOST: "%"
+      # root 只在容器内回环可用；迁移与账号初始化使用专用账号。
+      MYSQL_ROOT_HOST: "localhost"
+      MYSQL_MIGRATOR_PASSWORD: ${MYSQL_MIGRATOR_PASSWORD:?MYSQL_MIGRATOR_PASSWORD 必须在 .env 中设置}
+      MYSQL_PROVISIONER_PASSWORD: ${MYSQL_PROVISIONER_PASSWORD:?MYSQL_PROVISIONER_PASSWORD 必须在 .env 中设置}
       TZ: Asia/Shanghai
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./mysql-init-accounts.sh:/docker-entrypoint-initdb.d/20-init-accounts.sh:ro
+      - ./mysql-init-accounts.sh:/scripts/mysql-init-accounts.sh:ro
       - ./certs/runtime:/certs:ro
     restart: unless-stopped
     networks:

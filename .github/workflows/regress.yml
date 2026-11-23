@@ -110,6 +110,8 @@ jobs:
           NEO4J_PASSWORD: iboot-dev-neo4j
           # 中间件账号鉴权：CI 在干净环境使用独立开发口令。
           MYSQL_ROOT_PASSWORD: root
+          MYSQL_MIGRATOR_PASSWORD: iboot-dev-migrator
+          MYSQL_PROVISIONER_PASSWORD: iboot-dev-provisioner
           MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
           REDIS_EXPORTER_PASSWORD: iboot-dev-redis-exporter
           MIDDLEWARE_SYSTEM_PASSWORD: iboot-dev-system
@@ -174,6 +176,8 @@ jobs:
           IBOOT_SERVICE_AUTHORIZATION_OPA_URL: http://localhost:8181
           # 与启动步骤一致：CI 使用同一组中间件账号。
           MYSQL_ROOT_PASSWORD: root
+          MYSQL_MIGRATOR_PASSWORD: iboot-dev-migrator
+          MYSQL_PROVISIONER_PASSWORD: iboot-dev-provisioner
           MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter
           REDIS_EXPORTER_PASSWORD: iboot-dev-redis-exporter
           MIDDLEWARE_SYSTEM_PASSWORD: iboot-dev-system
