@@ -208,6 +208,9 @@ jobs:
           NACOS_USERNAME: iboot
           NACOS_PASSWORD: iboot-dev-nacos
           NACOS_ADMIN_PASSWORD: iboot-dev-nacos-admin
+          NACOS_AUTH_TOKEN: aWJvb3QtZGV2LW5hY29zLWF1dGgtdG9rZW4tMzJieXRl
+          NACOS_AUTH_IDENTITY_KEY: iboot
+          NACOS_AUTH_IDENTITY_VALUE: iboot
           # 与启动步骤一致：CI 不启动 iboot-ops，内部 TLS 不再检查 8089。
           IBOOT_OPS_ENABLED: 'false'
         run: bash scripts/regress/regress.sh
