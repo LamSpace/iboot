@@ -472,6 +472,9 @@ B5.13 起，MySQL 写权限由 `scripts/mysql-table-grants.tsv` 与 `scripts/mys
 账号创建脚本不再授予库级 DML。Seata 参与方 `system`/`workflow` 额外拥有共享 `undo_log` 的 DML；
 Redis 键模式在 compose 的 ACL 用户定义中维护。
 
+MySQL、Redis、Silo 与 Nacos HTTP 使用**服务端 TLS + 独立账号/ACL**，不是客户端证书 mTLS；
+客户端证书 mTLS 只用于业务服务端口与 Nacos gRPC。需要数据面客户端证书时，必须单独立项改造各客户端。
+
 ### 13.2 初始化
 
 ```bash
@@ -1014,6 +1017,7 @@ scripts/tls-rotate-schedule.sh --print                     # 只输出将安装�
 ```
 
 - 优先安装 systemd user timer；当前会话不可用时回退到当前用户 crontab。默认每日 `03:30` 执行。
+- 仓库与开发机默认**不写入** systemd timer 或 crontab；首次部署必须在目标主机执行 `--install` 才会生效。
 - 定时任务先跑 `--check`：通过则只写日志，不碰证书；失败才执行 `--rotate --restart=<scope>`。
 - 默认 `--restart=none`，需要自动生效时必须显式选择 `docker` 或 `host`。
 - 日志写入 `logs/tls-rotate.log`，目录锁防止并发重签。
@@ -1218,3 +1222,19 @@ scripts/spire-down.sh
 - 现有十个服务仍使用 mkcert 叶子证书；SVID 切换需要证书加载/轮换改造，列为下一阶段。
 - 不部署 Kubernetes 控制面或 sidecar 网格。
 - SPIRE 的 CA、token 与数据卷均为本地演示资产，不入仓。
+
+## 29. 零信任残余边界清单（B5.14 后）
+
+本轮 6 项登记边界已收口；以下是仍存在的显式边界或后续阶段，均已登记，不是隐藏欠账。
+
+| # | 边界 / 后续项 | 登记位置 | 触发条件 / 下一步 |
+|---|---|---|---|
+| 1 | Seata 无原生 TLS/认证 | §19、`transport-security` 规格 | 上游提供原生 TLS/认证，或引入网格；当前靠 `tx` 网络与内部令牌补偿 |
+| 2 | 十个服务尚未切换到 SPIRE SVID | §18.5、§28.2、`workload-identity` 规格 | 证书加载/轮换改造完成后按服务灰度切换，保留 mkcert 回滚 |
+| 3 | 未引入 Kubernetes sidecar 网格 | §27.3、§28.2、`ROADMAP` 阶段 4 | 部署目标迁到 Kubernetes 后再评估 Istio/Linkerd |
+| 4 | Sentinel 命令端口 8719 仍按默认绑定 | §12.4、§25.4 | Sentinel 支持绑定地址，或前置只绑定回环的代理 |
+| 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `scripts/tls-rotate-schedule.sh --install ...` |
+| 6 | OPA 生产高可用未实现 | §27.3 | 生产多副本、缓存/超时预算、故障演练 |
+| 7 | 中间件不是客户端证书 mTLS | §13.1 | 需要时单独立项改造 MySQL/Redis/Silo/Nacos HTTP 客户端证书 |
+
+> 说明：第 1 项按用户要求排除；第 2、3 项是 L3 的后续阶段；第 4–7 项是已登记的运维/部署边界。
