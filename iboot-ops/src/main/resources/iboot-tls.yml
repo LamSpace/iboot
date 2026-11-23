@@ -35,6 +35,8 @@ iboot:
   security:
     service-authorization:
       enabled: ${IBOOT_SERVICE_AUTHORIZATION_ENABLED:false}
+      opa-url: ${IBOOT_SERVICE_AUTHORIZATION_OPA_URL:}
+      opa-timeout: ${IBOOT_SERVICE_AUTHORIZATION_OPA_TIMEOUT:500ms}
       rules:
         - paths: ["/actuator/**"]
           callers: ["iboot-ops", "prometheus", "blackbox", "iboot-portal"]

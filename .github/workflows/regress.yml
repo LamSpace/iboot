@@ -169,6 +169,9 @@ jobs:
           ES_GRAFANA_PASSWORD: iboot-dev-es-grafana
           ES_EXPORTER_PASSWORD: iboot-dev-es-exporter
           NEO4J_PASSWORD: iboot-dev-neo4j
+          GRAFANA_ADMIN_PASSWORD: iboot-dev-grafana
+          KIBANA_SYSTEM_PASSWORD: iboot-dev-kibana
+          IBOOT_SERVICE_AUTHORIZATION_OPA_URL: http://localhost:8181
           # 与启动步骤一致：CI 使用同一组中间件账号。
           MYSQL_ROOT_PASSWORD: root
           MYSQL_EXPORTER_PASSWORD: iboot-dev-exporter

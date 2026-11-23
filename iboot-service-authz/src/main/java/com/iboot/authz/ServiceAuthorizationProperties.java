@@ -18,6 +18,7 @@ package com.iboot.authz;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +49,52 @@ public class ServiceAuthorizationProperties {
      * 宿主专属规则，优先于公共规则匹配。
      */
     private List<ServiceAuthorizationRule> extraRules = new ArrayList<>();
+
+    /**
+     * OPA 决策地址；为空时使用本地规则。
+     */
+    private String opaUrl = "";
+
+    /**
+     * 单次 OPA 决策超时。
+     */
+    private Duration opaTimeout = Duration.ofMillis(500);
+
+    /**
+     * 获取 OPA 决策地址。
+     *
+     * @return OPA 基础地址；为空表示使用本地规则
+     */
+    public String getOpaUrl() {
+        return opaUrl;
+    }
+
+    /**
+     * 设置 OPA 决策地址。
+     *
+     * @param opaUrl OPA 基础地址
+     */
+    public void setOpaUrl(final String opaUrl) {
+        this.opaUrl = opaUrl == null ? "" : opaUrl;
+    }
+
+    /**
+     * 获取 OPA 决策超时。
+     *
+     * @return 超时时间
+     */
+    public Duration getOpaTimeout() {
+        return opaTimeout;
+    }
+
+    /**
+     * 设置 OPA 决策超时。
+     *
+     * @param opaTimeout 超时时间
+     */
+    public void setOpaTimeout(final Duration opaTimeout) {
+        this.opaTimeout = opaTimeout == null ? Duration.ofMillis(500) : opaTimeout;
+    }
 
     /**
      * 是否启用。

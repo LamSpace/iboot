@@ -98,6 +98,8 @@ x-app-env: &app-env
   IBOOT_INTERNAL_TLS_ENABLED: "true"
   # 服务间授权：mTLS 身份 + 路径级调用方白名单
   IBOOT_SERVICE_AUTHORIZATION_ENABLED: "true"
+  IBOOT_SERVICE_AUTHORIZATION_OPA_URL: http://opa:8181
+  IBOOT_SERVICE_AUTHORIZATION_OPA_TIMEOUT: 500ms
   JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dnacos.remote.client.rpc.tls.enable=true -Dnacos.remote.client.rpc.tls.trustCollectionChainPath=file:/certs/ca/rootCA.pem -Dnacos.remote.client.rpc.tls.trustAll=false -Dnacos.remote.client.rpc.tls.mutualAuth=true -Dnacos.remote.client.rpc.tls.certChainFile=file:/certs/portal.pem -Dnacos.remote.client.rpc.tls.certPrivateKey=file:/certs/portal-key.pem"
   IBOOT_ROCKETMQ_ENDPOINTS: rocketmq-tls:8081
   IBOOT_ROCKETMQ_SSL_ENABLED: "true"
@@ -231,6 +233,83 @@ services:
     networks:
       - data
 
+  # OPA 集中服务间授权决策；失败关闭，见 docs/27 §27。
+  opa:
+    image: openpolicyagent/opa:1.8.0
+    container_name: iboot-opa
+    command: ["run", "--server", "--addr=0.0.0.0:8181", "--log-level=info", "/policies"]
+    volumes:
+      - ./opa/policies:/policies:ro
+    ports:
+      - "127.0.0.1:8181:8181"
+    restart: unless-stopped
+    networks:
+      - app
+
+  # ==================== SPIRE（opt-in，profile: spire） ====================
+  # 只用于验证 Workload API 与 SVID；默认启动路径不包含，现有 mTLS 不受影响。
+  spire-server:
+    image: ghcr.io/spiffe/spire-server:1.12.4
+    container_name: iboot-spire-server
+    # 本地数据卷由 root 创建；SPIRE 镜像默认 1000:1000，演示环境用 root 写卷。
+    user: "0:0"
+    profiles: ["spire"]
+    command: ["-config", "/run/spire/config/server.conf"]
+    volumes:
+      - ./spire/server.conf:/run/spire/config/server.conf:ro
+      - ./spire/ca:/run/spire/ca:ro
+      - spire_server_data:/run/spire/data
+    healthcheck:
+      test: ["CMD", "/opt/spire/bin/spire-server", "healthcheck", "-socketPath", "/run/spire/server/api.sock"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: "no"
+    networks:
+      - data
+
+  spire-agent:
+    image: ghcr.io/spiffe/spire-agent:1.12.4
+    container_name: iboot-spire-agent
+    profiles: ["spire"]
+    # Docker WorkloadAttestor 需要把调用进程 PID 映射到容器，必须共享宿主 PID 命名空间。
+    pid: host
+    command: ["-config", "/run/spire/config/agent.conf", "-joinToken", "${SPIRE_JOIN_TOKEN:-}"]
+    volumes:
+      - ./spire/agent.conf:/run/spire/config/agent.conf:ro
+      - ./spire/bundle:/run/spire/bundle:ro
+      - spire_agent_data:/run/spire/data
+      - spire_agent_socket:/run/spire/sockets
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      spire-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/opt/spire/bin/spire-agent", "healthcheck", "-socketPath", "/run/spire/sockets/agent.sock"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: "no"
+    networks:
+      - data
+
+  spire-demo:
+    image: ghcr.io/spiffe/spire-agent:1.12.4
+    container_name: iboot-spire-demo
+    profiles: ["spire"]
+    entrypoint: ["/opt/spire/bin/spire-agent"]
+    command: ["api", "fetch", "x509", "-socketPath", "/run/spire/sockets/agent.sock", "-output", "json"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - data
+
 # ==================== 应用服务 ====================
   iboot-system:
     <<: *app-common
@@ -283,6 +362,8 @@ services:
         condition: service_healthy
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-ai:
     <<: *app-common
@@ -333,6 +414,8 @@ services:
         condition: service_healthy
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-file:
     <<: *app-common
@@ -377,6 +460,8 @@ services:
         condition: service_healthy
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-auth:
     <<: *app-common
@@ -417,6 +502,8 @@ services:
         condition: service_healthy
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-notify:
     <<: *app-common
@@ -462,6 +549,8 @@ services:
         condition: service_completed_successfully
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-job:
     <<: *app-common
@@ -506,6 +595,8 @@ services:
         condition: service_healthy
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-workflow:
     <<: *app-common
@@ -551,6 +642,8 @@ services:
         condition: service_completed_successfully
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-monitor:
     <<: *app-common
@@ -592,6 +685,8 @@ services:
         condition: service_healthy
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-gateway:
     <<: *app-common
@@ -629,6 +724,8 @@ services:
         condition: service_healthy
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-ops:
     <<: *app-common
@@ -667,6 +764,8 @@ services:
         condition: service_healthy
       mysql-grants-init:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
 
   iboot-portal:
     build:
@@ -1818,3 +1917,7 @@ volumes:
   tempo_data:
   seata_data:
   skywalking_banyandb_data:
+
+  spire_server_data:
+  spire_agent_data:
+  spire_agent_socket:

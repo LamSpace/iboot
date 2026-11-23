@@ -15,7 +15,8 @@
 - 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
   宿主机开发模式下 Java 进程也只监听回环地址（B5.10）。
-- 服务端以客户端证书的 SPIFFE URI SAN（CN 回退）做路径级服务间授权（B5.4/B5.8）；仍不引入本机服务网格或 OPA，方法级业务权限继续由 JWT 承担。
+- 服务端以客户端证书的 SPIFFE URI SAN（CN 回退）做路径级服务间授权（B5.4/B5.8）；
+  B5.14 引入 OPA 集中决策与 SPIRE Workload API 演示；仍不部署 Kubernetes 网格，方法级业务权限继续由 JWT 承担。
 
 ## 2. 证书
 
@@ -756,7 +757,8 @@ openssl x509 -in docker/certs/services/iboot-system.pem -noout -purpose
 
 ### 18.5 边界
 
-- 服务端已按 SPIFFE ID（CN 回退）做路径级授权（B5.4/B5.8）；方法级业务权限仍由 JWT 决定，SPIFFE Workload API 与服务网格留待后续。
+- 服务端已按 SPIFFE ID（CN 回退）做路径级授权（B5.4/B5.8）；B5.14 已提供 SPIRE Workload API 的 opt-in
+  演示（`spire` profile），现有服务仍使用 mkcert 证书，SVID 切换为下一阶段。
 - Nacos 注册客户端仍使用共享 `portal.pem`；注册通道不是业务服务端口。
 - 证书探针仍以一个服务端点反映同批签发的叶子证书到期时间；拆分不同有效期前必须扩展探针。
 
@@ -1060,8 +1062,9 @@ bash scripts/regress/service-authz.sh
 
 ### 24.4 边界
 
-- 不部署 SPIRE/SPIFFE Workload API；证书仍由本地 CA 直接签发。
-- 不引入 OPA 或服务网格；策略仍由 `ServiceAuthorizationPolicy` 执行。
+- SPIRE 以 opt-in `spire` profile 部署，提供 Workload API 与 demo SVID；现有服务仍由本地 CA 签发证书。
+- OPA 已作为集中策略决策点；`opa-url` 为空时仍回退到 `ServiceAuthorizationPolicy` 本地规则。
+- 不部署 Kubernetes 网格；Docker Compose 的 L3 平面登记为“SPIFFE 身份 + OPA 策略 + mTLS”。
 - 信任域切换需要同时改 `tls-init.sh` 与 `ClientCertificateIdentity`，当前不支持多信任域。
 
 ## 25. Sentinel Dashboard TLS 与登录（B5.11）
@@ -1161,3 +1164,57 @@ bash scripts/regress/rocketmq-acl.sh
 - 兼容层依赖客户端内部类路径，属于上游临时补丁；升级 `rocketmq-client-java` 后先确认
   `RpcClientImpl` 已不再引用不安全信任管理器，然后删除两个兼容层与相关测试。
 - RocketMQ 仍不是 mTLS：客户端没有证书身份，调用方身份由 ACL access key 提供。
+
+## 27. OPA 集中服务间授权（B5.14）
+
+服务端仍先用客户端证书确定调用方；B5.14 把路径级规则求值交给 OPA，避免每个服务的策略实现漂移。
+
+### 27.1 决策路径
+
+- `IBOOT_SERVICE_AUTHORIZATION_OPA_URL=http://opa:8181`（宿主机 `http://localhost:8181`）时，
+  `ServiceAuthorizationPolicy` 把 `caller`、`path` 与按 first-match 排序的规则提交到
+  `POST /v1/data/iboot/authz/allow`。
+- OPA 返回 `{"result":true|false}`；网关 WebFlux 使用异步调用，Servlet 使用同步封装。
+- 连接失败、超时（默认 500ms）、非 200 或结果缺失一律按拒绝处理；`opa-url` 为空时回退本地规则。
+- 规则仍来自各服务配置，OPA 不复制规则，只做集中求值。
+
+### 27.2 验收
+
+```bash
+scripts/regress/opa-authz.sh
+scripts/regress/service-authz.sh
+```
+
+`opa-authz.sh` 覆盖：OPA 健康、`opa test`、允许/拒绝、OPA 启用时的门户/文件服务链路、
+停止 OPA 后 403 失败关闭。
+
+### 27.3 边界
+
+- OPA 是新增运行时依赖；生产应部署多副本并设置超时/重试预算。
+- 当前每次内部请求都会调用 OPA；如需降低开销，可后续增加本地缓存或 sidecar 模式。
+- 不引入 Kubernetes 网格；Compose 拓扑以 OPA + SPIFFE + mTLS 为策略/身份平面。
+
+## 28. SPIRE Workload API 演示（B5.14）
+
+SPIRE 以 opt-in `spire` profile 部署，用于验证 Workload API 与 X.509-SVID；默认启动路径不包含，
+现有 mTLS 证书链不变。
+
+### 28.1 启动与验收
+
+```bash
+scripts/spire-up.sh
+bash scripts/regress/spire-svid.sh
+scripts/spire-down.sh
+```
+
+- `spire-server` 使用 SQLite、disk key manager、join token 节点证明与本地 disk upstream CA。
+- `spire-agent` 使用 join token 完成节点证明，并通过 `/run/spire/sockets/agent.sock` 提供 Workload API。
+- `spire-demo` 使用 Docker label selector 注册，获取的 SVID URI SAN 为
+  `spiffe://iboot.local/service/iboot-demo`。
+- `spire-down.sh` 只删除三个 SPIRE 容器，保留数据卷；不使用 `compose down`，避免影响主栈。
+
+### 28.2 边界
+
+- 现有十个服务仍使用 mkcert 叶子证书；SVID 切换需要证书加载/轮换改造，列为下一阶段。
+- 不部署 Kubernetes 控制面或 sidecar 网格。
+- SPIRE 的 CA、token 与数据卷均为本地演示资产，不入仓。

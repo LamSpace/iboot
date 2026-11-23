@@ -138,3 +138,7 @@ lerna-debug.log*
 # Python 缓存
 __pycache__/
 *.pyc
+
+# SPIRE 本地 CA 与 bundle
+docker/spire/ca/
+docker/spire/bundle/

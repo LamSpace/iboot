@@ -20,6 +20,7 @@ import org.springframework.util.AntPathMatcher;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 服务间授权策略。
@@ -36,6 +37,8 @@ public final class ServiceAuthorizationPolicy {
 
     private final AntPathMatcher matcher = new AntPathMatcher();
 
+    private final OpaAuthorizationClient opaClient;
+
     /**
      * 创建策略。
      *
@@ -46,6 +49,10 @@ public final class ServiceAuthorizationPolicy {
         ordered.addAll(properties.getExtraRules());
         ordered.addAll(properties.getRules());
         this.rules = List.copyOf(ordered);
+        String opaUrl = properties.getOpaUrl();
+        this.opaClient = opaUrl == null || opaUrl.isBlank()
+                ? null
+                : new OpaAuthorizationClient(opaUrl, properties.getOpaTimeout());
     }
 
     /**
@@ -56,6 +63,27 @@ public final class ServiceAuthorizationPolicy {
      * @return 命中规则且调用方不在白名单时返回 {@code true}
      */
     public boolean isDenied(final String path, final String caller) {
+        if (opaClient != null) {
+            return !opaClient.isAllowed(path, caller, rules);
+        }
+        return isDeniedLocally(path, caller);
+    }
+
+    /**
+     * 异步判断请求是否应被拒绝，供 WebFlux 过滤器使用。
+     *
+     * @param path   请求路径
+     * @param caller 调用方名称，可为 {@code null}
+     * @return 拒绝时为 {@code true} 的异步结果
+     */
+    public CompletableFuture<Boolean> isDeniedAsync(final String path, final String caller) {
+        if (opaClient != null) {
+            return opaClient.isAllowedAsync(path, caller, rules).thenApply(allowed -> !allowed);
+        }
+        return CompletableFuture.completedFuture(isDeniedLocally(path, caller));
+    }
+
+    private boolean isDeniedLocally(final String path, final String caller) {
         for (ServiceAuthorizationRule rule : rules) {
             if (rule.matches(path, matcher)) {
                 return !rule.allows(caller);

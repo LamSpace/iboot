@@ -110,6 +110,10 @@ printf '\n===== 5. 内部 TLS =====\n'
 printf '\n===== 5b. 服务间授权 =====\n'
 "$HERE/service-authz.sh" || fail "服务间授权检查未通过"
 
+echo
+echo "===== 5c. OPA 服务间授权 ====="
+"$HERE/opa-authz.sh" || fail "OPA 服务间授权检查未通过"
+
 printf '\n===== 6. 可观测控制台 TLS =====\n'
 "$HERE/observability-tls.sh" || fail "可观测控制台 TLS 检查未通过"
 
@@ -158,6 +162,10 @@ printf '\n===== 11. 明文默认地址审计 =====\n'
 
 printf '\n===== 12. 冒烟 =====\n'
 "$HERE/smoke.sh" || fail "冒烟未通过"
+
+echo
+echo "===== 12b. SPIRE Workload API ====="
+"$HERE/spire-svid.sh" || fail "SPIRE Workload API 检查未通过"
 
 printf '\n===== 13. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
