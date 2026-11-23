@@ -50,7 +50,8 @@ for module in iboot-workflow iboot-notify; do
 done
 
 reg_log "== 3. 信任管理器单元测试 =="
-if "${MVN[@]}" -q -pl iboot-workflow -Dtest=RocketMqServerTrustTest \
+if "${MVN[@]}" -q -pl iboot-workflow -am -Dtest=RocketMqServerTrustTest \
+    -Dsurefire.failIfNoSpecifiedTests=false \
     -Diboot.certs.dir="$ROOT/docker/certs" \
     -DargLine="-Djavax.net.ssl.trustStore=$TRUSTSTORE -Djavax.net.ssl.trustStorePassword=changeit" \
     test >/tmp/rocketmq-trust-unit.log 2>&1; then
@@ -62,7 +63,8 @@ fi
 reg_log "== 4. 实际投递：正确 CA =="
 if IBOOT_ROCKETMQ_INTEGRATION=true IBOOT_ROCKETMQ_EXPECT_FAILURE=false \
     IBOOT_ROCKETMQ_ENDPOINTS="$ENDPOINT" \
-    "${MVN[@]}" -q -pl iboot-workflow -Dtest='RocketMqServerTrustTest#sendsMessageWhenConfigured' \
+    "${MVN[@]}" -q -pl iboot-workflow -am -Dtest='RocketMqServerTrustTest#sendsMessageWhenConfigured' \
+    -Dsurefire.failIfNoSpecifiedTests=false \
     -Diboot.certs.dir="$ROOT/docker/certs" \
     -DargLine="-Djavax.net.ssl.trustStore=$TRUSTSTORE -Djavax.net.ssl.trustStorePassword=changeit" \
     test >/tmp/rocketmq-trust-positive.log 2>&1; then
@@ -76,7 +78,8 @@ if [ ! -f "$JDK_CACERTS" ]; then
     reg_log "  [SKIP] 找不到 JDK cacerts：$JDK_CACERTS"
 elif IBOOT_ROCKETMQ_INTEGRATION=true IBOOT_ROCKETMQ_EXPECT_FAILURE=true \
     IBOOT_ROCKETMQ_ENDPOINTS="$ENDPOINT" \
-    "${MVN[@]}" -q -pl iboot-workflow -Dtest='RocketMqServerTrustTest#sendsMessageWhenConfigured' \
+    "${MVN[@]}" -q -pl iboot-workflow -am -Dtest='RocketMqServerTrustTest#sendsMessageWhenConfigured' \
+    -Dsurefire.failIfNoSpecifiedTests=false \
     -Diboot.certs.dir="$ROOT/docker/certs" \
     -DargLine="-Djavax.net.ssl.trustStore=$JDK_CACERTS -Djavax.net.ssl.trustStorePassword=changeit" \
     test >/tmp/rocketmq-trust-negative.log 2>&1; then
