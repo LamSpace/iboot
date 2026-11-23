@@ -53,7 +53,7 @@ SAN_NAMES=(
     iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops
     mysql redis kafka elasticsearch silo nacos seata-server rocketmq-proxy tempo
     prometheus alertmanager grafana thanos-query thanos-sidecar thanos-store thanos-compact kibana
-    sentinel-dashboard
+    sentinel-dashboard rocketmq-tls
 )
 
 # 可部署服务各自使用独立证书；同一张证书同时承担服务端与客户端身份。
@@ -142,6 +142,7 @@ cert_valid() {
     cert_has_purpose "$CERT_FILE" "SSL client" || return 1
     cert_identity_matches "$CERT_FILE" "iboot-portal" "service/iboot-portal" || return 1
     cert_has_san "$CERT_FILE" "sentinel-dashboard" || return 1
+    cert_has_san "$CERT_FILE" "rocketmq-tls" || return 1
     openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1 || return 1
     local svc client
     for svc in "${SERVICE_NAMES[@]}"; do
@@ -244,6 +245,7 @@ check_expiry() {
     cert_has_purpose "$CERT_FILE" "SSL client" || fail "门户证书缺少 clientAuth 用途：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
     cert_identity_matches "$CERT_FILE" "iboot-portal" "service/iboot-portal" || fail "门户证书 SPIFFE ID 与 CN 不一致：$CERT_FILE"
     cert_has_san "$CERT_FILE" "sentinel-dashboard" || fail "门户证书 SAN 不包含 sentinel-dashboard：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
+    cert_has_san "$CERT_FILE" "rocketmq-tls" || fail "门户证书 SAN 不包含 rocketmq-tls：$CERT_FILE（执行 scripts/tls-init.sh --force 重签）"
     if openssl x509 -checkend 2592000 -noout -in "$CERT_FILE" >/dev/null 2>&1; then
         log "证书有效：$CERT_FILE"
         openssl x509 -noout -enddate -in "$CERT_FILE" | sed 's/^/  /'

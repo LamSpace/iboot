@@ -10,7 +10,7 @@
 
 - 浏览器/CLI → 门户（L1 边缘 TLS）；门户 → 网关；服务间调用与 JWKS。
 - MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面；Kafka SASL 与 Redis 命名 ACL；Grafana/Prometheus/Alertmanager/Thanos/Kibana 控制台。
-- Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 应用入口只接受 TLS 并启用 ACL（客户端仍不校验服务端证书，见 §9.4/§19/§22）。
+- Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 应用入口只接受 TLS、启用 ACL，客户端通过兼容层校验服务端证书与主机名（见 §19/§22/§26）。
 - Seata 无原生 TLS/认证，作为显式例外放在 `tx` 网络，仅 workflow/system 可访问（见 §19）。
 - 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
@@ -312,10 +312,10 @@ scripts/regress/log-pipeline.sh --drills
   非 TLS 连接被关闭；TLS 仍在客户端与 Proxy 之间端到端完成。
 - workflow 与 notify 连接 `rocketmq-tls:8081` 并设置 `IBOOT_ROCKETMQ_SSL_ENABLED=true`；
   宿主机开发使用 `localhost:18081`。Proxy 原生 8080/8081 不再发布到宿主机。
-- **已知边界**：官方客户端 5.2.2 硬编码 `InsecureTrustManagerFactory`，不校验服务端
-  证书；B5.6 已补 ACL 与调用方账号，但该链路仍不提供服务端身份认证、
-  客户端认证或 mTLS 能力。
-- 文档与回归输出统一使用“TLS-only 加密入口/已知边界”，不得写成零信任或 mTLS。
+- 客户端使用 `enableSsl=true`，并通过 B5.12 兼容层校验服务端证书链与 `rocketmq-tls`
+  主机名；上游 5.2.2 的硬编码限制由该兼容层修补（见 §26）。
+- B5.6 已补 ACL 与调用方账号。该链路仍不是 mTLS：客户端没有证书身份，
+  调用方身份来自 ACL 凭据；文档与回归输出不得把 ACL 写成 mTLS。
 
 ### 9.5 验收与回滚
 
@@ -439,7 +439,7 @@ REG_CACERT="$PWD/docker/certs/ca/rootCA.pem" scripts/regress/regress.sh
 - Sentinel 客户端命令端口 8719 仍由 Sentinel 自身绑定策略决定，不承载业务请求，作为残余边界登记。
 - 中间件已按服务拆分账号（B5.5）：MySQL、Redis、Nacos 每服务独立，Silo 由文件/备份/AI 三个桶级账号隔离；
   权限边界仍保持共享库 DML，表级授权不在本节范围内。
-- RocketMQ 入口只接受 TLS 并启用 ACL，但客户端不校验服务端证书；Seata 无原生 TLS/认证，仅靠 `tx` 网络与回环发布隔离，均为显式例外。
+- RocketMQ 入口只接受 TLS、启用 ACL，并由 B5.12 兼容层校验服务端证书；Seata 无原生 TLS/认证，仅靠 `tx` 网络与回环发布隔离，均为显式例外。
 - 可观测 UI 均为 HTTPS；Sentinel Dashboard 在 B5.11 完成 TLS 与登录。
 - 工作负载 mTLS 的证书身份已落地；SPIFFE/服务网格与按调用方授权不在本节的宣称范围内。
 
@@ -767,8 +767,8 @@ B5.3 收掉两条未闭环链路：RocketMQ 应用入口只接受 TLS；Seata �
 - RocketMQ NameServer、Broker、Proxy 与初始化任务只加入 `mq` 网络；`rocketmq-tls` 同时加入
   `app` 与 `mq`。应用连接 `rocketmq-tls:8081`，宿主机连接 `localhost:18081`。
 - Proxy 原生 8080/8081 不再发布到宿主机；`18080` 映射已移除。
-- **仍存在的边界**：官方客户端 5.2.2 硬编码 `InsecureTrustManagerFactory`，不校验服务端证书。
-  ACL 与调用方身份由 B5.6 补齐（见 §22）；仍不能宣称服务端身份认证或 mTLS。
+- 客户端服务端证书校验由 B5.12 兼容层补齐（见 §26）；ACL 与调用方身份见 §22。
+  该链路仍不是 mTLS：客户端没有证书身份。
 
 验证：
 
@@ -958,7 +958,7 @@ bash scripts/regress/regress.sh
 
 ### 22.3 边界与回滚
 
-- 仍不校验服务端证书：客户端 5.2.2 的 `InsecureTrustManagerFactory` 是上游限制；本批只补调用方身份。
+- 服务端证书校验由 B5.12 兼容层提供；ACL 仍只负责调用方身份，不构成 mTLS。
 - NameServer 未启用认证；它只服务 Broker/Proxy 的路由查询，不在应用入口路径上。
 - 回滚：移除 Broker/Proxy 的 ACL 配置与 `rocketmq-acl-init`，客户端凭据字段可保留为空。
 
@@ -1104,3 +1104,56 @@ bash scripts/regress/observability-tls.sh
 
 - Dashboard 反向探测服务命令端口 8719 仍是 HTTP，只在 Docker 网络内使用，不发布到宿主机。
 - 规则仍从 Nacos 下发；Dashboard 重启不影响运行中的限流规则。
+
+## 26. RocketMQ 服务端证书校验（B5.12）
+
+官方 `rocketmq-client-java:5.2.2` 在 `RpcClientImpl` 中硬编码
+`InsecureTrustManagerFactory.INSTANCE`，TLS 只加密、不校验服务端证书；最新发行版仍是 5.2.2。
+B5.12 用一个最小兼容层修补该限制。
+
+### 26.1 兼容层
+
+- workflow 与 notify 的 `src/main/java` 中各有一个同 FQCN 的
+  `org.apache.rocketmq.shaded...InsecureTrustManagerFactory`，只暴露客户端引用的 `INSTANCE`。
+- Spring Boot fat jar 的 `BOOT-INF/classes` 优先于 `BOOT-INF/lib`，因此兼容层覆盖客户端 jar 内的
+  不安全实现；客户端其余逻辑不变。
+- gRPC 的 `ClientTlsHandler` 已启用 `HTTPS` 主机名校验；兼容层只替换信任管理器，不关闭主机名校验。
+- 初始化失败抛出 `ExceptionInInitializerError`，客户端失败关闭，不回退到信任所有证书。
+
+### 26.2 信任库
+
+- 默认使用 JVM 的 `javax.net.ssl.trustStore`；本项目的宿主机与容器进程都指向
+  `docker/certs/truststore.p12`。
+- 可选覆盖：
+
+```text
+-Diboot.rocketmq.trustStore=/path/truststore.p12
+-Diboot.rocketmq.trustStorePassword=changeit
+-Diboot.rocketmq.trustStoreType=PKCS12
+```
+
+或对应环境变量 `IBOOT_ROCKETMQ_TRUSTSTORE`、`IBOOT_ROCKETMQ_TRUSTSTORE_PASSWORD`、
+`IBOOT_ROCKETMQ_TRUSTSTORE_TYPE`。
+
+### 26.3 SAN
+
+应用连接 `rocketmq-tls:8081`，因此 `tls-init.sh` 的门户证书 SAN 增加 `rocketmq-tls`。
+`--check` 会校验该 SAN；旧证书需要执行 `scripts/tls-init.sh --force` 或
+`scripts/tls-rotate.sh --rotate --restart docker`。
+
+### 26.4 验收
+
+```bash
+scripts/tls-init.sh --check
+bash scripts/regress/rocketmq-server-auth.sh
+bash scripts/regress/rocketmq-acl.sh
+```
+
+`rocketmq-server-auth.sh` 覆盖 SAN、fat jar 打包、正确 CA 投递、错误 CA（JDK cacerts）失败；
+`rocketmq-acl.sh` 继续覆盖 workflow 发布与 notify 消费。
+
+### 26.5 边界与升级
+
+- 兼容层依赖客户端内部类路径，属于上游临时补丁；升级 `rocketmq-client-java` 后先确认
+  `RpcClientImpl` 已不再引用不安全信任管理器，然后删除两个兼容层与相关测试。
+- RocketMQ 仍不是 mTLS：客户端没有证书身份，调用方身份由 ACL access key 提供。

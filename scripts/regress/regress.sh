@@ -135,6 +135,10 @@ echo
 echo "===== 8b. RocketMQ ACL ====="
 "$HERE/rocketmq-acl.sh" || fail "RocketMQ ACL 检查未通过"
 
+echo
+echo "===== 8c. RocketMQ 服务端证书 ====="
+"$HERE/rocketmq-server-auth.sh" || fail "RocketMQ 服务端证书检查未通过"
+
 printf '\n===== 9. 日志与检索 TLS =====\n'
 "$HERE/log-search-tls.sh" || fail "日志与检索 TLS 检查未通过"
 
