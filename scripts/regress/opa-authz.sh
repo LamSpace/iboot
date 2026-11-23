@@ -26,6 +26,15 @@ else
     reg_fail "OPA 策略单元测试失败，详见 /tmp/opa-test.log"
 fi
 
+MAVEN_SETTINGS="${MAVEN_SETTINGS:-/home/lam/repo/settings.xml}"
+MVN=(mvn)
+[ -f "$MAVEN_SETTINGS" ] && MVN+=(-s "$MAVEN_SETTINGS")
+if "${MVN[@]}" -q -pl iboot-service-authz -Dtest=ServiceAuthorizationOpaTest test >/tmp/opa-java-test.log 2>&1; then
+    reg_pass "Java OPA 决策客户端测试通过"
+else
+    reg_fail "Java OPA 决策客户端测试失败，详见 /tmp/opa-java-test.log"
+fi
+
 allow="$(curl -sS -m 3 -X POST "$OPA/v1/data/iboot/authz/allow" \
     -H 'Content-Type: application/json' \
     -d '{"input":{"caller":"iboot-gateway","path":"/api/user/1","rules":[{"paths":["/api/**"],"callers":["iboot-gateway"]}]}}')"
