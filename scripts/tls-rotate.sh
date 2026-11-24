@@ -8,8 +8,10 @@
 #   scripts/tls-rotate.sh --check
 #   scripts/tls-rotate.sh --rotate --restart none
 #   scripts/tls-rotate.sh --rotate --restart docker
+#   scripts/tls-rotate.sh --rotate --restart rolling
 #   scripts/tls-rotate.sh --rotate --restart api
 #   scripts/tls-rotate.sh --rotate --restart host
+#   scripts/tls-rotate.sh --restart-only --restart rolling
 
 set -euo pipefail
 
@@ -31,7 +33,7 @@ EXPECT_RESTART=0
 for arg in "$@"; do
     if [ "$EXPECT_RESTART" -eq 1 ]; then
         case "$arg" in
-            none|docker|api|host) RESTART="$arg" ;;
+            none|docker|api|rolling|host) RESTART="$arg" ;;
             *) printf '[tls-rotate] 未知重启范围：%s\n' "$arg" >&2; exit 2 ;;
         esac
         EXPECT_RESTART=0
@@ -40,38 +42,25 @@ for arg in "$@"; do
     case "$arg" in
         --check) MODE="check" ;;
         --rotate) MODE="rotate" ;;
+        --restart-only) MODE="restart-only" ;;
         --restart) EXPECT_RESTART=1 ;;
         --restart=none) RESTART="none" ;;
         --restart=docker) RESTART="docker" ;;
         --restart=api) RESTART="api" ;;
+        --restart=rolling) RESTART="rolling" ;;
         --restart=host) RESTART="host" ;;
         -h|--help) usage; exit 0 ;;
         *) printf '[tls-rotate] 未知参数：%s\n' "$arg" >&2; exit 2 ;;
     esac
 done
 if [ "$EXPECT_RESTART" -eq 1 ]; then
-    printf '[tls-rotate] --restart 缺少取值（none|docker|api|host）\n' >&2
+    printf '[tls-rotate] --restart 缺少取值（none|docker|rolling|api|host）\n' >&2
     exit 2
 fi
 
 check_certs() {
     "$ROOT/scripts/tls-init.sh" --check
 }
-
-if [ "$MODE" = "rotate" ]; then
-    printf '[tls-rotate] 显式重签叶子证书\n'
-    "$ROOT/scripts/tls-init.sh" --force
-else
-    if ! check_certs; then
-        printf '[tls-rotate] 证书检查未通过；确认后执行 scripts/tls-rotate.sh --rotate\n' >&2
-        exit 1
-    fi
-    printf '[tls-rotate] 证书检查通过；未修改任何文件\n'
-    exit 0
-fi
-
-check_certs
-printf '[tls-rotate] 重签后检查通过\n'
 
 restart_api() {
     local socket="${DOCKER_SOCKET:-/var/run/docker.sock}"
@@ -109,28 +98,80 @@ restart_api() {
     return "$failed"
 }
 
-case "$RESTART" in
-    none)
-        printf '[tls-rotate] 未重启运行时；需要时执行 --restart docker|host\n'
-        ;;
-    docker)
-        printf '[tls-rotate] 重建当前运行的 Docker 服务\n'
-        COMPOSE=(docker compose -f "$ROOT/docker/docker-compose.yml")
-        # 调度容器自身不参与重建，避免 --restart docker 递归重启
-        mapfile -t services < <("${COMPOSE[@]}" ps --services 2>/dev/null | grep -vx tls-rotate)
-        if [ "${#services[@]}" -eq 0 ]; then
-            printf '[tls-rotate] 未发现运行中的 compose 服务\n' >&2
-            exit 1
-        fi
-        "${COMPOSE[@]}" up -d --force-recreate "${services[@]}"
-        ;;
-    api)
-        printf '[tls-rotate] 通过 Docker API 重启使用证书的服务\n'
-        restart_api
-        ;;
-    host)
-        printf '[tls-rotate] 重启宿主机开发进程\n'
-        "$ROOT/scripts/dev-init.sh" --stop
-        "$ROOT/scripts/dev-init.sh"
-        ;;
-esac
+rolling_restart() {
+    printf '[tls-rotate] 逐个重建当前运行的 Docker 服务\n'
+    local -a compose=(docker compose -f "$ROOT/docker/docker-compose.yml")
+    local -a services=()
+    # 调度容器自身不参与重建，避免递归重启
+    mapfile -t services < <("${compose[@]}" ps --services 2>/dev/null | grep -vx tls-rotate)
+    if [ "${#services[@]}" -eq 0 ]; then
+        printf '[tls-rotate] 未发现运行中的 compose 服务\n' >&2
+        return 1
+    fi
+    local svc cid status i
+    for svc in "${services[@]}"; do
+        "${compose[@]}" up -d --no-deps --force-recreate "$svc" >/dev/null
+        cid="$("${compose[@]}" ps -q "$svc" 2>/dev/null | head -1)"
+        [ -n "$cid" ] || continue
+        for i in $(seq 1 60); do
+            status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$cid" 2>/dev/null || true)"
+            case "$status" in
+                healthy|running) break ;;
+            esac
+            sleep 2
+        done
+        printf '[tls-rotate] %s: %s\n' "$svc" "${status:-unknown}"
+    done
+}
+
+restart_runtime() {
+    case "$RESTART" in
+        none)
+            printf '[tls-rotate] 未重启运行时；需要时执行 --restart docker|rolling|api|host\n'
+            ;;
+        docker)
+            printf '[tls-rotate] 重建当前运行的 Docker 服务\n'
+            local -a compose=(docker compose -f "$ROOT/docker/docker-compose.yml")
+            local -a services=()
+            mapfile -t services < <("${compose[@]}" ps --services 2>/dev/null | grep -vx tls-rotate)
+            if [ "${#services[@]}" -eq 0 ]; then
+                printf '[tls-rotate] 未发现运行中的 compose 服务\n' >&2
+                return 1
+            fi
+            "${compose[@]}" up -d --force-recreate "${services[@]}"
+            ;;
+        rolling)
+            rolling_restart
+            ;;
+        api)
+            printf '[tls-rotate] 通过 Docker API 重启使用证书的服务\n'
+            restart_api
+            ;;
+        host)
+            printf '[tls-rotate] 重启宿主机开发进程\n'
+            "$ROOT/scripts/dev-init.sh" --stop
+            "$ROOT/scripts/dev-init.sh"
+            ;;
+    esac
+}
+
+if [ "$MODE" = "restart-only" ]; then
+    restart_runtime
+    exit 0
+fi
+
+if [ "$MODE" = "rotate" ]; then
+    printf '[tls-rotate] 显式重签叶子证书\n'
+    "$ROOT/scripts/tls-init.sh" --force
+else
+    if ! check_certs; then
+        printf '[tls-rotate] 证书检查未通过；确认后执行 scripts/tls-rotate.sh --rotate\n' >&2
+        exit 1
+    fi
+    printf '[tls-rotate] 证书检查通过；未修改任何文件\n'
+    exit 0
+fi
+
+check_certs
+printf '[tls-rotate] 重签后检查通过\n'
+restart_runtime

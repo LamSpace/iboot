@@ -5,6 +5,7 @@
 #   scripts/tls-init.sh              证书不存在、用途不足或剩余有效期不足 30 天时生成/重签
 #   scripts/tls-init.sh --force      强制重签
 #   scripts/tls-init.sh --check      只检查证书，不生成
+#   scripts/tls-init.sh --sync-runtime 只重建信任库与运行期副本（CA 轮换阶段使用）
 #
 # 证书目录默认是 docker/certs（已在 .gitignore 中）。浏览器信任需要另外执行一次
 # `CAROOT=<证书目录>/ca mkcert -install`，该步骤可能需要管理员权限，脚本不代为执行。
@@ -29,6 +30,14 @@ TRUSTSTORE="$CERT_DIR/truststore.p12"
 ROOT_CA="$CAROOT/rootCA.pem"
 CA_KEY="$CAROOT/rootCA-key.pem"
 CA_SERIAL="$CAROOT/rootCA.srl"
+# 签名 CA 与信任 bundle 分离：CA 轮换期间 rootCA.pem 可同时包含新旧 CA，
+# 签名只使用 active-ca.pem（存在时），避免 bundle 被误当作单张 CA。
+SIGN_CA="${IBOOT_TLS_SIGN_CA:-$CAROOT/active-ca.pem}"
+SIGN_CA_KEY="${IBOOT_TLS_SIGN_CA_KEY:-$CAROOT/active-ca-key.pem}"
+if [ ! -f "$SIGN_CA" ] || [ ! -f "$SIGN_CA_KEY" ]; then
+    SIGN_CA="$ROOT_CA"
+    SIGN_CA_KEY="$CA_KEY"
+fi
 # 容器运行期证书副本：以容器用户可读权限提供，宿主私钥仍保持 0600
 RUNTIME_DIR="$CERT_DIR/runtime"
 SERVICE_DIR="$CERT_DIR/services"
@@ -74,6 +83,7 @@ CLIENT_NAMES=(
 
 FORCE=0
 CHECK_ONLY=0
+SYNC_ONLY=0
 
 usage() {
     awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"
@@ -83,6 +93,7 @@ for arg in "$@"; do
     case "$arg" in
         --force) FORCE=1 ;;
         --check) CHECK_ONLY=1 ;;
+        --sync-runtime) SYNC_ONLY=1 ;;
         -h|--help) usage; exit 0 ;;
         *) printf '[ERROR] 未知参数：%s\n' "$arg" >&2; exit 2 ;;
     esac
@@ -290,13 +301,49 @@ check_expiry() {
     log "exporter 证书有效：${#EXPORTER_NAMES[@]} 张（$SERVICE_DIR）"
 }
 
+build_truststore() {
+    log "生成 Java 信任库：$TRUSTSTORE"
+    local tmp ca n=0
+    tmp="$(mktemp -d)"
+    # rootCA.pem 在 CA 轮换窗口内可能是多张 CA 的 bundle；逐张导入。
+    awk -v dir="$tmp" '
+        /BEGIN CERTIFICATE/ { n++ }
+        n > 0 { print > (dir "/ca-" n ".pem") }
+    ' "$ROOT_CA"
+    rm -f "$TRUSTSTORE"
+    for ca in "$tmp"/ca-*.pem; do
+        [ -f "$ca" ] || continue
+        keytool -importcert -noprompt \
+            -alias "iboot-local-ca-$n" \
+            -file "$ca" \
+            -keystore "$TRUSTSTORE" \
+            -storetype PKCS12 \
+            -storepass changeit >/dev/null
+        n=$((n + 1))
+    done
+    rm -rf "$tmp"
+    [ -f "$TRUSTSTORE" ] || fail "Java 信任库生成失败：$TRUSTSTORE"
+    chmod 644 "$TRUSTSTORE"
+}
+
 if [ "$CHECK_ONLY" -eq 1 ]; then
     check_expiry
     exit 0
 fi
 
+if [ "$SYNC_ONLY" -eq 1 ]; then
+    check_expiry
+    build_truststore
+    ensure_runtime_copies
+    log "运行期信任库与证书副本已同步"
+    exit 0
+fi
+
 # 首次生成时由 mkcert 创建本地 CA；之后叶子证书由 openssl 使用同一 CA 签发。
 ensure_ca() {
+    if [ -f "$SIGN_CA" ] && [ -f "$SIGN_CA_KEY" ]; then
+        return 0
+    fi
     if [ -f "$ROOT_CA" ] && [ -f "$CA_KEY" ]; then
         return 0
     fi
@@ -339,7 +386,7 @@ EOF
     openssl req -new -newkey rsa:2048 -nodes \
         -keyout "$key" -subj "/CN=$name" -out "$tmp/leaf.csr" >/dev/null 2>&1
     openssl x509 -req -in "$tmp/leaf.csr" \
-        -CA "$ROOT_CA" -CAkey "$CA_KEY" \
+        -CA "$SIGN_CA" -CAkey "$SIGN_CA_KEY" \
         -CAcreateserial -CAserial "$CA_SERIAL" \
         -days "$CERT_DAYS" -sha256 -extfile "$tmp/ext.cnf" \
         -out "$cert" >/dev/null 2>&1
@@ -396,15 +443,7 @@ done
 chmod 600 "$KEY_FILE" "$CA_KEY"
 chmod 644 "$CERT_FILE" "$ROOT_CA"
 
-log "生成 Java 信任库：$TRUSTSTORE"
-rm -f "$TRUSTSTORE"
-keytool -importcert -noprompt \
-    -alias iboot-local-ca \
-    -file "$ROOT_CA" \
-    -keystore "$TRUSTSTORE" \
-    -storetype PKCS12 \
-    -storepass changeit >/dev/null
-chmod 644 "$TRUSTSTORE"
+build_truststore
 ensure_runtime_copies
 
 log "完成："

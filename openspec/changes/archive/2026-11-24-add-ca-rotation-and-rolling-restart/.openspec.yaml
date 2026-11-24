@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 三阶段 CA 轮换与 Docker 滚动重启
+skip_specs: true

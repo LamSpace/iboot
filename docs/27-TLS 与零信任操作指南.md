@@ -1068,8 +1068,27 @@ scripts/tls-rotate-schedule.sh --print                     # 只输出将安装�
 ### 23.3 边界
 
 - 只覆盖 Prometheus → exporter；Grafana/Thanos/Kibana 的内网调用仍使用既有 HTTPS。
-- 调度只负责检查、重签与按范围重启；CA 轮换、跨主机调度与滚动发布不在本批范围内。
+- 调度只负责叶子证书检查、重签与按范围重启；CA 轮换见 §23.4，Docker 环境可用 `--restart rolling` 逐个重建。
+- 跨主机场景仍需在每台主机分别安装调度；本仓库不提供中心化编排。
 - Dashboard 的反向探测命令端口 8719 仍为 HTTP，只在 Docker 网络内使用，不发布到宿主机。
+
+### 23.4 CA 轮换与滚动发布
+
+CA 轮换分三阶段，避免新旧 CA 切换时服务互相拒绝：
+
+```bash
+scripts/tls-ca-rotate.sh --prepare  --restart rolling   # 生成新 CA，bundle=旧+新；叶子仍由旧 CA 签发
+scripts/tls-ca-rotate.sh --activate --restart rolling   # 签名切到新 CA，重签全部叶子；bundle=新+旧
+scripts/tls-ca-rotate.sh --finalize --restart rolling   # bundle 只保留新 CA，旧 CA 退役
+scripts/tls-ca-rotate.sh --status                       # 查看阶段、bundle 证书数、签名 CA、叶子签发者
+```
+
+- `prepare` 必须先于 `activate`：所有服务需要先加载同时信任新旧 CA 的 bundle，才能接受新 CA 签发的叶子证书。
+- `activate` 调用 `tls-init.sh --force` 重签全部叶子证书；`finalize` 重建信任库与运行期副本。
+- `--restart rolling` 通过 compose `up -d --no-deps --force-recreate` 逐个重建服务，并等待容器 healthy/running；
+  `--restart docker` 一次性重建，`--restart api` 通过 Docker API 重启，`--restart host` 重启宿主机进程。
+- 默认 `--restart none`，只改文件；生产/多主机环境应在每台主机按阶段执行，且先 `prepare` 全部主机再 `activate`。
+- 回归 `scripts/regress/ca-rotation.sh` 在临时证书目录执行三阶段，校验 bundle 数量与叶子签发者，不触碰运行中栈。
 
 ## 24. SPIFFE 工作负载身份（B5.8）
 
@@ -1282,5 +1301,6 @@ scripts/spire-down.sh
 | 6 | Silo 与 Nacos HTTP 不是客户端证书 mTLS | §13.1 | 上游提供按工作负载的客户端证书认证，或引入网格；MySQL/Redis 已完成 |
 
 > 说明：第 1 项按用户要求排除；第 2、3 项是 L3 的后续阶段；第 4–6 项是已登记的运维/部署边界。
+> CA 轮换与 Docker 滚动发布已在 §23.4 实现；跨主机仍需在每台主机分别执行调度与轮换阶段。
 > 原“OPA 生产高可用未实现”已在 B6 以双副本 + nginx LB + 有界重试/可选短 TTL 缓存闭环；生产仍应做
 > 超时预算与故障演练。
