@@ -216,16 +216,53 @@ if docker inspect iboot-mysql >/dev/null 2>&1; then
     else
         reg_pass "MySQL 拒绝明文连接"
     fi
+    if docker exec -e MYSQL_PWD="${MYSQL_SYSTEM_PASSWORD:-}" iboot-mysql mysql -h127.0.0.1 -uiboot_system \
+        --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem -e "SELECT 1" >/dev/null 2>&1; then
+        reg_fail "MySQL 业务账号不带客户端证书仍可连接"
+    else
+        reg_pass "MySQL 业务账号不带客户端证书被拒绝"
+    fi
+    if docker exec -e MYSQL_PWD="${MYSQL_SYSTEM_PASSWORD:-}" iboot-mysql mysql -h127.0.0.1 -uiboot_system \
+        --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem \
+        --ssl-cert=/certs/services/iboot-system.pem --ssl-key=/certs/services/iboot-system-key.pem \
+        -e "SELECT 1" >/dev/null 2>&1; then
+        reg_pass "MySQL 业务账号带自己的客户端证书可连接"
+    else
+        reg_fail "MySQL 业务账号带自己的客户端证书仍被拒绝"
+    fi
+    if docker exec -e MYSQL_PWD="${MYSQL_SYSTEM_PASSWORD:-}" iboot-mysql mysql -h127.0.0.1 -uiboot_system \
+        --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem \
+        --ssl-cert=/certs/services/iboot-file.pem --ssl-key=/certs/services/iboot-file-key.pem \
+        -e "SELECT 1" >/dev/null 2>&1; then
+        reg_fail "MySQL 接受其它服务的客户端证书"
+    else
+        reg_pass "MySQL 拒绝其它服务的客户端证书"
+    fi
 else
     reg_fail "找不到 iboot-mysql 容器"
 fi
 
 reg_log "== 6. Redis TLS =="
 if docker inspect iboot-redis >/dev/null 2>&1; then
-    if [ "$(docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem --user iboot_exporter --pass "$REDIS_EXPORTER_PASSWORD" -p 6379 ping 2>/dev/null)" = "PONG" ]; then
+    if [ "$(docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem \
+        --cert /certs/clients/redis-exporter.pem --key /certs/clients/redis-exporter-key.pem \
+        --user iboot_exporter --pass "$REDIS_EXPORTER_PASSWORD" -p 6379 ping 2>/dev/null)" = "PONG" ]; then
         reg_pass "Redis TLS PING 成功"
     else
         reg_fail "Redis TLS PING 失败"
+    fi
+    if docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem -p 6379 \
+        --user iboot_system --pass "${REDIS_SYSTEM_PASSWORD:-}" ping 2>/dev/null | grep -q PONG; then
+        reg_fail "Redis 不带客户端证书仍可连接"
+    else
+        reg_pass "Redis 不带客户端证书被拒绝"
+    fi
+    if [ "$(docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem \
+        --cert /certs/clients/redis-exporter.pem --key /certs/clients/redis-exporter-key.pem \
+        --user iboot_system --pass "${REDIS_SYSTEM_PASSWORD:-}" -p 6379 ping 2>/dev/null)" = "PONG" ]; then
+        reg_pass "Redis 带客户端证书可连接"
+    else
+        reg_fail "Redis 带客户端证书仍被拒绝"
     fi
     if docker exec iboot-redis redis-cli -p 6379 ping >/dev/null 2>&1; then
         reg_fail "Redis 仍接受明文连接"

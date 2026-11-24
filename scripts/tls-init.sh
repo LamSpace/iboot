@@ -69,7 +69,7 @@ EXPORTER_NAMES=(
 
 # 不提供业务端口的调用方使用独立客户端证书，避免借用门户或某个服务的身份。
 CLIENT_NAMES=(
-    prometheus blackbox
+    prometheus blackbox redis-exporter
 )
 
 FORCE=0
@@ -219,7 +219,18 @@ ensure_runtime_copies() {
     for svc in "${SERVICE_NAMES[@]}"; do
         cp -f "$SERVICE_DIR/$svc.pem" "$RUNTIME_SERVICE_DIR/$svc.pem"
         cp -f "$SERVICE_DIR/$svc-key.pem" "$RUNTIME_SERVICE_DIR/$svc-key.pem"
-        chmod 644 "$RUNTIME_SERVICE_DIR/$svc.pem" "$RUNTIME_SERVICE_DIR/$svc-key.pem"
+        # MySQL 客户端证书需要 PKCS12 keystore；宿主与容器使用同一份文件。
+        openssl pkcs12 -export \
+            -in "$SERVICE_DIR/$svc.pem" \
+            -inkey "$SERVICE_DIR/$svc-key.pem" \
+            -certfile "$ROOT_CA" \
+            -name "$svc" \
+            -out "$SERVICE_DIR/$svc.p12" \
+            -passout "pass:$KAFKA_STORE_PASS"
+        cp -f "$SERVICE_DIR/$svc.p12" "$RUNTIME_SERVICE_DIR/$svc.p12"
+        chmod 644 "$RUNTIME_SERVICE_DIR/$svc.pem" "$RUNTIME_SERVICE_DIR/$svc-key.pem" \
+            "$RUNTIME_SERVICE_DIR/$svc.p12"
+        chmod 644 "$SERVICE_DIR/$svc.p12"
     done
     chmod 755 "$RUNTIME_SERVICE_DIR"
     mkdir -p "$RUNTIME_CLIENT_DIR"

@@ -689,6 +689,7 @@ start_backend() {
                     env_opts+=(
                         "MYSQL_USERNAME=$acct" "MYSQL_PASSWORD=${!mysql_pw_var}"
                         "REDIS_USERNAME=$acct" "REDIS_PASSWORD=${!redis_pw_var}"
+                        "MYSQL_SSL_PARAMS=sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8&clientCertificateKeyStoreUrl=file:${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/services/$name.p12&clientCertificateKeyStorePassword=changeit&clientCertificateKeyStoreType=PKCS12"
                     )
                     ;;
             esac

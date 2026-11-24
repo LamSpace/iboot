@@ -51,6 +51,7 @@ for service in "${SERVICES[@]}"; do
     SQL+="
 CREATE USER IF NOT EXISTS '${user_sql}'@'%' IDENTIFIED BY '${password_sql}';
 ALTER USER '${user_sql}'@'%' IDENTIFIED BY '${password_sql}';
+ALTER USER '${user_sql}'@'%' REQUIRE SUBJECT '/CN=iboot-${service}';
 "
 done
 

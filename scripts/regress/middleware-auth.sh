@@ -52,10 +52,14 @@ ES_GRAFANA_PASSWORD="${ES_GRAFANA_PASSWORD:-}"
 ES_EXPORTER_PASSWORD="${ES_EXPORTER_PASSWORD:-}"
 
 mysql_exec() {
-    local user="$1" password="$2" sql="$3"
+    local user="$1" password="$2" sql="$3" svc="${1#iboot_}"
+    local -a cert_opts=()
+    if [ -f "$ROOT/docker/certs/runtime/services/iboot-$svc.pem" ]; then
+        cert_opts=(--ssl-cert="/certs/services/iboot-$svc.pem" --ssl-key="/certs/services/iboot-$svc-key.pem")
+    fi
     docker exec -e MYSQL_PWD="$password" iboot-mysql mysql \
         --protocol=TCP --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/rootCA.pem \
-        -h127.0.0.1 -u"$user" -e "$sql" 2>/dev/null
+        "${cert_opts[@]}" -h127.0.0.1 -u"$user" -e "$sql" 2>/dev/null
 }
 
 mysql_root_exec() {
@@ -253,6 +257,7 @@ redis_exec() {
     local user="$1" password="$2"
     shift 2
     docker exec iboot-redis redis-cli --tls --cacert /certs/rootCA.pem -p 6379 \
+        --cert /certs/clients/redis-exporter.pem --key /certs/clients/redis-exporter-key.pem \
         --user "$user" --pass "$password" "$@" 2>/dev/null
 }
 

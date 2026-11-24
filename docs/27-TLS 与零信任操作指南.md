@@ -478,8 +478,9 @@ B5.13 起，MySQL 写权限由 `scripts/mysql-table-grants.tsv` 与 `scripts/mys
 账号创建脚本不再授予库级 DML。Seata 参与方 `system`/`workflow` 额外拥有共享 `undo_log` 的 DML；
 Redis 键模式在 compose 的 ACL 用户定义中维护。
 
-MySQL、Redis、Silo 与 Nacos HTTP 使用**服务端 TLS + 独立账号/ACL**，不是客户端证书 mTLS；
-客户端证书 mTLS 只用于业务服务端口与 Nacos gRPC。需要数据面客户端证书时，必须单独立项改造各客户端。
+MySQL 与 Redis 已要求业务客户端出示工作负载证书：MySQL 服务账号绑定 `REQUIRE SUBJECT '/CN=iboot-<service>'`，
+Redis 开启 `tls-auth-clients yes`；数据库口令/ACL 仍是第二道认证。Silo 与 Nacos HTTP API 不支持按工作负载的
+客户端证书认证，保持**服务端 TLS + 账号/令牌**并登记为显式例外；Nacos gRPC 另有每服务客户端证书（§18.5）。
 
 ### 13.2 初始化
 
@@ -1272,7 +1273,7 @@ scripts/spire-down.sh
 | 3 | 未引入 Kubernetes sidecar 网格 | §27.3、§28.2、`ROADMAP` 阶段 4 | 部署目标迁到 Kubernetes 后再评估 Istio/Linkerd |
 | 4 | Sentinel 命令端口 8719 仍按默认绑定 | §12.4、§25.4 | Sentinel 支持绑定地址，或前置只绑定回环的代理 |
 | 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `scripts/tls-rotate-schedule.sh --install ...` |
-| 6 | 中间件不是客户端证书 mTLS | §13.1 | 需要时单独立项改造 MySQL/Redis/Silo/Nacos HTTP 客户端证书 |
+| 6 | Silo 与 Nacos HTTP 不是客户端证书 mTLS | §13.1 | 上游提供按工作负载的客户端证书认证，或引入网格；MySQL/Redis 已完成 |
 
 > 说明：第 1 项按用户要求排除；第 2、3 项是 L3 的后续阶段；第 4–6 项是已登记的运维/部署边界。
 > 原“OPA 生产高可用未实现”已在 B6 以双副本 + nginx LB + 有界重试/可选短 TTL 缓存闭环；生产仍应做

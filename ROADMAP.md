@@ -145,7 +145,7 @@ v0–v4 已完成：登录与只读查询（v1）、运维写命令（v2，含�
 | B3 | ES/Kafka/Logstash 日志与检索面；RocketMQ 仅作为加密通道 | 已完成：`openspec/changes/archive/2026-11-21-add-log-search-tls/` |
 | B4 | 入口收敛、中间件认证、网络分段、每服务 DB 账号 | 已完成：Nacos TLS（`openspec/changes/archive/2026-11-21-add-nacos-tls/`）、入口收敛、中间件认证、网络分段与每服务账号 |
 | B5 | 服务间 mTLS、工作负载身份、中间件身份收尾 | 已完成：B5.1–B5.14：每服务证书、服务间 mTLS、RocketMQ TLS-only 与 ACL、路径级授权、中间件每服务身份、exporter mTLS、证书轮换与 SPIFFE 身份、证书轮换自动调度、宿主机进程回环绑定、Sentinel Dashboard TLS 与登录、RocketMQ 服务端证书校验、表级/键级最小权限、OPA 集中决策与 SPIRE Workload API；Kubernetes 服务网格不在本项目范围，Compose 以 SPIFFE+OPA+mTLS 为 L3 平面；残余边界清单见 docs/27 §29 |
-| B6 | 凭据与决策面收尾 | 已完成：MySQL 迁移/管理账号边界、MySQL/Redis/Nacos 组件独立凭据、Nacos 每服务工作负载客户端证书、OPA 有界重试/可选短 TTL 缓存/双副本 nginx LB；详见 docs/27 §13/§18/§27/§29 |
+| B6 | 凭据与决策面收尾 | 已完成：MySQL 迁移/管理账号边界、MySQL/Redis/Nacos 组件独立凭据、Nacos 每服务工作负载客户端证书、MySQL/Redis 客户端证书 mTLS、OPA 有界重试/可选短 TTL 缓存/双副本 nginx LB；Silo 与 Nacos HTTP 保留账号/令牌例外；详见 docs/27 §13/§18/§27/§29 |
 
 边界：B1 只加密公开入口；B2 加密门户→网关、服务间与核心数据面，网关 `8088` 改为
 HTTPS 但仍是内部地址；Nacos 的 TLS 在 B4 完成。不在本地手搓服务网格，

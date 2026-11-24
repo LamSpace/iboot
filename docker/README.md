@@ -132,7 +132,8 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 SPIRE profile（`spire`，默认不启动）：`spire-server`、`spire-agent` 与 `spire-demo` 验证 Workload API/SVID；
 不发布宿主机端口，启动与验收见 `scripts/spire-up.sh` 与 `scripts/regress/spire-svid.sh`。
 
-B2 起 8080–8089 只提供 HTTPS；B5.2 起还要求客户端证书。MySQL/Redis/Silo/Neo4j 只接受 TLS。
+B2 起 8080–8089 只提供 HTTPS；B5.2 起还要求客户端证书。MySQL/Redis/Silo/Neo4j 只接受 TLS；
+MySQL/Redis 的业务客户端还要求出示客户端证书，Silo 与 Nacos HTTP 保持账号/令牌例外。
 B3 起 ES、Kafka、Logstash 也只接受 TLS；Nacos 在 B4 起同样只接受 TLS。
 
 ### 网络分段
@@ -240,8 +241,9 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   Seata 使用 `tx` 网络，仅 workflow/system 可访问。
 - 服务间请求按客户端证书 CN 做路径级授权（`iboot-service-authz`）；
   `IBOOT_SERVICE_AUTHORIZATION_ENABLED=true` 由 compose 公共环境注入，矩阵见 [docs/27 §20](<../docs/27-TLS 与零信任操作指南.md>)。
-- MySQL 以 `--require_secure_transport=ON` 启动；Redis 只监听 TLS 端口；Silo 以
-  `--certs-dir /certs` 启动；Neo4j 的 `graph` profile 启用 Bolt TLS。
+- MySQL 以 `--require_secure_transport=ON` 启动，服务账号还绑定 `REQUIRE SUBJECT`；Redis 开启
+  `tls-auth-clients yes`，业务与 exporter 都出示客户端证书；Silo 以 `--certs-dir /certs` 启动；
+  Neo4j 的 `graph` profile 启用 Bolt TLS。
 - 数据面健康检查使用本地 CA；ES/Kafka/Logstash/Nacos 只接受 TLS。
 - `iboot-auth`、服务间与 JWKS 地址均为 `https://`；Nacos 实例以 `secure=true` 注册。
 - Nacos gRPC 客户端证书使用各服务自己的 `services/iboot-<service>.pem`（挂载到 `/certs/nacos-client.pem`），

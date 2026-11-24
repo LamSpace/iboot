@@ -18,16 +18,22 @@ if [ -z "${MYSQL_FILE_PASSWORD:-}" ] && [ -f "$ROOT/.env" ]; then
 fi
 
 mysql_as() {
-    local user="$1" password="$2" sql="$3"
+    local user="$1" password="$2" sql="$3" svc="${1#iboot_}"
+    local -a cert_opts=()
+    if [ -f "$ROOT/docker/certs/runtime/services/iboot-$svc.pem" ]; then
+        cert_opts=(--ssl-cert="/certs/services/iboot-$svc.pem" --ssl-key="/certs/services/iboot-$svc-key.pem")
+    fi
     docker exec -e MYSQL_PWD="$password" iboot-mysql \
-        mysql -u"$user" -h 127.0.0.1 --ssl-mode=REQUIRED -N -B -D iboot -e "$sql" 2>&1
+        mysql -u"$user" -h 127.0.0.1 --ssl-mode=REQUIRED "${cert_opts[@]}" -N -B -D iboot -e "$sql" 2>&1
 }
 
 redis_as() {
     local user="$1" password="$2"
     shift 2
     docker exec -e REDISCLI_AUTH="$password" iboot-redis \
-        redis-cli --tls --cacert /certs/ca/rootCA.pem --no-auth-warning --user "$user" "$@" 2>&1
+        redis-cli --tls --cacert /certs/ca/rootCA.pem \
+        --cert /certs/clients/redis-exporter.pem --key /certs/clients/redis-exporter-key.pem \
+        --no-auth-warning --user "$user" "$@" 2>&1
 }
 
 mysql_password_of() {
