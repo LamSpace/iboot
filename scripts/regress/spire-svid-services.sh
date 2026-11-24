@@ -57,6 +57,10 @@ service_uses_svid() {
 }
 
 for svc in "${SERVICES[@]}"; do
+    if [ "$svc" = "iboot-ops" ] && [ "${IBOOT_OPS_ENABLED:-true}" != "true" ]; then
+        reg_log "  iboot-ops 已关闭（IBOOT_OPS_ENABLED=false），跳过进程检查"
+        continue
+    fi
     if service_uses_svid "$svc"; then
         reg_pass "$svc 进程加载 SVID"
     else
