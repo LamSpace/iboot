@@ -149,6 +149,8 @@ Description=iBoot TLS certificate check and rotation
 [Service]
 Type=oneshot
 WorkingDirectory=$ROOT
+# systemd user 环境默认 PATH 不含 SDKMAN/JDK 的 keytool 与用户级 mkcert；固化安装时的 PATH。
+Environment="PATH=$PATH"
 ExecStart=$ROOT/scripts/tls-rotate-schedule.sh --run-now --restart=$RESTART
 EOF
 }

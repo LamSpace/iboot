@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: systemd 定时任务固化 keytool PATH
+skip_specs: true
