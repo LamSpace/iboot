@@ -6,24 +6,79 @@ groups:
         for: 10m
         labels:
           severity: warning
+          team: security
         annotations:
           summary: "TLS 证书将在 30 天内过期"
-          description: "叶子证书剩余 {{ $value | printf \"%.1f\" }} 天，执行 scripts/tls-init.sh --force 重签并重启服务"
+          description: "叶子证书（含 SVID）剩余 {{ $value | printf \"%.1f\" }} 天，执行 scripts/tls-init.sh --force 或 SVID 刷新并重启服务"
 
       - alert: TlsCertificateExpiringCritical
         expr: (probe_ssl_earliest_cert_expiry{job="tls-cert"} - time()) / 86400 < 7
         for: 10m
         labels:
           severity: critical
+          team: security
         annotations:
           summary: "TLS 证书将在 7 天内过期"
-          description: "叶子证书剩余 {{ $value | printf \"%.1f\" }} 天，必须立即轮换"
+          description: "叶子证书（含 SVID）剩余 {{ $value | printf \"%.1f\" }} 天，必须立即轮换"
 
       - alert: TlsCertificateProbeFailed
         expr: probe_success{job="tls-cert"} == 0
         for: 5m
         labels:
           severity: warning
+          team: security
         annotations:
           summary: "TLS 证书探针失败"
           description: "blackbox 无法完成到 {{ $labels.instance }} 的 TLS 握手，证书到期检测不可见"
+
+  - name: svid-alerts
+    rules:
+      - alert: SpireServerUnhealthy
+        expr: probe_success{job="spire-health", instance=~".*spire-server.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "SPIRE Server 健康检查失败"
+          description: "blackbox 无法访问 {{ $labels.instance }}；SVID 签发与刷新将不可用"
+
+      - alert: SpireAgentUnhealthy
+        expr: probe_success{job="spire-health", instance=~".*spire-agent.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "SPIRE Agent 健康检查失败"
+          description: "blackbox 无法访问 {{ $labels.instance }}；Workload API 可能无法签发 SVID"
+
+      - alert: SvidRefreshFailed
+        expr: iboot_svid_refresh_last_exit_code != 0
+        for: 15m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "SVID 刷新调度失败"
+          description: "最近一次检查/刷新退出码为 {{ $value }}；查看 logs/svid-refresh.log 与 scripts/svid-refresh-schedule.sh --status"
+
+      - alert: SvidRefreshStale
+        expr: time() - iboot_svid_refresh_last_success_timestamp_seconds > 3 * 86400
+        for: 30m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "SVID 刷新调度长时间未成功"
+          description: "距最近一次成功已超过 3 天；确认调度已安装并检查 logs/svid-refresh.log"
+
+      - alert: SvidCertificateExpiringSoon
+        expr: iboot_svid_cert_min_remaining_seconds < 7 * 86400
+        for: 10m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "SVID 将在 7 天内过期"
+          description: "十个服务 SVID 的最小剩余有效期为 {{ $value | printf \"%.1f\" }} 秒；执行 scripts/svid-refresh-schedule.sh --run-now"

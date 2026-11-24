@@ -129,6 +129,10 @@ printf '\n===== 7. 证书到期监控 =====\n'
 "$HERE/tls-cert-monitor.sh" || fail "证书到期监控检查未通过"
 
 echo
+echo "===== 7a. SPIRE/SVID 监控与告警 ====="
+"$HERE/spire-svid-monitor.sh" || fail "SPIRE/SVID 监控检查未通过"
+
+echo
 echo "===== 7b. 证书轮换检查模式 ====="
 "$ROOT/scripts/tls-rotate.sh" --check || fail "证书轮换检查未通过"
 

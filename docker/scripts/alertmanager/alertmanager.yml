@@ -2,15 +2,28 @@ global:
   resolve_timeout: 5m
 
 route:
-  group_by: ['alertname']
+  group_by: ['alertname', 'team']
   group_wait: 10s
   group_interval: 10s
   repeat_interval: 1h
   receiver: 'webhook'
+  routes:
+    # TLS/SVID/SPIRE 告警统一标记 team=security，单独路由便于接入安全值班渠道。
+    - matchers:
+        - team="security"
+      receiver: 'security-webhook'
+      group_wait: 10s
+      group_interval: 30s
+      repeat_interval: 2h
 
 receivers:
   - name: 'webhook'
     webhook_configs:
+      - url: 'http://localhost:8080/webhook/alert'
+        send_resolved: true
+  - name: 'security-webhook'
+    webhook_configs:
+      # 本地默认复用门户 webhook；接入安全值班渠道时替换该 URL。
       - url: 'http://localhost:8080/webhook/alert'
         send_resolved: true
 

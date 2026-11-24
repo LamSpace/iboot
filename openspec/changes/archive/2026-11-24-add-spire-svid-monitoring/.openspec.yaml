@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 为 SPIRE 控制面与 SVID 刷新增加监控、告警与安全路由

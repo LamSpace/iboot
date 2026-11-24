@@ -1,5 +1,13 @@
 # Blackbox 探针配置：只做 TLS 握手并暴露证书到期时间。
 modules:
+  # SPIRE Server/Agent 健康端点；容器内为明文 HTTP，不承载业务数据。
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      preferred_ip_protocol: ip4
+
   https_cert:
     prober: http
     timeout: 5s
