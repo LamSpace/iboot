@@ -15,15 +15,15 @@
 
 范围内已闭环：MySQL/Redis/Silo/Nacos gRPC 客户端证书、Nacos 配置命名空间隔离、
 OPA 韧性/本地 HA、CA 三阶段轮换 + Docker 滚动重启、备份命令客户端证书、
-宿主机与 Compose 全量模式 SPIRE SVID、轮换调度安装（本机 systemd user timer）。
+宿主机与 Compose 全量模式 SPIRE SVID、轮换调度安装（本机 systemd user timer）、
+SVID 到期检查与刷新调度（A1，`svid-refresh-schedule.sh`）。
 
 最终全栈回归：`45342399147`（success）；本地 12c–12h 回归通过。
 
-## 2. 行动项（5 项，唯一“未完成”）
+## 2. 行动项（4 项，唯一“未完成”）
 
 | # | 行动项 | 验收标准 | 验证 |
 |---|---|---|---|
-| A1 | SVID refresh 纳入调度 | 宿主机与 Compose 在 SVID 到期前自动 refresh；失败有日志/告警；或明确固定维护窗口 | `spire-svid-sync --status`、12g、12h |
 | A2 | `tls-rotate` 与 Compose SVID 重启路径对齐 | mkcert 叶子轮换不会把 Compose SVID 栈重建回 mkcert；`--restart docker` 使用 SVID 覆盖层或委托 `docker-svid-refresh.sh` | Compose SVID 栈上执行一次叶子轮换，服务仍加载 SVID |
 | A3 | CA 轮换回滚入口 | `tls-ca-rotate.sh --rollback` 或固化 runbook，可从 `prepare/activate` 回到上一张 CA | 临时证书目录 prepare→activate→rollback 验证 |
 | A4 | SPIRE/SVID 监控与告警 | Prometheus 规则覆盖 SPIRE Server/Agent 健康、SVID refresh 失败、服务证书到期；Alertmanager 路由 | 规则加载 + 故障注入 |
@@ -47,7 +47,7 @@ OPA 韧性/本地 HA、CA 三阶段轮换 + Docker 滚动重启、备份命令�
 
 ## 4. 变更规则
 
-1. 只有 A1–A5 计入“未完成”；E1–E11 不再作为遗留任务重复盘点。
+1. 只有 A2–A5 计入“未完成”；E1–E11 不再作为遗留任务重复盘点。
 2. 新增项必须先归入“行动项”或“例外登记”，并写明 Owner、触发条件、复核日期。
 3. 行动项完成后从本表移除，并在 `docs/27` 对应章节记录验证结果。
 4. 阶段范围变化（例如迁 K8s）时重新基线化本页。

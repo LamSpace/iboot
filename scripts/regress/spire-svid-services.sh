@@ -44,6 +44,15 @@ for svc in "${SERVICES[@]}"; do
         || reg_fail "$svc SVID 无法由信任 bundle 验证"
 done
 
+check_out="$("$ROOT/scripts/spire-svid-sync.sh" --check 2>&1)" \
+    && reg_pass "SVID 到期检查通过（刷新阈值内）" \
+    || reg_fail "SVID 到期检查未通过：$(printf '%s' "$check_out" | tr '\n' ' ')"
+if printf '%s\n' "$check_out" | grep -q '^refresh_needed=no$'; then
+    reg_pass "SVID 状态报告无需刷新"
+else
+    reg_fail "SVID 状态未报告 refresh_needed=no"
+fi
+
 service_uses_svid() {
     local svc="$1" pid
     if docker ps --format '{{.Names}}' | grep -qx "$svc"; then
