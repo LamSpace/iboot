@@ -1276,8 +1276,8 @@ scripts/regress/service-authz.sh
 
 ## 28. SPIRE Workload API 与服务 SVID（B5.14 / B6）
 
-SPIRE 以 opt-in `spire` profile 部署。B6 起 `dev-init.sh` 在宿主机开发中默认启动 SPIRE，
-为十个服务注册 Docker label selector 并取回 X.509-SVID；Compose 全量模式仍保持 mkcert 证书链。
+SPIRE 以 opt-in `spire` profile 部署。B6 起 `dev-init.sh` 与 `docker-deploy.sh` 均默认启用 SVID：
+宿主机开发由脚本直接取回，Compose 全量模式由每服务一次性 sidecar 取回并写入命名卷。
 显式设置 `IBOOT_SVID_ENABLED=false` 可回退到 mkcert。
 
 ### 28.1 启动与验收
@@ -1316,11 +1316,30 @@ bash scripts/regress/spire-svid-services.sh
 - 条目变更后 Agent 会缓存旧 SVID，`spire-svid-sync.sh --setup` 会重启 Agent 清理缓存。
 - 预签名/抓取等仍使用 mkcert 的 Prometheus/blackbox 客户端证书；服务端 SVID 由信任 bundle 验证。
 
-### 28.3 边界
+### 28.3 Compose 全量模式
 
-- Compose 全量部署（`docker-deploy.sh`）仍使用 mkcert 服务证书；切换需要每服务 sidecar 与滚动重启，属独立部署变更。
+`docker-deploy.sh` 默认启用 SVID：加载 `docker/docker-compose.svid.yml` 覆盖层与
+`--profile spire --profile svid`。每个服务有一个一次性 `svid-<service>` sidecar：
+
+- 通过 Agent Workload API 取回 SVID，写入命名卷 `svid_<service>`；
+- 应用容器只读挂载 `/svid`，`IBOOT_TLS_CERT_FILE`/`IBOOT_TLS_KEY_FILE` 指向 SVID；
+- 应用 `depends_on` sidecar `service_completed_successfully`；
+- 私钥在卷内放宽到 644，供 app 用户读取。
+
+SVID 到期前执行：
+
+```bash
+scripts/docker-svid-refresh.sh              # 重新取回并滚动重启十个服务
+scripts/docker-svid-refresh.sh --no-restart # 只刷新卷内 SVID
+```
+
+`IBOOT_SVID_ENABLED=false` 可回退到 mkcert 证书链。
+
+### 28.4 边界
+
+- SVID 刷新是显式脚本动作，没有内置热加载；到期前需执行 refresh。
 - 不部署 Kubernetes 控制面或 sidecar 网格。
-- SPIRE 的 CA、token 与数据卷均为本地开发资产，不入仓；SVID 私钥只写入 `docker/certs/svid`（已忽略）。
+- SPIRE 的 CA、token 与数据卷均为本地开发资产，不入仓；SVID 私钥只写入命名卷或 `docker/certs/svid`（已忽略）。
 
 ## 29. 零信任残余边界清单（B5.14 后）
 
@@ -1329,7 +1348,7 @@ bash scripts/regress/spire-svid-services.sh
 | # | 边界 / 后续项 | 登记位置 | 触发条件 / 下一步 |
 |---|---|---|---|
 | 1 | Seata 无原生 TLS/认证 | §19、`transport-security` 规格 | 上游提供原生 TLS/认证，或引入网格；当前靠 `tx` 网络与内部令牌补偿 |
-| 2 | Compose 全量模式仍使用 mkcert | §18.5、§28.2、`workload-identity` 规格 | 宿主机开发已默认切换 SPIRE SVID（30 天 TTL + refresh 脚本）；Compose 全量切换需每服务 sidecar 与滚动重启，属独立部署变更 |
+| 2 | SVID 刷新依赖显式脚本，无热加载 | §18.5、§28.3、`workload-identity` 规格 | 宿主机开发与 Compose 全量模式均已默认 SVID（30 天 TTL）；到期前执行 `spire-svid-sync.sh --refresh --restart host` 或 `docker-svid-refresh.sh` |
 | 3 | 未引入 Kubernetes sidecar 网格 | §27.3、§28.2、`ROADMAP` 阶段 4 | 部署目标迁到 Kubernetes 后再评估 Istio/Linkerd |
 | 4 | Sentinel 命令端口 8719 仍按默认绑定 | §12.4、§25.4 | Sentinel 支持绑定地址，或前置只绑定回环的代理 |
 | 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `--install`（systemd/cron），或经维护者批准后 `--install --scheduler docker`；本会话未安装常驻调度 |
