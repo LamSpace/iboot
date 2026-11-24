@@ -31,6 +31,7 @@ spring:
         # 实例地址使用服务名，证书 SAN 不依赖容器 IP；宿主机开发由 dev-init.sh 覆盖为 127.0.0.1
         ip: ${IBOOT_NACOS_DISCOVERY_IP:${spring.application.name}}
       config:
+        namespace: ${NACOS_CONFIG_NAMESPACE:iboot-notify}
         server-addr: ${NACOS_SERVER_ADDR:https://localhost:8848}
         username: ${NACOS_USERNAME:}
         password: ${NACOS_PASSWORD:}

@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 # 初始化 Nacos 鉴权账号。
 #
-# 首次启动：设置内置 nacos 管理员的密码；随后创建/更新服务账号 iboot，
-# 绑定角色并授予配置读写权限。脚本可重复执行。
+# 首次启动：设置内置 nacos 管理员的密码；随后创建每服务配置命名空间、
+# 服务账号与独立角色，只授予 public 服务发现与自己命名空间的配置读写。脚本可重复执行。
 #
 # 环境变量：NACOS_ADDR、NACOS_SCHEME、NACOS_CACERT、
 #          NACOS_ADMIN_PASSWORD、NACOS_USERNAME、NACOS_PASSWORD
@@ -56,8 +56,45 @@ login_resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/user/login" \
 token="$(printf '%s' "$login_resp" | json_get accessToken)"
 [ -n "$token" ] || fail "管理员登录失败：$login_resp"
 
+ensure_namespace() {
+    local ns="$1" resp code
+    resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/admin/core/namespace" \
+        -H "Authorization: Bearer $token" \
+        --data-urlencode "namespaceId=$ns" \
+        --data-urlencode "namespaceName=$ns" \
+        --data-urlencode "namespaceDesc=iBoot $ns config" || true)"
+    code="$(printf '%s' "$resp" | json_get code)"
+    if [ "$code" = "0" ]; then
+        return 0
+    fi
+    if curl $CURL_OPTS -H "Authorization: Bearer $token" \
+            "$BASE/nacos/v3/admin/core/namespace/list" 2>/dev/null \
+            | grep -q "\"namespace\":\"$ns\""; then
+        return 0
+    fi
+    fail "命名空间创建失败（$ns）：$resp"
+}
+
+ensure_role() {
+    local role="$1" username="$2"
+    curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/role" \
+        -H "Authorization: Bearer $token" \
+        --data-urlencode "role=$role" \
+        --data-urlencode "username=$username" >/dev/null 2>&1 || true
+}
+
+grant() {
+    local role="$1" resource="$2"
+    curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/permission" \
+        -H "Authorization: Bearer $token" \
+        --data-urlencode "role=$role" \
+        --data-urlencode "resource=$resource" \
+        --data-urlencode "action=rw" >/dev/null 2>&1 || true
+}
+
 ensure_account() {
-    local username="$1" password="$2" resp code svc_resp svc_token probe_status
+    local username="$1" password="$2" role="$3" resp code svc_resp svc_token probe_status
+    shift 3
     resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/user" \
         -H "Authorization: Bearer $token" \
         --data-urlencode "username=$username" \
@@ -71,16 +108,14 @@ ensure_account() {
             || fail "账号口令同步失败（$username）：$resp"
     fi
 
-    # 角色已存在时 POST 会失败；权限授予是幂等的。首次启动必须先建角色再授权。
-    curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/role" \
-        -H "Authorization: Bearer $token" \
-        --data-urlencode "role=iboot_role" \
-        --data-urlencode "username=$username" >/dev/null 2>&1 || true
-    curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/permission" \
-        -H "Authorization: Bearer $token" \
-        --data-urlencode "role=iboot_role" \
-        --data-urlencode "resource=*" \
-        --data-urlencode "action=rw" >/dev/null 2>&1 || true
+    ensure_role "$role" "$username"
+    # 旧的共享角色会授予 *，必须从每个账号上摘除后再按资源授权。
+    curl $CURL_OPTS -X DELETE "$BASE/nacos/v3/auth/role?role=iboot_role&username=$username" \
+        -H "Authorization: Bearer $token" >/dev/null 2>&1 || true
+    local resource
+    for resource in "$@"; do
+        grant "$role" "$resource"
+    done
 
     svc_resp="$(curl $CURL_OPTS -X POST "$BASE/nacos/v3/auth/user/login" \
         --data-urlencode "username=$username" \
@@ -88,24 +123,44 @@ ensure_account() {
     svc_token="$(printf '%s' "$svc_resp" | json_get accessToken)"
     [ -n "$svc_token" ] || fail "账号登录失败（$username）：$svc_resp"
 
-    probe_status="$(curl $CURL_OPTS -o /dev/null -w '%{http_code}' \
-        -H "Authorization: Bearer $svc_token" \
-        "$BASE/nacos/v3/client/cs/config?dataId=__iboot_probe__&groupName=DEFAULT_GROUP&namespaceId=public" || true)"
-    case "$probe_status" in
-        200|404) ;;
-        *) fail "账号无权读取配置（$username，HTTP $probe_status）" ;;
-    esac
+    local resource probe_ns
+    for resource in "$@"; do
+        if [ "$resource" = "*" ]; then
+            probe_ns="public"
+        else
+            case "$resource" in
+                *:*) probe_ns="${resource%%:*}" ;;
+                *) probe_ns="$resource" ;;
+            esac
+        fi
+        probe_status="$(curl $CURL_OPTS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $svc_token" \
+            "$BASE/nacos/v3/client/cs/config?dataId=__iboot_probe__&groupName=DEFAULT_GROUP&namespaceId=$probe_ns" || true)"
+        case "$probe_status" in
+            200|404) ;;
+            *) fail "账号无权读取配置（$username，namespace=$probe_ns，HTTP $probe_status）" ;;
+        esac
+    done
 }
 
+SERVICES="system workflow file notify job monitor auth ai gateway ops"
+
+# 每服务独立配置命名空间；发现仍使用 public。
+for service in $SERVICES; do
+    ensure_namespace "iboot-$service"
+done
+
 # 运维脚本账号；管理脚本使用它，不注入业务服务。
-ensure_account "$NACOS_USERNAME" "$NACOS_PASSWORD"
+ensure_account "$NACOS_USERNAME" "$NACOS_PASSWORD" "iboot_ops_role" "*"
 
 # 每服务账号：账号名 iboot_<service>，口令由 NACOS_<SERVICE>_PASSWORD 注入。
-for service in system workflow file notify job monitor auth ai gateway ops; do
+# 权限限定为 public（服务发现）与自己的配置命名空间。
+for service in $SERVICES; do
     var="NACOS_$(printf '%s' "$service" | tr '[:lower:]' '[:upper:]')_PASSWORD"
     eval "password=\${$var:-}"
     [ -n "$password" ] || fail "缺少 $var"
-    ensure_account "iboot_$service" "$password"
+    ensure_account "iboot_$service" "$password" "iboot_${service}_role" \
+        "public:*:*" "iboot-$service:*:*"
 done
 
 printf '[nacos-init] 管理员、运维与服务账号已就绪（%s + 10 个服务账号）\n' "$NACOS_USERNAME"

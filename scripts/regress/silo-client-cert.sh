@@ -69,6 +69,10 @@ case "$code" in
     *) reg_fail "无客户端证书未被拒绝（HTTP ${code:-000}）" ;;
 esac
 
+# mcli 的 alias 保存在容器本地，silo-init 的 alias 不会跨容器共享；这里在 Silo 容器内重建。
+docker exec iboot-silo sh -c \
+    'mcli alias set local https://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null' \
+    >/dev/null 2>&1 || true
 for policy in iboot-file iboot-ai; do
     if docker exec iboot-silo sh -c "mcli admin policy info local $policy" >/dev/null 2>&1; then
         reg_pass "证书 CN 对应的策略存在：$policy"
