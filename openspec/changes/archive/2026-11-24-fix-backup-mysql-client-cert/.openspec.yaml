@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 备份命令使用 127.0.0.1 TCP 与 iboot-job 客户端证书
+skip_specs: true

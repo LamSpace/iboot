@@ -58,7 +58,9 @@ class BackupCommandFactoryTest {
 
         assertThat(command).startsWith("docker", "exec", "-i", "-e", "MYSQL_PWD", "iboot-mysql", "mysqldump");
         assertThat(command).contains("--single-transaction", "--quick", "--default-character-set=utf8mb4",
-                "--set-gtid-purged=OFF", "--no-tablespaces", "-uroot", "-hlocalhost", "-P3306", "iboot_admin");
+                "--set-gtid-purged=OFF", "--no-tablespaces", "--ssl-mode=VERIFY_IDENTITY",
+                "--ssl-ca=/certs/rootCA.pem", "--ssl-cert=/certs/services/iboot-job.pem",
+                "--ssl-key=/certs/services/iboot-job-key.pem", "-uroot", "-hlocalhost", "-P3306", "iboot_admin");
         assertThat(command).doesNotContain("--databases", "-p" + PASSWORD, PASSWORD);
         assertThat(factory.environment()).containsEntry("MYSQL_PWD", PASSWORD);
     }
