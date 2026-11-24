@@ -58,5 +58,5 @@ A1–A5 已全部闭环，当前没有未完成行动项。后续新增项必须
 ## 5. 关联文档
 
 - 操作与排障：[docs/27-TLS 与零信任操作指南](./27-TLS%20与零信任操作指南.md)
-- 回归脚本：`scripts/regress/regress.sh` 12c–12h
+- 回归脚本：`scripts/regress/regress.sh` 7a、12c–12k
 - OpenSpec 归档：`openspec/changes/archive/`
