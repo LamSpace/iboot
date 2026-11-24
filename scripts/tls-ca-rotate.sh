@@ -10,8 +10,12 @@
 #   scripts/tls-ca-rotate.sh --prepare [--restart none|docker|rolling|api|host]
 #   scripts/tls-ca-rotate.sh --activate [--restart ...]
 #   scripts/tls-ca-rotate.sh --finalize [--restart ...]
+#   scripts/tls-ca-rotate.sh --rollback [--restart ...]
 #   scripts/tls-ca-rotate.sh --status
 #   scripts/tls-ca-rotate.sh --prepare --dry-run
+#
+# --rollback 可从 prepared/activated 回到上一张 CA：恢复旧 CA 为签名者并重签全部叶子；
+# finalized 后旧 CA 已退役，拒绝自动回滚。
 #
 # 每个阶段结束后需重启运行时，使服务重新加载信任 bundle / 叶子证书；
 # 默认 --restart none，仅修改文件。
@@ -49,6 +53,7 @@ while [ "$#" -gt 0 ]; do
         --prepare) MODE="prepare" ;;
         --activate) MODE="activate" ;;
         --finalize) MODE="finalize" ;;
+        --rollback) MODE="rollback" ;;
         --status) MODE="status" ;;
         --dry-run) DRY_RUN=1 ;;
         --restart)
@@ -197,6 +202,65 @@ finalize() {
     restart
 }
 
+restore_previous_ca() {
+    cp -f "$PREV_CA" "$ROOT_CA"
+    cp -f "$PREV_KEY" "$ROOT_KEY"
+    chmod 644 "$ROOT_CA"
+    chmod 600 "$ROOT_KEY"
+}
+
+cleanup_rotation() {
+    rm -f "$NEXT_CA" "$NEXT_KEY" "$ACTIVE_CA" "$ACTIVE_KEY" "$STATE"
+}
+
+rollback() {
+    require_files
+    local current
+    current="$(state)"
+    case "$current" in
+        prepared|activated)
+            [ -f "$PREV_CA" ] && [ -f "$PREV_KEY" ] \
+                || die "上一张 CA 备份缺失：$PREV_CA / $PREV_KEY"
+            ;;
+    esac
+    case "$current" in
+        prepared)
+            if [ "$DRY_RUN" = "1" ]; then
+                say "[dry-run] 将丢弃下一张 CA，信任 bundle 恢复为上一张 CA；叶子证书不变"
+                return 0
+            fi
+            restore_previous_ca
+            cleanup_rotation
+            sync_runtime
+            say "rollback 完成：已回到 prepare 前的 CA，叶子证书未改变"
+            log "rollback from prepared complete"
+            restart
+            ;;
+        activated)
+            if [ "$DRY_RUN" = "1" ]; then
+                say "[dry-run] 将恢复上一张 CA 为签名者，重签全部叶子证书并收敛信任 bundle"
+                return 0
+            fi
+            restore_previous_ca
+            say "恢复上一张 CA 为签名者并重签全部叶子证书"
+            IBOOT_TLS_CERT_DIR="$CERT_DIR" IBOOT_TLS_CAROOT="$CAROOT" \
+                IBOOT_TLS_SIGN_CA="$PREV_CA" IBOOT_TLS_SIGN_CA_KEY="$PREV_KEY" \
+                "$ROOT/scripts/tls-init.sh" --force
+            cleanup_rotation
+            sync_runtime
+            say "rollback 完成：叶子证书已由上一张 CA 重新签发"
+            log "rollback from activated complete"
+            restart
+            ;;
+        finalized)
+            die "当前已 finalize，旧 CA 已退役，不能自动回滚；请从备份恢复上一轮 CA 或重新 prepare"
+            ;;
+        *)
+            die "当前状态为 $current，没有可回滚的 CA 阶段"
+            ;;
+    esac
+}
+
 show_status() {
     printf 'state=%s\n' "$(state)"
     printf 'cert_dir=%s\n' "$CERT_DIR"
@@ -211,6 +275,10 @@ show_status() {
         printf 'next_ca=%s\n' "$NEXT_CA"
         openssl x509 -noout -subject -enddate -in "$NEXT_CA" | sed 's/^/  /'
     fi
+    case "$(state)" in
+        prepared|activated) printf 'rollback=available\n' ;;
+        *) printf 'rollback=unavailable\n' ;;
+    esac
     local leaf="$CERT_DIR/services/iboot-system.pem"
     if [ -f "$leaf" ]; then
         printf 'leaf_issuer=%s\n' "$(openssl x509 -noout -issuer -in "$leaf" | sed 's/^issuer=//')"
@@ -221,5 +289,6 @@ case "$MODE" in
     prepare) prepare ;;
     activate) activate ;;
     finalize) finalize ;;
+    rollback) rollback ;;
     status) show_status ;;
 esac
