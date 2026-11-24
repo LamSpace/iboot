@@ -158,7 +158,7 @@ export IBOOT_ROCKETMQ_SSL_ENABLED="${IBOOT_ROCKETMQ_SSL_ENABLED:-true}"
 
 # 服务间授权依赖客户端证书；明文排障模式默认关闭，可显式覆盖。
 export IBOOT_SERVICE_AUTHORIZATION_ENABLED="${IBOOT_SERVICE_AUTHORIZATION_ENABLED:-${IBOOT_INTERNAL_TLS_ENABLED:-true}}"
-# OPA 集中策略决策；宿主机进程连接映射地址，容器内由 compose 覆盖为 http://opa:8181。
+# OPA 集中策略决策；宿主机进程连接映射地址，容器内由 compose 覆盖为 http://opa-lb:8181。
 export IBOOT_SERVICE_AUTHORIZATION_OPA_URL="${IBOOT_SERVICE_AUTHORIZATION_OPA_URL:-http://localhost:8181}"
 
 # 可观测平台：默认随开发环境启动；资源紧张时可关闭。
@@ -459,7 +459,7 @@ start_middleware() {
     log '=== 1. 中间件 ==='
     # Prometheus 在宿主机开发模式抓取宿主进程；Docker 全量部署的默认配置按服务名抓取。
     export IBOOT_PROMETHEUS_CONFIG="${IBOOT_PROMETHEUS_CONFIG:-prometheus.yml}"
-    local infra=(mysql redis silo elasticsearch elasticsearch-init seata-server opa)
+    local infra=(mysql redis silo elasticsearch elasticsearch-init seata-server opa opa-lb)
     if rocketmq_enabled; then
         infra+=(rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-tls rocketmq-init)
     fi
