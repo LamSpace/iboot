@@ -1064,6 +1064,7 @@ scripts/tls-rotate-schedule.sh --print                     # 只输出将安装�
 ```
 
 - 优先安装 systemd user timer；当前会话不可用时回退到当前用户 crontab。默认每日 `03:30` 执行。
+- systemd user 单元的 `PATH` 在安装时固化，确保 SDKMAN/JDK 的 `keytool` 对定时任务可见；JDK 路径变化后重新执行 `--install`。
 - 仓库与开发机默认**不写入** systemd timer 或 crontab；首次部署必须在目标主机执行 `--install` 才会生效。
 - `--scheduler docker` 使用 compose 的 `tls-rotate` profile：容器内按日检查，通过 Docker API
   重启使用证书的业务容器，不写宿主机持久化任务。该模式会启动常驻容器并挂载 Docker socket，
