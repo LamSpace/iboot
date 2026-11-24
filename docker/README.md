@@ -244,6 +244,8 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
   `--certs-dir /certs` 启动；Neo4j 的 `graph` profile 启用 Bolt TLS。
 - 数据面健康检查使用本地 CA；ES/Kafka/Logstash/Nacos 只接受 TLS。
 - `iboot-auth`、服务间与 JWKS 地址均为 `https://`；Nacos 实例以 `secure=true` 注册。
+- Nacos gRPC 客户端证书使用各服务自己的 `services/iboot-<service>.pem`（挂载到 `/certs/nacos-client.pem`），
+  不再共用 `portal.pem`。
 - 回滚使用上一版镜像/compose，不提供运行期明文回退。
 
 证书生成与负向用例见

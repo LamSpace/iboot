@@ -114,6 +114,10 @@ echo
 echo "===== 5c. OPA 服务间授权 ====="
 "$HERE/opa-authz.sh" || fail "OPA 服务间授权检查未通过"
 
+echo
+echo "===== 5d. Nacos 客户端证书 ====="
+"$HERE/nacos-client-cert.sh" || fail "Nacos 客户端证书检查未通过"
+
 printf '\n===== 6. 可观测控制台 TLS =====\n'
 "$HERE/observability-tls.sh" || fail "可观测控制台 TLS 检查未通过"
 
