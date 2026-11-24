@@ -330,6 +330,21 @@ public class RagProperties {
          */
         private String bucket = "iboot-ai";
 
+        /**
+         * 是否使用每服务客户端证书向 Silo 换取临时凭据。
+         */
+        private boolean clientCertEnabled;
+
+        /**
+         * 客户端证书 PKCS12 keystore 路径。
+         */
+        private String clientCertKeystore = "/certs/client.p12";
+
+        /**
+         * 客户端证书 keystore 口令。
+         */
+        private String clientCertKeystorePassword = "changeit";
+
         public String getEndpoint() {
             return endpoint;
         }
@@ -360,6 +375,30 @@ public class RagProperties {
 
         public void setBucket(String bucket) {
             this.bucket = bucket;
+        }
+
+        public boolean isClientCertEnabled() {
+            return clientCertEnabled;
+        }
+
+        public void setClientCertEnabled(boolean clientCertEnabled) {
+            this.clientCertEnabled = clientCertEnabled;
+        }
+
+        public String getClientCertKeystore() {
+            return clientCertKeystore;
+        }
+
+        public void setClientCertKeystore(String clientCertKeystore) {
+            this.clientCertKeystore = clientCertKeystore;
+        }
+
+        public String getClientCertKeystorePassword() {
+            return clientCertKeystorePassword;
+        }
+
+        public void setClientCertKeystorePassword(String clientCertKeystorePassword) {
+            this.clientCertKeystorePassword = clientCertKeystorePassword;
         }
     }
 

@@ -479,8 +479,11 @@ B5.13 起，MySQL 写权限由 `scripts/mysql-table-grants.tsv` 与 `scripts/mys
 Redis 键模式在 compose 的 ACL 用户定义中维护。
 
 MySQL 与 Redis 已要求业务客户端出示工作负载证书：MySQL 服务账号绑定 `REQUIRE SUBJECT '/CN=iboot-<service>'`，
-Redis 开启 `tls-auth-clients yes`；数据库口令/ACL 仍是第二道认证。Silo 与 Nacos HTTP API 不支持按工作负载的
-客户端证书认证，保持**服务端 TLS + 账号/令牌**并登记为显式例外；Nacos gRPC 另有每服务客户端证书（§18.5）。
+Redis 开启 `tls-auth-clients yes`；数据库口令/ACL 仍是第二道认证。
+Silo 在 B6 起启用 `MINIO_IDENTITY_TLS_ENABLE=on`：文件/AI 服务用每服务 PKCS12 调用
+`AssumeRoleWithCertificate`，Silo 按证书 CN（`iboot-file`/`iboot-ai`）映射同名桶策略并签发短时临时凭据；
+本地为兼容现有 CN 策略设置 `MINIO_IDENTITY_TLS_URI_SAN_SCHEME=disabled`，URI SAN 为 SPIFFE 时可切换映射方式。
+Nacos HTTP API 仍保持**服务端 TLS + 账号/令牌**并登记为显式例外；Nacos gRPC 另有每服务客户端证书（§18.5）。
 
 ### 13.2 初始化
 
@@ -1298,7 +1301,7 @@ scripts/spire-down.sh
 | 3 | 未引入 Kubernetes sidecar 网格 | §27.3、§28.2、`ROADMAP` 阶段 4 | 部署目标迁到 Kubernetes 后再评估 Istio/Linkerd |
 | 4 | Sentinel 命令端口 8719 仍按默认绑定 | §12.4、§25.4 | Sentinel 支持绑定地址，或前置只绑定回环的代理 |
 | 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `--install`（systemd/cron），或经维护者批准后 `--install --scheduler docker`；本会话未安装常驻调度 |
-| 6 | Silo 与 Nacos HTTP 不是客户端证书 mTLS | §13.1 | 上游提供按工作负载的客户端证书认证，或引入网格；MySQL/Redis 已完成 |
+| 6 | Nacos HTTP API 不是客户端证书 mTLS | §13.1 | 上游提供按工作负载的客户端证书认证，或引入网格；MySQL/Redis/Silo 已完成 |
 
 > 说明：第 1 项按用户要求排除；第 2、3 项是 L3 的后续阶段；第 4–6 项是已登记的运维/部署边界。
 > CA 轮换与 Docker 滚动发布已在 §23.4 实现；跨主机仍需在每台主机分别执行调度与轮换阶段。

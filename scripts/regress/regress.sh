@@ -179,6 +179,10 @@ echo
 echo "===== 12d. CA 轮换 ====="
 "$HERE/ca-rotation.sh" || fail "CA 轮换检查未通过"
 
+echo
+echo "===== 12e. Silo 客户端证书 ====="
+"$HERE/silo-client-cert.sh" || fail "Silo 客户端证书检查未通过"
+
 printf '\n===== 13. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 

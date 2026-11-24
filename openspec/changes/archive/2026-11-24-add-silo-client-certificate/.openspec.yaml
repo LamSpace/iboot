@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: Silo 使用每服务客户端证书换取临时凭据
+skip_specs: true

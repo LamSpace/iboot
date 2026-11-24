@@ -137,7 +137,8 @@ TLS 轮换 profile（`tls-rotate`，默认不启动）：`tls-rotate` 容器按�
 需维护者显式批准后启动。一次性验证使用 `TLS_ROTATE_RUN_ONCE=1`，见 `scripts/regress/tls-rotate-scheduler.sh`。
 
 B2 起 8080–8089 只提供 HTTPS；B5.2 起还要求客户端证书。MySQL/Redis/Silo/Neo4j 只接受 TLS；
-MySQL/Redis 的业务客户端还要求出示客户端证书，Silo 与 Nacos HTTP 保持账号/令牌例外。
+MySQL/Redis 的业务客户端还要求出示客户端证书；Silo 开启 `MINIO_IDENTITY_TLS_ENABLE=on`，
+文件/AI 服务用每服务证书调用 `AssumeRoleWithCertificate` 换取短时凭据；Nacos HTTP 保持令牌例外。
 B3 起 ES、Kafka、Logstash 也只接受 TLS；Nacos 在 B4 起同样只接受 TLS。
 
 ### 网络分段

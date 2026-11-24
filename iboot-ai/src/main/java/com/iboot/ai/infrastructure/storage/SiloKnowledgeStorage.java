@@ -24,11 +24,21 @@ import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
+import io.minio.credentials.CertificateIdentityProvider;
 import io.minio.http.Method;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
@@ -56,10 +66,44 @@ public class SiloKnowledgeStorage implements KnowledgeStorage {
     public SiloKnowledgeStorage(RagProperties properties) {
         RagProperties.Storage storage = properties.getStorage();
         this.bucket = storage.getBucket();
-        this.client = MinioClient.builder()
-                .endpoint(storage.getEndpoint())
-                .credentials(storage.getAccessKey(), storage.getSecretKey())
-                .build();
+        MinioClient.Builder builder = MinioClient.builder().endpoint(storage.getEndpoint());
+        if (storage.isClientCertEnabled()) {
+            builder.credentialsProvider(certificateIdentity(storage));
+        } else {
+            builder.credentials(storage.getAccessKey(), storage.getSecretKey());
+        }
+        this.client = builder.build();
+    }
+
+    /**
+     * 使用每服务客户端证书向 Silo 的 AssumeRoleWithCertificate 换取临时凭据。
+     *
+     * @param storage Silo 存储配置
+     * @return 证书身份凭据提供者
+     */
+    private static CertificateIdentityProvider certificateIdentity(RagProperties.Storage storage) {
+        try {
+            char[] password = storage.getClientCertKeystorePassword().toCharArray();
+            KeyStore keyStore = KeyStore.getInstance("PKCS12");
+            try (InputStream input = Files.newInputStream(Path.of(storage.getClientCertKeystore()))) {
+                keyStore.load(input, password);
+            }
+            KeyManagerFactory keyManagers = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagers.init(keyStore, password);
+            TrustManagerFactory trustManagers = TrustManagerFactory.getInstance(
+                    TrustManagerFactory.getDefaultAlgorithm());
+            trustManagers.init((KeyStore) null);
+            TrustManager[] managers = trustManagers.getTrustManagers();
+            if (managers.length == 0 || !(managers[0] instanceof X509TrustManager trustManager)) {
+                throw new IllegalStateException("未找到 X509TrustManager");
+            }
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(keyManagers.getKeyManagers(), managers, null);
+            return new CertificateIdentityProvider(storage.getEndpoint(), sslContext.getSocketFactory(),
+                    trustManager, 3600, null);
+        } catch (Exception e) {
+            throw new IllegalStateException("Silo 客户端证书初始化失败：" + e.getMessage(), e);
+        }
     }
 
     @Override
