@@ -135,6 +135,12 @@ iboot:
       username: ${MYSQL_USERNAME:iboot_job}
       password: ${MYSQL_PASSWORD:}
     command:
+      # 强制走容器内 TCP 回环；socket 连接无法提交客户端证书，会被 REQUIRE SUBJECT 拒绝。
+      host: ${IBOOT_BACKUP_COMMAND_HOST:127.0.0.1}
+      # MySQL 服务账号已要求客户端证书；路径相对 mysql 容器内的 /certs 挂载。
+      mysql-client-cert: ${IBOOT_BACKUP_MYSQL_CLIENT_CERT:/certs/services/iboot-job.pem}
+      mysql-client-key: ${IBOOT_BACKUP_MYSQL_CLIENT_KEY:/certs/services/iboot-job-key.pem}
+      mysql-ca: ${IBOOT_BACKUP_MYSQL_CA:/certs/rootCA.pem}
       # 本地默认通过 docker exec 复用 MySQL 容器内的 mysqldump，避免宿主机安装客户端
       dump-prefix:
         - docker

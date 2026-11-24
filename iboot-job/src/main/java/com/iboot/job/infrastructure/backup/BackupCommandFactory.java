@@ -75,6 +75,7 @@ public class BackupCommandFactory {
         command.add("--default-character-set=utf8mb4");
         command.add("--set-gtid-purged=OFF");
         command.add("--no-tablespaces");
+        addTlsOptions(command);
         command.add("-u" + database.getUsername());
         command.add("-h" + commandHost());
         command.add("-P" + commandPort());
@@ -94,11 +95,32 @@ public class BackupCommandFactory {
         BackupProperties.Database database = properties.getDatabase();
         List<String> command = new ArrayList<>(properties.getCommand().getRestorePrefix());
         command.add("--default-character-set=utf8mb4");
+        addTlsOptions(command);
         command.add("-u" + database.getUsername());
         command.add("-h" + commandHost());
         command.add("-P" + commandPort());
         command.add("--database=" + targetSchema);
         return List.copyOf(command);
+    }
+
+    /**
+     * 追加 MySQL 客户端 TLS 参数；客户端证书为空时只校验服务端证书链。
+     *
+     * @param command 命令参数列表
+     */
+    private void addTlsOptions(final List<String> command) {
+        BackupProperties.Command options = properties.getCommand();
+        String ca = options.getMysqlCa();
+        String cert = options.getMysqlClientCert();
+        String key = options.getMysqlClientKey();
+        if (ca != null && !ca.isBlank()) {
+            command.add("--ssl-mode=VERIFY_IDENTITY");
+            command.add("--ssl-ca=" + ca);
+        }
+        if (cert != null && !cert.isBlank() && key != null && !key.isBlank()) {
+            command.add("--ssl-cert=" + cert);
+            command.add("--ssl-key=" + key);
+        }
     }
 
     /**

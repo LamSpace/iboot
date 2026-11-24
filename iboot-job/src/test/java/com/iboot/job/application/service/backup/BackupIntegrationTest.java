@@ -116,6 +116,10 @@ class BackupIntegrationTest {
         properties.getDatabase().setPassword("root");
         properties.getCommand().setHost("localhost");
         properties.getCommand().setPort(MYSQL_PORT);
+        // Testcontainers 的 MySQL 容器没有 /certs 挂载，集成测试用 root 直连。
+        properties.getCommand().setMysqlClientCert("");
+        properties.getCommand().setMysqlClientKey("");
+        properties.getCommand().setMysqlCa("");
         String containerId = MYSQL.getContainerId();
         properties.getCommand().setDumpPrefix(List.of("docker", "exec", "-i", "-e", "MYSQL_PWD",
                 containerId, "mysqldump"));

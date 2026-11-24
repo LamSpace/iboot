@@ -334,6 +334,21 @@ public class BackupProperties {
         private Integer port;
 
         /**
+         * mysqldump/mysql 客户端证书路径；为空时不提交客户端证书。
+         */
+        private String mysqlClientCert = "/certs/services/iboot-job.pem";
+
+        /**
+         * mysqldump/mysql 客户端私钥路径；为空时不提交客户端证书。
+         */
+        private String mysqlClientKey = "/certs/services/iboot-job-key.pem";
+
+        /**
+         * mysqldump/mysql 客户端 CA 路径；为空时不校验证书链。
+         */
+        private String mysqlCa = "/certs/rootCA.pem";
+
+        /**
          * 获取导出命令前缀。
          *
          * @return 命令参数列表
@@ -376,6 +391,60 @@ public class BackupProperties {
          */
         public void setPort(final Integer port) {
             this.port = port;
+        }
+
+        /**
+         * 获取客户端证书路径。
+         *
+         * @return 证书路径；为空表示不提交客户端证书
+         */
+        public String getMysqlClientCert() {
+            return mysqlClientCert;
+        }
+
+        /**
+         * 设置客户端证书路径。
+         *
+         * @param mysqlClientCert 证书路径；空字符串表示不提交客户端证书
+         */
+        public void setMysqlClientCert(final String mysqlClientCert) {
+            this.mysqlClientCert = mysqlClientCert;
+        }
+
+        /**
+         * 获取客户端私钥路径。
+         *
+         * @return 私钥路径；为空表示不提交客户端证书
+         */
+        public String getMysqlClientKey() {
+            return mysqlClientKey;
+        }
+
+        /**
+         * 设置客户端私钥路径。
+         *
+         * @param mysqlClientKey 私钥路径；空字符串表示不提交客户端证书
+         */
+        public void setMysqlClientKey(final String mysqlClientKey) {
+            this.mysqlClientKey = mysqlClientKey;
+        }
+
+        /**
+         * 获取客户端 CA 路径。
+         *
+         * @return CA 路径；为空表示不校验证书链
+         */
+        public String getMysqlCa() {
+            return mysqlCa;
+        }
+
+        /**
+         * 设置客户端 CA 路径。
+         *
+         * @param mysqlCa CA 路径；空字符串表示不校验证书链
+         */
+        public void setMysqlCa(final String mysqlCa) {
+            this.mysqlCa = mysqlCa;
         }
 
         /**
