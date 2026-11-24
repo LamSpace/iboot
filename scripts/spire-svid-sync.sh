@@ -169,8 +169,12 @@ restart_tls_dependents() {
 }
 
 setup() {
-    say '启动 SPIRE Server/Agent（含 demo 验证）'
-    "$ROOT/scripts/spire-up.sh" >/dev/null || die 'SPIRE 启动或 demo SVID 获取失败'
+    local up_out
+    say '启动 SPIRE Server/Agent'
+    if ! up_out="$("$ROOT/scripts/spire-up.sh" --no-demo 2>&1)"; then
+        printf '%s\n' "$up_out" | tail -10 | sed 's/^/[spire-svid]   /' >&2
+        die 'SPIRE 启动失败'
+    fi
     spire_ready || die 'SPIRE Server/Agent 未就绪'
     # 先重启 Agent 清空旧 SVID 缓存，再注册条目；避免“条目已更新但 Agent 仍返回旧证书”。
     say '重启 SPIRE Agent 清理 SVID 缓存'
