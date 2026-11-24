@@ -24,6 +24,7 @@
 | `spire-svid-sync.sh` | 为十个服务注册 SVID 条目、取回证书、合并 SPIRE CA 到信任 bundle；`--refresh` 重新取回，`--status` 查看有效期与 SAN，`--check` 按阈值判断是否需要刷新。 |
 | `docker-svid-refresh.sh` | Compose 全量模式 SVID 刷新：重建 `svid-*` sidecar 写入命名卷，并滚动重启十个业务容器。 |
 | `svid-refresh-schedule.sh` | SVID 到期检查与刷新调度：systemd user timer 或 cron 每日检查，低于阈值才刷新宿主机或 Compose 栈；结果写日志与 Prometheus 文本指标。 |
+| `tls-ca-orchestrate.sh` | 跨主机调度安装/巡检与 CA 阶段编排：默认 dry-run，`--execute` 才通过 SSH 执行；保证 prepare→activate→finalize 按主机分组推进。 |
 | `host-loopback-relay.py` | 原生 Docker 无法直连宿主机回环时的 TCP relay：只绑定 Docker 网桥网关，转发到 `127.0.0.1:8080-8089`。 |
 | `apm/` | SkyWalking 对比实验：`fetch-agent.sh` 下载 Agent，`measure.sh` 采样，`verify.sh` 双后端验收。 |
 
@@ -98,6 +99,7 @@ CI 的 PR 任务只跑路由覆盖、构建与网关测试；定时 / 手动任�
 | 12h | `compose-svid.sh` | Compose SVID 覆盖层、sidecar 镜像与单服务取证。 |
 | 12i | `svid-refresh-schedule.sh` | SVID 刷新调度安装、幂等、检查/刷新路径、锁与指标。 |
 | 12j | `tls-rotate-svid.sh` | `tls-rotate` 在 Compose SVID 栈上的重启路径委托。 |
+| 12k | `tls-ca-orchestrate.sh` | 跨主机 checklist 顺序、dry-run、执行顺序、失败停止与巡检。 |
 | 13 | `permission-matrix.sh` | 角色 × 接口 × 期望结果的权限边界矩阵。 |
 
 独立验收脚本（不在 `regress.sh` 主链路内）：

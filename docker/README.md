@@ -132,7 +132,9 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 SPIRE profile（`spire`）：`spire-server`、`spire-agent` 与 `spire-demo` 验证 Workload API/SVID；
 `dev-init.sh` 默认启动该 profile，为宿主机十个服务取回 SVID；Compose 全量模式由
 `docker/docker-compose.svid.yml` 叠加 `svid` profile，为每个服务运行一次性取证 sidecar 并写入命名卷。
-`IBOOT_SVID_ENABLED=false` 可回退 mkcert；SVID 刷新见 `scripts/docker-svid-refresh.sh`。
+`IBOOT_SVID_ENABLED=false` 可回退 mkcert；SVID 刷新见 `scripts/docker-svid-refresh.sh`，
+到期检查与自动刷新由 `scripts/svid-refresh-schedule.sh` 调度（默认每日 04:00，失败写
+`logs/svid-refresh.log` 与 Prometheus 文本指标）。
 启动与验收见 `scripts/spire-up.sh`、`scripts/spire-svid-sync.sh`、`scripts/regress/spire-svid-services.sh`
 与 `scripts/regress/compose-svid.sh`。
 

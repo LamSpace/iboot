@@ -19,15 +19,18 @@ OPA 韧性/本地 HA、CA 三阶段轮换 + Docker 滚动重启、备份命令�
 SVID 到期检查与刷新调度（A1，`svid-refresh-schedule.sh`）、
 `tls-rotate` 与 Compose SVID 重启路径对齐（A2）、
 CA 轮换回滚入口（A3，`tls-ca-rotate.sh --rollback`）、
-SPIRE/SVID 监控与告警（A4，`spire-svid-monitor.sh`）。
+SPIRE/SVID 监控与告警（A4，`spire-svid-monitor.sh`）、
+跨主机调度巡检与 CA 阶段编排（A5，`tls-ca-orchestrate.sh`）。
 
 最终全栈回归：`45342399147`（success）；本地 12c–12h 回归通过。
 
-## 2. 行动项（1 项，唯一“未完成”）
+## 2. 行动项（0 项）
+
+A1–A5 已全部闭环，当前没有未完成行动项。后续新增项必须按 §4 规则先登记。
 
 | # | 行动项 | 验收标准 | 验证 |
 |---|---|---|---|
-| A5 | 跨主机调度与 CA 阶段编排 | 每台主机安装调度并有 `--status` 巡检；`prepare→activate→finalize` 顺序 runbook | 两主机 dry-run/checklist |
+| — | 无 | — | — |
 
 ## 3. 例外登记（不计入遗留任务）
 
@@ -47,7 +50,7 @@ SPIRE/SVID 监控与告警（A4，`spire-svid-monitor.sh`）。
 
 ## 4. 变更规则
 
-1. 只有 A5 计入“未完成”；E1–E11 不再作为遗留任务重复盘点。
+1. 当前行动项为 0；E1–E11 不再作为遗留任务重复盘点。
 2. 新增项必须先归入“行动项”或“例外登记”，并写明 Owner、触发条件、复核日期。
 3. 行动项完成后从本表移除，并在 `docs/27` 对应章节记录验证结果。
 4. 阶段范围变化（例如迁 K8s）时重新基线化本页。
