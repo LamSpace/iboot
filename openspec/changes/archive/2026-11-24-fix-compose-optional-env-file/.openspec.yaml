@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: compose 在缺少 .env 时仍可 config，修复 CI 静态凭据检查
+skip_specs: true

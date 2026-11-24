@@ -156,7 +156,9 @@ x-app-env: &app-env
 
 x-app-common: &app-common
   env_file:
-    - ../.env
+    # CI 直接用环境变量注入；.env 不存在时不应阻止 compose config/回归静态检查。
+    - path: ../.env
+      required: false
   restart: unless-stopped
   networks:
     - app
