@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 本地/CI 启动栈时同时拉起 opa-lb，并修复失败日志采集
+skip_specs: true

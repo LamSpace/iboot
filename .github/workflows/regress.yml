@@ -275,10 +275,17 @@ jobs:
         run: |
           echo '===== 后端日志 ====='
           ls -la logs/ 2>/dev/null || true
-          tail -100 logs/*.log 2>/dev/null || true
+          for f in logs/*.log; do
+            echo "===== $f ====="
+            tail -c 20000 "$f" 2>/dev/null || true
+          done
           echo '===== 中间件状态 ====='
-          docker compose -f docker/docker-compose.yml --profile platform ps || true
-          docker compose -f docker/docker-compose.yml --profile platform logs --tail=100 mysql redis silo elasticsearch nacos 2>/dev/null || true
+          # 失败步骤没有 compose 插值所需的全部环境变量，直接用 docker 取状态与日志。
+          docker ps -a --format '{{.Names}}\t{{.Status}}' || true
+          for c in iboot-mysql iboot-redis iboot-silo iboot-elasticsearch iboot-nacos; do
+            echo "===== $c ====="
+            docker logs --tail 100 "$c" 2>&1 || true
+          done
 
       # 快照与 diff 是契约漂移的唯一完整证据，失败时下载后可直接刷新 golden 基线。
       - name: 上传回归快照
