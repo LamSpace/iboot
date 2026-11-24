@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: SVID setup 不依赖 demo 工作负载
+skip_specs: true
