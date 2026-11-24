@@ -335,6 +335,7 @@ services:
     restart: "no"
     networks:
       - data
+      - obs
 
   spire-agent:
     image: ghcr.io/spiffe/spire-agent:1.12.4
@@ -361,6 +362,7 @@ services:
     restart: "no"
     networks:
       - data
+      - obs
 
   spire-demo:
     image: ghcr.io/spiffe/spire-agent:1.12.4
@@ -1891,6 +1893,8 @@ services:
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      # SVID 刷新调度写入运行期目录（挂载点 /certs）；文本文件采集只读取 *.prom。
+      - '--collector.textfile.directory=/certs'
       - '--web.config.file=/etc/exporter/web.yml'
     volumes:
       - /proc:/host/proc:ro

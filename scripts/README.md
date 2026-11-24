@@ -77,6 +77,7 @@ CI 的 PR 任务只跑路由覆盖、构建与网关测试；定时 / 手动任�
 | 6 | `observability-tls.sh` | Grafana/Kibana/Alertmanager/Thanos 等控制台 TLS。 |
 | 6b | `exporter-mtls.sh` | exporter 客户端证书与 Prometheus 抓取。 |
 | 7 | `tls-cert-monitor.sh` | 证书到期指标与告警规则。 |
+| 7a | `spire-svid-monitor.sh` | SPIRE 健康探针、SVID 指标、故障注入与 Alertmanager 路由。 |
 | 7b | `tls-rotate.sh --check` | 证书轮换检查模式（不重签）。 |
 | 7c | `tls-rotation-schedule.sh` | 轮换调度安装/卸载/状态（临时 HOME 与假命令）。 |
 | 8 | `middleware-auth.sh` | MySQL/Redis/ES/Kafka/RocketMQ 认证与越权拒绝。 |

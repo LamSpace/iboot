@@ -1331,6 +1331,11 @@ bash scripts/regress/spire-svid-services.sh
   `scripts/svid-refresh-schedule.sh --status` 巡检。日志 `logs/svid-refresh.log`；
   指标写入 `docker/certs/runtime/svid-refresh.prom`，供 Prometheus 文本文件采集。
 - 条目变更后 Agent 会缓存旧 SVID，`spire-svid-sync.sh --setup` 会重启 Agent 清理缓存。
+- 监控：Prometheus `spire-health` job 用 blackbox 探测 Server/Agent 的 `/ready`；
+  `svid-alerts` 覆盖控制面不可用、刷新失败/停滞与 SVID 临期。指标来自
+  `docker/certs/runtime/svid-refresh.prom`（node-exporter 文本文件采集）。
+  Alertmanager 将 `team="security"` 路由到 `security-webhook`。验收用
+  `scripts/regress/spire-svid-monitor.sh`。
 - 预签名/抓取等仍使用 mkcert 的 Prometheus/blackbox 客户端证书；服务端 SVID 由信任 bundle 验证。
 
 ### 28.3 Compose 全量模式
@@ -1366,7 +1371,7 @@ scripts/docker-svid-refresh.sh --no-restart # 只刷新卷内 SVID
 ## 29. 零信任残余边界清单
 
 当前阶段的**唯一清单**见 [docs/28 当前基线与例外](./28-TLS%20与零信任当前基线与例外.md)：
-只有 2 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
+只有 1 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
 
 与本操作指南的章节映射：
 
