@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: SVID 合并 CA 后重启 Redis 以接受 SVID 客户端
+skip_specs: true
