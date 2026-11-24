@@ -22,7 +22,9 @@
 # 说明：
 # - 构建与运行期基础镜像来自 scripts/pull-docker-images.sh 配置的 Docker Hub；
 # - 根目录 .env 会被加载，用于 compose 插值（如 NEO4J_PASSWORD）；
-# - 应用容器的环境变量由 docker-compose.yml 的 env_file 注入。
+# - 应用容器的环境变量由 docker-compose.yml 的 env_file 注入；
+# - 默认启用 SPIRE SVID（IBOOT_SVID_ENABLED=true）：叠加 docker-compose.svid.yml，
+#   为每个服务运行一次性取证 sidecar；显式设为 false 可回退 mkcert。
 
 set -euo pipefail
 
@@ -35,6 +37,7 @@ BASE_IMAGES=(
   "eclipse-temurin:25.0.5_8-jre"
   "node:22.23.5-bookworm-slim"
   "nginx:1.30.6-alpine3.24"
+  "ghcr.io/spiffe/spire-agent:1.12.4"
 )
 
 log()  { printf '[docker-deploy] %s\n' "$*"; }
@@ -46,6 +49,12 @@ if [ -f "$ROOT/.env" ]; then
   # shellcheck disable=SC1091
   . "$ROOT/.env"
   set +a
+fi
+
+SVID_ENABLED="${IBOOT_SVID_ENABLED:-true}"
+if [ "$SVID_ENABLED" = "true" ]; then
+  COMPOSE=(docker compose -f docker/docker-compose.yml -f docker/docker-compose.svid.yml \
+    --profile spire --profile svid)
 fi
 
 require_docker() {
@@ -105,7 +114,7 @@ report_unhealthy() {
   while IFS='|' read -r name service state health; do
     [ -n "$service" ] || continue
     case "$service" in
-      mysql-users-init|mysql-grants-init|nacos-init|db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init|es-users-init) continue ;;
+      mysql-users-init|mysql-grants-init|nacos-init|db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init|es-users-init|svid-iboot-*) continue ;;
     esac
     if [ "$state" != "running" ] || { [ -n "$health" ] && [ "$health" != "healthy" ]; }; then
       printf '\n--- %s（%s，health=%s）最近日志 ---\n' "$name" "$state" "${health:-none}" >&2
@@ -126,7 +135,7 @@ wait_ready() {
     while IFS='|' read -r name service state health; do
       [ -n "$service" ] || continue
       case "$service" in
-        mysql-users-init|mysql-grants-init|nacos-init|db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init|es-users-init)
+        mysql-users-init|mysql-grants-init|nacos-init|db-init|silo-init|rocketmq-store-init|rocketmq-init|kafka-init|elasticsearch-init|es-users-init|svid-iboot-*)
           if [ "$state" = "exited" ]; then
             exitcode=$(docker inspect -f '{{.State.ExitCode}}' "$name" 2>/dev/null || echo 1)
             if [ "$exitcode" != "0" ]; then
@@ -171,6 +180,11 @@ up() {
   [ -f "$ROOT/.env" ] || fail "缺少根目录 .env，请从 .env.example 复制并填写后重试"
   prepare_tls
   stop_host_services
+  if [ "$SVID_ENABLED" = "true" ]; then
+    log "初始化 SPIRE SVID（注册条目、合并 CA、重建信任库）..."
+    "$ROOT/scripts/spire-svid-sync.sh" --setup \
+      || fail "SPIRE SVID 初始化失败"
+  fi
   ensure_base_images
   build_images
 

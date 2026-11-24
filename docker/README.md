@@ -130,8 +130,11 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 图数据库 profile：Neo4j `7474`（HTTP）、`7687`（Bolt TLS），均绑定 `127.0.0.1`。
 
 SPIRE profile（`spire`）：`spire-server`、`spire-agent` 与 `spire-demo` 验证 Workload API/SVID；
-`dev-init.sh` 默认启动该 profile，为宿主机十个服务取回 SVID（`IBOOT_SVID_ENABLED=false` 可回退 mkcert）；
-不发布宿主机端口，启动与验收见 `scripts/spire-up.sh`、`scripts/spire-svid-sync.sh` 与 `scripts/regress/spire-svid-services.sh`。
+`dev-init.sh` 默认启动该 profile，为宿主机十个服务取回 SVID；Compose 全量模式由
+`docker/docker-compose.svid.yml` 叠加 `svid` profile，为每个服务运行一次性取证 sidecar 并写入命名卷。
+`IBOOT_SVID_ENABLED=false` 可回退 mkcert；SVID 刷新见 `scripts/docker-svid-refresh.sh`。
+启动与验收见 `scripts/spire-up.sh`、`scripts/spire-svid-sync.sh`、`scripts/regress/spire-svid-services.sh`
+与 `scripts/regress/compose-svid.sh`。
 
 TLS 轮换 profile（`tls-rotate`，默认不启动）：`tls-rotate` 容器按日检查证书，失败才重签并通过 Docker API
 重启业务容器；不写宿主机 cron/systemd。该 profile 挂载 Docker socket 与仓库根目录，只用于本地/容器化开发，

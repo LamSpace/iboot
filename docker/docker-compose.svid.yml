@@ -1,0 +1,282 @@
+# Compose 全量模式的 SPIRE SVID 覆盖层。
+#
+# 用法（与基础 compose 叠加，启用 spire + svid profile）：
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.svid.yml \
+#     --profile spire --profile svid up -d
+#
+# 每个服务有一个一次性 sidecar：通过 Agent Workload API 取回 SVID 写入命名卷，
+# 应用容器只读挂载并改用 SVID 证书；信任 bundle 由 scripts/spire-svid-sync.sh --setup 合并。
+# 默认 compose 不引用本文件，mkcert 路径保持不变。
+
+services:
+  iboot-system:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_system:/svid:ro
+    depends_on:
+      svid-iboot-system:
+        condition: service_completed_successfully
+
+  svid-iboot-system:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-system
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_system:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+  iboot-ai:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_ai:/svid:ro
+    depends_on:
+      svid-iboot-ai:
+        condition: service_completed_successfully
+
+  svid-iboot-ai:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-ai
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_ai:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+  iboot-file:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_file:/svid:ro
+    depends_on:
+      svid-iboot-file:
+        condition: service_completed_successfully
+
+  svid-iboot-file:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-file
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_file:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+  iboot-auth:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_auth:/svid:ro
+    depends_on:
+      svid-iboot-auth:
+        condition: service_completed_successfully
+
+  svid-iboot-auth:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-auth
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_auth:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+  iboot-notify:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_notify:/svid:ro
+    depends_on:
+      svid-iboot-notify:
+        condition: service_completed_successfully
+
+  svid-iboot-notify:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-notify
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_notify:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+  iboot-job:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_job:/svid:ro
+    depends_on:
+      svid-iboot-job:
+        condition: service_completed_successfully
+
+  svid-iboot-job:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-job
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_job:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+  iboot-workflow:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_workflow:/svid:ro
+    depends_on:
+      svid-iboot-workflow:
+        condition: service_completed_successfully
+
+  svid-iboot-workflow:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-workflow
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_workflow:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+  iboot-monitor:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_monitor:/svid:ro
+    depends_on:
+      svid-iboot-monitor:
+        condition: service_completed_successfully
+
+  svid-iboot-monitor:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-monitor
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_monitor:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+  iboot-gateway:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_gateway:/svid:ro
+    depends_on:
+      svid-iboot-gateway:
+        condition: service_completed_successfully
+
+  svid-iboot-gateway:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-gateway
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_gateway:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+  iboot-ops:
+    environment:
+      IBOOT_TLS_CERT_FILE: /svid/svid.0.pem
+      IBOOT_TLS_KEY_FILE: /svid/svid.0.key
+    volumes:
+      - svid_iboot_ops:/svid:ro
+    depends_on:
+      svid-iboot-ops:
+        condition: service_completed_successfully
+
+  svid-iboot-ops:
+    image: iboot-svid-sidecar:local
+    build:
+      context: ./svid-sidecar
+    profiles: ["svid"]
+    labels:
+      com.iboot.svid.service: iboot-ops
+    command: ["/opt/spire/bin/spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /svid && chmod 644 /svid/*"]
+    volumes:
+      - spire_agent_socket:/run/spire/sockets
+      - svid_iboot_ops:/svid
+    depends_on:
+      spire-agent:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  svid_iboot_system:
+  svid_iboot_ai:
+  svid_iboot_file:
+  svid_iboot_auth:
+  svid_iboot_notify:
+  svid_iboot_job:
+  svid_iboot_workflow:
+  svid_iboot_monitor:
+  svid_iboot_gateway:
+  svid_iboot_ops:

@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: Compose 全量模式每服务 SVID sidecar
+skip_specs: true

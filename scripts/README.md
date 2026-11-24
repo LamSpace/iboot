@@ -22,6 +22,7 @@
 | `silo-init.sh` | 初始化 Silo 根账号、服务桶与访问密钥。 |
 | `spire-up.sh` / `spire-down.sh` | 启动/停止 SPIRE Server、Agent 与 demo 工作负载；`dev-init.sh` 默认启动 SPIRE 供服务 SVID 使用，`spire-down.sh` 只删除 SPIRE 容器，保留主栈。 |
 | `spire-svid-sync.sh` | 为十个服务注册 SVID 条目、取回证书、合并 SPIRE CA 到信任 bundle；`--refresh` 重新取回，`--status` 查看有效期与 SAN。 |
+| `docker-svid-refresh.sh` | Compose 全量模式 SVID 刷新：重建 `svid-*` sidecar 写入命名卷，并滚动重启十个业务容器。 |
 | `host-loopback-relay.py` | 原生 Docker 无法直连宿主机回环时的 TCP relay：只绑定 Docker 网桥网关，转发到 `127.0.0.1:8080-8089`。 |
 | `apm/` | SkyWalking 对比实验：`fetch-agent.sh` 下载 Agent，`measure.sh` 采样，`verify.sh` 双后端验收。 |
 
@@ -29,7 +30,7 @@
 
 | 脚本 | 用途 |
 |---|---|
-| `docker-deploy.sh` | 全栈 Docker 入口：停止宿主机进程 → 确保基础镜像 → 构建共享 builder → 构建运行期镜像 → Compose 启动并等待健康。支持 `up [core\|observability\|graph\|full]`、`status`、`logs`、`down`、`purge --yes`。 |
+| `docker-deploy.sh` | 全栈 Docker 入口：停止宿主机进程 → SVID 初始化（默认）→ 确保基础镜像 → 构建共享 builder → 构建运行期镜像 → Compose 启动并等待健康。支持 `up [core\|observability\|graph\|full]`、`status`、`logs`、`down`、`purge --yes`；`IBOOT_SVID_ENABLED=false` 回退 mkcert。 |
 | `pull-docker-images.sh` | 从 Docker Hub 拉取构建与运行期镜像（对象存储使用 pgsty/silo），供 `docker-deploy.sh` 与 Compose 使用。 |
 
 ## 回归
@@ -92,6 +93,7 @@ CI 的 PR 任务只跑路由覆盖、构建与网关测试；定时 / 手动任�
 | 12e | `silo-client-cert.sh` | Silo 客户端证书换取临时凭据。 |
 | 12f | `nacos-namespace-isolation.sh` | Nacos 配置命名空间隔离。 |
 | 12g | `spire-svid-services.sh` | 十个服务的 SVID SAN、有效期与 mTLS 健康检查。 |
+| 12h | `compose-svid.sh` | Compose SVID 覆盖层、sidecar 镜像与单服务取证。 |
 | 13 | `permission-matrix.sh` | 角色 × 接口 × 期望结果的权限边界矩阵。 |
 
 独立验收脚本（不在 `regress.sh` 主链路内）：
