@@ -1081,7 +1081,9 @@ scripts/tls-rotate-schedule.sh --print                     # 只输出将安装�
 
 - 只覆盖 Prometheus → exporter；Grafana/Thanos/Kibana 的内网调用仍使用既有 HTTPS。
 - 调度只负责叶子证书检查、重签与按范围重启；CA 轮换见 §23.4，Docker 环境可用 `--restart rolling` 逐个重建。
-- 跨主机场景仍需在每台主机分别安装调度；本仓库不提供中心化编排。
+- 跨主机场景在每台主机分别安装调度（`tls-rotate-schedule.sh --install` 与
+  `svid-refresh-schedule.sh --install`），用 `--status` 巡检；`tls-ca-orchestrate.sh`
+  只编排“每台主机按阶段执行”的顺序，不提供中心化调度服务。
 - Dashboard 的反向探测命令端口 8719 仍为 HTTP，只在 Docker 网络内使用，不发布到宿主机。
 
 ### 23.4 CA 轮换与滚动发布
@@ -1107,6 +1109,19 @@ scripts/tls-ca-rotate.sh --status                       # 查看阶段、bundle 
   `--restart docker` 一次性重建，`--restart api` 通过 Docker API 重启，`--restart host` 重启宿主机进程。
   若当前是 Compose SVID 栈，`docker`/`rolling` 会委托 `docker-svid-refresh.sh` 重新取回 SVID 后滚动重启。
 - 默认 `--restart none`，只改文件；生产/多主机环境应在每台主机按阶段执行，且先 `prepare` 全部主机再 `activate`。
+  跨主机编排入口：
+
+```bash
+scripts/tls-ca-orchestrate.sh --hosts h1,h2 --checklist          # 打印完整 runbook
+scripts/tls-ca-orchestrate.sh --hosts h1,h2 --install-schedules   # dry-run 打印安装命令
+scripts/tls-ca-orchestrate.sh --hosts h1,h2 --install-schedules --execute
+scripts/tls-ca-orchestrate.sh --hosts h1,h2 --status --execute    # 汇总三类巡检
+scripts/tls-ca-orchestrate.sh --hosts h1,h2 --stage prepare --execute
+# 全部主机 prepare 完成后，再 activate，最后 finalize
+```
+
+  脚本默认 dry-run，只有 `--execute` 才通过 SSH 执行；任一主机失败即停止，失败主机可用
+  `tls-ca-rotate.sh --rollback` 回到上一张 CA。
 - 回归 `scripts/regress/ca-rotation.sh` 在临时证书目录执行三阶段，校验 bundle 数量与叶子签发者，不触碰运行中栈。
 - 若已启用 SPIRE SVID，`finalize` 后执行 `scripts/spire-svid-sync.sh --refresh --restart <scope>`，
   重新把 SPIRE CA 合并进信任 bundle，避免服务重启后不再信任 SVID。
@@ -1364,14 +1379,15 @@ scripts/docker-svid-refresh.sh --no-restart # 只刷新卷内 SVID
 
 - SVID 没有内置热加载；刷新后仍需重启服务加载新证书，调度脚本已封装该步骤。
 - 调度与 `tls-rotate-schedule.sh` 相同，默认不写入开发者定时任务；首次部署必须在目标主机执行
-  `--install`。跨主机场景每台主机分别安装。
+  `--install`。跨主机场景用 `tls-ca-orchestrate.sh --hosts ... --install-schedules --execute`
+  逐台安装，并用 `--status --execute` 巡检。
 - 不部署 Kubernetes 控制面或 sidecar 网格。
 - SPIRE 的 CA、token 与数据卷均为本地开发资产，不入仓；SVID 私钥只写入命名卷或 `docker/certs/svid`（已忽略）。
 
 ## 29. 零信任残余边界清单
 
 当前阶段的**唯一清单**见 [docs/28 当前基线与例外](./28-TLS%20与零信任当前基线与例外.md)：
-只有 1 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
+当前没有未完成行动项；其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
 
 与本操作指南的章节映射：
 
@@ -1384,4 +1400,4 @@ scripts/docker-svid-refresh.sh --no-restart # 只刷新卷内 SVID
 
 轮换调度已在本机安装 systemd user timer；其他主机需分别执行 `--install`，状态用
 `scripts/tls-rotate-schedule.sh --status` 巡检。CA 轮换与 Docker 滚动发布见 §23.4；
-跨主机阶段顺序见 docs/28 的 A5。
+跨主机阶段顺序与巡检见 §23.4 的 `scripts/tls-ca-orchestrate.sh`。
