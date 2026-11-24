@@ -183,6 +183,10 @@ echo
 echo "===== 12e. Silo 客户端证书 ====="
 "$HERE/silo-client-cert.sh" || fail "Silo 客户端证书检查未通过"
 
+echo
+echo "===== 12f. Nacos 命名空间隔离 ====="
+"$HERE/nacos-namespace-isolation.sh" || fail "Nacos 命名空间隔离检查未通过"
+
 printf '\n===== 13. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 

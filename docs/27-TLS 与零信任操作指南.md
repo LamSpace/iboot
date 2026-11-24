@@ -462,8 +462,8 @@ B4.3 在 TLS 与网络边界之上补账号认证，但当时是共享账号方�
 | MySQL | `iboot_exporter` | mysqld-exporter | `PROCESS`、`REPLICATION CLIENT`、`performance_schema` 只读 |
 | Redis | `iboot_<service>` | 八个数据服务 | 命名 ACL 账号，按登记键/频道模式限制；monitor 键空间浏览例外 |
 | Redis | `iboot_exporter` | redis-exporter 与健康检查 | 只读监控命令集 |
-| Nacos | `iboot_<service>` | 十个服务（含 gateway/ops） | 绑定 `iboot_role`，配置读写 |
-| Nacos | `iboot` | 管理脚本 | 运维账号；不注入业务服务 |
+| Nacos | `iboot_<service>` | 十个服务（含 gateway/ops） | 独立角色；`public:*:*` 服务发现 + `iboot-<service>:*:*` 配置读写 |
+| Nacos | `iboot` | 管理脚本 | `iboot_ops_role` 运维账号；不注入业务服务 |
 | Silo | `iboot_file` | 文件服务 | 仅 `iboot-files` 桶 |
 | Silo | `iboot_job` | 备份任务 | 仅 `iboot-files` 桶 |
 | Silo | `iboot_ai` | AI 服务 | 仅 `iboot-ai` 桶 |
@@ -473,6 +473,10 @@ B4.3 在 TLS 与网络边界之上补账号认证，但当时是共享账号方�
 共享账号 `iboot_app` 已删除；服务账号名由服务名把 `-` 换成 `_` 得到（如 `iboot-system` → `iboot_system`）。
 每个服务在三类组件上的口令分别来自 `MYSQL_<SERVICE>_PASSWORD`、`REDIS_<SERVICE>_PASSWORD` 与
 `NACOS_<SERVICE>_PASSWORD`，不得复用同一值。
+
+B6 起 Nacos 配置按服务命名空间隔离：每个服务有 `iboot-<service>` 命名空间与独立角色，
+只能读写自己的命名空间；`public` 保留服务注册、订阅与公共配置。服务通过
+`spring.cloud.nacos.config.namespace` 指向自己的命名空间，`discovery` 仍使用 public。
 
 B5.13 起，MySQL 写权限由 `scripts/mysql-table-grants.tsv` 与 `scripts/mysql-grants-init.sh` 在建表后授予；
 账号创建脚本不再授予库级 DML。Seata 参与方 `system`/`workflow` 额外拥有共享 `undo_log` 的 DML；
