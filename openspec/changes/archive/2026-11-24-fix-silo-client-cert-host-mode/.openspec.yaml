@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 宿主机模式启用 Silo 客户端证书
+skip_specs: true

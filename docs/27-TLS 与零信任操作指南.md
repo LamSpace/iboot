@@ -487,6 +487,8 @@ Redis 开启 `tls-auth-clients yes`；数据库口令/ACL 仍是第二道认证�
 Silo 在 B6 起启用 `MINIO_IDENTITY_TLS_ENABLE=on`：文件/AI 服务用每服务 PKCS12 调用
 `AssumeRoleWithCertificate`，Silo 按证书 CN（`iboot-file`/`iboot-ai`）映射同名桶策略并签发短时临时凭据；
 本地为兼容现有 CN 策略设置 `MINIO_IDENTITY_TLS_URI_SAN_SCHEME=disabled`，URI SAN 为 SPIFFE 时可切换映射方式。
+容器模式由 compose 注入 `/certs/client.p12`；宿主机模式由 `dev-init.sh` 注入
+`docker/certs/services/<service>.p12` 并设置 `IBOOT_<SVC>_SILO_CLIENT_CERT_ENABLED=true`。
 Nacos HTTP API 仍保持**服务端 TLS + 账号/令牌**并登记为显式例外；Nacos gRPC 另有每服务客户端证书（§18.5）。
 
 ### 13.2 初始化
