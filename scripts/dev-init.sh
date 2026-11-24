@@ -702,10 +702,13 @@ start_backend() {
             fi
             case "$name" in
                 iboot-ai)
+                    local silo_cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
                     env_opts+=(ELASTICSEARCH_USERNAME=iboot_ai "ELASTICSEARCH_PASSWORD=$ES_AI_PASSWORD")
                     env_opts+=(
                         "IBOOT_AI_SILO_ACCESS_KEY=${SILO_AI_ACCESS_KEY:-iboot_ai}"
                         "IBOOT_AI_SILO_SECRET_KEY=$SILO_AI_SECRET_KEY"
+                        "IBOOT_AI_SILO_CLIENT_CERT_ENABLED=true"
+                        "IBOOT_AI_SILO_CLIENT_CERT_KEYSTORE=$silo_cert_dir/services/$name.p12"
                     )
                     ;;
                 iboot-workflow)
@@ -723,9 +726,12 @@ start_backend() {
                     )
                     ;;
                 iboot-file)
+                    local silo_cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
                     env_opts+=(
                         "IBOOT_FILE_SILO_ACCESS_KEY=${SILO_FILE_ACCESS_KEY:-iboot_file}"
                         "IBOOT_FILE_SILO_SECRET_KEY=$SILO_FILE_SECRET_KEY"
+                        "IBOOT_FILE_SILO_CLIENT_CERT_ENABLED=true"
+                        "IBOOT_FILE_SILO_CLIENT_CERT_KEYSTORE=$silo_cert_dir/services/$name.p12"
                     )
                     ;;
                 iboot-job)
