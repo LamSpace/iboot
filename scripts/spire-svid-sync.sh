@@ -96,11 +96,13 @@ register_entries() {
 }
 
 fetch_svid() {
-    local svc="$1" volume="$2" attempt out
+    local svc="$1" volume="$2" attempt out name
     mkdir -p "$SVID_DIR/$svc"
     chmod 755 "$SVID_DIR/$svc"
-    for attempt in 1 2 3; do
-        out="$(docker run --rm --user "$(id -u):$(id -g)" \
+    for attempt in $(seq 1 10); do
+        name="svid-$svc-$$-$attempt"
+        docker rm -f "$name" >/dev/null 2>&1 || true
+        out="$(docker run --name "$name" --user "$(id -u):$(id -g)" \
             --label "com.iboot.svid.service=$svc" \
             -v "$volume:/run/spire/sockets" \
             -v "$SVID_DIR/$svc:/svid" \
@@ -109,9 +111,18 @@ fetch_svid() {
         if [ -f "$SVID_DIR/$svc/svid.0.pem" ] && [ -f "$SVID_DIR/$svc/svid.0.key" ]; then
             chmod 600 "$SVID_DIR/$svc/svid.0.key"
             chmod 644 "$SVID_DIR/$svc/svid.0.pem" "$SVID_DIR/$svc/bundle.0.pem"
+            docker rm -f "$name" >/dev/null 2>&1 || true
             return 0
         fi
-        [ "$attempt" -lt 3 ] && sleep 2
+        if [ "$attempt" -eq 10 ]; then
+            say "SVID 取回诊断（$svc）：$(docker inspect -f '{{json .Config.Labels}}' "$name" 2>/dev/null || true)"
+            docker exec "$SERVER_CONTAINER" /opt/spire/bin/spire-server entry show \
+                -spiffeID "spiffe://$TRUST_DOMAIN/service/$svc" -socketPath "$SERVER_SOCKET" 2>&1 \
+                | sed 's/^/[spire-svid]   /' || true
+            docker logs "$AGENT_CONTAINER" 2>&1 | tail -10 | sed 's/^/[spire-svid]   agent: /' || true
+        fi
+        docker rm -f "$name" >/dev/null 2>&1 || true
+        sleep 2
     done
     die "取回 SVID 失败：$svc（${out:-无输出}）"
 }
@@ -150,9 +161,7 @@ setup() {
     say '启动 SPIRE Server/Agent（含 demo 验证）'
     "$ROOT/scripts/spire-up.sh" >/dev/null || die 'SPIRE 启动或 demo SVID 获取失败'
     spire_ready || die 'SPIRE Server/Agent 未就绪'
-    say '注册十个服务的 SVID 条目'
-    register_entries
-    # 条目变更后 Agent 可能仍缓存旧 SVID；重启 Agent 使其重新拉取。
+    # 先重启 Agent 清空旧 SVID 缓存，再注册条目；避免“条目已更新但 Agent 仍返回旧证书”。
     say '重启 SPIRE Agent 清理 SVID 缓存'
     docker restart "$AGENT_CONTAINER" >/dev/null
     local i
@@ -161,6 +170,10 @@ setup() {
             -socketPath "$AGENT_SOCKET" >/dev/null 2>&1 && break
         sleep 1
     done
+    say '注册十个服务的 SVID 条目'
+    register_entries
+    # 给 Docker attestor 留出稳定时间。
+    sleep 2
     say "取回 SVID：$SVID_DIR"
     fetch_all
     merge_trust_bundle

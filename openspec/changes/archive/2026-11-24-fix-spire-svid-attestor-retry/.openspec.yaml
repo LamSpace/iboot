@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 提高 CI Docker attestor 取回 SVID 的稳定性
+skip_specs: true
