@@ -26,8 +26,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,12 +48,23 @@ class ServiceAuthorizationOpaTest {
 
     private final AtomicReference<String> requestBody = new AtomicReference<>("");
 
+    private final AtomicInteger requests = new AtomicInteger();
+
     private volatile boolean allow;
+
+    private volatile boolean failFirstRequest;
 
     @BeforeEach
     void startServer() throws Exception {
+        requests.set(0);
+        failFirstRequest = false;
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/v1/data/iboot/authz/allow", exchange -> {
+            int requestNumber = requests.incrementAndGet();
+            if (failFirstRequest && requestNumber == 1) {
+                exchange.close();
+                return;
+            }
             requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             byte[] response = ("{\"result\":" + allow + "}").getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -95,9 +108,51 @@ class ServiceAuthorizationOpaTest {
         assertTrue(policy.isDeniedAsync("/api/user/1", "iboot-gateway").join());
     }
 
+    @Test
+    void opaRetriesTransientFailure() throws Exception {
+        allow = true;
+        failFirstRequest = true;
+        ServiceAuthorizationPolicy policy = policyWithOpa(Duration.ofSeconds(2));
+        assertFalse(policy.isDenied("/api/user/retry", "iboot-gateway"));
+        assertEquals(2, requests.get());
+    }
+
+    @Test
+    void opaCachesDefinitiveDecision() {
+        allow = true;
+        ServiceAuthorizationPolicy policy = policyWithCache(Duration.ofSeconds(5));
+        assertFalse(policy.isDenied("/api/user/cache", "iboot-gateway"));
+        assertFalse(policy.isDenied("/api/user/cache", "iboot-gateway"));
+        assertEquals(1, requests.get());
+    }
+
+    @Test
+    void opaCacheExpires() throws Exception {
+        allow = true;
+        ServiceAuthorizationPolicy policy = policyWithCache(Duration.ofMillis(100));
+        assertFalse(policy.isDenied("/api/user/cache-ttl", "iboot-gateway"));
+        Thread.sleep(250);
+        assertFalse(policy.isDenied("/api/user/cache-ttl", "iboot-gateway"));
+        assertEquals(2, requests.get());
+    }
+
+    private ServiceAuthorizationPolicy policyWithCache(final Duration ttl) {
+        ServiceAuthorizationProperties properties =
+                properties("http://127.0.0.1:" + server.getAddress().getPort());
+        properties.setOpaCacheTtl(ttl);
+        return new ServiceAuthorizationPolicy(properties);
+    }
+
     private ServiceAuthorizationPolicy policyWithOpa() {
         return new ServiceAuthorizationPolicy(
                 properties("http://127.0.0.1:" + server.getAddress().getPort()));
+    }
+
+    private ServiceAuthorizationPolicy policyWithOpa(final Duration timeout) {
+        ServiceAuthorizationProperties properties =
+                properties("http://127.0.0.1:" + server.getAddress().getPort());
+        properties.setOpaTimeout(timeout);
+        return new ServiceAuthorizationPolicy(properties);
     }
 
     private ServiceAuthorizationProperties properties(final String opaUrl) {
@@ -109,6 +164,8 @@ class ServiceAuthorizationOpaTest {
         properties.setRules(List.of(rule));
         properties.setOpaUrl(opaUrl);
         properties.setOpaTimeout(Duration.ofMillis(300));
+        properties.setOpaCacheTtl(Duration.ZERO);
+        properties.setOpaRetryAttempts(1);
         return properties;
     }
 }

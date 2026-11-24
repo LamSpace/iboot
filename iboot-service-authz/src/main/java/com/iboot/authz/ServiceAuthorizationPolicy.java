@@ -52,7 +52,8 @@ public final class ServiceAuthorizationPolicy {
         String opaUrl = properties.getOpaUrl();
         this.opaClient = opaUrl == null || opaUrl.isBlank()
                 ? null
-                : new OpaAuthorizationClient(opaUrl, properties.getOpaTimeout());
+                : new OpaAuthorizationClient(opaUrl, properties.getOpaTimeout(),
+                        properties.getOpaRetryAttempts(), properties.getOpaCacheTtl());
     }
 
     /**
