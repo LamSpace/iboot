@@ -96,6 +96,7 @@ CI 的 PR 任务只跑路由覆盖、构建与网关测试；定时 / 手动任�
 | 12g | `spire-svid-services.sh` | 十个服务的 SVID SAN、有效期与 mTLS 健康检查。 |
 | 12h | `compose-svid.sh` | Compose SVID 覆盖层、sidecar 镜像与单服务取证。 |
 | 12i | `svid-refresh-schedule.sh` | SVID 刷新调度安装、幂等、检查/刷新路径、锁与指标。 |
+| 12j | `tls-rotate-svid.sh` | `tls-rotate` 在 Compose SVID 栈上的重启路径委托。 |
 | 13 | `permission-matrix.sh` | 角色 × 接口 × 期望结果的权限边界矩阵。 |
 
 独立验收脚本（不在 `regress.sh` 主链路内）：

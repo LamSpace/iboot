@@ -1051,7 +1051,9 @@ scripts/tls-rotate.sh --rotate --restart host
 ```
 
 - 普通启动只补发缺失的 exporter 证书，不重签既有服务证书；`--rotate` 才调用 `tls-init.sh --force`。
-- Docker 重启对当前运行的 compose 服务执行 `up -d --force-recreate`；宿主机重启调用 `dev-init.sh --stop` 后再启动。
+- Docker 重启对当前运行的 compose 服务执行 `up -d --force-recreate`；若检测到 Compose SVID 栈
+  （存在 `docker-svid-*` 容器），`--restart docker|rolling` 改为委托 `docker-svid-refresh.sh`，
+  避免按基础 compose 重建后服务回退到 mkcert 证书。宿主机重启调用 `dev-init.sh --stop` 后再启动。
 - 周期调度由独立入口安装，不与普通启动耦合：
 
 ```bash
@@ -1097,6 +1099,7 @@ scripts/tls-ca-rotate.sh --status                       # 查看阶段、bundle 
 - `activate` 调用 `tls-init.sh --force` 重签全部叶子证书；`finalize` 重建信任库与运行期副本。
 - `--restart rolling` 通过 compose `up -d --no-deps --force-recreate` 逐个重建服务，并等待容器 healthy/running；
   `--restart docker` 一次性重建，`--restart api` 通过 Docker API 重启，`--restart host` 重启宿主机进程。
+  若当前是 Compose SVID 栈，`docker`/`rolling` 会委托 `docker-svid-refresh.sh` 重新取回 SVID 后滚动重启。
 - 默认 `--restart none`，只改文件；生产/多主机环境应在每台主机按阶段执行，且先 `prepare` 全部主机再 `activate`。
 - 回归 `scripts/regress/ca-rotation.sh` 在临时证书目录执行三阶段，校验 bundle 数量与叶子签发者，不触碰运行中栈。
 - 若已启用 SPIRE SVID，`finalize` 后执行 `scripts/spire-svid-sync.sh --refresh --restart <scope>`，
@@ -1334,6 +1337,9 @@ bash scripts/regress/spire-svid-services.sh
 - 应用 `depends_on` sidecar `service_completed_successfully`；
 - 私钥在卷内放宽到 644，供 app 用户读取。
 
+SVID 栈上的 mkcert 叶子轮换不需要改回基础 compose：`tls-rotate.sh --restart docker|rolling`
+会检测 `docker-svid-*` 容器并委托 `docker-svid-refresh.sh`，服务继续加载 SVID。
+
 SVID 到期前执行（默认已由 `svid-refresh-schedule.sh` 调度；以下为手动入口）：
 
 ```bash
@@ -1354,7 +1360,7 @@ scripts/docker-svid-refresh.sh --no-restart # 只刷新卷内 SVID
 ## 29. 零信任残余边界清单
 
 当前阶段的**唯一清单**见 [docs/28 当前基线与例外](./28-TLS%20与零信任当前基线与例外.md)：
-只有 4 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
+只有 3 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
 
 与本操作指南的章节映射：
 
