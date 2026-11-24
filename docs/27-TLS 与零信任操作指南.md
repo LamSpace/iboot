@@ -1098,6 +1098,8 @@ scripts/tls-ca-rotate.sh --status                       # 查看阶段、bundle 
   `--restart docker` 一次性重建，`--restart api` 通过 Docker API 重启，`--restart host` 重启宿主机进程。
 - 默认 `--restart none`，只改文件；生产/多主机环境应在每台主机按阶段执行，且先 `prepare` 全部主机再 `activate`。
 - 回归 `scripts/regress/ca-rotation.sh` 在临时证书目录执行三阶段，校验 bundle 数量与叶子签发者，不触碰运行中栈。
+- 若已启用 SPIRE SVID，`finalize` 后执行 `scripts/spire-svid-sync.sh --refresh --restart <scope>`，
+  重新把 SPIRE CA 合并进信任 bundle，避免服务重启后不再信任 SVID。
 
 ## 24. SPIFFE 工作负载身份（B5.8）
 
