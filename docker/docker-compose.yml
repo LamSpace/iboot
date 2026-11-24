@@ -15,6 +15,8 @@ x-app-env: &app-env
   # 每服务身份由各服务块覆盖；默认清空，避免继承 env_file 中的共享或其它服务凭据。
   MYSQL_USERNAME: ""
   MYSQL_PASSWORD: ""
+  # 数据服务使用每服务 PKCS12 客户端 keystore；服务块把它挂载到 /certs/client.p12。
+  MYSQL_SSL_PARAMS: "sslMode=VERIFY_IDENTITY&requireSSL=true&serverTimezone=UTC&characterEncoding=utf8&clientCertificateKeyStoreUrl=file:/certs/client.p12&clientCertificateKeyStorePassword=changeit&clientCertificateKeyStoreType=PKCS12"
   REDIS_HOST: redis
   REDIS_PORT: "6379"
   REDIS_USERNAME: ""
@@ -385,6 +387,7 @@ services:
       SYS_NACOS_CONSOLE_EMBED: ${SYS_NACOS_CONSOLE_EMBED:-false}
     volumes:
       - ./certs/runtime:/certs:ro
+      - ./certs/runtime/services/iboot-system.p12:/certs/client.p12:ro
       - ./certs/runtime/services/iboot-system.pem:/certs/nacos-client.pem:ro
       - ./certs/runtime/services/iboot-system-key.pem:/certs/nacos-client-key.pem:ro
       - admin_logs:/app/logs
@@ -441,6 +444,7 @@ services:
       ELASTICSEARCH_PASSWORD: ${ES_AI_PASSWORD:?ES_AI_PASSWORD 必须在 .env 中设置}
     volumes:
       - ./certs/runtime:/certs:ro
+      - ./certs/runtime/services/iboot-ai.p12:/certs/client.p12:ro
       - ./certs/runtime/services/iboot-ai.pem:/certs/nacos-client.pem:ro
       - ./certs/runtime/services/iboot-ai-key.pem:/certs/nacos-client-key.pem:ro
       - admin_logs:/app/logs
@@ -491,6 +495,7 @@ services:
       JAVA_OPTIONS: "-Xms256m -Xmx512m --enable-native-access=ALL-UNNAMED"
     volumes:
       - ./certs/runtime:/certs:ro
+      - ./certs/runtime/services/iboot-file.p12:/certs/client.p12:ro
       - ./certs/runtime/services/iboot-file.pem:/certs/nacos-client.pem:ro
       - ./certs/runtime/services/iboot-file-key.pem:/certs/nacos-client-key.pem:ro
       - admin_logs:/app/logs
@@ -539,6 +544,7 @@ services:
       IBOOT_AUTH_JWK_FILE: /app/keys/iboot-auth-jwk.json
     volumes:
       - ./certs/runtime:/certs:ro
+      - ./certs/runtime/services/iboot-auth.p12:/certs/client.p12:ro
       - ./certs/runtime/services/iboot-auth.pem:/certs/nacos-client.pem:ro
       - ./certs/runtime/services/iboot-auth-key.pem:/certs/nacos-client-key.pem:ro
       - admin_logs:/app/logs
@@ -585,6 +591,7 @@ services:
       IBOOT_ROCKETMQ_SECRET_KEY: ${ROCKETMQ_NOTIFY_SECRET_KEY:?ROCKETMQ_NOTIFY_SECRET_KEY 必须在 .env 中设置}
     volumes:
       - ./certs/runtime:/certs:ro
+      - ./certs/runtime/services/iboot-notify.p12:/certs/client.p12:ro
       - ./certs/runtime/services/iboot-notify.pem:/certs/nacos-client.pem:ro
       - ./certs/runtime/services/iboot-notify-key.pem:/certs/nacos-client-key.pem:ro
       - admin_logs:/app/logs
@@ -634,6 +641,7 @@ services:
       IBOOT_BACKUP_ENABLED: "false"
     volumes:
       - ./certs/runtime:/certs:ro
+      - ./certs/runtime/services/iboot-job.p12:/certs/client.p12:ro
       - ./certs/runtime/services/iboot-job.pem:/certs/nacos-client.pem:ro
       - ./certs/runtime/services/iboot-job-key.pem:/certs/nacos-client-key.pem:ro
       - admin_logs:/app/logs
@@ -684,6 +692,7 @@ services:
       - tx
     volumes:
       - ./certs/runtime:/certs:ro
+      - ./certs/runtime/services/iboot-workflow.p12:/certs/client.p12:ro
       - ./certs/runtime/services/iboot-workflow.pem:/certs/nacos-client.pem:ro
       - ./certs/runtime/services/iboot-workflow-key.pem:/certs/nacos-client-key.pem:ro
       - admin_logs:/app/logs
@@ -729,6 +738,7 @@ services:
       ELASTICSEARCH_PASSWORD: ${ES_MONITOR_PASSWORD:?ES_MONITOR_PASSWORD 必须在 .env 中设置}
     volumes:
       - ./certs/runtime:/certs:ro
+      - ./certs/runtime/services/iboot-monitor.p12:/certs/client.p12:ro
       - ./certs/runtime/services/iboot-monitor.pem:/certs/nacos-client.pem:ro
       - ./certs/runtime/services/iboot-monitor-key.pem:/certs/nacos-client-key.pem:ro
       - admin_logs:/app/logs
@@ -918,7 +928,7 @@ services:
       --tls-cert-file /certs/portal.pem
       --tls-key-file /certs/portal-key.pem
       --tls-ca-cert-file /certs/rootCA.pem
-      --tls-auth-clients no
+      --tls-auth-clients yes
       --user default off
       --user iboot_system on ">$$REDIS_SYSTEM_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_tokens:*" "~pat_last_used:*" "~sys_config::*" "&cache:evict" "+@all"
       --user iboot_workflow on ">$$REDIS_WORKFLOW_PASSWORD" "~login_tokens:*" "~online_token:*" "%R~pat_tokens:*" "~pat_last_used:*" "+@all"
@@ -947,7 +957,7 @@ services:
     networks:
       - data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli --user iboot_exporter --pass \"$$REDIS_EXPORTER_PASSWORD\" --tls --cacert /certs/rootCA.pem -p 6379 ping"]
+      test: ["CMD-SHELL", "redis-cli --user iboot_exporter --pass \"$$REDIS_EXPORTER_PASSWORD\" --tls --cacert /certs/rootCA.pem --cert /certs/clients/redis-exporter.pem --key /certs/clients/redis-exporter-key.pem -p 6379 ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -1830,6 +1840,8 @@ services:
       REDIS_USER: iboot_exporter
       REDIS_PASSWORD: ${REDIS_EXPORTER_PASSWORD:?REDIS_EXPORTER_PASSWORD 必须在 .env 中设置}
       REDIS_EXPORTER_TLS_CA_CERT_FILE: /certs/ca/rootCA.pem
+      REDIS_EXPORTER_TLS_CLIENT_CERT_FILE: /certs/clients/redis-exporter.pem
+      REDIS_EXPORTER_TLS_CLIENT_KEY_FILE: /certs/clients/redis-exporter-key.pem
     command:
       - '--tls-server-cert-file=/certs/services/redis-exporter.pem'
       - '--tls-server-key-file=/certs/services/redis-exporter-key.pem'

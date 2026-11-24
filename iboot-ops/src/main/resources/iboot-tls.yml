@@ -4,6 +4,10 @@
 # 证书目录由 IBOOT_TLS_CERT_DIR 指定：宿主机开发为 <repo>/docker/certs，
 # 容器内为 /certs。未设置时回落到 docker/certs，便于直接运行 jar。
 spring:
+  data:
+    redis:
+      ssl:
+        bundle: redis-client
   http:
     clients:
       ssl:
@@ -18,6 +22,12 @@ spring:
     bundle:
       pem:
         iboot:
+          keystore:
+            certificate: file:${IBOOT_TLS_CERT_FILE:${IBOOT_TLS_CERT_DIR:docker/certs}/portal.pem}
+            private-key: file:${IBOOT_TLS_KEY_FILE:${IBOOT_TLS_CERT_DIR:docker/certs}/portal-key.pem}
+          truststore:
+            certificate: file:${IBOOT_TLS_CERT_DIR:docker/certs}/ca/rootCA.pem
+        redis-client:
           keystore:
             certificate: file:${IBOOT_TLS_CERT_FILE:${IBOOT_TLS_CERT_DIR:docker/certs}/portal.pem}
             private-key: file:${IBOOT_TLS_KEY_FILE:${IBOOT_TLS_CERT_DIR:docker/certs}/portal-key.pem}
