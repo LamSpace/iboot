@@ -803,8 +803,8 @@ openssl x509 -in docker/certs/services/iboot-system.pem -noout -purpose
 
 ### 18.5 边界
 
-- 服务端已按 SPIFFE ID（CN 回退）做路径级授权（B5.4/B5.8）；B5.14 已提供 SPIRE Workload API 的 opt-in
-  演示（`spire` profile），现有服务仍使用 mkcert 证书，SVID 切换为下一阶段。
+- 服务端已按 SPIFFE ID（CN 回退）做路径级授权（B5.4/B5.8）；B6 起宿主机开发默认由
+  `dev-init.sh` 为十个服务取回 SPIRE SVID（`IBOOT_SVID_ENABLED=true`），Compose 全量模式仍使用 mkcert 叶子证书。
 - Nacos 注册客户端已改用每服务自己的 `services/iboot-<service>.pem`（Docker 挂载到
   `/certs/nacos-client.pem`）；Nacos Server 只校验信任链，不按证书主体做资源级授权，因此该证书用于身份归因，
   不是资源级隔离。
@@ -1137,7 +1137,8 @@ bash scripts/regress/service-authz.sh
 
 ### 24.4 边界
 
-- SPIRE 以 opt-in `spire` profile 部署，提供 Workload API 与 demo SVID；现有服务仍由本地 CA 签发证书。
+- 宿主机开发由 `dev-init.sh` 默认启动 SPIRE 并为十个服务取回 SVID；Compose 全量模式仍由本地 CA 签发证书。
+- SVID 的 DNS SAN 同时包含服务名、`localhost` 与 `host.docker.internal`，兼容宿主机发现、回环健康检查与 Prometheus 抓取。
 - OPA 已作为集中策略决策点；`opa-url` 为空时仍回退到 `ServiceAuthorizationPolicy` 本地规则。
 - 不部署 Kubernetes 网格；Docker Compose 的 L3 平面登记为“SPIFFE 身份 + OPA 策略 + mTLS”。
 - 信任域切换需要同时改 `tls-init.sh` 与 `ClientCertificateIdentity`，当前不支持多信任域。
@@ -1271,10 +1272,11 @@ scripts/regress/service-authz.sh
   全部副本不可用时仍失败关闭。生产仍应结合部署环境设置超时/重试预算并做故障演练。
 - 不引入 Kubernetes 网格；Compose 拓扑以 OPA + SPIFFE + mTLS 为策略/身份平面。
 
-## 28. SPIRE Workload API 演示（B5.14）
+## 28. SPIRE Workload API 与服务 SVID（B5.14 / B6）
 
-SPIRE 以 opt-in `spire` profile 部署，用于验证 Workload API 与 X.509-SVID；默认启动路径不包含，
-现有 mTLS 证书链不变。
+SPIRE 以 opt-in `spire` profile 部署。B6 起 `dev-init.sh` 在宿主机开发中默认启动 SPIRE，
+为十个服务注册 Docker label selector 并取回 X.509-SVID；Compose 全量模式仍保持 mkcert 证书链。
+显式设置 `IBOOT_SVID_ENABLED=false` 可回退到 mkcert。
 
 ### 28.1 启动与验收
 
@@ -1290,11 +1292,33 @@ scripts/spire-down.sh
   `spiffe://iboot.local/service/iboot-demo`。
 - `spire-down.sh` 只删除三个 SPIRE 容器，保留数据卷；不使用 `compose down`，避免影响主栈。
 
-### 28.2 边界
+### 28.2 宿主机服务 SVID 切换
 
-- 现有十个服务仍使用 mkcert 叶子证书；SVID 切换需要证书加载/轮换改造，列为下一阶段。
+`dev-init.sh` 默认执行以下步骤：
+
+1. 启动 SPIRE Server/Agent（`spire` profile），注册 `iboot-svid-<service>` 条目；
+2. 用 Docker label selector 的工作负载容器取回 SVID，写入 `docker/certs/svid/<service>/`；
+3. 把 SPIRE upstream CA 合并进 `docker/certs/ca/rootCA.pem`，重建信任库与运行期副本；
+4. 服务以 `IBOOT_TLS_CERT_FILE=.../svid.0.pem`、`IBOOT_TLS_KEY_FILE=.../svid.0.key` 启动；
+5. 宿主机 Nacos 发现地址改为 `localhost`（SVID 不支持 IP SAN，所有服务在同一主机）。
+
+运维入口：
+
+```bash
+scripts/spire-svid-sync.sh --status
+scripts/spire-svid-sync.sh --refresh --restart host   # 重新取回 SVID 并重启宿主机服务
+bash scripts/regress/spire-svid-services.sh
+```
+
+- SPIRE Server 的 `ca_ttl` 设为 30 天，服务条目的 `x509SVIDTTL` 同为 30 天；到期前执行 refresh。
+- 条目变更后 Agent 会缓存旧 SVID，`spire-svid-sync.sh --setup` 会重启 Agent 清理缓存。
+- 预签名/抓取等仍使用 mkcert 的 Prometheus/blackbox 客户端证书；服务端 SVID 由信任 bundle 验证。
+
+### 28.3 边界
+
+- Compose 全量部署（`docker-deploy.sh`）仍使用 mkcert 服务证书；切换需要每服务 sidecar 与滚动重启，属独立部署变更。
 - 不部署 Kubernetes 控制面或 sidecar 网格。
-- SPIRE 的 CA、token 与数据卷均为本地演示资产，不入仓。
+- SPIRE 的 CA、token 与数据卷均为本地开发资产，不入仓；SVID 私钥只写入 `docker/certs/svid`（已忽略）。
 
 ## 29. 零信任残余边界清单（B5.14 后）
 
@@ -1303,7 +1327,7 @@ scripts/spire-down.sh
 | # | 边界 / 后续项 | 登记位置 | 触发条件 / 下一步 |
 |---|---|---|---|
 | 1 | Seata 无原生 TLS/认证 | §19、`transport-security` 规格 | 上游提供原生 TLS/认证，或引入网格；当前靠 `tx` 网络与内部令牌补偿 |
-| 2 | 十个服务尚未切换到 SPIRE SVID | §18.5、§28.2、`workload-identity` 规格 | 已做可行性验证：SVID 可带 DNS/URI SAN，但默认 TTL 1h，Spring Boot 文件型 TLS bundle 无热加载；切换需每服务 agent/sidecar 与滚动重启，属独立项目，当前 mkcert 为默认路径 |
+| 2 | Compose 全量模式仍使用 mkcert | §18.5、§28.2、`workload-identity` 规格 | 宿主机开发已默认切换 SPIRE SVID（30 天 TTL + refresh 脚本）；Compose 全量切换需每服务 sidecar 与滚动重启，属独立部署变更 |
 | 3 | 未引入 Kubernetes sidecar 网格 | §27.3、§28.2、`ROADMAP` 阶段 4 | 部署目标迁到 Kubernetes 后再评估 Istio/Linkerd |
 | 4 | Sentinel 命令端口 8719 仍按默认绑定 | §12.4、§25.4 | Sentinel 支持绑定地址，或前置只绑定回环的代理 |
 | 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `--install`（systemd/cron），或经维护者批准后 `--install --scheduler docker`；本会话未安装常驻调度 |

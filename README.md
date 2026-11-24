@@ -100,7 +100,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | 持久层 | MyBatis 4.0.1 + PageHelper 2.1.1、Druid 1.2.28、Flyway、MySQL 8.4.13 |
 | 缓存 | Redis 8.8.4 + Caffeine 3.1.8（二级缓存，Pub/Sub 失效广播） |
 | 认证 | OAuth2 / OIDC 授权码 + PKCE（Spring Authorization Server）、JWT、RBAC 与五级数据权限 |
-| 服务间安全 | 每服务 mTLS 证书、SPIFFE 工作负载身份、路径级授权、OPA 集中决策；Nacos 配置按服务命名空间隔离；Silo 通过证书换取临时凭据；叶子证书与 CA 均支持轮换（三阶段 + 滚动重启）；SPIRE 为 opt-in 演示 profile |
+| 服务间安全 | 每服务 mTLS 证书、SPIFFE 工作负载身份、路径级授权、OPA 集中决策；宿主机开发默认使用 SPIRE SVID；Nacos 配置按服务命名空间隔离；Silo 通过证书换取临时凭据；叶子证书与 CA 均支持轮换（三阶段 + 滚动重启） |
 | 文件与检索 | Silo（MinIO 兼容，io.minio 8.5.7 客户端；另有本地与 OSS 实现）、Elasticsearch 9.5.5（客户端 9.2.5） |
 | 流程与调度 | Flowable 8.0.0、Quartz（集群模式） |
 | AI | Spring AI 2.0.1、AgentScope Java 2.0.1、Neo4j 5.26.33（驱动 6.0.2）、PDFBox 3.0.5、Apache POI 5.4.1 |
@@ -115,7 +115,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | UI 与状态 | Element Plus 2.6、Pinia 2.1、Vue Router 4.3 |
 | 其他 | vue-i18n 9.14、axios 1.6、markdown-it、DOMPurify、Sass |
 
-**中间件**：`docker/docker-compose.yml` 提供 29 个常驻容器与 3 个可选 SkyWalking 容器（`apm` profile，默认不启动），按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo，`observability` 为 Prometheus/Grafana/Kibana/Alertmanager/Thanos 与 exporter，`spire` 为 Workload API 演示，`tls-rotate` 为可选的证书轮换调度容器）；`dev-init.sh` 默认启动开发核心、集中日志与 `observability` profile。Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 与 TLS 入口 `rocketmq-tls` 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入；OPA 默认常驻，服务通过 `IBOOT_SERVICE_AUTHORIZATION_OPA_URL` 获取集中授权决策。SkyWalking 对比实验的启停与验收见 [docs/24](<./docs/24-SkyWalking 与 Tempo 对比实验.md>)。
+**中间件**：`docker/docker-compose.yml` 提供 29 个常驻容器与 3 个可选 SkyWalking 容器（`apm` profile，默认不启动），按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo，`observability` 为 Prometheus/Grafana/Kibana/Alertmanager/Thanos 与 exporter，`spire` 为 Workload API 与服务 SVID，`tls-rotate` 为可选的证书轮换调度容器）；`dev-init.sh` 默认启动开发核心、集中日志、`observability` 与 `spire` profile（`IBOOT_SVID_ENABLED=false` 可回退 mkcert）。Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 与 TLS 入口 `rocketmq-tls` 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入；OPA 默认常驻，服务通过 `IBOOT_SERVICE_AUTHORIZATION_OPA_URL` 获取集中授权决策。SkyWalking 对比实验的启停与验收见 [docs/24](<./docs/24-SkyWalking 与 Tempo 对比实验.md>)。
 
 ## 功能清单
 

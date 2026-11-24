@@ -173,9 +173,18 @@ export IBOOT_OPS_SECURITY_ENABLED="${IBOOT_OPS_SECURITY_ENABLED:-false}"
 # 宿主机开发进程连接容器内的 Sentinel Dashboard（必选治理控制台）。
 export SENTINEL_DASHBOARD="${SENTINEL_DASHBOARD:-https://localhost:8858}"
 
-# 宿主机服务通过 Nacos 以回环地址互相发现，证书 SAN 覆盖 127.0.0.1；
-# Docker 部署不设置该变量，实例地址回落到服务名。
-export IBOOT_NACOS_DISCOVERY_IP="${IBOOT_NACOS_DISCOVERY_IP:-127.0.0.1}"
+# SPIRE SVID 默认启用：十个服务的 HTTP mTLS 使用 Workload API 签发的 SVID。
+# 显式 IBOOT_SVID_ENABLED=false 可回退到 mkcert 证书。
+SVID_ENABLED="${IBOOT_SVID_ENABLED:-true}"
+SVID_DIR="${IBOOT_SVID_DIR:-${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}/svid}"
+
+# 宿主机服务通过 Nacos 互相发现。SVID 不支持 IP SAN，且宿主机模式所有服务在同一主机，
+# 因此发现地址使用 localhost（SVID 的 DNS SAN 包含 localhost）；非 SVID 模式沿用回环 IP。
+if [ "$SVID_ENABLED" = "true" ]; then
+    export IBOOT_NACOS_DISCOVERY_IP="${IBOOT_NACOS_DISCOVERY_IP:-localhost}"
+else
+    export IBOOT_NACOS_DISCOVERY_IP="${IBOOT_NACOS_DISCOVERY_IP:-127.0.0.1}"
+fi
 
 # 内部 Silo endpoint 使用 HTTPS；即使没有 .env 也避免退回 sys_config 的明文地址
 export IBOOT_FILE_SILO_ENDPOINT="${IBOOT_FILE_SILO_ENDPOINT:-https://localhost:9000}"
@@ -363,6 +372,9 @@ stop_all_services() {
         stop_service "${entry%%:*}"
     done
     stop_frontend
+    if [ "${SVID_ENABLED:-true}" = "true" ]; then
+        "$ROOT/scripts/spire-down.sh" >/dev/null 2>&1 || true
+    fi
 }
 
 # 准备本地证书与公开来源变量。
@@ -695,10 +707,17 @@ start_backend() {
             esac
             if internal_tls_enabled; then
                 local cert_dir="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
-                env_opts+=(
-                    "IBOOT_TLS_CERT_FILE=$cert_dir/services/$name.pem"
-                    "IBOOT_TLS_KEY_FILE=$cert_dir/services/$name-key.pem"
-                )
+                if [ "$SVID_ENABLED" = "true" ]; then
+                    env_opts+=(
+                        "IBOOT_TLS_CERT_FILE=$SVID_DIR/$name/svid.0.pem"
+                        "IBOOT_TLS_KEY_FILE=$SVID_DIR/$name/svid.0.key"
+                    )
+                else
+                    env_opts+=(
+                        "IBOOT_TLS_CERT_FILE=$cert_dir/services/$name.pem"
+                        "IBOOT_TLS_KEY_FILE=$cert_dir/services/$name-key.pem"
+                    )
+                fi
             fi
             case "$name" in
                 iboot-ai)
@@ -850,13 +869,13 @@ case "$ACTION" in
     down)
         log '=== 停止并移除 ==='
         stop_all_services
-        "${COMPOSE[@]}" --profile platform --profile observability down --remove-orphans > /dev/null 2>&1 || true
+        "${COMPOSE[@]}" --profile platform --profile observability --profile spire down --remove-orphans > /dev/null 2>&1 || true
         log '后端、前端与中间件已停止，数据卷保留'
         ;;
     purge)
         log '=== 停止并清除数据 ==='
         stop_all_services
-        "${COMPOSE[@]}" --profile platform --profile observability down -v --remove-orphans > /dev/null 2>&1 || true
+        "${COMPOSE[@]}" --profile platform --profile observability --profile spire down -v --remove-orphans > /dev/null 2>&1 || true
         log '后端、前端、中间件与数据卷均已移除'
         ;;
     up)
@@ -866,6 +885,9 @@ case "$ACTION" in
         fi
         prepare_tls
         start_middleware
+        if [ "$SVID_ENABLED" = "true" ]; then
+            "$ROOT/scripts/spire-svid-sync.sh" --setup || fail 'SPIRE SVID 初始化失败'
+        fi
         build_backend
         run_db_init
         start_backend
