@@ -177,7 +177,7 @@ L3 留给阶段 3/4 的 ASM/Istio。
 | OCR 模型 | 百炼 `qwen3.5-ocr`（可回退 `qwen-vl-ocr-2025-11-20`） | 默认关闭 |
 | MySQL / Redis / ES / Silo | 8.4.13 / 8.8.4 / 9.5.5 / RELEASE.2026-11-12；ES 客户端 **9.2.5**（Boot 托管） | 客户端可连接 9.x 服务端；以 Compose 镜像为准 |
 | Flowable / Neo4j | **8.0.0** / **5.26.33-community**（驱动 6.0.2） | Flowable 8 是唯一支持 Boot 4 的版本线；Neo4j 5.26 为 5.x LTS |
-| OPA / SPIRE | **1.8.0** / **1.12.4** | 服务间授权集中决策；SPIRE 仅 `spire` profile 演示 Workload API，不进入默认启动路径 |
+| OPA / SPIRE | **1.8.0** / **1.12.4** | 服务间授权集中决策；SPIRE 由 `spire` profile 提供，`dev-init.sh` / `docker-deploy.sh` 默认启用并为十个服务签发 SVID，`IBOOT_SVID_ENABLED=false` 回退 mkcert |
 | Apache Dubbo | **阻塞** | 无 Boot 4 支持 |
 | GraalVM（若做 native） | 工具链必须 **25** | Boot 4 native 构建要求 |
 

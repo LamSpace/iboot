@@ -804,7 +804,8 @@ openssl x509 -in docker/certs/services/iboot-system.pem -noout -purpose
 ### 18.5 边界
 
 - 服务端已按 SPIFFE ID（CN 回退）做路径级授权（B5.4/B5.8）；B6 起宿主机开发默认由
-  `dev-init.sh` 为十个服务取回 SPIRE SVID（`IBOOT_SVID_ENABLED=true`），Compose 全量模式仍使用 mkcert 叶子证书。
+  `dev-init.sh` 为十个服务取回 SPIRE SVID（`IBOOT_SVID_ENABLED=true`），Compose 全量模式由
+  每服务 sidecar 取回 SVID 写入命名卷；`IBOOT_SVID_ENABLED=false` 可回退 mkcert 叶子证书。
 - Nacos 注册客户端已改用每服务自己的 `services/iboot-<service>.pem`（Docker 挂载到
   `/certs/nacos-client.pem`）；Nacos Server 只校验信任链，不按证书主体做资源级授权，因此该证书用于身份归因，
   不是资源级隔离。
@@ -1301,7 +1302,7 @@ scripts/regress/service-authz.sh
 
 ## 28. SPIRE Workload API 与服务 SVID（B5.14 / B6）
 
-SPIRE 以 opt-in `spire` profile 部署。B6 起 `dev-init.sh` 与 `docker-deploy.sh` 均默认启用 SVID：
+SPIRE 以 `spire` profile 部署。B6 起 `dev-init.sh` 与 `docker-deploy.sh` 均默认启用 SVID：
 宿主机开发由脚本直接取回，Compose 全量模式由每服务一次性 sidecar 取回并写入命名卷。
 显式设置 `IBOOT_SVID_ENABLED=false` 可回退到 mkcert。
 
