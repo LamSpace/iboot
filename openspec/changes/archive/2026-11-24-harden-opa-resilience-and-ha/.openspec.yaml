@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 为 OPA 决策增加重试、短 TTL 缓存与多副本故障切换

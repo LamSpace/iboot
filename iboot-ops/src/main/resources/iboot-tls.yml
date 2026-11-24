@@ -37,6 +37,8 @@ iboot:
       enabled: ${IBOOT_SERVICE_AUTHORIZATION_ENABLED:false}
       opa-url: ${IBOOT_SERVICE_AUTHORIZATION_OPA_URL:}
       opa-timeout: ${IBOOT_SERVICE_AUTHORIZATION_OPA_TIMEOUT:500ms}
+      opa-retry-attempts: ${IBOOT_SERVICE_AUTHORIZATION_OPA_RETRY_ATTEMPTS:1}
+      opa-cache-ttl: ${IBOOT_SERVICE_AUTHORIZATION_OPA_CACHE_TTL:0s}
       rules:
         - paths: ["/actuator/**"]
           callers: ["iboot-ops", "prometheus", "blackbox", "iboot-portal"]

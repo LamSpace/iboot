@@ -61,6 +61,16 @@ public class ServiceAuthorizationProperties {
     private Duration opaTimeout = Duration.ofMillis(500);
 
     /**
+     * OPA 传输错误重试次数；{@code 0} 表示不重试。
+     */
+    private int opaRetryAttempts = 1;
+
+    /**
+     * 明确 OPA 决策的本地缓存 TTL；默认禁用，避免 OPA 全部不可用时仍从缓存放行。
+     */
+    private Duration opaCacheTtl = Duration.ZERO;
+
+    /**
      * 获取 OPA 决策地址。
      *
      * @return OPA 基础地址；为空表示使用本地规则
@@ -94,6 +104,42 @@ public class ServiceAuthorizationProperties {
      */
     public void setOpaTimeout(final Duration opaTimeout) {
         this.opaTimeout = opaTimeout == null ? Duration.ofMillis(500) : opaTimeout;
+    }
+
+    /**
+     * 获取 OPA 传输错误重试次数。
+     *
+     * @return 重试次数；{@code 0} 表示不重试
+     */
+    public int getOpaRetryAttempts() {
+        return opaRetryAttempts;
+    }
+
+    /**
+     * 设置 OPA 传输错误重试次数。
+     *
+     * @param opaRetryAttempts 重试次数；负数按 {@code 0} 处理
+     */
+    public void setOpaRetryAttempts(final int opaRetryAttempts) {
+        this.opaRetryAttempts = Math.max(0, opaRetryAttempts);
+    }
+
+    /**
+     * 获取 OPA 决策缓存 TTL。
+     *
+     * @return 缓存 TTL；{@code 0} 或负值表示禁用缓存
+     */
+    public Duration getOpaCacheTtl() {
+        return opaCacheTtl;
+    }
+
+    /**
+     * 设置 OPA 决策缓存 TTL。
+     *
+     * @param opaCacheTtl 缓存 TTL；{@code null} 表示禁用缓存
+     */
+    public void setOpaCacheTtl(final Duration opaCacheTtl) {
+        this.opaCacheTtl = opaCacheTtl == null ? Duration.ZERO : opaCacheTtl;
     }
 
     /**

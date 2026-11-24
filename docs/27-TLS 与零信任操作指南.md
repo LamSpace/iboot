@@ -1230,8 +1230,10 @@ scripts/regress/service-authz.sh
 
 ### 27.3 边界
 
-- OPA 是新增运行时依赖；生产应部署多副本并设置超时/重试预算。
-- 当前每次内部请求都会调用 OPA；如需降低开销，可后续增加本地缓存或 sidecar 模式。
+- OPA 在本地 Compose 以双副本运行，`opa-lb`（nginx）做 DNS 发现与被动故障切换；服务连接
+  `http://opa-lb:8181`，单副本故障不会导致全部拒绝。
+- 客户端对连接失败/超时做有界重试，并对明确决策做可选的 5s TTL、容量受限本地缓存（默认关闭）；失败结果不缓存，
+  全部副本不可用时仍失败关闭。生产仍应结合部署环境设置超时/重试预算并做故障演练。
 - 不引入 Kubernetes 网格；Compose 拓扑以 OPA + SPIFFE + mTLS 为策略/身份平面。
 
 ## 28. SPIRE Workload API 演示（B5.14）
@@ -1270,7 +1272,8 @@ scripts/spire-down.sh
 | 3 | 未引入 Kubernetes sidecar 网格 | §27.3、§28.2、`ROADMAP` 阶段 4 | 部署目标迁到 Kubernetes 后再评估 Istio/Linkerd |
 | 4 | Sentinel 命令端口 8719 仍按默认绑定 | §12.4、§25.4 | Sentinel 支持绑定地址，或前置只绑定回环的代理 |
 | 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `scripts/tls-rotate-schedule.sh --install ...` |
-| 6 | OPA 生产高可用未实现 | §27.3 | 生产多副本、缓存/超时预算、故障演练 |
-| 7 | 中间件不是客户端证书 mTLS | §13.1 | 需要时单独立项改造 MySQL/Redis/Silo/Nacos HTTP 客户端证书 |
+| 6 | 中间件不是客户端证书 mTLS | §13.1 | 需要时单独立项改造 MySQL/Redis/Silo/Nacos HTTP 客户端证书 |
 
-> 说明：第 1 项按用户要求排除；第 2、3 项是 L3 的后续阶段；第 4–7 项是已登记的运维/部署边界。
+> 说明：第 1 项按用户要求排除；第 2、3 项是 L3 的后续阶段；第 4–6 项是已登记的运维/部署边界。
+> 原“OPA 生产高可用未实现”已在 B6 以双副本 + nginx LB + 有界重试/可选短 TTL 缓存闭环；生产仍应做
+> 超时预算与故障演练。
