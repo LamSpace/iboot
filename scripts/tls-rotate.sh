@@ -8,6 +8,7 @@
 #   scripts/tls-rotate.sh --check
 #   scripts/tls-rotate.sh --rotate --restart none
 #   scripts/tls-rotate.sh --rotate --restart docker
+#   scripts/tls-rotate.sh --rotate --restart api
 #   scripts/tls-rotate.sh --rotate --restart host
 
 set -euo pipefail
@@ -30,7 +31,7 @@ EXPECT_RESTART=0
 for arg in "$@"; do
     if [ "$EXPECT_RESTART" -eq 1 ]; then
         case "$arg" in
-            none|docker|host) RESTART="$arg" ;;
+            none|docker|api|host) RESTART="$arg" ;;
             *) printf '[tls-rotate] 未知重启范围：%s\n' "$arg" >&2; exit 2 ;;
         esac
         EXPECT_RESTART=0
@@ -42,13 +43,14 @@ for arg in "$@"; do
         --restart) EXPECT_RESTART=1 ;;
         --restart=none) RESTART="none" ;;
         --restart=docker) RESTART="docker" ;;
+        --restart=api) RESTART="api" ;;
         --restart=host) RESTART="host" ;;
         -h|--help) usage; exit 0 ;;
         *) printf '[tls-rotate] 未知参数：%s\n' "$arg" >&2; exit 2 ;;
     esac
 done
 if [ "$EXPECT_RESTART" -eq 1 ]; then
-    printf '[tls-rotate] --restart 缺少取值（none|docker|host）\n' >&2
+    printf '[tls-rotate] --restart 缺少取值（none|docker|api|host）\n' >&2
     exit 2
 fi
 
@@ -71,6 +73,42 @@ fi
 check_certs
 printf '[tls-rotate] 重签后检查通过\n'
 
+restart_api() {
+    local socket="${DOCKER_SOCKET:-/var/run/docker.sock}"
+    local filter="${TLS_ROTATE_RESTART_FILTER:-^iboot-((auth|system|file|workflow|ops|ai|notify|monitor|job|gateway|portal)|[a-z0-9-]+-exporter)$}"
+    command -v curl >/dev/null 2>&1 || {
+        printf '[tls-rotate] 缺少 curl，无法通过 Docker API 重启\n' >&2
+        return 1
+    }
+    [ -S "$socket" ] || {
+        printf '[tls-rotate] Docker socket 不可用：%s\n' "$socket" >&2
+        return 1
+    }
+    mapfile -t names < <(
+        curl -s --unix-socket "$socket" http://localhost/containers/json \
+            | grep -o '"Names":\["[^"]*"' \
+            | sed 's/.*\["//; s/"$//' \
+            | sed 's#^/##' \
+            | grep -E "$filter" || true
+    )
+    if [ "${#names[@]}" -eq 0 ]; then
+        printf '[tls-rotate] 未发现需要重启的服务容器；跳过\n'
+        return 0
+    fi
+    local name code failed=0
+    for name in "${names[@]}"; do
+        code="$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+            --unix-socket "$socket" "http://localhost/containers/$name/restart" || true)"
+        if [ "$code" = "204" ]; then
+            printf '[tls-rotate] 已重启 %s\n' "$name"
+        else
+            printf '[tls-rotate] 重启 %s 失败（HTTP %s）\n' "$name" "${code:-000}" >&2
+            failed=1
+        fi
+    done
+    return "$failed"
+}
+
 case "$RESTART" in
     none)
         printf '[tls-rotate] 未重启运行时；需要时执行 --restart docker|host\n'
@@ -78,12 +116,17 @@ case "$RESTART" in
     docker)
         printf '[tls-rotate] 重建当前运行的 Docker 服务\n'
         COMPOSE=(docker compose -f "$ROOT/docker/docker-compose.yml")
-        mapfile -t services < <("${COMPOSE[@]}" ps --services 2>/dev/null)
+        # 调度容器自身不参与重建，避免 --restart docker 递归重启
+        mapfile -t services < <("${COMPOSE[@]}" ps --services 2>/dev/null | grep -vx tls-rotate)
         if [ "${#services[@]}" -eq 0 ]; then
             printf '[tls-rotate] 未发现运行中的 compose 服务\n' >&2
             exit 1
         fi
         "${COMPOSE[@]}" up -d --force-recreate "${services[@]}"
+        ;;
+    api)
+        printf '[tls-rotate] 通过 Docker API 重启使用证书的服务\n'
+        restart_api
         ;;
     host)
         printf '[tls-rotate] 重启宿主机开发进程\n'

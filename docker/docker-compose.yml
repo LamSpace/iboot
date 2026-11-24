@@ -295,6 +295,24 @@ services:
     networks:
       - app
 
+  # 证书轮换调度（opt-in，profile: tls-rotate）。
+  # 不写宿主机 cron/systemd；容器内按日检查，失败才重签，并通过 Docker API
+  # 重启使用证书的业务容器。仅本地/容器化开发环境使用，需要挂载 Docker socket。
+  tls-rotate:
+    image: maven:3.10.0-eclipse-temurin-25
+    container_name: iboot-tls-rotate
+    profiles: ["tls-rotate"]
+    entrypoint: ["/workspace/docker/tls-rotate/entrypoint.sh"]
+    environment:
+      TLS_ROTATE_AT: ${TLS_ROTATE_AT:-03:30}
+      TLS_ROTATE_RESTART: ${TLS_ROTATE_RESTART:-api}
+      IBOOT_STATE_DIR: /tmp/iboot-state
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - ../:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
   # ==================== SPIRE（opt-in，profile: spire） ====================
   # 只用于验证 Workload API 与 SVID；默认启动路径不包含，现有 mTLS 不受影响。
   spire-server:
