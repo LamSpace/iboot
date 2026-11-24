@@ -22,7 +22,7 @@ CA 轮换回滚入口（A3，`tls-ca-rotate.sh --rollback`）、
 SPIRE/SVID 监控与告警（A4，`spire-svid-monitor.sh`）、
 跨主机调度巡检与 CA 阶段编排（A5，`tls-ca-orchestrate.sh`）。
 
-最终全栈回归：`45342399147`（success）；本地 12c–12h 回归通过。
+最终全栈回归：GitHub full-regress `45427875943`（success）；本地全量回归（含 7a、12c–12k）通过。
 
 ## 2. 行动项（0 项）
 
