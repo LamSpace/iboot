@@ -22,7 +22,9 @@ fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/ca"
-cp "$LIVE_CA/rootCA.pem" "$LIVE_CA/rootCA-key.pem" "$TMP/ca/"
+# 运行期 bundle 可能已包含 SPIRE CA；临时测试只取第一张（mkcert）作为单 CA 起点。
+openssl x509 -in "$LIVE_CA/rootCA.pem" -out "$TMP/ca/rootCA.pem"
+cp "$LIVE_CA/rootCA-key.pem" "$TMP/ca/"
 
 if ! IBOOT_TLS_CERT_DIR="$TMP" "$ROOT/scripts/tls-init.sh" --force >/tmp/ca-rotation-init.log 2>&1; then
     reg_fail "临时证书初始化失败，详见 /tmp/ca-rotation-init.log"

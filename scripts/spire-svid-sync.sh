@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# SPIRE SVID 同步入口。
+#
+# 为十个服务注册 Workload API 条目并取回 X.509-SVID，写入 docker/certs/svid/<service>/。
+# SVID 的 DNS SAN 同时包含服务名与 localhost：宿主机模式的 Nacos 发现地址使用 localhost，
+# 容器模式使用服务名，两种客户端都能通过主机名校验。
+#
+# 用法：
+#   scripts/spire-svid-sync.sh --setup            启动 SPIRE、注册条目、取回 SVID、合并信任 bundle
+#   scripts/spire-svid-sync.sh --refresh [--restart none|rolling|api|host]
+#   scripts/spire-svid-sync.sh --status
+#
+# 默认不重启服务；刷新 SVID 后需重启才能让服务加载新证书。
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CERT_DIR="${IBOOT_TLS_CERT_DIR:-$ROOT/docker/certs}"
+CA_BUNDLE="$CERT_DIR/ca/rootCA.pem"
+SPIRE_CA="$ROOT/docker/spire/ca/ca.crt"
+SVID_DIR="${IBOOT_SVID_DIR:-$CERT_DIR/svid}"
+AGENT_IMAGE="ghcr.io/spiffe/spire-agent:1.12.4"
+SERVER_CONTAINER="iboot-spire-server"
+AGENT_CONTAINER="iboot-spire-agent"
+SERVER_SOCKET="/run/spire/server/api.sock"
+AGENT_SOCKET="/run/spire/sockets/agent.sock"
+PARENT_ID="spiffe://iboot.local/agent/iboot"
+TRUST_DOMAIN="iboot.local"
+SERVICES=(iboot-system iboot-gateway iboot-auth iboot-file iboot-notify iboot-job iboot-workflow iboot-monitor iboot-ai iboot-ops)
+
+MODE=""
+RESTART="none"
+
+usage() {
+    awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"
+}
+say() { printf '[spire-svid] %s\n' "$*"; }
+die() { say "$*" >&2; exit 2; }
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --setup) MODE="setup" ;;
+        --refresh) MODE="refresh" ;;
+        --status) MODE="status" ;;
+        --restart)
+            [ "$#" -ge 2 ] || die "--restart 缺少取值（none|rolling|api|host）"
+            RESTART="$2"
+            shift
+            ;;
+        --restart=*) RESTART="${1#*=}" ;;
+        -h|--help) usage; exit 0 ;;
+        *) die "未知参数：$1" ;;
+    esac
+    shift
+done
+[ -n "$MODE" ] || { usage >&2; exit 2; }
+case "$RESTART" in
+    none|rolling|api|host) ;;
+    *) die "未知重启范围：$RESTART（none|rolling|api|host）" ;;
+esac
+
+agent_volume() {
+    docker volume ls --format '{{.Name}}' | grep -E 'spire_agent_socket$' | head -1
+}
+
+spire_ready() {
+    docker exec "$SERVER_CONTAINER" /opt/spire/bin/spire-server healthcheck \
+        -socketPath "$SERVER_SOCKET" >/dev/null 2>&1 \
+        && docker exec "$AGENT_CONTAINER" /opt/spire/bin/spire-agent healthcheck \
+            -socketPath "$AGENT_SOCKET" >/dev/null 2>&1
+}
+
+register_entries() {
+    local svc ids id
+    for svc in "${SERVICES[@]}"; do
+        # 先按 SPIFFE ID 删除旧条目（可能由测试或上一轮创建，entryID 不一定相同）。
+        ids="$(docker exec "$SERVER_CONTAINER" /opt/spire/bin/spire-server entry show \
+            -spiffeID "spiffe://$TRUST_DOMAIN/service/$svc" -socketPath "$SERVER_SOCKET" 2>/dev/null \
+            | awk '/Entry ID/{print $4}')"
+        for id in $ids; do
+            docker exec "$SERVER_CONTAINER" /opt/spire/bin/spire-server entry delete \
+                -entryID "$id" -socketPath "$SERVER_SOCKET" >/dev/null 2>&1 || true
+        done
+        docker exec "$SERVER_CONTAINER" /opt/spire/bin/spire-server entry create \
+            -entryID "iboot-svid-$svc" \
+            -parentID "$PARENT_ID" \
+            -spiffeID "spiffe://$TRUST_DOMAIN/service/$svc" \
+            -selector "docker:label:com.iboot.svid.service:$svc" \
+            -dns "$svc" \
+            -dns localhost \
+            -dns host.docker.internal \
+            -x509SVIDTTL 2592000 \
+            -socketPath "$SERVER_SOCKET" >/dev/null \
+            || die "注册 SVID 条目失败：$svc"
+    done
+}
+
+fetch_svid() {
+    local svc="$1" volume="$2" attempt out
+    mkdir -p "$SVID_DIR/$svc"
+    chmod 755 "$SVID_DIR/$svc"
+    for attempt in 1 2 3; do
+        out="$(docker run --rm --user "$(id -u):$(id -g)" \
+            --label "com.iboot.svid.service=$svc" \
+            -v "$volume:/run/spire/sockets" \
+            -v "$SVID_DIR/$svc:/svid" \
+            --entrypoint /opt/spire/bin/spire-agent "$AGENT_IMAGE" \
+            api fetch x509 -socketPath "$AGENT_SOCKET" -write /svid 2>&1 || true)"
+        if [ -f "$SVID_DIR/$svc/svid.0.pem" ] && [ -f "$SVID_DIR/$svc/svid.0.key" ]; then
+            chmod 600 "$SVID_DIR/$svc/svid.0.key"
+            chmod 644 "$SVID_DIR/$svc/svid.0.pem" "$SVID_DIR/$svc/bundle.0.pem"
+            return 0
+        fi
+        [ "$attempt" -lt 3 ] && sleep 2
+    done
+    die "取回 SVID 失败：$svc（${out:-无输出}）"
+}
+
+fetch_all() {
+    local volume svc
+    volume="$(agent_volume)"
+    [ -n "$volume" ] || die "未找到 SPIRE agent socket 卷"
+    for svc in "${SERVICES[@]}"; do
+        fetch_svid "$svc" "$volume"
+    done
+}
+
+merge_trust_bundle() {
+    local body
+    [ -f "$SPIRE_CA" ] || die "SPIRE upstream CA 不存在：$SPIRE_CA"
+    body="$(openssl x509 -in "$SPIRE_CA" -outform PEM | sed -n '2p')"
+    if ! grep -qF "$body" "$CA_BUNDLE"; then
+        say "合并 SPIRE CA 到信任 bundle：$CA_BUNDLE"
+        cat "$SPIRE_CA" >> "$CA_BUNDLE"
+    fi
+    IBOOT_TLS_CERT_DIR="$CERT_DIR" "$ROOT/scripts/tls-init.sh" --sync-runtime
+}
+
+restart_observability() {
+    local -a compose=(docker compose -f "$ROOT/docker/docker-compose.yml")
+    local svc
+    for svc in prometheus blackbox-exporter; do
+        if "${compose[@]}" ps --services 2>/dev/null | grep -qx "$svc"; then
+            "${compose[@]}" restart "$svc" >/dev/null 2>&1 || true
+        fi
+    done
+}
+
+setup() {
+    say '启动 SPIRE Server/Agent（含 demo 验证）'
+    "$ROOT/scripts/spire-up.sh" >/dev/null || die 'SPIRE 启动或 demo SVID 获取失败'
+    spire_ready || die 'SPIRE Server/Agent 未就绪'
+    say '注册十个服务的 SVID 条目'
+    register_entries
+    # 条目变更后 Agent 可能仍缓存旧 SVID；重启 Agent 使其重新拉取。
+    say '重启 SPIRE Agent 清理 SVID 缓存'
+    docker restart "$AGENT_CONTAINER" >/dev/null
+    local i
+    for i in $(seq 1 30); do
+        docker exec "$AGENT_CONTAINER" /opt/spire/bin/spire-agent healthcheck \
+            -socketPath "$AGENT_SOCKET" >/dev/null 2>&1 && break
+        sleep 1
+    done
+    say "取回 SVID：$SVID_DIR"
+    fetch_all
+    merge_trust_bundle
+    restart_observability
+    say 'SPIRE SVID 初始化完成'
+}
+
+refresh() {
+    spire_ready || die 'SPIRE 未运行；先执行 --setup'
+    fetch_all
+    merge_trust_bundle
+    restart_observability
+    case "$RESTART" in
+        none) say 'SVID 已刷新；未重启服务（新证书在重启后生效）' ;;
+        *) "$ROOT/scripts/tls-rotate.sh" --restart-only --restart="$RESTART" ;;
+    esac
+}
+
+status() {
+    local svc cert
+    printf 'cert_dir=%s\nsvid_dir=%s\n' "$CERT_DIR" "$SVID_DIR"
+    if spire_ready; then
+        printf 'spire=ready\n'
+    else
+        printf 'spire=unavailable\n'
+    fi
+    for svc in "${SERVICES[@]}"; do
+        cert="$SVID_DIR/$svc/svid.0.pem"
+        if [ -f "$cert" ]; then
+            printf '%s: %s\n' "$svc" "$(openssl x509 -in "$cert" -noout -enddate | cut -d= -f2)"
+            openssl x509 -in "$cert" -noout -ext subjectAltName 2>/dev/null \
+                | tail -1 | sed 's/^/  /'
+        else
+            printf '%s: missing\n' "$svc"
+        fi
+    done
+    if [ -f "$CA_BUNDLE" ] && [ -f "$SVID_DIR/iboot-system/svid.0.pem" ]; then
+        if openssl verify -CAfile "$CA_BUNDLE" -untrusted "$SVID_DIR/iboot-system/svid.0.pem" \
+                "$SVID_DIR/iboot-system/svid.0.pem" >/dev/null 2>&1; then
+            printf 'bundle=trusts-spire-ca\n'
+        else
+            printf 'bundle=missing-spire-ca\n'
+        fi
+    fi
+}
+
+case "$MODE" in
+    setup) setup ;;
+    refresh) refresh ;;
+    status) status ;;
+esac

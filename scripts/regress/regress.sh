@@ -187,6 +187,10 @@ echo
 echo "===== 12f. Nacos 命名空间隔离 ====="
 "$HERE/nacos-namespace-isolation.sh" || fail "Nacos 命名空间隔离检查未通过"
 
+echo
+echo "===== 12g. SPIRE SVID 服务切换 ====="
+"$HERE/spire-svid-services.sh" || fail "SPIRE SVID 服务切换检查未通过"
+
 printf '\n===== 13. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 

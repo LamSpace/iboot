@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 宿主机开发十个服务默认使用 SPIRE SVID
+skip_specs: true
