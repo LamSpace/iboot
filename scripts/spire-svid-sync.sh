@@ -147,11 +147,22 @@ merge_trust_bundle() {
     IBOOT_TLS_CERT_DIR="$CERT_DIR" "$ROOT/scripts/tls-init.sh" --sync-runtime
 }
 
-restart_observability() {
+restart_tls_dependents() {
     local -a compose=(docker compose -f "$ROOT/docker/docker-compose.yml")
-    local svc
+    local -a running=()
+    local svc i
+    mapfile -t running < <("${compose[@]}" ps --services 2>/dev/null || true)
+    # Redis 的客户端证书复用 IBOOT_TLS_CERT_FILE（SVID）；服务端只在启动时加载
+    # tls-ca-cert-file，必须在合并 SPIRE CA 后重启，否则 SVID 客户端会 unknown_ca。
+    if printf '%s\n' "${running[@]}" | grep -qx redis; then
+        "${compose[@]}" restart redis >/dev/null 2>&1 || true
+        for i in $(seq 1 30); do
+            [ "$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' iboot-redis 2>/dev/null || true)" = "healthy" ] && break
+            sleep 1
+        done
+    fi
     for svc in prometheus blackbox-exporter; do
-        if "${compose[@]}" ps --services 2>/dev/null | grep -qx "$svc"; then
+        if printf '%s\n' "${running[@]}" | grep -qx "$svc"; then
             "${compose[@]}" restart "$svc" >/dev/null 2>&1 || true
         fi
     done
@@ -177,7 +188,7 @@ setup() {
     say "取回 SVID：$SVID_DIR"
     fetch_all
     merge_trust_bundle
-    restart_observability
+    restart_tls_dependents
     say 'SPIRE SVID 初始化完成'
 }
 
@@ -185,7 +196,7 @@ refresh() {
     spire_ready || die 'SPIRE 未运行；先执行 --setup'
     fetch_all
     merge_trust_bundle
-    restart_observability
+    restart_tls_dependents
     case "$RESTART" in
         none) say 'SVID 已刷新；未重启服务（新证书在重启后生效）' ;;
         *) "$ROOT/scripts/tls-rotate.sh" --restart-only --restart="$RESTART" ;;
