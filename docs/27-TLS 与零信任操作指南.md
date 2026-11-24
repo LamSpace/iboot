@@ -1048,15 +1048,21 @@ scripts/tls-rotate.sh --rotate --restart host
 ```bash
 scripts/tls-rotate-schedule.sh --install --restart=docker  # 每日检查，失败才重签并重建当前 Docker 服务
 scripts/tls-rotate-schedule.sh --install --restart=host    # 宿主机进程场景
-scripts/tls-rotate-schedule.sh --status
-scripts/tls-rotate-schedule.sh --uninstall
+scripts/tls-rotate-schedule.sh --install --scheduler docker --restart=api  # 容器化调度，不写宿主机 cron/systemd
+scripts/tls-rotate-schedule.sh --status --scheduler docker
+scripts/tls-rotate-schedule.sh --uninstall --scheduler docker
 scripts/tls-rotate-schedule.sh --print                     # 只输出将安装的内容
 ```
 
 - 优先安装 systemd user timer；当前会话不可用时回退到当前用户 crontab。默认每日 `03:30` 执行。
 - 仓库与开发机默认**不写入** systemd timer 或 crontab；首次部署必须在目标主机执行 `--install` 才会生效。
+- `--scheduler docker` 使用 compose 的 `tls-rotate` profile：容器内按日检查，通过 Docker API
+  重启使用证书的业务容器，不写宿主机持久化任务。该模式会启动常驻容器并挂载 Docker socket，
+  属于本地/容器化开发选项，需由维护者显式批准后安装。
+- 一次性验证（不启动常驻调度）：`TLS_ROTATE_RUN_ONCE=1` 运行 `docker/tls-rotate/entrypoint.sh`，
+  只执行一次 `--run-now` 后退出。
 - 定时任务先跑 `--check`：通过则只写日志，不碰证书；失败才执行 `--rotate --restart=<scope>`。
-- 默认 `--restart=none`，需要自动生效时必须显式选择 `docker` 或 `host`。
+- 默认 `--restart=none`，需要自动生效时必须显式选择 `docker`、`api` 或 `host`。
 - 日志写入 `logs/tls-rotate.log`，目录锁防止并发重签。
 
 ### 23.3 边界
@@ -1272,7 +1278,7 @@ scripts/spire-down.sh
 | 2 | 十个服务尚未切换到 SPIRE SVID | §18.5、§28.2、`workload-identity` 规格 | 证书加载/轮换改造完成后按服务灰度切换，保留 mkcert 回滚 |
 | 3 | 未引入 Kubernetes sidecar 网格 | §27.3、§28.2、`ROADMAP` 阶段 4 | 部署目标迁到 Kubernetes 后再评估 Istio/Linkerd |
 | 4 | Sentinel 命令端口 8719 仍按默认绑定 | §12.4、§25.4 | Sentinel 支持绑定地址，或前置只绑定回环的代理 |
-| 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `scripts/tls-rotate-schedule.sh --install ...` |
+| 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `--install`（systemd/cron），或经维护者批准后 `--install --scheduler docker`；本会话未安装常驻调度 |
 | 6 | Silo 与 Nacos HTTP 不是客户端证书 mTLS | §13.1 | 上游提供按工作负载的客户端证书认证，或引入网格；MySQL/Redis 已完成 |
 
 > 说明：第 1 项按用户要求排除；第 2、3 项是 L3 的后续阶段；第 4–6 项是已登记的运维/部署边界。

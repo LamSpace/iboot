@@ -10,7 +10,7 @@
 | `dev-init.sh` | 一键拉起本地环境：中间件 → 按需构建 → `iboot-db-init` 建库建表 → MySQL 账号与表级授权 → 启动九个业务服务与运维控制台 → 等待健康。支持 `--frontend`、`--status`、`--stop`、`--down`、`--purge`。 |
 | `tls-init.sh` | 生成本地 TLS CA、门户/服务/客户端证书与 Java 信任库；证书默认写入 `docker/certs/`。支持 `--force` 重签与 `--check` 只检查剩余有效期。浏览器信任需另外执行一次 `mkcert -install`。 |
 | `tls-rotate.sh` | 证书轮换：`--check` 只检查，满足阈值时才重签并分发；`--restart <mode>` 控制是否重启服务。 |
-| `tls-rotate-schedule.sh` | 安装/卸载/查看证书轮换定时任务；优先 systemd user timer，回退到带标记的 crontab。 |
+| `tls-rotate-schedule.sh` | 安装/卸载/查看证书轮换定时任务；优先 systemd user timer，回退到带标记的 crontab；`--scheduler docker` 使用 opt-in 的 `tls-rotate` compose profile。 |
 | `build.sh` | 前后端一键构建。参数：`all`（默认）、`frontend`、`backend`、`help`。 |
 | `mysql-users-init.sh` | 幂等创建每服务 MySQL/Redis/Nacos 账号与 exporter 只读账号。 |
 | `mysql-grants-init.sh` | 按 `mysql-table-grants.tsv` 收紧到表级授权；先 `REVOKE ALL`，再授予只读与各服务写表。 |

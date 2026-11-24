@@ -5,11 +5,14 @@
 # 定时任务先检查，检查失败才重签；普通启动路径不会调用本脚本。
 #
 # 用法：
-#   scripts/tls-rotate-schedule.sh --install [--restart none|docker|host] [--scheduler auto|systemd|cron] [--at HH:MM]
-#   scripts/tls-rotate-schedule.sh --uninstall
-#   scripts/tls-rotate-schedule.sh --status
-#   scripts/tls-rotate-schedule.sh --run-now [--restart none|docker|host]
-#   scripts/tls-rotate-schedule.sh --print [--scheduler auto|systemd|cron] [--restart none|docker|host] [--at HH:MM]
+#   scripts/tls-rotate-schedule.sh --install [--restart none|docker|api|host] [--scheduler auto|systemd|cron|docker] [--at HH:MM]
+#   scripts/tls-rotate-schedule.sh --uninstall [--scheduler auto|systemd|cron|docker]
+#   scripts/tls-rotate-schedule.sh --status [--scheduler auto|systemd|cron|docker]
+#   scripts/tls-rotate-schedule.sh --run-now [--restart none|docker|api|host]
+#   scripts/tls-rotate-schedule.sh --print [--scheduler auto|systemd|cron|docker] [--restart none|docker|api|host] [--at HH:MM]
+#
+# docker 调度器使用 compose 的 tls-rotate profile，不写宿主机 cron/systemd；
+# 容器内通过 Docker API 重启服务，适合本地与容器化开发环境。
 
 set -euo pipefail
 
@@ -53,12 +56,13 @@ while [ "$#" -gt 0 ]; do
         --run-now) MODE="run-now" ;;
         --print) MODE="print" ;;
         --restart)
-            [ "$#" -ge 2 ] || die "--restart 缺少取值（none|docker|host）"
+            [ "$#" -ge 2 ] || die "--restart 缺少取值（none|docker|api|host）"
             RESTART="$2"
             shift
             ;;
         --restart=none) RESTART="none" ;;
         --restart=docker) RESTART="docker" ;;
+        --restart=api) RESTART="api" ;;
         --restart=host) RESTART="host" ;;
         --scheduler)
             [ "$#" -ge 2 ] || die "--scheduler 缺少取值（auto|systemd|cron）"
@@ -80,12 +84,12 @@ done
 
 [ -n "$MODE" ] || { usage >&2; exit 2; }
 case "$RESTART" in
-    none|docker|host) ;;
-    *) die "未知重启范围：$RESTART（none|docker|host）" ;;
+    none|docker|api|host) ;;
+    *) die "未知重启范围：$RESTART（none|docker|api|host）" ;;
 esac
 case "$SCHEDULER" in
-    auto|systemd|cron) ;;
-    *) die "未知调度器：$SCHEDULER（auto|systemd|cron）" ;;
+    auto|systemd|cron|docker) ;;
+    *) die "未知调度器：$SCHEDULER（auto|systemd|cron|docker）" ;;
 esac
 printf '%s' "$AT" | grep -Eq '^([01][0-9]|2[0-3]):[0-5][0-9]$' || die "时间格式必须是 HH:MM：$AT"
 
@@ -99,6 +103,7 @@ resolve_scheduler() {
     case "$SCHEDULER" in
         systemd) printf 'systemd' ;;
         cron) printf 'cron' ;;
+        docker) printf 'docker' ;;
         auto)
             if systemd_available; then
                 printf 'systemd'
@@ -107,6 +112,33 @@ resolve_scheduler() {
             fi
             ;;
     esac
+}
+
+compose_cmd() {
+    docker compose -f "$ROOT/docker/docker-compose.yml" --profile tls-rotate "$@"
+}
+
+docker_available() {
+    command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1
+}
+
+docker_installed() {
+    docker_available || return 1
+    compose_cmd ps --status running --services 2>/dev/null | grep -qx 'tls-rotate'
+}
+
+install_docker() {
+    docker_available || die "缺少 docker compose，无法安装 docker 调度"
+    export TLS_ROTATE_AT="$AT" TLS_ROTATE_RESTART="$RESTART"
+    compose_cmd up -d tls-rotate
+    say "已启动 docker 调度容器（$AT，restart=$RESTART）"
+}
+
+uninstall_docker() {
+    docker_available || return 1
+    docker_installed || return 1
+    compose_cmd rm -sf tls-rotate >/dev/null 2>&1 || true
+    say "已停止 docker 调度容器"
 }
 
 service_content() {
@@ -160,6 +192,10 @@ print_schedule() {
             ;;
         cron)
             cron_block
+            ;;
+        docker)
+            printf '# docker compose --profile tls-rotate up -d tls-rotate\n'
+            printf '# TLS_ROTATE_AT=%s TLS_ROTATE_RESTART=%s\n' "$AT" "$RESTART"
             ;;
         *) die "未知调度器：$scheduler" ;;
     esac
@@ -303,12 +339,20 @@ case "$MODE" in
             cron)
                 install_cron
                 ;;
+            docker)
+                install_docker
+                ;;
         esac
         ;;
     uninstall)
         removed=0
-        if uninstall_systemd; then removed=1; fi
-        if uninstall_cron; then removed=1; fi
+        if [ "$SCHEDULER" != "docker" ]; then
+            if uninstall_systemd; then removed=1; fi
+            if uninstall_cron; then removed=1; fi
+        fi
+        if [ "$SCHEDULER" = "docker" ] || [ "$SCHEDULER" = "auto" ]; then
+            if uninstall_docker; then removed=1; fi
+        fi
         if [ "$removed" -eq 0 ]; then
             say "未发现本项目的调度"
         fi
@@ -332,6 +376,13 @@ case "$MODE" in
                 inblock     { print }
                 $0 == end   { exit }
             '
+        fi
+        if [ "$SCHEDULER" = "docker" ] || [ "$SCHEDULER" = "auto" ]; then
+            if docker_installed; then
+                found=1
+                printf 'scheduler=docker\n'
+                compose_cmd ps tls-rotate 2>/dev/null || true
+            fi
         fi
         if [ "$found" -eq 0 ]; then
             printf 'scheduler=none\n'

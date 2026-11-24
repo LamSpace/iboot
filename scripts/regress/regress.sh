@@ -171,6 +171,10 @@ echo
 echo "===== 12b. SPIRE Workload API ====="
 "$HERE/spire-svid.sh" || fail "SPIRE Workload API 检查未通过"
 
+echo
+echo "===== 12c. 证书轮换调度 ====="
+"$HERE/tls-rotate-scheduler.sh" || fail "证书轮换调度检查未通过"
+
 printf '\n===== 13. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 

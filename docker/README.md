@@ -132,6 +132,10 @@ APM 对比 profile（`apm`，默认不启动，实验结束可整体删除）：
 SPIRE profile（`spire`，默认不启动）：`spire-server`、`spire-agent` 与 `spire-demo` 验证 Workload API/SVID；
 不发布宿主机端口，启动与验收见 `scripts/spire-up.sh` 与 `scripts/regress/spire-svid.sh`。
 
+TLS 轮换 profile（`tls-rotate`，默认不启动）：`tls-rotate` 容器按日检查证书，失败才重签并通过 Docker API
+重启业务容器；不写宿主机 cron/systemd。该 profile 挂载 Docker socket 与仓库根目录，只用于本地/容器化开发，
+需维护者显式批准后启动。一次性验证使用 `TLS_ROTATE_RUN_ONCE=1`，见 `scripts/regress/tls-rotate-scheduler.sh`。
+
 B2 起 8080–8089 只提供 HTTPS；B5.2 起还要求客户端证书。MySQL/Redis/Silo/Neo4j 只接受 TLS；
 MySQL/Redis 的业务客户端还要求出示客户端证书，Silo 与 Nacos HTTP 保持账号/令牌例外。
 B3 起 ES、Kafka、Logstash 也只接受 TLS；Nacos 在 B4 起同样只接受 TLS。
