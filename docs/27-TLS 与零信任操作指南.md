@@ -1313,7 +1313,14 @@ scripts/spire-svid-sync.sh --refresh --restart host   # 重新取回 SVID 并重
 bash scripts/regress/spire-svid-services.sh
 ```
 
-- SPIRE Server 的 `ca_ttl` 设为 30 天，服务条目的 `x509SVIDTTL` 同为 30 天；到期前执行 refresh。
+- SPIRE Server 的 `ca_ttl` 设为 30 天，服务条目的 `x509SVIDTTL` 同为 30 天；到期前由调度刷新。
+  手动入口：
+  `scripts/spire-svid-sync.sh --check`（低于阈值退出 1）与 `--status`（`refresh_needed`）。
+- 周期调度：`scripts/svid-refresh-schedule.sh --install --target=auto` 默认每日 04:00 检查，
+  剩余有效期低于 7 天或 SVID 缺失时刷新；宿主机目标执行 `--refresh --restart host`，
+  Compose 目标委托 `docker-svid-refresh.sh`。状态用
+  `scripts/svid-refresh-schedule.sh --status` 巡检。日志 `logs/svid-refresh.log`；
+  指标写入 `docker/certs/runtime/svid-refresh.prom`，供 Prometheus 文本文件采集。
 - 条目变更后 Agent 会缓存旧 SVID，`spire-svid-sync.sh --setup` 会重启 Agent 清理缓存。
 - 预签名/抓取等仍使用 mkcert 的 Prometheus/blackbox 客户端证书；服务端 SVID 由信任 bundle 验证。
 
@@ -1327,7 +1334,7 @@ bash scripts/regress/spire-svid-services.sh
 - 应用 `depends_on` sidecar `service_completed_successfully`；
 - 私钥在卷内放宽到 644，供 app 用户读取。
 
-SVID 到期前执行：
+SVID 到期前执行（默认已由 `svid-refresh-schedule.sh` 调度；以下为手动入口）：
 
 ```bash
 scripts/docker-svid-refresh.sh              # 重新取回并滚动重启十个服务
@@ -1338,14 +1345,16 @@ scripts/docker-svid-refresh.sh --no-restart # 只刷新卷内 SVID
 
 ### 28.4 边界
 
-- SVID 刷新是显式脚本动作，没有内置热加载；到期前需执行 refresh。
+- SVID 没有内置热加载；刷新后仍需重启服务加载新证书，调度脚本已封装该步骤。
+- 调度与 `tls-rotate-schedule.sh` 相同，默认不写入开发者定时任务；首次部署必须在目标主机执行
+  `--install`。跨主机场景每台主机分别安装。
 - 不部署 Kubernetes 控制面或 sidecar 网格。
 - SPIRE 的 CA、token 与数据卷均为本地开发资产，不入仓；SVID 私钥只写入命名卷或 `docker/certs/svid`（已忽略）。
 
 ## 29. 零信任残余边界清单
 
 当前阶段的**唯一清单**见 [docs/28 当前基线与例外](./28-TLS%20与零信任当前基线与例外.md)：
-只有 5 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
+只有 4 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
 
 与本操作指南的章节映射：
 

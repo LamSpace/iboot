@@ -9,8 +9,10 @@
 #   scripts/spire-svid-sync.sh --setup            启动 SPIRE、注册条目、取回 SVID、合并信任 bundle
 #   scripts/spire-svid-sync.sh --refresh [--restart none|rolling|api|host]
 #   scripts/spire-svid-sync.sh --status
+#   scripts/spire-svid-sync.sh --check [--threshold-days 7]
 #
 # 默认不重启服务；刷新 SVID 后需重启才能让服务加载新证书。
+# --check 供调度使用：所有 SVID 剩余有效期超过阈值时退出 0，否则退出 1。
 
 set -euo pipefail
 
@@ -30,6 +32,7 @@ SERVICES=(iboot-system iboot-gateway iboot-auth iboot-file iboot-notify iboot-jo
 
 MODE=""
 RESTART="none"
+THRESHOLD_DAYS="${IBOOT_SVID_REFRESH_THRESHOLD_DAYS:-7}"
 
 usage() {
     awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"
@@ -42,6 +45,13 @@ while [ "$#" -gt 0 ]; do
         --setup) MODE="setup" ;;
         --refresh) MODE="refresh" ;;
         --status) MODE="status" ;;
+        --check) MODE="check" ;;
+        --threshold-days)
+            [ "$#" -ge 2 ] || die "--threshold-days 缺少取值（正整数）"
+            THRESHOLD_DAYS="$2"
+            shift
+            ;;
+        --threshold-days=*) THRESHOLD_DAYS="${1#*=}" ;;
         --restart)
             [ "$#" -ge 2 ] || die "--restart 缺少取值（none|rolling|api|host）"
             RESTART="$2"
@@ -57,6 +67,9 @@ done
 case "$RESTART" in
     none|rolling|api|host) ;;
     *) die "未知重启范围：$RESTART（none|rolling|api|host）" ;;
+esac
+case "$THRESHOLD_DAYS" in
+    ''|*[!0-9]*) die "阈值必须是正整数：$THRESHOLD_DAYS" ;;
 esac
 
 agent_volume() {
@@ -207,6 +220,54 @@ refresh() {
     esac
 }
 
+cert_end_epoch() {
+    local end
+    end="$(openssl x509 -in "$1" -noout -enddate 2>/dev/null | sed 's/^notAfter=//')"
+    [ -n "$end" ] || return 1
+    date -d "$end" +%s 2>/dev/null
+}
+
+# 汇总 SVID 剩余有效期。
+#
+# 输出 min_remaining_days 与 refresh_needed；任一 SVID 缺失、无法解析或剩余有效期
+# 低于阈值时返回 1，供调度器决定是否刷新。
+svid_remaining_summary() {
+    local now threshold_secs svc cert end remain min="" needs=0
+    now="$(date +%s)"
+    threshold_secs=$((THRESHOLD_DAYS * 86400))
+    for svc in "${SERVICES[@]}"; do
+        cert="$SVID_DIR/$svc/svid.0.pem"
+        if [ ! -f "$cert" ]; then
+            needs=1
+            continue
+        fi
+        if ! end="$(cert_end_epoch "$cert")"; then
+            needs=1
+            continue
+        fi
+        remain=$((end - now))
+        if [ -z "$min" ] || [ "$remain" -lt "$min" ]; then
+            min="$remain"
+        fi
+        if [ "$remain" -lt "$threshold_secs" ]; then
+            needs=1
+        fi
+    done
+    if [ -n "$min" ]; then
+        printf 'min_remaining_seconds=%s\n' "$min"
+        printf 'min_remaining_days=%s\n' "$((min / 86400))"
+    else
+        printf 'min_remaining_seconds=unknown\n'
+        printf 'min_remaining_days=unknown\n'
+    fi
+    if [ "$needs" -eq 0 ]; then
+        printf 'refresh_needed=no\n'
+        return 0
+    fi
+    printf 'refresh_needed=yes\n'
+    return 1
+}
+
 status() {
     local svc cert
     printf 'cert_dir=%s\nsvid_dir=%s\n' "$CERT_DIR" "$SVID_DIR"
@@ -233,10 +294,13 @@ status() {
             printf 'bundle=missing-spire-ca\n'
         fi
     fi
+    printf 'threshold_days=%s\n' "$THRESHOLD_DAYS"
+    svid_remaining_summary || true
 }
 
 case "$MODE" in
     setup) setup ;;
     refresh) refresh ;;
     status) status ;;
+    check) svid_remaining_summary ;;
 esac

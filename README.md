@@ -100,7 +100,7 @@ Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规�
 | 持久层 | MyBatis 4.0.1 + PageHelper 2.1.1、Druid 1.2.28、Flyway、MySQL 8.4.13 |
 | 缓存 | Redis 8.8.4 + Caffeine 3.1.8（二级缓存，Pub/Sub 失效广播） |
 | 认证 | OAuth2 / OIDC 授权码 + PKCE（Spring Authorization Server）、JWT、RBAC 与五级数据权限 |
-| 服务间安全 | 每服务 mTLS 证书、SPIFFE 工作负载身份、路径级授权、OPA 集中决策；宿主机开发默认使用 SPIRE SVID；Nacos 配置按服务命名空间隔离；Silo 通过证书换取临时凭据；叶子证书与 CA 均支持轮换（三阶段 + 滚动重启） |
+| 服务间安全 | 每服务 mTLS 证书、SPIFFE 工作负载身份、路径级授权、OPA 集中决策；宿主机开发默认使用 SPIRE SVID，并由独立调度在到期前自动刷新；Nacos 配置按服务命名空间隔离；Silo 通过证书换取临时凭据；叶子证书与 CA 均支持轮换（三阶段 + 滚动重启） |
 | 文件与检索 | Silo（MinIO 兼容，io.minio 8.5.7 客户端；另有本地与 OSS 实现）、Elasticsearch 9.5.5（客户端 9.2.5） |
 | 流程与调度 | Flowable 8.0.0、Quartz（集群模式） |
 | AI | Spring AI 2.0.1、AgentScope Java 2.0.1、Neo4j 5.26.33（驱动 6.0.2）、PDFBox 3.0.5、Apache POI 5.4.1 |
@@ -327,7 +327,7 @@ scripts/docker-deploy.sh up core
 | [docs/25 开发者 CLI 操作指南](<./docs/25-开发者 CLI 操作指南.md>) | CLI 安装、登录、context、只读/写命令与安全边界 |
 | [docs/26 CI 与个人访问令牌](<./docs/26-CI 与个人访问令牌.md>) | PAT 签发、CI secret、轮换、撤销与权限快照 |
 | [docs/27 TLS 与零信任操作指南](<./docs/27-TLS 与零信任操作指南.md>) | 证书、SVID、CA 轮换、调度、服务间授权与排障 |
-| [docs/28 TLS 与零信任当前基线与例外](<./docs/28-TLS 与零信任当前基线与例外.md>) | 当前阶段范围、5 项行动项与例外登记 |
+| [docs/28 TLS 与零信任当前基线与例外](<./docs/28-TLS 与零信任当前基线与例外.md>) | 当前阶段范围、4 项行动项与例外登记 |
 | [openspec/specs](openspec/specs) | 能力契约与变更记录 |
 | [openspec/changes/archive](openspec/changes/archive) | 历次变更的 proposal / design / tasks |
 
