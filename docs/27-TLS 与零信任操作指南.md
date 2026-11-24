@@ -1301,7 +1301,7 @@ scripts/spire-down.sh
 | # | 边界 / 后续项 | 登记位置 | 触发条件 / 下一步 |
 |---|---|---|---|
 | 1 | Seata 无原生 TLS/认证 | §19、`transport-security` 规格 | 上游提供原生 TLS/认证，或引入网格；当前靠 `tx` 网络与内部令牌补偿 |
-| 2 | 十个服务尚未切换到 SPIRE SVID | §18.5、§28.2、`workload-identity` 规格 | 证书加载/轮换改造完成后按服务灰度切换，保留 mkcert 回滚 |
+| 2 | 十个服务尚未切换到 SPIRE SVID | §18.5、§28.2、`workload-identity` 规格 | 已做可行性验证：SVID 可带 DNS/URI SAN，但默认 TTL 1h，Spring Boot 文件型 TLS bundle 无热加载；切换需每服务 agent/sidecar 与滚动重启，属独立项目，当前 mkcert 为默认路径 |
 | 3 | 未引入 Kubernetes sidecar 网格 | §27.3、§28.2、`ROADMAP` 阶段 4 | 部署目标迁到 Kubernetes 后再评估 Istio/Linkerd |
 | 4 | Sentinel 命令端口 8719 仍按默认绑定 | §12.4、§25.4 | Sentinel 支持绑定地址，或前置只绑定回环的代理 |
 | 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `--install`（systemd/cron），或经维护者批准后 `--install --scheduler docker`；本会话未安装常驻调度 |

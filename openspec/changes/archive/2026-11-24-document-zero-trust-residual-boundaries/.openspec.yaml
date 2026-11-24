@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 登记 SPIRE SVID 与跨主机/调度残余边界
+skip_specs: true
