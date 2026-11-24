@@ -629,8 +629,8 @@ start_backend() {
                     "-Dnacos.remote.client.rpc.tls.trustCollectionChainPath=file:$cert_dir/ca/rootCA.pem"
                     "-Dnacos.remote.client.rpc.tls.trustAll=false"
                     "-Dnacos.remote.client.rpc.tls.mutualAuth=true"
-                    "-Dnacos.remote.client.rpc.tls.certChainFile=file:$cert_dir/portal.pem"
-                    "-Dnacos.remote.client.rpc.tls.certPrivateKey=file:$cert_dir/portal-key.pem"
+                    "-Dnacos.remote.client.rpc.tls.certChainFile=file:$cert_dir/services/$name.pem"
+                    "-Dnacos.remote.client.rpc.tls.certPrivateKey=file:$cert_dir/services/$name-key.pem"
                 )
             else
                 java_opts+=("--server.ssl.enabled=false")

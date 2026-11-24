@@ -345,13 +345,15 @@ Nacos 3.3 的 HTTP API、控制台与 gRPC 通道已切到 TLS；gRPC 进一步�
   `-Dnacos.remote.client.rpc.tls.trustCollectionChainPath=file:<cert-dir>/ca/rootCA.pem`、
   `-Dnacos.remote.client.rpc.tls.trustAll=false`、
   `-Dnacos.remote.client.rpc.tls.mutualAuth=true`、
-  `-Dnacos.remote.client.rpc.tls.certChainFile=file:<cert-dir>/portal.pem`、
-  `-Dnacos.remote.client.rpc.tls.certPrivateKey=file:<cert-dir>/portal-key.pem`；
+  `-Dnacos.remote.client.rpc.tls.certChainFile=file:<cert-dir>/services/iboot-<service>.pem`、
+  `-Dnacos.remote.client.rpc.tls.certPrivateKey=file:<cert-dir>/services/iboot-<service>-key.pem`；
   `serverAddr` 仍为 `host:8848`。
 - gRPC 端口偏移保持不变：8848 → 9848；9849 是集群内部端口，不映射宿主机。
 - 门户 Vite 的 `/nacos-console` 代理、`sentinel-init.sh`、`dev-init.sh` 健康检查与 Docker
   控制台 URL 都改为 HTTPS + 本地 CA。
-- Nacos 的 HTTP 与 gRPC 已启用服务账号认证与鉴权（B4.3）；gRPC 已启用 mTLS，但所有服务共用同一张客户端证书，每服务身份留待 B5。本地控制台鉴权仍关闭（见 §13.5）。
+- Nacos 的 HTTP 与 gRPC 已启用服务账号认证与鉴权（B4.3）；gRPC 已启用 mTLS，且每个服务提交自己的
+  工作负载证书（Docker 挂载到 `/certs/nacos-client.pem`）。该证书用于归因，Nacos 不按证书主体做资源级
+  授权；本地控制台鉴权仍关闭（见 §13.5）。
 
 验证：
 
@@ -793,7 +795,9 @@ openssl x509 -in docker/certs/services/iboot-system.pem -noout -purpose
 
 - 服务端已按 SPIFFE ID（CN 回退）做路径级授权（B5.4/B5.8）；B5.14 已提供 SPIRE Workload API 的 opt-in
   演示（`spire` profile），现有服务仍使用 mkcert 证书，SVID 切换为下一阶段。
-- Nacos 注册客户端仍使用共享 `portal.pem`；注册通道不是业务服务端口。
+- Nacos 注册客户端已改用每服务自己的 `services/iboot-<service>.pem`（Docker 挂载到
+  `/certs/nacos-client.pem`）；Nacos Server 只校验信任链，不按证书主体做资源级授权，因此该证书用于身份归因，
+  不是资源级隔离。
 - 证书探针仍以一个服务端点反映同批签发的叶子证书到期时间；拆分不同有效期前必须扩展探针。
 
 ## 19. RocketMQ TLS-only 与 Seata 例外（B5.3）
