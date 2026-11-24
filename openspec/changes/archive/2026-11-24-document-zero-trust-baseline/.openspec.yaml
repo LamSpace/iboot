@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: 固定当前阶段 TLS/零信任基线与例外登记
+skip_specs: true

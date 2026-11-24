@@ -326,6 +326,8 @@ scripts/docker-deploy.sh up core
 | [docs/24 SkyWalking 与 Tempo 对比实验](<./docs/24-SkyWalking 与 Tempo 对比实验.md>) | 辅助 APM 栈、双后端验收、开销度量与选型结论 |
 | [docs/25 开发者 CLI 操作指南](<./docs/25-开发者 CLI 操作指南.md>) | CLI 安装、登录、context、只读/写命令与安全边界 |
 | [docs/26 CI 与个人访问令牌](<./docs/26-CI 与个人访问令牌.md>) | PAT 签发、CI secret、轮换、撤销与权限快照 |
+| [docs/27 TLS 与零信任操作指南](<./docs/27-TLS 与零信任操作指南.md>) | 证书、SVID、CA 轮换、调度、服务间授权与排障 |
+| [docs/28 TLS 与零信任当前基线与例外](<./docs/28-TLS 与零信任当前基线与例外.md>) | 当前阶段范围、5 项行动项与例外登记 |
 | [openspec/specs](openspec/specs) | 能力契约与变更记录 |
 | [openspec/changes/archive](openspec/changes/archive) | 历次变更的 proposal / design / tasks |
 

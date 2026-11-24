@@ -1342,20 +1342,20 @@ scripts/docker-svid-refresh.sh --no-restart # 只刷新卷内 SVID
 - 不部署 Kubernetes 控制面或 sidecar 网格。
 - SPIRE 的 CA、token 与数据卷均为本地开发资产，不入仓；SVID 私钥只写入命名卷或 `docker/certs/svid`（已忽略）。
 
-## 29. 零信任残余边界清单（B5.14 后）
+## 29. 零信任残余边界清单
 
-本轮 6 项登记边界已收口；以下是仍存在的显式边界或后续阶段，均已登记，不是隐藏欠账。
+当前阶段的**唯一清单**见 [docs/28 当前基线与例外](./28-TLS%20与零信任当前基线与例外.md)：
+只有 5 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
 
-| # | 边界 / 后续项 | 登记位置 | 触发条件 / 下一步 |
-|---|---|---|---|
-| 1 | Seata 无原生 TLS/认证 | §19、`transport-security` 规格 | 上游提供原生 TLS/认证，或引入网格；当前靠 `tx` 网络与内部令牌补偿 |
-| 2 | SVID 刷新依赖显式脚本，无热加载 | §18.5、§28.3、`workload-identity` 规格 | 宿主机开发与 Compose 全量模式均已默认 SVID（30 天 TTL）；到期前执行 `spire-svid-sync.sh --refresh --restart host` 或 `docker-svid-refresh.sh` |
-| 3 | 未引入 Kubernetes sidecar 网格 | §27.3、§28.2、`ROADMAP` 阶段 4 | 部署目标迁到 Kubernetes 后再评估 Istio/Linkerd |
-| 4 | Sentinel 命令端口 8719 仍按默认绑定 | §12.4、§25.4 | Sentinel 支持绑定地址，或前置只绑定回环的代理 |
-| 5 | 轮换调度默认未安装 | §23.2 | 目标主机执行 `--install`（systemd/cron），或经维护者批准后 `--install --scheduler docker`；本会话未安装常驻调度 |
-| 6 | Nacos HTTP API 不是客户端证书 mTLS | §13.1 | 上游提供按工作负载的客户端证书认证，或引入网格；MySQL/Redis/Silo 已完成 |
+与本操作指南的章节映射：
 
-> 说明：第 1 项按用户要求排除；第 2、3 项是 L3 的后续阶段；第 4–6 项是已登记的运维/部署边界。
-> CA 轮换与 Docker 滚动发布已在 §23.4 实现；跨主机仍需在每台主机分别执行调度与轮换阶段。
-> 原“OPA 生产高可用未实现”已在 B6 以双副本 + nginx LB + 有界重试/可选短 TTL 缓存闭环；生产仍应做
-> 超时预算与故障演练。
+- Seata 无原生 TLS/认证 → §19；
+- SVID 刷新与 Compose 重启路径 → §18.5、§23.4、§28；
+- Kubernetes sidecar 网格 → §27.3、§28.4；
+- Sentinel 8719 → §12.4、§25.4；
+- Nacos HTTP 仅令牌 → §13.1；
+- SPIRE 生产化、SVID IP SAN、多信任域探针 → §28.4 与 docs/28 的例外登记。
+
+轮换调度已在本机安装 systemd user timer；其他主机需分别执行 `--install`，状态用
+`scripts/tls-rotate-schedule.sh --status` 巡检。CA 轮换与 Docker 滚动发布见 §23.4；
+跨主机阶段顺序见 docs/28 的 A5。
