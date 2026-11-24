@@ -24,6 +24,7 @@ if [ -f "$ROOT/.env" ]; then
 fi
 MODE="check"
 RESTART="none"
+DOCKER_SVID_REFRESH="${IBOOT_DOCKER_SVID_REFRESH_BIN:-$ROOT/scripts/docker-svid-refresh.sh}"
 
 usage() {
     awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"
@@ -98,6 +99,22 @@ restart_api() {
     return "$failed"
 }
 
+# Compose 全量模式默认叠加 SVID 覆盖层；sidecar 退出后仍以 docker-svid-* 容器存在。
+# 直接按基础 compose 重建会把服务证书路径改回 mkcert，必须委托 SVID 刷新入口。
+svid_stack_active() {
+    command -v docker >/dev/null 2>&1 || return 1
+    docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qE '^docker-svid-.*-1$'
+}
+
+delegate_svid_restart() {
+    [ -x "$DOCKER_SVID_REFRESH" ] || {
+        printf '[tls-rotate] SVID 刷新脚本不可执行：%s\n' "$DOCKER_SVID_REFRESH" >&2
+        return 1
+    }
+    printf '[tls-rotate] 检测到 Compose SVID 栈；委托 docker-svid-refresh.sh 刷新并滚动重启\n'
+    "$DOCKER_SVID_REFRESH"
+}
+
 rolling_restart() {
     printf '[tls-rotate] 逐个重建当前运行的 Docker 服务\n'
     local -a compose=(docker compose -f "$ROOT/docker/docker-compose.yml")
@@ -130,6 +147,10 @@ restart_runtime() {
             printf '[tls-rotate] 未重启运行时；需要时执行 --restart docker|rolling|api|host\n'
             ;;
         docker)
+            if svid_stack_active; then
+                delegate_svid_restart
+                return
+            fi
             printf '[tls-rotate] 重建当前运行的 Docker 服务\n'
             local -a compose=(docker compose -f "$ROOT/docker/docker-compose.yml")
             local -a services=()
@@ -141,6 +162,10 @@ restart_runtime() {
             "${compose[@]}" up -d --force-recreate "${services[@]}"
             ;;
         rolling)
+            if svid_stack_active; then
+                delegate_svid_restart
+                return
+            fi
             rolling_restart
             ;;
         api)

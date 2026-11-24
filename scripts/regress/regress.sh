@@ -199,6 +199,10 @@ echo
 echo "===== 12i. SVID 刷新调度 ====="
 "$HERE/svid-refresh-schedule.sh" || fail "SVID 刷新调度检查未通过"
 
+echo
+echo "===== 12j. tls-rotate SVID 重启路径 ====="
+"$HERE/tls-rotate-svid.sh" || fail "tls-rotate SVID 重启路径检查未通过"
+
 printf '\n===== 13. 权限矩阵 =====\n'
 "$HERE/permission-matrix.sh" || fail "权限矩阵未通过"
 
