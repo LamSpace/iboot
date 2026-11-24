@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-24
+goal: ops 关闭时 SVID 回归跳过进程检查
+skip_specs: true
