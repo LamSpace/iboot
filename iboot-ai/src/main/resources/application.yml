@@ -230,3 +230,6 @@ iboot:
         access-key: ${IBOOT_AI_SILO_ACCESS_KEY:minioadmin}
         secret-key: ${IBOOT_AI_SILO_SECRET_KEY:minioadmin}
         bucket: ${IBOOT_AI_SILO_BUCKET:iboot-ai}
+        client-cert-enabled: ${IBOOT_AI_SILO_CLIENT_CERT_ENABLED:false}
+        client-cert-keystore: ${IBOOT_AI_SILO_CLIENT_CERT_KEYSTORE:/certs/client.p12}
+        client-cert-keystore-password: ${IBOOT_AI_SILO_CLIENT_CERT_KEYSTORE_PASSWORD:changeit}

@@ -20,14 +20,23 @@ import com.iboot.kernel.web.BusinessException;
 import com.iboot.file.domain.system.model.StorageObject;
 import com.iboot.file.domain.system.service.FileStorageStrategy;
 import io.minio.*;
+import io.minio.credentials.CertificateIdentityProvider;
 import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -93,11 +102,46 @@ public class SiloFileStorageStrategy implements FileStorageStrategy {
      * @return 使用同一凭据的客户端
      */
     private MinioClient buildClient(String endpoint) {
-        return MinioClient.builder()
+        MinioClient.Builder builder = MinioClient.builder()
                 .endpoint(endpoint)
-                .region(siloProperties.getRegion())
-                .credentials(siloProperties.getAccessKey(), siloProperties.getSecretKey())
-                .build();
+                .region(siloProperties.getRegion());
+        if (siloProperties.isClientCertEnabled()) {
+            try {
+                // 预签名客户端使用对外端点，但 STS 始终走内网端点。
+                builder.credentialsProvider(certificateIdentity(siloProperties.getEndpoint()));
+            } catch (Exception e) {
+                throw new BusinessException("Silo 客户端证书初始化失败: " + e.getMessage());
+            }
+        } else {
+            builder.credentials(siloProperties.getAccessKey(), siloProperties.getSecretKey());
+        }
+        return builder.build();
+    }
+
+    /**
+     * 使用每服务客户端证书向 Silo 的 AssumeRoleWithCertificate 换取临时凭据。
+     *
+     * @param endpoint Silo 端点，同时作为 STS 端点
+     * @return 证书身份凭据提供者
+     * @throws Exception keystore/SSLContext 初始化失败时抛出
+     */
+    private CertificateIdentityProvider certificateIdentity(String endpoint) throws Exception {
+        char[] password = siloProperties.getClientCertKeystorePassword().toCharArray();
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        try (InputStream input = Files.newInputStream(Path.of(siloProperties.getClientCertKeystore()))) {
+            keyStore.load(input, password);
+        }
+        KeyManagerFactory keyManagers = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        keyManagers.init(keyStore, password);
+        TrustManagerFactory trustManagers = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trustManagers.init((KeyStore) null);
+        TrustManager[] managers = trustManagers.getTrustManagers();
+        if (managers.length == 0 || !(managers[0] instanceof X509TrustManager trustManager)) {
+            throw new IllegalStateException("未找到 X509TrustManager");
+        }
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(keyManagers.getKeyManagers(), managers, null);
+        return new CertificateIdentityProvider(endpoint, sslContext.getSocketFactory(), trustManager, 3600, null);
     }
 
     /**

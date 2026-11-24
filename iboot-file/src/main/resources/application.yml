@@ -92,6 +92,11 @@ iboot:
   logging:
     operate-log-table: sys_operate_log
   file:
+    # Silo 客户端证书：使用每服务 PKCS12 调用 AssumeRoleWithCertificate
+    silo:
+      client-cert-enabled: ${IBOOT_FILE_SILO_CLIENT_CERT_ENABLED:false}
+      client-cert-keystore: ${IBOOT_FILE_SILO_CLIENT_CERT_KEYSTORE:/certs/client.p12}
+      client-cert-keystore-password: ${IBOOT_FILE_SILO_CLIENT_CERT_KEYSTORE_PASSWORD:changeit}
     # 数据权限范围由系统服务提供；按注册中心服务名寻址，由本服务负载均衡
     permission:
       scope-url: ${IBOOT_FILE_SCOPE_URL:https://iboot-system/api/auth/scope}

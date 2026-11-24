@@ -90,6 +90,18 @@ public class SiloProperties {
     @Value("${iboot.file.silo.bucket:}")
     private String bucketOverride;
 
+    /** 是否使用每服务客户端证书向 Silo 换取临时凭据。 */
+    @Value("${iboot.file.silo.client-cert-enabled:false}")
+    private boolean clientCertEnabled;
+
+    /** 客户端证书 PKCS12 keystore 路径；启用客户端证书时必填。 */
+    @Value("${iboot.file.silo.client-cert-keystore:/certs/client.p12}")
+    private String clientCertKeystore;
+
+    /** 客户端证书 PKCS12 keystore 口令。 */
+    @Value("${iboot.file.silo.client-cert-keystore-password:changeit}")
+    private String clientCertKeystorePassword;
+
     @SuppressWarnings("all")
     public SiloProperties(final SysConfigReader sysConfigReader) {
         this.sysConfigReader = sysConfigReader;
@@ -173,6 +185,33 @@ public class SiloProperties {
         }
         String value = sysConfigReader.getString(CONFIG_KEY_BUCKET_NAME);
         return value != null ? value : DEFAULT_BUCKET_NAME;
+    }
+
+    /**
+     * 判断是否启用 Silo 客户端证书认证。
+     *
+     * @return 启用时返回 {@code true}
+     */
+    public boolean isClientCertEnabled() {
+        return clientCertEnabled;
+    }
+
+    /**
+     * 获取客户端证书 PKCS12 keystore 路径。
+     *
+     * @return keystore 路径
+     */
+    public String getClientCertKeystore() {
+        return clientCertKeystore;
+    }
+
+    /**
+     * 获取客户端证书 keystore 口令。
+     *
+     * @return keystore 口令
+     */
+    public String getClientCertKeystorePassword() {
+        return clientCertKeystorePassword;
     }
 
     /**

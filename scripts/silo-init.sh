@@ -51,9 +51,10 @@ create_service_account() {
         || fail "附加策略失败：$user"
 }
 
-create_service_account "$SILO_FILE_ACCESS_KEY" "$SILO_FILE_SECRET_KEY" iboot-file-rw "$FILE_BUCKET"
+# 文件/AI 的策略名与证书 CN 一致，供 AssumeRoleWithCertificate 的 CN→策略映射使用。
+create_service_account "$SILO_FILE_ACCESS_KEY" "$SILO_FILE_SECRET_KEY" iboot-file "$FILE_BUCKET"
 create_service_account "$SILO_JOB_ACCESS_KEY" "$SILO_JOB_SECRET_KEY" iboot-job-rw "$FILE_BUCKET"
-create_service_account "$SILO_AI_ACCESS_KEY" "$SILO_AI_SECRET_KEY" iboot-ai-rw "$AI_BUCKET"
+create_service_account "$SILO_AI_ACCESS_KEY" "$SILO_AI_SECRET_KEY" iboot-ai "$AI_BUCKET"
 
 printf '[silo-init] 桶与服务账号已就绪：%s、%s、%s\n' \
     "$SILO_FILE_ACCESS_KEY" "$SILO_JOB_ACCESS_KEY" "$SILO_AI_ACCESS_KEY"
