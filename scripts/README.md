@@ -90,7 +90,7 @@ CI 的 PR 任务只跑路由覆盖、构建与网关测试；定时 / 手动任�
 | 12 | `smoke.sh` | 登录、用户、文件、推送、任务、备份、审批关键链路。 |
 | 12b | `spire-svid.sh` | SPIRE Workload API 与 demo SVID。 |
 | 12c | `tls-rotate-scheduler.sh` | 证书轮换调度配置与一次性容器检查。 |
-| 12d | `ca-rotation.sh` | 三阶段 CA 轮换（临时证书目录）。 |
+| 12d | `ca-rotation.sh` | 三阶段 CA 轮换与 prepared/activated 回滚（临时证书目录）。 |
 | 12e | `silo-client-cert.sh` | Silo 客户端证书换取临时凭据。 |
 | 12f | `nacos-namespace-isolation.sh` | Nacos 配置命名空间隔离。 |
 | 12g | `spire-svid-services.sh` | 十个服务的 SVID SAN、有效期与 mTLS 健康检查。 |

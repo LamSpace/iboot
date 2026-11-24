@@ -1092,11 +1092,17 @@ CA 轮换分三阶段，避免新旧 CA 切换时服务互相拒绝：
 scripts/tls-ca-rotate.sh --prepare  --restart rolling   # 生成新 CA，bundle=旧+新；叶子仍由旧 CA 签发
 scripts/tls-ca-rotate.sh --activate --restart rolling   # 签名切到新 CA，重签全部叶子；bundle=新+旧
 scripts/tls-ca-rotate.sh --finalize --restart rolling   # bundle 只保留新 CA，旧 CA 退役
-scripts/tls-ca-rotate.sh --status                       # 查看阶段、bundle 证书数、签名 CA、叶子签发者
+scripts/tls-ca-rotate.sh --rollback [--restart rolling] # prepared/activated 阶段回到上一张 CA
+scripts/tls-ca-rotate.sh --status                       # 查看阶段、bundle 证书数、签名 CA、叶子签发者、rollback 可用性
 ```
 
 - `prepare` 必须先于 `activate`：所有服务需要先加载同时信任新旧 CA 的 bundle，才能接受新 CA 签发的叶子证书。
 - `activate` 调用 `tls-init.sh --force` 重签全部叶子证书；`finalize` 重建信任库与运行期副本。
+- `--rollback` 用于阶段中止：
+  - `prepared`：丢弃下一张 CA，信任 bundle 恢复为上一张 CA；叶子证书不变。
+  - `activated`：恢复上一张 CA 为签名者并重签全部叶子，bundle 收敛为上一张 CA。
+  - `finalized` 后旧 CA 已退役，脚本拒绝自动回滚；需从备份恢复或重新走一轮轮换。
+  - 回滚后 `--status` 的 `rollback=unavailable`，状态回到 `initial`。
 - `--restart rolling` 通过 compose `up -d --no-deps --force-recreate` 逐个重建服务，并等待容器 healthy/running；
   `--restart docker` 一次性重建，`--restart api` 通过 Docker API 重启，`--restart host` 重启宿主机进程。
   若当前是 Compose SVID 栈，`docker`/`rolling` 会委托 `docker-svid-refresh.sh` 重新取回 SVID 后滚动重启。
@@ -1360,7 +1366,7 @@ scripts/docker-svid-refresh.sh --no-restart # 只刷新卷内 SVID
 ## 29. 零信任残余边界清单
 
 当前阶段的**唯一清单**见 [docs/28 当前基线与例外](./28-TLS%20与零信任当前基线与例外.md)：
-只有 3 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
+只有 2 项行动项算未完成，其余为已接受风险、上游限制或阶段项，不再重复计入遗留任务。
 
 与本操作指南的章节映射：
 

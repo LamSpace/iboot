@@ -82,5 +82,81 @@ openssl verify -CAfile "$TMP/ca/rootCA.pem" "$TMP/services/iboot-system.pem" >/d
     && reg_pass "finalize 后叶子证书可验证" \
     || reg_fail "finalize 后叶子证书验证失败"
 
+reg_log ""
+reg_log "== 回滚：prepare → rollback =="
+TMP2="$(mktemp -d)"
+trap 'rm -rf "$TMP" "${TMP2:-}"' EXIT
+mkdir -p "$TMP2/ca"
+openssl x509 -in "$LIVE_CA/rootCA.pem" -out "$TMP2/ca/rootCA.pem"
+cp "$LIVE_CA/rootCA-key.pem" "$TMP2/ca/"
+if ! IBOOT_TLS_CERT_DIR="$TMP2" "$ROOT/scripts/tls-init.sh" --force >/tmp/ca-rollback-init.log 2>&1; then
+    reg_fail "回滚测试证书初始化失败，详见 /tmp/ca-rollback-init.log"
+    reg_summary
+    exit "$REG_FAILED"
+fi
+original_issuer="$(openssl x509 -noout -issuer -in "$TMP2/services/iboot-system.pem")"
+
+if IBOOT_TLS_CERT_DIR="$TMP2" "$ROOT/scripts/tls-ca-rotate.sh" --prepare --restart none \
+        >/tmp/ca-rollback-prepare.log 2>&1; then
+    reg_pass "回滚用例 prepare 完成"
+else
+    reg_fail "回滚用例 prepare 失败，详见 /tmp/ca-rollback-prepare.log"
+fi
+status_out="$(IBOOT_TLS_CERT_DIR="$TMP2" "$ROOT/scripts/tls-ca-rotate.sh" --status 2>&1)"
+printf '%s\n' "$status_out" | grep -q '^rollback=available$' \
+    && reg_pass "prepared 状态报告可回滚" \
+    || reg_fail "prepared 状态未报告可回滚"
+if IBOOT_TLS_CERT_DIR="$TMP2" "$ROOT/scripts/tls-ca-rotate.sh" --rollback --restart none \
+        >/tmp/ca-rollback-prepared.log 2>&1; then
+    reg_pass "prepared → rollback 完成"
+else
+    reg_fail "prepared → rollback 失败，详见 /tmp/ca-rollback-prepared.log"
+fi
+certs="$(grep -c 'BEGIN CERTIFICATE' "$TMP2/ca/rootCA.pem" || true)"
+[ "$certs" = "1" ] && reg_pass "prepared 回滚后 bundle 只保留上一张 CA" \
+    || reg_fail "prepared 回滚后 bundle 证书数异常：$certs"
+[ "$(openssl x509 -noout -issuer -in "$TMP2/services/iboot-system.pem")" = "$original_issuer" ] \
+    && reg_pass "prepared 回滚不改变叶子证书签发者" \
+    || reg_fail "prepared 回滚改变了叶子证书签发者"
+openssl verify -CAfile "$TMP2/ca/rootCA.pem" "$TMP2/services/iboot-system.pem" >/dev/null 2>&1 \
+    && reg_pass "prepared 回滚后叶子证书可验证" \
+    || reg_fail "prepared 回滚后叶子证书验证失败"
+[ "$(IBOOT_TLS_CERT_DIR="$TMP2" "$ROOT/scripts/tls-ca-rotate.sh" --status 2>&1 | sed -n 's/^state=//p')" = "initial" ] \
+    && reg_pass "prepared 回滚后状态回到 initial" \
+    || reg_fail "prepared 回滚后状态未回到 initial"
+
+reg_log ""
+reg_log "== 回滚：activate → rollback =="
+if IBOOT_TLS_CERT_DIR="$TMP2" "$ROOT/scripts/tls-ca-rotate.sh" --prepare --restart none \
+        >/tmp/ca-rollback-prepare2.log 2>&1; then
+    reg_pass "回滚第二轮 prepare 完成"
+else
+    reg_fail "回滚第二轮 prepare 失败，详见 /tmp/ca-rollback-prepare2.log"
+fi
+if IBOOT_TLS_CERT_DIR="$TMP2" "$ROOT/scripts/tls-ca-rotate.sh" --activate --restart none \
+        >/tmp/ca-rollback-activate.log 2>&1; then
+    reg_pass "回滚用例 activate 完成"
+else
+    reg_fail "回滚用例 activate 失败，详见 /tmp/ca-rollback-activate.log"
+fi
+new_issuer2="$(openssl x509 -noout -issuer -in "$TMP2/services/iboot-system.pem")"
+[ "$new_issuer2" != "$original_issuer" ] && reg_pass "activate 后叶子证书由新 CA 签发" \
+    || reg_fail "activate 后叶子证书签发者未变化"
+if IBOOT_TLS_CERT_DIR="$TMP2" "$ROOT/scripts/tls-ca-rotate.sh" --rollback --restart none \
+        >/tmp/ca-rollback-activated.log 2>&1; then
+    reg_pass "activate → rollback 完成"
+else
+    reg_fail "activate → rollback 失败，详见 /tmp/ca-rollback-activated.log"
+fi
+[ "$(openssl x509 -noout -issuer -in "$TMP2/services/iboot-system.pem")" = "$original_issuer" ] \
+    && reg_pass "activate 回滚后叶子证书由上一张 CA 重新签发" \
+    || reg_fail "activate 回滚后叶子证书签发者未恢复"
+certs="$(grep -c 'BEGIN CERTIFICATE' "$TMP2/ca/rootCA.pem" || true)"
+[ "$certs" = "1" ] && reg_pass "activate 回滚后 bundle 只保留上一张 CA" \
+    || reg_fail "activate 回滚后 bundle 证书数异常：$certs"
+openssl verify -CAfile "$TMP2/ca/rootCA.pem" "$TMP2/services/iboot-system.pem" >/dev/null 2>&1 \
+    && reg_pass "activate 回滚后叶子证书可验证" \
+    || reg_fail "activate 回滚后叶子证书验证失败"
+
 reg_summary
 exit "$REG_FAILED"
