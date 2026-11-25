@@ -24,13 +24,28 @@ else
     reg_fail "blackbox-exporter 未运行"
 fi
 
-probe_ok="$(curl -sS --cacert "$CA" --get "$PROM/api/v1/query" \
-    --data-urlencode 'query=probe_success{job="tls-cert"}' 2>/dev/null \
-    | jq -r '[.data.result[].value[1]] | any(. == "1")')"
+# 单次抓取失败不代表探针不可用：Prometheus 15s 抓一次，blackbox 经宿主 relay
+# 访问服务时偶发瞬时失败。用 5 分钟窗口判断「最近是否成功过」，持续失败仍由
+# tls-alerts 的 probe_success == 0 告警覆盖。
+probe_query='max_over_time(probe_success{job="tls-cert"}[5m])'
+probe_ok=""
+for attempt in 1 2 3; do
+    probe_ok="$(curl -sS --cacert "$CA" --get "$PROM/api/v1/query" \
+        --data-urlencode "query=$probe_query" 2>/dev/null \
+        | jq -r '[.data.result[].value[1]] | any(. == "1")')"
+    [ "$probe_ok" = "true" ] && break
+    [ "$attempt" -lt 3 ] && sleep 5
+done
 if [ "$probe_ok" = "true" ]; then
-    reg_pass "证书探针握手成功"
+    reg_pass "证书探针握手成功（最近 5 分钟）"
 else
-    reg_fail "证书探针握手失败（probe_success 无成功样本）"
+    up="$(curl -sS --cacert "$CA" --get "$PROM/api/v1/query" \
+        --data-urlencode 'query=up{job="tls-cert"}' 2>/dev/null \
+        | jq -r '[.data.result[].value[1]] | join(",")')"
+    raw="$(curl -sS --cacert "$CA" --get "$PROM/api/v1/query" \
+        --data-urlencode 'query=probe_success{job="tls-cert"}' 2>/dev/null \
+        | jq -r '[.data.result[].value[1]] | join(",")')"
+    reg_fail "证书探针握手失败（最近 5 分钟无成功样本；up=${up:-无}，probe_success=${raw:-无}）"
 fi
 
 expiry="$(curl -sS --cacert "$CA" --get "$PROM/api/v1/query" \
