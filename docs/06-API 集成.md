@@ -2,7 +2,7 @@
 
 ## 目录
 
-1. [API 设计规范](#api 设计规范)
+1. [API 设计规范](#api-设计规范)
 2. [认证与授权](#认证与授权)
 3. [请求封装](#请求封装)
 4. [接口列表](#接口列表)
@@ -19,24 +19,24 @@ iBoot 后端 API 遵循 RESTful 设计风格，使用 HTTP 方法表达对资源
 
 | HTTP 方法 | 操作 | 示例 |
 |-----------|------|------|
-| GET | 查询资源 | GET /api/users |
-| POST | 创建资源 | POST /api/users |
-| PUT | 更新资源（全量） | PUT /api/users/1 |
-| PATCH | 更新资源（部分） | PATCH /api/users/1 |
-| DELETE | 删除资源 | DELETE /api/users/1 |
+| GET | 查询资源 | GET /api/user/list |
+| POST | 创建资源 | POST /api/user |
+| PUT | 更新资源（全量） | PUT /api/user |
+| PATCH | 更新资源（部分） | PATCH /api/user/1 |
+| DELETE | 删除资源 | DELETE /api/user/1 |
 
 ### 6.2 URL 命名规范
 
 - 使用小写字母
-- 单词间使用连字符（-）分隔
-- 使用名词复数形式
-- 避免在 URL 中出现动词
+- 域前缀使用**单数**名词（`/api/user`、`/api/role`、`/api/file`）
+- 列表动作用 `/list`；树形资源用 `/tree`；避免在 URL 中出现 `get`/`create` 这类动词
+- 需要版本控制时使用请求头 `Accept-Version: 1`，不在路径里写版本号
 
 **示例：**
 ```
-/api/users          # 用户列表
-/api/users/1        # ID 为 1 的用户
-/api/user-roles     # 用户角色（而非 /api/getUserRoles）
+/api/user/list      # 用户列表
+/api/user/1         # ID 为 1 的用户
+/api/user/export    # 导出用户
 ```
 
 ### 6.3 细粒度 API 版本控制
@@ -68,8 +68,8 @@ Authorization: Bearer <token>
 
 | 方式 | 示例 | 优点 | 缺点 |
 |------|------|------|------|
-| 请求头版本控制 | `Accept-Version: 1` + `/api/users` | URL 简洁，便于维护 | 调试不够直观 |
-| URL 路径版本控制 | `/api/v1/users` | 直观可见 | URL 冗余，版本升级需改路由 |
+| 请求头版本控制 | `Accept-Version: 1` + `/api/user` | URL 简洁，便于维护 | 调试不够直观 |
+| URL 路径版本控制 | `/api/v1/user` | 直观可见 | URL 冗余，版本升级需改路由 |
 
 iBoot 采用请求头版本控制方式，保持 URL 的稳定性。
 
@@ -169,49 +169,26 @@ curl --cacert docker/certs/ca/rootCA.pem \
 
 | 参数 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
-| page | integer | 1 | 页码 |
-| size | integer | 10 | 每页数量 |
-| sort | string | - | 排序字段 |
-| order | string | desc | 排序方向（asc/desc） |
+| pageNum | integer | 1 | 页码 |
+| pageSize | integer | 10 | 每页数量 |
 
 **示例：**
 ```
-GET /api/users?page=1&size=20&sort=createTime&order=desc
+GET /api/user/list?pageNum=1&pageSize=20&username=admin
 ```
 
 ## 认证与授权
 
-### 6.5 JWT 认证流程
+### 6.5 认证流程
 
-```
-┌─────────┐     ┌─────────┐     ┌─────────┐     ┌─────────┐
-│  客户端  │     │  认证层  │     │  业务层  │     │  数据层  │
-└────┬────┘     └────┬────┘     └────┬────┘     └────┬────┘
-     │               │               │               │
-     │ 1.POST /login │               │               │
-     │──────────────►│               │               │
-     │               │               │               │
-     │               │2.验证用户信息 │               │
-     │               │──────────────►│               │
-     │               │               │               │
-     │               │3.生成 JWT     │               │
-     │               │◄──────────────│               │
-     │               │               │               │
-     │ 4.返回 Token  │               │               │
-     │◄──────────────│               │               │
-     │               │               │               │
-     │5.后续请求携带 Token │               │               │
-     │──────────────►│               │               │
-     │               │               │               │
-     │               │6.验证 Token   │               │
-     │               │──────────────►│               │
-     │               │               │               │
-     │               │               │7.业务处理     │
-     │               │               │──────────────►│
-     │               │               │               │
-     │ 8.返回结果    │               │               │
-     │◄──────────────│               │               │
-```
+浏览器与 CLI 都使用 OAuth2 授权码 + PKCE，认证由独立的 `iboot-auth` 承担：
+
+1. 客户端跳转 `/oauth2/authorize`，携带 `client_id`、`redirect_uri`、`code_challenge` 与 `state`。
+2. `iboot-auth` 展示登录页，校验用户凭据、失败计数与锁定状态。
+3. 认证成功后重定向回客户端，附带一次性授权码。
+4. 客户端用授权码与 `code_verifier` 调 `/oauth2/token`，换取访问令牌。
+5. 资源服务用 `iboot-auth` 的 JWK 公钥验签，并校验共享 Redis 中的会话与撤销状态。
+6. 公共客户端不签发刷新令牌；401 表示会话失效，需要重新登录。
 
 ### 6.5.1 开发者 CLI
 
@@ -230,7 +207,7 @@ Authorization: Bearer <token>
 ```json
 {
   "header": {
-    "alg": "HS256",
+    "alg": "RS256",
     "typ": "JWT"
   },
   "payload": {
@@ -248,9 +225,9 @@ Authorization: Bearer <token>
 
 | 配置项 | 默认值 | 描述 |
 |--------|--------|------|
-| token 过期时间 | 1 小时 | access_token 有效期 |
-| refresh_token 过期时间 | 7 天 | 刷新令牌有效期 |
-| 自动续期 | 支持 | 请求活跃时自动续期 |
+| access_token 有效期 | 30 分钟 | 由 `iboot-auth` 用 RSA 私钥签发，资源服务通过 JWK 公钥验签 |
+| refresh_token 有效期 | 30 分钟 | 公共客户端不签发刷新令牌 |
+| 自动续期 | 否 | 没有刷新令牌；401 表示会话失效，需要重新登录 |
 
 ### 6.8 权限注解
 
@@ -324,7 +301,7 @@ import request from '@/utils/request'
 
 export function getUserList(params) {
   return request({
-    url: '/users',
+    url: '/user/list',
     method: 'get',
     params
   })
@@ -332,14 +309,14 @@ export function getUserList(params) {
 
 export function getUserById(id) {
   return request({
-    url: `/users/${id}`,
+    url: `/user/${id}`,
     method: 'get'
   })
 }
 
 export function createUser(data) {
   return request({
-    url: '/users',
+    url: '/user',
     method: 'post',
     data
   })
@@ -347,7 +324,7 @@ export function createUser(data) {
 
 export function updateUser(id, data) {
   return request({
-    url: `/users/${id}`,
+    url: '/user',
     method: 'put',
     data
   })
@@ -355,7 +332,7 @@ export function updateUser(id, data) {
 
 export function deleteUser(id) {
   return request({
-    url: `/users/${id}`,
+    url: `/user/${id}`,
     method: 'delete'
   })
 }
@@ -378,13 +355,12 @@ export function deleteUser(id) {
 | /connect/logout | GET | 登出（RP-Initiated Logout） |
 | /login | GET | 认证服务托管的登录页 |
 
-双栈窗口内仍保留旧的用户名密码接口，窗口关闭后移除：
+双栈窗口已关闭，旧的用户名密码登录接口不再提供。当前只保留：
 
 | 接口 | 方法 | 描述 |
 |------|------|------|
-| /auth/login | POST | 用户名密码换取令牌（过渡期） |
-| /auth/logout | POST | 删除共享会话（过渡期） |
-| /auth/register | POST | 自助注册（依据系统参数开放） |
+| /api/auth/logout | POST | 撤销共享会话 |
+| /api/auth/register | POST | 自助注册（依据系统参数开放） |
 
 ### 6.11.1 国际化接口
 
@@ -424,112 +400,47 @@ POST /api/i18n/locale?locale=en-US
 - 前端同时会将语言偏好保存到 localStorage
 - 支持的語言：`zh-CN`（简体中文）、`en-US`（英文）
 
-**登录请求示例：**
-```bash
-POST /api/auth/login
-Content-Type: application/json
+**登录（OAuth2 授权码 + PKCE）：**
 
-{
-  "username": "admin",
-  "password": "admin123456",
-  "captcha": "1234",
-  "rememberMe": true
-}
-```
+浏览器不再向业务服务提交用户名密码，而是跳转认证服务：
+
+1. `GET /oauth2/authorize`，携带 `client_id`、`redirect_uri`、`code_challenge` 与 `state`。
+2. `iboot-auth` 展示登录页，用户提交凭据。
+3. 回调携带一次性 `code`；前端用 `code_verifier` 调 `POST /oauth2/token`。
+4. 令牌端点返回 `access_token`（30 分钟）与 `id_token`；公共客户端不返回 `refresh_token`。
 
 > 登录、登出与注册由 `iboot-auth`（8083）承载，数据权限范围接口 `GET /api/auth/scope` 仍由
-> `iboot-system` 提供。客户端统一经网关 8088 访问，路径与拆分前完全相同。
-> 请求体中的 `captcha`、`rememberMe` 当前不被服务端读取，保留字段是为了兼容既有调用方。
+> `iboot-system` 提供。客户端统一经网关 8088 访问。
 
-**登录响应示例：**
+**令牌响应示例：**
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "xxx",
-    "expiresIn": 3600,
-    "userInfo": {
-      "id": 1,
-      "username": "admin",
-      "nickname": "管理员"
-    }
-  }
+  "access_token": "eyJhbGciOiJSUzI1NiIs...",
+  "token_type": "Bearer",
+  "expires_in": 1800,
+  "scope": "openid profile",
+  "id_token": "eyJhbGciOiJSUzI1NiIs..."
 }
 ```
 
-### 6.12 用户接口
+### 6.12 系统域接口约定
 
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| /users | GET | 用户列表（分页） |
-| /users/{id} | GET | 用户详情 |
-| /users | POST | 创建用户 |
-| /users/{id} | PUT | 更新用户 |
-| /users/{id} | DELETE | 删除用户 |
-| /users/{id}/password | PATCH | 修改密码 |
-| /users/{id}/status | PATCH | 修改状态 |
-| /users/me | GET | 当前用户信息 |
+系统域控制器统一使用单数前缀 `/api/<domain>`，列表动作用 `/list`；完整路径以各服务 OpenAPI 为准。
 
-### 6.13 角色接口
+| 资源 | 前缀 | 常用动作 |
+|---|---|---|
+| 用户 | `/api/user` | `GET /list`、`GET /{id}`、`POST`、`PUT`、`DELETE /{id}`、`PUT /changeStatus`、`PUT /profile/password`、`GET /profile` |
+| 角色 | `/api/role` | `GET /list`、`GET /{id}`、`POST`、`PUT`、`DELETE /{id}`、菜单/数据权限分配 |
+| 菜单 | `/api/menu` | `GET /list`、`GET /tree`、`POST`、`PUT`、`DELETE /{id}` |
+| 部门 | `/api/dept` | `GET /list`、`GET /tree`、`POST`、`PUT`、`DELETE /{id}` |
+| 岗位 | `/api/post` | `GET /list`、`POST`、`PUT`、`DELETE /{id}` |
+| 字典 | `/api/dict` | `GET /type/list`、`GET /data/list`、按类型查询 |
+| 参数 | `/api/config` | `GET /list`、`POST`、`PUT`、`DELETE /{id}` |
+| 文件 | `/api/file` | `POST /upload`、`GET /list`、`GET /download/{id}`、`GET /preview/{id}`、`DELETE /{id}` |
+| SSE | `/api/push` | `GET /connect`、`GET /status`（归属 `iboot-notify`） |
 
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| /roles | GET | 角色列表 |
-| /roles/{id} | GET | 角色详情 |
-| /roles | POST | 创建角色 |
-| /roles/{id} | PUT | 更新角色 |
-| /roles/{id} | DELETE | 删除角色 |
-| /roles/{id}/menus | PUT | 分配菜单权限 |
-| /roles/{id}/depts | PUT | 分配数据权限 |
-
-### 6.14 菜单接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| /menus | GET | 菜单列表 |
-| /menus/tree | GET | 菜单树 |
-| /menus/{id} | GET | 菜单详情 |
-| /menus | POST | 创建菜单 |
-| /menus/{id} | PUT | 更新菜单 |
-| /menus/{id} | DELETE | 删除菜单 |
-
-### 6.15 部门接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| /depts | GET | 部门列表 |
-| /depts/tree | GET | 部门树 |
-| /depts/{id} | GET | 部门详情 |
-| /depts | POST | 创建部门 |
-| /depts/{id} | PUT | 更新部门 |
-| /depts/{id} | DELETE | 删除部门 |
-
-### 6.16 字典接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| /dict/types | GET | 字典类型列表 |
-| /dict/types/{id} | GET | 字典类型详情 |
-| /dict/types | POST | 创建字典类型 |
-| /dict/types/{id} | PUT | 更新字典类型 |
-| /dict/types/{id} | DELETE | 删除字典类型 |
-| /dict/data | GET | 字典数据列表 |
-| /dict/data/type/{type} | GET | 根据类型查询字典数据 |
-
-### 6.17 文件接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| /files | POST | 文件上传 |
-| /files | GET | 文件列表 |
-| /files/{id} | GET | 文件详情 |
-| /files/{id} | DELETE | 删除文件 |
-| /files/{id}/download | GET | 文件下载 |
-| /files/{id}/preview | GET | 文件预览 |
-
-**文件上传示例：**
+> 登录使用 OAuth2 授权码 + PKCE；`/api/auth/login` 已移除。完整接口清单用各服务的
+> `/v3/api-docs` 或 Swagger UI 查看，服务与端口见 [docs/23 §8.1](<./23-微服务底座操作指南.md>)。
 
 ### 6.18 SSE 推送接口
 
@@ -543,8 +454,8 @@ Content-Type: application/json
 ```bash
 # 使用 curl 连接 SSE（t 参数传递 Token；同样需要 CA 与客户端证书）
 curl --cacert docker/certs/ca/rootCA.pem \
-     --cert docker/certs/services/system.pem --key docker/certs/services/system-key.pem \
-     https://localhost:8080/api/push/connect?t=<YOUR_JWT_TOKEN>
+     --cert docker/certs/services/iboot-notify.pem --key docker/certs/services/iboot-notify-key.pem \
+     https://localhost:8084/api/push/connect?t=<YOUR_JWT_TOKEN>
 ```
 
 **SSE 连接响应格式（text/event-stream）：**
@@ -695,7 +606,7 @@ export function uploadFile(file) {
   formData.append('file', file)
 
   return request({
-    url: '/files',
+    url: '/file/upload',
     method: 'post',
     data: formData,
     headers: {
@@ -797,7 +708,7 @@ export function uploadFile(file) {
 **请求示例：**
 ```java
 // 后端代码示例
-return Result.success("user.login.success", data);
+return Result.successWithCode("user.login.success", data);
 ```
 
 **响应示例（中文环境）：**
@@ -846,24 +757,20 @@ return Result.success("user.login.success", data);
 {
   "code": 200,
   "message": "success",
-  "data": {
-    "list": [],
-    "total": 100,
-    "page": 1,
-    "size": 10,
-    "pages": 10
-  },
+  "data": [],
+  "total": 100,
+  "pageNum": 1,
+  "pageSize": 10,
   "timestamp": 1699999999999
 }
 ```
 
 | 字段 | 类型 | 描述 |
 |------|------|------|
-| list | array | 数据列表 |
+| data | array | 当前页数据（`PageResult` 继承 `Result<List<T>>`） |
 | total | long | 总记录数 |
-| page | integer | 当前页码 |
-| size | integer | 每页数量 |
-| pages | integer | 总页数 |
+| pageNum | integer | 当前页码，从 1 开始 |
+| pageSize | integer | 每页数量 |
 
 ### 6.21 请求参数格式
 
@@ -882,8 +789,8 @@ return Result.success("user.login.success", data);
 **查询参数：**
 ```json
 {
-  "page": 1,
-  "size": 10,
+  "pageNum": 1,
+  "pageSize": 10,
   "username": "admin",
   "status": 1,
   "deptId": 1
@@ -1067,22 +974,12 @@ axiosRetry(request, {
 })
 ```
 
-### 6.27 批量操作
+### 6.27 导出
 
 ```typescript
-// 批量删除
-export function batchDeleteUsers(ids: number[]) {
-  return request({
-    url: '/users/batch',
-    method: 'delete',
-    data: { ids }
-  })
-}
-
-// 批量导出
 export function exportUsers(params) {
   return request({
-    url: '/users/export',
+    url: '/user/export',
     method: 'get',
     params,
     responseType: 'blob' // 重要：设置为 blob 以下载文件
@@ -1096,10 +993,12 @@ export function exportUsers(params) {
 
 **UserController 完整实现：**
 
+> 示例中的 Lombok 注解仅用于省略样板代码；项目未引入 Lombok，实际代码使用显式构造器与访问器。
+
 ```java
 package com.iboot.system.interfaces.controller;
 
-import com.iboot.system.common.result.Result;
+import com.iboot.kernel.web.Result;
 import com.iboot.system.interfaces.dto.user.CreateUserRequest;
 import com.iboot.system.interfaces.dto.user.UserResponse;
 import com.iboot.system.application.service.UserApplicationService;
@@ -1122,7 +1021,7 @@ import java.util.List;
  */
 @Tag(name = "用户管理", description = "用户管理相关接口")
 @RestController
-@RequestMapping("/api/system/users")
+@RequestMapping("/api/user")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -1202,7 +1101,7 @@ public class UserController {
 **Result 工具类：**
 
 ```java
-package com.iboot.system.common.result;
+package com.iboot.kernel.web;
 
 import lombok.Data;
 import java.io.Serializable;
@@ -1257,7 +1156,7 @@ public class Result<T> implements Serializable {
 **PageResult 实现：**
 
 ```java
-package com.iboot.system.common.result;
+package com.iboot.kernel.web;
 
 import lombok.Data;
 import java.util.List;
@@ -1309,7 +1208,7 @@ public class PageResult<T> {
 ```java
 package com.iboot.system.common.exception;
 
-import com.iboot.system.common.result.Result;
+import com.iboot.kernel.web.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -1405,7 +1304,7 @@ public class GlobalExceptionHandler {
 ```
 ┌─────────────────┐
 │  HTTP 请求       │
-│  POST /api/users │
+│  POST /api/user  │
 └────────┬────────┘
          │
          ▼
@@ -1482,7 +1381,7 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
             .info(new Info()
-                .title("iBoot Admin API")
+                .title("iBoot API")
                 .version("1.0.0")
                 .description("iBoot 通用管理系统 API 文档"))
             .addSecurityItem(new SecurityRequirement()

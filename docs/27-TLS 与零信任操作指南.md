@@ -12,7 +12,7 @@
 - MySQL、Redis、Silo、Neo4j 等核心数据面；Elasticsearch/Kafka/Logstash 日志与检索面；Tempo 的 OTLP 上报与查询面；Kafka SASL 与 Redis 命名 ACL；Grafana/Prometheus/Alertmanager/Thanos/Kibana 控制台。
 - Nacos 的 HTTP/控制台 HTTPS 与 gRPC mTLS；RocketMQ 应用入口只接受 TLS、启用 ACL，客户端通过兼容层校验服务端证书与主机名（见 §19/§22/§26）。
 - Seata 无原生 TLS/认证，作为显式例外放在 `tx` 网络，仅 workflow/system 可访问（见 §19）。
-- 十个业务服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
+- 十个可部署服务的 HTTPS 端口要求客户端证书；网关、服务间调用、门户与 Prometheus/blackbox 各自出示工作负载证书（B5.2，见 §18）。
 - Docker 全量部署中，门户是唯一公开入口；宿主机侧只有 80/443 跨网卡监听，其余容器发布端口只绑定回环地址（§12）。
   宿主机开发模式下 Java 进程也只监听回环地址（B5.10）。
 - 服务端以客户端证书的 SPIFFE URI SAN（CN 回退）做路径级服务间授权（B5.4/B5.8）；
@@ -35,7 +35,7 @@ scripts/tls-init.sh --check  # 只检查有效期与证书用途
 | `ca/rootCA.pem` | 本地 CA，供 nginx / Node / curl |
 | `ca/rootCA-key.pem` | CA 私钥，权限 0600，不入仓 |
 | `portal.pem` / `portal-key.pem` | 门户、Nacos、Tempo 与可观测控制台的共享叶子证书；门户也用它作为访问上游的客户端证书 |
-| `services/<service>.pem` / `<service>-key.pem` | 十个业务服务各自的叶子证书与私钥，同时用于服务端与客户端身份 |
+| `services/<service>.pem` / `<service>-key.pem` | 十个可部署服务各自的叶子证书与私钥，同时用于服务端与客户端身份 |
 | `clients/prometheus.pem` / `clients/blackbox.pem` 等 | Prometheus 与 blackbox 的探针客户端证书 |
 | `truststore.p12` | Java 信任库，口令 `changeit` |
 
@@ -196,10 +196,10 @@ B2 在不改变公开入口的前提下，把门户到网关、服务间、JWKS 
 ### 8.1 服务端
 
 - 网关保持 `8088`，但只提供 HTTPS；门户 nginx 与 Vite 的上游改为 `https://`。
-- 九个业务服务与运维控制台通过共享 `iboot-tls.yml` 启用 `server.ssl.bundle=iboot`：
+- 八个业务服务、网关与运维控制台都启用 `server.ssl.bundle=iboot`：
   - `iboot-kernel` 提供文件，八个业务服务通过 `spring.config.import` 引入；
   - 网关与运维控制台不依赖 kernel，各自在 `src/main/resources` 放同一份文件。
-- 十个业务服务通过 `IBOOT_TLS_CERT_FILE` / `IBOOT_TLS_KEY_FILE` 加载各自的
+- 十个可部署服务通过 `IBOOT_TLS_CERT_FILE` / `IBOOT_TLS_KEY_FILE` 加载各自的
   `services/<service>.pem` / `<service>-key.pem`；SAN 含服务名、`localhost`、`127.0.0.1`。
 - B5.2 起 `iboot-tls.yml` 同时设置 `server.ssl.client-auth=need`：服务端口只接受由
   本地 CA 签发的客户端证书；不带证书的 TLS 连接在握手阶段失败。
@@ -380,13 +380,13 @@ scripts/regress/internal-tls.sh
 - B4.7：可观测查询与控制台 TLS 已完成（`harden-observability-ui-tls`）。
 - B5.1：每服务独立服务端证书已完成（`add-service-certificates`）。
 - B5.2：服务间 mTLS、每服务工作负载身份与探针客户端身份已完成（`enforce-service-mtls`），见 §18。
-- B5.3：RocketMQ TLS-only 入口与 Seata 网络隔离/例外登记已完成（`harden-rocketmq-tls-and-isolate-seata`），见 §19；RocketMQ ACL 与服务端校验仍待后续。
-- B5.4：服务间路径级授权已完成（`enforce-service-authorization`），见 §20；中间件每服务身份与 SPIFFE/服务网格仍待后续。
+- B5.3：RocketMQ TLS-only 入口与 Seata 网络隔离/例外登记已完成（`harden-rocketmq-tls-and-isolate-seata`），见 §19；RocketMQ ACL 与服务端校验已在 B5.6 / B5.12 完成。
+- B5.4：服务间路径级授权已完成（`enforce-service-authorization`），见 §20；中间件每服务身份已在 B5.5 完成，SPIFFE 身份见 B5.8；Kubernetes 服务网格仍是后续项。
 
 ## 12. 暴露面与网络分段
 
 TLS 只保护「连上之后」的通道，不回答「谁允许连接」。本节把容器部署的宿主机暴露面与
-容器网络边界固化下来；它仍不等于零信任身份，服务端目前不校验调用方身份（B5）。
+容器网络边界固化下来；调用方身份与授权由 §18/§20/§24 的 mTLS、SPIFFE 与路径级授权承担。
 
 ### 12.1 宿主机端口
 
@@ -407,7 +407,7 @@ Docker 的端口发布会绕过常见主机防火墙，因此不能采用「先�
 | 网络 | 成员 | 边界 |
 |---|---|---|
 | `edge` | 门户、网关、系统服务、运维控制台 | 门户唯一入口 |
-| `app` | 网关、系统服务、运维控制台、八个业务服务、Prometheus、`rocketmq-tls` | 服务间调用、指标抓取与 RocketMQ TLS 入口 |
+| `app` | 网关、运维控制台、八个业务服务、Prometheus、`rocketmq-tls` | 服务间调用、指标抓取与 RocketMQ TLS 入口 |
 | `data` | 中间件（不含 Seata 与 RocketMQ 集群）、业务与初始化任务、Logstash/Kibana/Grafana/Thanos/exporter | 数据面 |
 | `mq` | RocketMQ NameServer/Broker/Proxy/初始化任务、`rocketmq-tls` | 仅 RocketMQ 集群与 TLS 前置代理 |
 | `tx` | `seata-server`、`iboot-workflow`、`iboot-system` | 仅事务协调与两个事务参与方 |
@@ -695,7 +695,7 @@ B4.6 在 TLS 之上补客户端身份：Kafka 从“只加密”变为“认证 
 
 | 账号 | 用途 | 权限 |
 |---|---|---|
-| `iboot_log` | 九个服务与运维控制台的日志生产 | 写 `iboot-logs` |
+| `iboot_log` | 十个可部署服务的日志生产 | 写 `iboot-logs` |
 | `iboot_logstash` | Logstash 日志消费 | 读 `iboot-logs` 与 `iboot-logstash` 消费组 |
 | `iboot_tools` | `kafka-init`、健康检查与运维 | 超级用户 |
 | `broker` | 节点间通信 | 超级用户 |
@@ -763,7 +763,7 @@ B5.2 在 B5.1 的每服务独立证书之上启用双向 TLS：服务端口要�
 
 | 调用方 | 客户端证书 |
 |---|---|
-| 十个业务服务 | 自己的 `services/<service>.pem`（Spring HTTP 客户端自动使用 `iboot` bundle） |
+| 十个可部署服务 | 自己的 `services/<service>.pem`（Spring HTTP 客户端自动使用 `iboot` bundle） |
 | 网关 | `services/iboot-gateway.pem`；额外设置 Gateway `httpclient.ssl.ssl-bundle` |
 | 门户 nginx | `portal.pem`，通过 `proxy_ssl_certificate` |
 | 门户 Vite（宿主机） | `portal.pem`，通过 `http-proxy` 的 `cert` / `key` |
@@ -1165,7 +1165,7 @@ bash scripts/regress/service-authz.sh
 
 ### 24.4 边界
 
-- 宿主机开发由 `dev-init.sh` 默认启动 SPIRE 并为十个服务取回 SVID；Compose 全量模式仍由本地 CA 签发证书。
+- 宿主机开发由 `dev-init.sh` 默认启动 SPIRE 并为十个服务取回 SVID；Compose 全量模式默认由每服务 sidecar 取回 SVID，`IBOOT_SVID_ENABLED=false` 才回退本地 CA。
 - SVID 的 DNS SAN 同时包含服务名、`localhost` 与 `host.docker.internal`，兼容宿主机发现、回环健康检查与 Prometheus 抓取。
 - OPA 已作为集中策略决策点；`opa-url` 为空时仍回退到 `ServiceAuthorizationPolicy` 本地规则。
 - 不部署 Kubernetes 网格；Docker Compose 的 L3 平面登记为“SPIFFE 身份 + OPA 策略 + mTLS”。

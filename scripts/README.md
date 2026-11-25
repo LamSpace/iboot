@@ -7,7 +7,7 @@
 
 | 脚本 | 用途 |
 |---|---|
-| `dev-init.sh` | 一键拉起本地环境：中间件 → 按需构建 → `iboot-db-init` 建库建表 → MySQL 账号与表级授权 → 启动九个业务服务与运维控制台 → 等待健康。支持 `--frontend`、`--status`、`--stop`、`--down`、`--purge`。 |
+| `dev-init.sh` | 一键拉起本地环境：中间件 → 按需构建 → `iboot-db-init` 建库建表 → MySQL 账号与表级授权 → 启动八个业务服务、网关与运维控制台 → 等待健康。支持 `--frontend`、`--status`、`--stop`、`--down`、`--purge`。 |
 | `tls-init.sh` | 生成本地 TLS CA、门户/服务/客户端证书与 Java 信任库；证书默认写入 `docker/certs/`。支持 `--force` 重签与 `--check` 只检查剩余有效期。浏览器信任需另外执行一次 `mkcert -install`。 |
 | `tls-rotate.sh` | 证书轮换：`--check` 只检查，满足阈值时才重签并分发；`--restart <mode>` 控制是否重启服务。 |
 | `tls-rotate-schedule.sh` | 安装/卸载/查看证书轮换定时任务；优先 systemd user timer，回退到带标记的 crontab；`--scheduler docker` 使用 opt-in 的 `tls-rotate` compose profile。 |
@@ -22,7 +22,7 @@
 | `silo-init.sh` | 初始化 Silo 根账号、服务桶与访问密钥。 |
 | `spire-up.sh` / `spire-down.sh` | 启动/停止 SPIRE Server、Agent 与 demo 工作负载；`dev-init.sh` 默认启动 SPIRE 供服务 SVID 使用，`spire-down.sh` 只删除 SPIRE 容器，保留主栈。 |
 | `spire-svid-sync.sh` | 为十个服务注册 SVID 条目、取回证书、合并 SPIRE CA 到信任 bundle；`--refresh` 重新取回，`--status` 查看有效期与 SAN，`--check` 按阈值判断是否需要刷新。 |
-| `docker-svid-refresh.sh` | Compose 全量模式 SVID 刷新：重建 `svid-*` sidecar 写入命名卷，并滚动重启十个业务容器。 |
+| `docker-svid-refresh.sh` | Compose 全量模式 SVID 刷新：重建 `svid-*` sidecar 写入命名卷，并滚动重启十个可部署服务容器。 |
 | `svid-refresh-schedule.sh` | SVID 到期检查与刷新调度：systemd user timer 或 cron 每日检查，低于阈值才刷新宿主机或 Compose 栈；结果写日志与 Prometheus 文本指标。 |
 | `tls-ca-orchestrate.sh` | 跨主机调度安装/巡检与 CA 阶段编排：默认 dry-run，`--execute` 才通过 SSH 执行；保证 prepare→activate→finalize 按主机分组推进。 |
 | `host-loopback-relay.py` | 原生 Docker 无法直连宿主机回环时的 TCP relay：只绑定 Docker 网桥网关，转发到 `127.0.0.1:8080-8089`。 |
@@ -37,7 +37,7 @@
 
 ## 回归
 
-回归脚本要求九个业务服务、网关与中间件已启动，详细用法见
+回归脚本要求八个业务服务、网关、运维控制台与中间件已启动，详细用法见
 `docs/23-微服务底座操作指南.md`。
 
 TLS 环境下回归默认通过宿主机 HTTPS 门户（`https://localhost:5173`）访问，因此宿主机开发
