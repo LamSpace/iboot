@@ -86,9 +86,9 @@ SSE（Server-Sent Events）是一种基于 HTTP 的服务器推送技术，允�
               │               │               │
               ▼               ▼               ▼
 ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│    Redis Pub/Sub │ │   MySQL/ES       │ │  BusinessMetrics │
+│    Redis Pub/Sub │ │   MySQL/ES       │ │  PushMetrics     │
 │  - Channel:      │ │  - 消息持久化     │ │  - 连接数统计     │
-│    push:event    │ │  - 历史记录查询   │ │  - 推送成功率     │
+│    iboot:push:events    │ │  - 历史记录查询   │ │  - 推送成功率     │
 │  - 集群消息广播   │ │                  │ │                  │
 └──────────────────┘ └──────────────────┘ └──────────────────┘
 ```
@@ -197,7 +197,7 @@ public class PushEvent {
     private String id;
 
     /**
-     * 事件类型（如：message.new, message.read, system.notify）
+     * 事件类型（如：com.iboot.push.new.message, com.iboot.push.message.read, com.iboot.push.system.notification）
      */
     private String type;
 
@@ -240,7 +240,7 @@ public class SseEmitterManager {
     private final ConcurrentHashMap<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     private final PushProperties pushProperties;
-    private final BusinessMetricsService businessMetricsService;
+    private final PushMetrics pushMetrics;
 
     /**
      * 建立连接
@@ -254,7 +254,7 @@ public class SseEmitterManager {
         emitters.put(userId, emitter);
 
         // 更新连接数指标
-        businessMetricsService.updateGauge("sse_connection_count", emitters.size());
+        pushMetrics.updatePushConnectionCount(emitters.size());
 
         // 设置回调
         emitter.onCompletion(() -> disconnect(userId));
@@ -358,7 +358,7 @@ public class SseEmitterManager {
 public class PushEndpoint {
 
     private final SseEmitterManager emitterManager;
-    private final BusinessMetricsService businessMetricsService;
+    private final PushMetrics pushMetrics;
 
     /**
      * 建立 SSE 连接
@@ -369,7 +369,7 @@ public class PushEndpoint {
         log.info("用户请求建立 SSE 连接：userId={}", userId);
 
         SseEmitter emitter = emitterManager.connect(userId);
-        businessMetricsService.increment("sse_connection_count");
+        pushMetrics.updatePushConnectionCount(emitters.size());
 
         return emitter;
     }
@@ -381,8 +381,8 @@ public class PushEndpoint {
     public Result<Map<String, Object>> getOnlineStatus() {
         Set<Long> onlineUsers = emitterManager.getOnlineUsers();
         Map<String, Object> status = new HashMap<>();
-        status.put("onlineUsers", onlineUsers.size());
-        status.put("isOnline", onlineUsers.contains(SecurityUtils.getCurrentUserId()));
+        status.put("totalOnline", onlineUsers.size());
+        status.put("online", onlineUsers.contains(SecurityUtils.getCurrentUserId()));
         return Result.success(status);
     }
 }
@@ -399,7 +399,7 @@ public class PushEventService {
     private final SseEmitterManager emitterManager;
     private final RedisPushEventBroadcaster redisBroadcaster;
     private final PushProperties pushProperties;
-    private final BusinessMetricsService businessMetricsService;
+    private final PushMetrics pushMetrics;
 
     /**
      * 发送消息给指定用户
@@ -414,9 +414,9 @@ public class PushEventService {
 
         // 更新指标
         if (success) {
-            businessMetricsService.increment("sse_push_success_total");
+            pushMetrics.recordPushEventSent();
         } else {
-            businessMetricsService.increment("sse_push_failed_total");
+            pushMetrics.recordPushEventFailed();
         }
     }
 
@@ -521,7 +521,7 @@ public class MessagePushListener {
         // 构建推送事件
         PushEvent pushEvent = PushEvent.builder()
             .id(UUID.randomUUID().toString())
-            .type("message.new")
+            .type("com.iboot.push.new.message")
             .source("/message")
             .time(Instant.now().toString())
             .dataContentType("application/json")
@@ -554,7 +554,7 @@ public class MessagePushListener {
         // 构建推送事件
         PushEvent pushEvent = PushEvent.builder()
             .id(UUID.randomUUID().toString())
-            .type("message.read")
+            .type("com.iboot.push.message.read")
             .source("/message")
             .time(Instant.now().toString())
             .dataContentType("application/json")
@@ -606,7 +606,7 @@ public class PushProperties {
         /**
          * Redis 频道名称
          */
-        private String channel = "push:event";
+        private String channel = "iboot:push:events";
     }
 
     @Data
@@ -614,17 +614,17 @@ public class PushProperties {
         /**
          * SSE 连接超时时间（毫秒）
          */
-        private long timeout = 60 * 60 * 1000L; // 1 小时
+        private long timeout = 300000L; // 5 分钟
 
         /**
-         * 心跳间隔（秒）
+         * 心跳间隔（毫秒）
          */
-        private int heartbeatInterval = 30;
+        private int heartbeatInterval = 30000;
 
         /**
-         * 重连间隔（秒）
+         * 重连间隔（毫秒）
          */
-        private int reconnectInterval = 3;
+        private int reconnectInterval = 5000;
     }
 
     @Data
@@ -646,10 +646,11 @@ public class PushProperties {
 
 | 事件类型 | 事件来源 | 数据格式 | 说明 |
 |---------|---------|---------|------|
-| `message.new` | `/message` | `MessagePushVO` | 新消息推送 |
-| `message.read` | `/message` | `{messageIds, readerId, readTime}` | 消息已读通知 |
-| `system.notify` | `/system` | `SystemNotifyVO` | 系统通知 |
-| `heartbeat` | `/system` | `{timestamp}` | 心跳包 |
+| `com.iboot.push.connection.established` | `/push` | 连接信息 | 建连确认 |
+| `com.iboot.push.new.message` | `/message` | `MessagePushVO` | 新消息推送 |
+| `com.iboot.push.message.read` | `/message` | `{messageIds, readerId, readTime}` | 消息已读通知 |
+| `com.iboot.push.system.notification` | `/system` | `SystemNotifyVO` | 系统通知 |
+| `heartbeat` | `/push` | `ping` | 心跳包 |
 
 ### 3.3 推送模式
 
@@ -660,7 +661,7 @@ public class PushProperties {
 ```java
 PushEvent event = PushEvent.builder()
     .id(UUID.randomUUID().toString())
-    .type("message.new")
+    .type("com.iboot.push.new.message")
     .source("/message")
     .time(Instant.now().toString())
     .data(messageData)
@@ -678,7 +679,7 @@ pushEventService.sendToUser(recipientId, event);
 List<Long> userIds = Arrays.asList(1L, 2L, 3L);
 PushEvent event = PushEvent.builder()
     .id(UUID.randomUUID().toString())
-    .type("system.notify")
+    .type("com.iboot.push.system.notification")
     .source("/system")
     .time(Instant.now().toString())
     .data(notifyData)
@@ -712,7 +713,7 @@ iboot:
   push:
     broadcaster: redis  # 设置为 REDIS 模式
     redis:
-      channel: push:event  # Redis Pub/Sub 频道
+      channel: iboot:push:events  # Redis Pub/Sub 频道
 ```
 
 工作原理：
@@ -732,16 +733,16 @@ iboot:
 
     # Redis 配置（broadcaster=redis 时使用）
     redis:
-      channel: push:event
+      channel: iboot:push:events
 
     # SSE 配置
     sse:
-      # 连接超时时间（毫秒），默认 1 小时
-      timeout: 3600000
-      # 心跳间隔（秒），默认 30 秒
-      heartbeat-interval: 30
-      # 重连间隔建议（秒），前端据此设置重连时间
-      reconnect-interval: 3
+      # 连接超时时间（毫秒），默认 5 分钟
+      timeout: 300000
+      # 心跳间隔（毫秒），默认 30 秒
+      heartbeat-interval: 30000
+      # 重连间隔建议（毫秒），前端据此设置重连时间
+      reconnect-interval: 5000
 
     # 通知配置
     notification:
@@ -773,14 +774,16 @@ export interface PushMessage {
 }
 
 export interface PushEventMap {
-  heartbeat: { timestamp: number }
-  'message.new': MessagePushVO
-  'message.read': { messageIds: number[]; readerId: number; readTime: string }
+  heartbeat: 'ping'
+  'com.iboot.push.connection.established': { userId: number; connectedAt: string }
+  'com.iboot.push.new.message': MessagePushVO
+  'com.iboot.push.message.read': { messageIds: number[]; readerId: number; readTime: string }
+  'com.iboot.push.system.notification': SystemNotifyVO
 }
 
 class PushClientClass {
   private eventSource: EventSourcePolyfill | null = null
-  private readonly reconnectTime = 3000 // 3 秒重连
+  private readonly reconnectTime = 5000 // 5 秒重连
 
   connect() {
     const userStore = useUserStore()
@@ -816,13 +819,13 @@ class PushClientClass {
     })
 
     // 监听新消息
-    this.addEventListener('message.new', (data) => {
+    this.addEventListener('com.iboot.push.new.message', (data) => {
       console.log('[SSE] 收到新消息:', data)
       // 触发消息通知
     })
 
     // 监听已读事件
-    this.addEventListener('message.read', (data) => {
+    this.addEventListener('com.iboot.push.message.read', (data) => {
       console.log('[SSE] 消息已读:', data)
       // 更新消息状态
     })
@@ -911,12 +914,12 @@ const unreadCount = computed(() => pushStore.unreadCount)
 const messages = computed(() => pushStore.messages)
 
 // 监听新消息推送
-PushClient.addEventListener('message.new', (data) => {
+PushClient.addEventListener('com.iboot.push.new.message', (data) => {
   pushStore.addMessage(data)
 })
 
 // 监听已读通知
-PushClient.addEventListener('message.read', (data) => {
+PushClient.addEventListener('com.iboot.push.message.read', (data) => {
   pushStore.markAsRead(data.messageIds)
 })
 </script>
@@ -996,28 +999,28 @@ applicationEventPublisher.publishEvent(notifyEvent);
 
 ```java
 // SseEmitterManager.connect()
-businessMetricsService.updateGauge("sse_connection_count", emitters.size());
+pushMetrics.updatePushConnectionCount(emitters.size());
 ```
 
 | 指标名称 | 类型 | 说明 |
 |---------|------|------|
-| `sse_connection_count` | Gauge | 当前在线连接数 |
+| `push_connection_active` | Gauge | 当前在线连接数 |
 
 ### 6.2 推送成功/失败指标
 
 ```java
 // PushEventService.sendToUser()
 if (success) {
-    businessMetricsService.increment("sse_push_success_total");
+    pushMetrics.recordPushEventSent();
 } else {
-    businessMetricsService.increment("sse_push_failed_total");
+    pushMetrics.recordPushEventFailed();
 }
 ```
 
 | 指标名称 | 类型 | 说明 |
 |---------|------|------|
-| `sse_push_success_total` | Counter | 推送成功次数累计 |
-| `sse_push_failed_total` | Counter | 推送失败次数累计 |
+| `push_event_sent` | Counter | 推送成功次数累计 |
+| `push_event_failed` | Counter | 推送失败次数累计 |
 
 ### 6.3 Prometheus 配置
 
@@ -1046,7 +1049,7 @@ SSE 推送指标目前没有预置面板，可在 `docker/scripts/grafana/provis
       "title": "SSE 连接数",
       "targets": [
         {
-          "expr": "sse_connection_count"
+          "expr": "push_connection_active"
         }
       ]
     },
@@ -1054,7 +1057,7 @@ SSE 推送指标目前没有预置面板，可在 `docker/scripts/grafana/provis
       "title": "推送成功率",
       "targets": [
         {
-          "expr": "rate(sse_push_success_total[5m]) / (rate(sse_push_success_total[5m]) + rate(sse_push_failed_total[5m]))"
+          "expr": "rate(push_event_sent[5m]) / (rate(push_event_sent[5m]) + rate(push_event_failed[5m]))"
         }
       ]
     }
@@ -1084,7 +1087,7 @@ event: connected
 data: connected
 
 id: 123456
-event: message.new
+event: com.iboot.push.new.message
 data: {"id":"msg123","senderId":1,"content":"Hello","createTime":"2026-03-12T10:00:00"}
 
 id: heartbeat-1
@@ -1107,8 +1110,8 @@ Authorization: Bearer <JWT_TOKEN>
 {
   "code": 200,
   "data": {
-    "onlineUsers": 15,
-    "isOnline": true
+    "online": true,
+    "totalOnline": 15
   }
 }
 ```
@@ -1137,7 +1140,7 @@ public class NotificationService {
 
         PushEvent event = PushEvent.builder()
             .id(UUID.randomUUID().toString())
-            .type("system.notify")
+            .type("com.iboot.push.system.notification")
             .source("/notification")
             .time(Instant.now().toString())
             .data(noticeData)
@@ -1200,7 +1203,7 @@ onMounted(() => {
 ### 9.4 集群部署
 
 1. **Redis 配置**：多实例部署时，设置 `broadcaster: redis`
-2. **频道命名**：不同环境使用不同的 Redis 频道（如 `push:event:dev`、`push:event:prod`）
+2. **频道命名**：不同环境使用不同的 Redis 频道（如 `iboot:push:events:dev`、`iboot:push:events:prod`）
 3. **粘性会话**：如条件允许，使用负载均衡器的粘性会话功能
 
 ---
@@ -1224,7 +1227,7 @@ onMounted(() => {
 ### Q3: 前端收不到特定类型的事件？
 
 **检查点**：
-1. 确认事件类型名称一致（如 `message.new` vs `message_new`）
+1. 确认事件类型名称一致（如 `com.iboot.push.new.message` vs `message_new`）
 2. 检查 `PushEvent.type` 是否正确设置
 3. 使用浏览器开发工具查看 Network 中的 SSE 流
 
@@ -1236,15 +1239,15 @@ onMounted(() => {
 
 **方法 1**：使用 curl 命令
 ```bash
-curl https://localhost:8080/api/push/connect?t=<YOUR_TOKEN>
+curl https://localhost:8084/api/push/connect?t=<YOUR_TOKEN>
 ```
 
 **方法 2**：使用浏览器控制台
 ```javascript
 const token = localStorage.getItem('token')
-const es = new EventSource(`https://localhost:8080/api/push/connect?t=${token}`)
+const es = new EventSource(`https://localhost:8084/api/push/connect?t=${token}`)
 es.onmessage = (e) => console.log('收到消息:', e.data)
-es.addEventListener('message.new', (e) => console.log('新消息:', JSON.parse(e.data)))
+es.addEventListener('com.iboot.push.new.message', (e) => console.log('新消息:', JSON.parse(e.data)))
 ```
 
 ---
@@ -1287,4 +1290,4 @@ es.addEventListener('message.new', (e) => console.log('新消息:', JSON.parse(e
 
 | 文件路径 | 配置项 |
 |---------|--------|
-| `iboot-system/src/main/resources/application.yml` | `iboot.push.*` 配置 |
+| `iboot-notify/src/main/resources/application.yml` | `iboot.push.*` 配置 |

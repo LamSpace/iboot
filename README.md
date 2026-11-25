@@ -2,335 +2,207 @@
 
 # iBoot
 
+**An engineering project that treats Agent, Cloud, Security, Micro Service and SRE Native as default system properties**
+
+Not just another admin panel: on a working management platform, it turns service boundaries, zero trust, AI as an execution unit, observability and cloud-native delivery into engineering capabilities with explicit acceptance criteria.
+
+[English](README.md) · [中文](README.zh-CN.md)
+
 <p align="center">
-  <a href="https://github.com/vuejs/core"><img src="https://img.shields.io/badge/Vue.js-3.x-brightgreen?style=flat-square&logo=vue.js&logoColor=white" alt="Vue.js"></a>&nbsp;
-  <a href="https://github.com/spring-projects/spring-boot"><img src="https://img.shields.io/badge/Spring%20Boot-4.0.x-blue?style=flat-square&logo=spring-boot&logoColor=white" alt="Spring Boot"></a>&nbsp;
-  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"></a>&nbsp;
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-18%2B-green?style=flat-square&logo=node.js&logoColor=white" alt="Node.js"></a>&nbsp;
-  <a href="https://www.mysql.com/"><img src="https://img.shields.io/badge/MySQL-8.0-red?style=flat-square&logo=mysql&logoColor=white" alt="MySQL"></a>&nbsp;
-  <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-7.0-red?style=flat-square&logo=redis&logoColor=white" alt="Redis"></a>
+  <a href="https://github.com/vuejs/core"><img src="https://img.shields.io/badge/Vue.js-3.4-brightgreen?style=flat-square&logo=vue.js&logoColor=white" alt="Vue.js"></a>&nbsp;
+  <a href="https://github.com/spring-projects/spring-boot"><img src="https://img.shields.io/badge/Spring%20Boot-4.0.3-blue?style=flat-square&logo=spring-boot&logoColor=white" alt="Spring Boot"></a>&nbsp;
+  <a href="https://github.com/alibaba/spring-cloud-alibaba"><img src="https://img.shields.io/badge/Spring%20Cloud%20Alibaba-2025.1.0.0-orange?style=flat-square" alt="Spring Cloud Alibaba"></a>&nbsp;
+  <a href="https://www.java.com/"><img src="https://img.shields.io/badge/Java-25-red?style=flat-square&logo=openjdk&logoColor=white" alt="Java 25"></a>&nbsp;
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker"></a>&nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square" alt="License"></a>
 </p>
 
 <p align="center">
-  <strong>一个前后端分离的微服务管理系统：九个可独立部署的业务服务、独立运维控制台与统一网关，DDD 分层，带 AI 工作台。</strong><br>
-  Vue 3 + TypeScript + Vite / Java 25 + Spring Boot 4.0.3 + Spring Cloud Alibaba
-</p>
-
-<p align="center">
-  <a href="#项目定位">项目定位</a> •
-  <a href="#架构总览">架构总览</a> •
-  <a href="#技术栈">技术栈</a> •
-  <a href="#功能清单">功能清单</a> •
-  <a href="#快速开始">快速开始</a> •
-  <a href="#目录结构">目录结构</a> •
-  <a href="#构建测试与回归">构建与测试</a> •
-  <a href="#镜像与部署现状">部署</a> •
-  <a href="#文档导航">文档</a>
+  <a href="#why-it-stands-out">Why it stands out</a> •
+  <a href="#the-five-natives-at-a-glance">Five Natives</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#tech-stack">Tech stack</a> •
+  <a href="#core-capabilities">Capabilities</a> •
+  <a href="#quick-start">Quick start</a> •
+  <a href="#documentation-map">Docs</a>
 </p>
 
 </div>
 
-## 项目定位
+## Why it stands out
 
-iBoot 是一个面向技术实践的通用管理系统。它在 DDD 分层与 RBAC 权限模型之上，逐步长出三块能力：
+- **The five Natives are acceptance criteria, not slogans.** Agent, Cloud, Security, Micro Service and SRE each define what "done" means. A capability that has not met its criteria does not enter the completed list — installing a component is not the same as having the capability.
+- **The microservices are actually split.** Eight independently deployable business services, a gateway and a side-channel operations console — ten deployable services in total. DDD layers, table ownership, Seata AT + TCC, and a producer-side outbox with RocketMQ run on real request paths, not just in the directory tree.
+- **Zero trust is the default.** OAuth2/OIDC + PKCE, service-to-service mTLS, SPIFFE workload identity, path-level authorization, centralized OPA decisions, per-service database accounts, table/key-level least privilege, three-phase CA rotation and automatic SVID refresh. It is on by default in local development and can be rolled back with a single switch.
+- **AI is a first-class execution unit.** A dedicated `iboot-ai` service provides streaming chat, hybrid-retrieval RAG, governed tool orchestration and a knowledge graph. Tool calls are allow-listed, writes require confirmation, runs are audited and deterministically replayable, and retrieval inherits the caller's RBAC and data scope. A skill library and MCP client are the next roadmap items.
+- **The engineering loop is verifiable.** `dev-init.sh` brings up the whole local stack with one command. Full-stack regression covers contract snapshots, path conservation, route coverage, TLS/authorization, smoke tests and a permission matrix. A CLI plus personal access tokens enable browserless automation. Every capability contract is recorded under `openspec/`.
 
-- **微服务**：单体按限界上下文拆分为九个独立可部署的业务服务，并增加一个独立的运维控制台；注册中心、配置中心、网关、链路追踪、Sentinel 治理与 Seata 分布式事务（AT + TCC）真实承载。
-- **云原生**：容器化与 Helm 化路线（尚未实施，见 [ROADMAP](ROADMAP.md)）。
-- **智能 Agent**：以百炼 Qwen 为底座的对话、RAG、智能体编排与知识图谱。
+> This is a hands-on engineering project, not a production product. Its capabilities target reproducible, verifiable engineering criteria; boundaries and trade-offs are recorded in the [ROADMAP](ROADMAP.md).
 
-已完成能力见 [ROADMAP 的能力索引](ROADMAP.md#2-能力索引)，未完成路线与仍然生效的技术约束也在同一份文件里。
+## The five Natives at a glance
 
-## 架构总览
+| Capability line | Already in place | Next |
+|---|---|---|
+| **Agent Native** | Streaming chat, knowledge-base RAG (BM25 + kNN + RRF), governed tool orchestration, organization/RBAC knowledge graph | Skill library (SKILL), MCP client, Agent Graph, cross-service agentification |
+| **Cloud Native** | Full local Compose environment, shared image template, one-command deployment | Helmfile + ACK, HPA, GitOps (Argo CD), GraalVM Native |
+| **Security Native** | OAuth2/OIDC + PKCE, mTLS/SPIFFE, OPA, per-service credentials, certificate rotation, CLI/PAT | Token Exchange (RFC 8693), multi-client sessions, WeChat Mini Program identity |
+| **Micro Service Native** | Business-service split, Nacos discovery, Sentinel governance, Seata AT/TCC, outbox + RocketMQ, contract/route regression | Consumer-driven contract tests, EventStorming boundary review, sharding |
+| **SRE Native** | Metrics, logs, tracing, alerting, backup and restore drills | SLI/SLO, burn-rate alerts, trace-log correlation, cost and elasticity visibility |
 
+The full roadmap, trigger conditions, version matrix and risk register are in [ROADMAP](ROADMAP.md) (Chinese).
+
+## Architecture
+
+```text
+Browser / CLI
+   │  HTTPS · OAuth2/OIDC + PKCE
+   ▼
+iboot-portal ── /iboot/api ──▶ iboot-gateway :8088
+                                      │ Nacos discovery · route rate limiting · SSE passthrough
+                                      ▼
+        ┌──────────────────────────────────────────────────┐
+        │  Eight independently deployable business services  │
+        │  system 8080   ai 8081        file 8082           │
+        │  auth 8083     notify 8084    job 8085            │
+        │  workflow 8086 monitor 8087                       │
+        └──────────────────────────────────────────────────┘
+                    │                          │
+                    ▼                          ▼
+   iboot-ops :8089 (side console)       MySQL · Redis · Elasticsearch · Silo
+                                        Nacos · RocketMQ · Kafka · Seata
+                                        OPA · SPIRE · Tempo
+                                        Prometheus · Grafana · ELK
 ```
-浏览器
-  |  /iboot/api          （开发期由 Vite 代理，生产由 nginx 代理）
-  v
-[iboot-portal] --代理--> [iboot-gateway :8088] --路由--> iboot-system   :8080
-                                                          iboot-ai       :8081
-                                                          iboot-file     :8082
-                                                          iboot-auth     :8083
-                                                          iboot-notify   :8084
-                                                          iboot-job      :8085
-                                                          iboot-workflow :8086
-                                                          iboot-monitor  :8087
 
-[iboot-portal] --/sba 同源代理（开发/内网）--> [iboot-ops :8089] --Nacos 发现--> 上述业务服务
+- The portal is the only public entry point and reverse-proxies `/iboot/api` to the gateway. Services find each other by Nacos service name and do not route through the gateway.
+- `iboot-ops`, the Sentinel dashboard and the Nacos/Sentinel consoles are side channels: same-origin proxying in development, internal-only in production.
+- All services share one database, `iboot`, but each table has exactly one owner. Read-only sharing is a long-term accepted mode; the contract is in [docs/23 §11.12](<./docs/23-微服务底座操作指南.md>) (Chinese).
+- The authoritative service/port list is [docs/23 §8.1](<./docs/23-微服务底座操作指南.md>); container and network boundaries are in [`docker/README.md`](docker/README.md).
 
-[iboot-gateway / iboot-workflow / iboot-notify] --规则与指标--> [sentinel-dashboard :8858]
-```
+## Tech stack
 
-前端业务接口只访问门户公开入口，由门户反代到网关；服务之间的调用按 Nacos 服务名寻址，
-不经过网关。运维控制台是旁路，
-开发环境经 Vite 代理以同源 iframe 打开，生产环境只允许内网访问，公网网关不提供 `/sba` 路由。
-Sentinel Dashboard 同样是旁路：只用于治理观察与临时演练，规则以 Nacos 为唯一持久化来源。
-
-**服务与端口**
-
-| 服务 | 端口 | 职责 | 主要表组 |
-|---|---|---|---|
-| `iboot-gateway` | 8088 | 统一入口、路由、跨域、SSE 长连接透传 | — |
-| `iboot-system` | 8080 | 用户、角色、菜单、部门、岗位、字典、参数；仪表板与统计；数据权限范围 | 系统与组织 |
-| `iboot-ai` | 8081 | 对话、知识库 RAG、智能体编排、知识图谱 | `ai_*` |
-| `iboot-file` | 8082 | 文件上传、下载、预览与分类 | `sys_file` |
-| `iboot-auth` | 8083 | OAuth2 / OIDC 授权服务器、登录页、登出与注册 | 系统表（直连） |
-| `iboot-notify` | 8084 | 消息中心、公告、模板、多渠道投递、SSE 推送、内容检索 | `sys_message*` / `sys_notice*` |
-| `iboot-job` | 8085 | 定时任务调度、数据备份与恢复 | `sys_job*` / `QRTZ_*` / 备份记录 |
-| `iboot-workflow` | 8086 | 请假审批与 Flowable 流程引擎 | `ACT_*` / `FLW_RU_*` / 审批表 |
-| `iboot-monitor` | 8087 | 操作/登录/运行日志、在线会话、资源监控 | `sys_operate_log` / `sys_login_log` |
-| `iboot-ops` | 8089 | 运维控制台：注册中心发现实例、单实例巡检、运行期日志级别调整 | — |
-| `sentinel-dashboard` | 8858 | 治理控制台：单资源流量、阻塞与规则查看；HTTPS + 登录，本地必选 | — |
-| `iboot-kernel` | — | 共享内核库（统一响应、鉴权、审计写入），不独立部署 | — |
-| `iboot-service-authz` | — | 服务间授权库（SPIFFE/CN 身份 + 路径规则 + OPA 决策），不独立部署 | — |
-| `iboot-sentinel` | — | 治理指标桥接库（MetricExtension → Micrometer），不独立部署 | — |
-
-**数据边界**：所有服务共用一个数据库 `iboot`；每张表只有一个所有者，其余服务只读登记的表与列。
-结构由 `iboot-db-init` 统一迁移，服务不执行 DDL。消费清单与写入例外见
-[docs/23](<./docs/23-微服务底座操作指南.md>) §11.12。
-
-## 技术栈
-
-**后端**
-
-| 领域 | 选型 |
+| Layer | Choices |
 |---|---|
-| 运行时 | Java 25（虚拟线程已启用） |
-| 框架 | Spring Boot 4.0.3、Spring Framework 7、Spring Security 7 |
-| 微服务 | Spring Cloud 2025.1.0、Spring Cloud Alibaba 2025.1.0.0（Nacos 3.3.0、Sentinel Dashboard 1.8.10 / 客户端 1.8.9、Seata 2.5.0 客户端 / 2.6.0 TC）、Spring Cloud Gateway |
-| 持久层 | MyBatis 4.0.1 + PageHelper 2.1.1、Druid 1.2.28、Flyway、MySQL 8.4.13 |
-| 缓存 | Redis 8.8.4 + Caffeine 3.1.8（二级缓存，Pub/Sub 失效广播） |
-| 认证 | OAuth2 / OIDC 授权码 + PKCE（Spring Authorization Server）、JWT、RBAC 与五级数据权限 |
-| 服务间安全 | 每服务 mTLS 证书、SPIFFE 工作负载身份、路径级授权、OPA 集中决策；宿主机开发默认使用 SPIRE SVID，并由独立调度在到期前自动刷新；Nacos 配置按服务命名空间隔离；Silo 通过证书换取临时凭据；叶子证书与 CA 均支持轮换（三阶段 + 滚动重启） |
-| 文件与检索 | Silo（MinIO 兼容，io.minio 8.5.7 客户端；另有本地与 OSS 实现）、Elasticsearch 9.5.5（客户端 9.2.5） |
-| 流程与调度 | Flowable 8.0.0、Quartz（集群模式） |
-| AI | Spring AI 2.0.1、AgentScope Java 2.0.1、Neo4j 5.26.33（驱动 6.0.2）、PDFBox 3.0.5、Apache POI 5.4.1 |
-| 其他 | MapStruct 1.6.3、FastExcel 0.19.0、CloudEvents 4.0.1、Springdoc 3.0.2、Testcontainers 2.0.5 |
-| 可观测 | Actuator + Micrometer、Prometheus / Grafana / Alertmanager / Thanos、ELK、Tempo 链路追踪；SkyWalking 作为可选的 APM 对比实验栈 |
+| Runtime | Java 25 (virtual threads), Spring Boot 4.0.3, Spring Framework 7, Spring Security 7 |
+| Microservices | Spring Cloud 2025.1.0, Spring Cloud Alibaba 2025.1.0.0, Nacos 3.3.0, Sentinel, Seata, RocketMQ, Kafka |
+| Data | MySQL 8.4, Redis 8.8 + Caffeine, Elasticsearch 9.5, Silo (MinIO-compatible), Neo4j 5.26, Flowable 8, Quartz |
+| Security | OAuth2/OIDC + PKCE, mTLS, SPIFFE, OPA, SPIRE, per-service database accounts, CA/certificate rotation |
+| AI | Spring AI 2.0.1, AgentScope Java 2.0.1, Bailian Qwen, BM25 + kNN + RRF hybrid retrieval, Neo4j knowledge graph |
+| Observability | Actuator + Micrometer, Prometheus / Grafana / Alertmanager / Thanos, ELK, Grafana Tempo |
+| Frontend | Vue 3.4, TypeScript 5.4, Vite 5.2, Element Plus, Pinia, vue-i18n |
 
-**前端**
+The full version matrix and selection rationale are in [docs/02](docs/02-技术栈.md) (Chinese); version locks and upgrade constraints are in [ROADMAP §9](ROADMAP.md#9-版本矩阵).
 
-| 领域 | 选型 |
-|---|---|
-| 框架 | Vue 3.4、TypeScript 5.4、Vite 5.2 |
-| UI 与状态 | Element Plus 2.6、Pinia 2.1、Vue Router 4.3 |
-| 其他 | vue-i18n 9.14、axios 1.6、markdown-it、DOMPurify、Sass |
+## Core capabilities
 
-**中间件**：`docker/docker-compose.yml` 提供 29 个常驻容器与 3 个可选 SkyWalking 容器（`apm` profile，默认不启动），按 profile 分组启动（`graph` 为 Neo4j，`platform` 为 Nacos 与 Tempo，`observability` 为 Prometheus/Grafana/Kibana/Alertmanager/Thanos 与 exporter，`spire` 为 Workload API 与服务 SVID，`svid` 为 Compose 全量模式的每服务取证 sidecar，`tls-rotate` 为可选的证书轮换调度容器）；`dev-init.sh` 与 `docker-deploy.sh` 默认启用 SVID（`IBOOT_SVID_ENABLED=false` 可回退 mkcert）。Sentinel Dashboard 默认常驻；Seata Server（TC 8091）默认常驻；RocketMQ NameServer / Broker / Proxy 与 TLS 入口 `rocketmq-tls` 常驻，宿主机通过 `localhost:18081` 接入；Kafka（KRaft 单节点）作为日志缓冲层常驻，宿主机通过 `localhost:29092` 接入；OPA 默认常驻，服务通过 `IBOOT_SERVICE_AUTHORIZATION_OPA_URL` 获取集中授权决策。SkyWalking 对比实验的启停与验收见 [docs/24](<./docs/24-SkyWalking 与 Tempo 对比实验.md>)。
+- **System and organization**: users, roles, menus, department tree, positions, dictionaries, parameters; RBAC and five-level data scope; dashboards and Excel export.
+- **Messaging and notifications**: in-app messages, announcements, templates, multi-channel delivery (in-app/email/DingTalk/SMS), SSE unicast/multicast/broadcast with cluster-wide broadcast, full-text search.
+- **Files and search**: upload, download, preview, categorization; Silo / local / OSS storage strategies; Elasticsearch content search.
+- **Approvals and jobs**: Flowable 8 leave approval, approval center, rejection and archiving; Quartz clustered jobs; backup and restore drills.
+- **Monitoring and operations**: login/operation/runtime logs, online sessions and forced logout, service and middleware resource checks, side-channel operations console.
+- **AI workbench**: multi-turn streaming chat, knowledge-base RAG, governed agent tools, organization/RBAC knowledge graph, daily quotas and token visibility.
+- **Developer CLI**: authorization-code + PKCE login, multiple contexts, read-only queries, operational write commands, personal access tokens (PAT) and the `iboot api` escape hatch.
+- **Service governance**: route-level rate limiting at the gateway, cross-service circuit breaking and degradation, Nacos as the rule source, Sentinel dashboard, reliable approval-to-notification delivery.
 
-## 功能清单
+Module-level feature details are in [docs/04](docs/04-功能模块.md); the AI workbench in [docs/22](<./docs/22-AI 工作台操作指南.md>); the CLI in [docs/25](<./docs/25-开发者 CLI 操作指南.md>).
 
-**系统域 `iboot-system`**：用户、角色、菜单、部门树、岗位、字典、参数配置；数据权限范围；仪表板与趋势统计、Excel 导出。
+## Quick start
 
-**认证 `iboot-auth`**：OIDC 发现文档与 JWK 公钥集；浏览器授权码 + PKCE 登录；登出与自助注册；认证服务托管的登录页。
-
-**文件 `iboot-file`**：上传、下载、预览、分类；Silo / 本地 / OSS 三种存储实现按配置切换。全量 Docker 部署默认使用 Silo：容器内 endpoint 为 `https://silo:9000`，预签名地址为浏览器可达的 `https://localhost:9000`；宿主机开发由 `dev-init.sh` 导出 `https://localhost:9000`，可在 `.env` 用 `IBOOT_FILE_STORAGE_TYPE=local` 切回本地磁盘。
-
-**消息与通知 `iboot-notify`**：站内消息、公告、消息模板、已读同步；站内 / 邮件 / 钉钉 / 短信四个投递渠道（短信默认关闭）；SSE 单播、组播、广播；公告与消息的全文检索。
-
-**定时任务与备份 `iboot-job`**：在管理端维护定时任务、启停并查看执行日志；发起备份、查看备份记录、执行恢复演练，产物加密后落到 Silo / 本地 / OSS。
-
-**审批 `iboot-workflow`**：请假申请、审批中心、驳回与归档；审批待办事件经本地 outbox 与 RocketMQ 可靠投递。
-
-**监控 `iboot-monitor`**：登录日志、操作日志、运行日志；在线会话与强制下线；服务资源、Redis、Silo、SQL 监控入口。
-
-**运维控制台 `iboot-ops`**：通过注册中心自动发现全部业务实例，提供健康、JVM、环境、配置、Bean、缓存、定时任务与线程巡检，并可在不重启的情况下调整日志级别。开发环境从门户的服务器监控页进入，`dev-init.sh` 默认关闭控制台认证以便 iframe 直接打开；生产环境保持认证开启且仅限内网访问。
-
-**AI 工作台 `iboot-ai`**：多轮流式对话与 Redis 会话记忆；知识库解析、Embedding、BM25 + kNN + RRF 混合检索与引用溯源；受控智能体工具与写操作二次确认；组织与 RBAC 知识图谱。
-
-**网关 `iboot-gateway`**：统一路由、跨域、SSE 长连接透传与服务降级。
-
-**开发者 CLI `iboot-cli`**：授权码 + PKCE 登录、多 context、只读查询、运维写命令
-（任务/备份/在线强退）、个人访问令牌（PAT）与 `iboot api` 逃生口；复用现有权限、
-数据范围与审计，不直连数据库。PAT 支持 CI 与无浏览器环境，`--token-stdin` 避免令牌
-进入命令行参数。详见 [docs/25](<./docs/25-开发者 CLI 操作指南.md>) 与
-[docs/26](<./docs/26-CI 与个人访问令牌.md>)。
-
-**服务治理**：网关按路由限流（`429` 统一 JSON），`iboot-notify` 内部端点具备入口流控；规则存 Nacos 并热更新，Sentinel Dashboard（8858）为本地必选组件，治理指标进入 Prometheus。门户“微服务治理”菜单提供 Nacos 与 Sentinel 控制台入口：开发环境经门户同源代理内嵌，生产环境只保留内网跳转。审批 → 通知已改为本地 outbox + RocketMQ，消费失败按重试进入死信队列。
-
-## 快速开始
-
-**前置条件**
-
-- JDK 25、Maven 3.9+
-- Docker 与 Docker Compose
-- Node.js 18+ 与 cnpm（仅前端需要）
-
-**一键启动（推荐）**
+**Prerequisites**: JDK 25, Maven 3.9+, Docker and Docker Compose, Node.js 18+ with cnpm (frontend only).
 
 ```bash
-# 1. 准备本地配置与密钥
+# 1. Prepare local configuration and secrets
 cp .env.example .env
-#    至少填写百炼 API Key；其余按需
+#    At minimum, fill in the Bailian API key; the rest is optional
 
-# 2. 生成 TLS CA/证书，并把 CA 装入浏览器信任库（一次性，可能需要管理员权限）
+# 2. Generate the local CA/certificates and trust the CA in your browser (one-time)
 bash scripts/tls-init.sh
 CAROOT=docker/certs/ca mkcert -install
 
-# 3. 拉起中间件（含 RocketMQ）、Sentinel Dashboard 与基线规则，构建后端并启动九个业务服务与运维控制台
+# 3. Start middleware, Sentinel, database migration, the eight services, gateway and ops console
 bash scripts/dev-init.sh
 
-# 4. 需要前端时（以 HTTPS 启动门户开发服务器）
+# 4. Start the frontend when needed (HTTPS dev server)
 bash scripts/dev-init.sh --frontend
 ```
 
-| 参数 | 作用 |
-|---|---|
-| `--build` | 强制重新构建后端 |
-| `--frontend` | 安装前端依赖并启动开发服务器 |
-| `--status` | 查看中间件、后端与前端状态 |
-| `--stop` / `--down` / `--purge` | 停服务 / 连中间件一起停 / 连数据卷一起删 |
+- Frontend: <https://localhost:5173>
+- Default administrator: `admin` / `admin123456` (change it immediately after the first login)
+- Gateway health: <https://localhost:8088/actuator/health> (internal address, client certificate required)
+- Common flags: `--status`, `--stop` / `--down` / `--purge`, `--build`.
 
-脚本会自动加载根目录 `.env`；需要自定义 Maven settings 时设置 `MAVEN_SETTINGS` 环境变量。
-后端日志与进程号写入根目录 `logs/`。集中日志（Kafka → Logstash → ES）与可观测平台
-（Prometheus/Grafana/Kibana/Alertmanager/Thanos）默认随 `dev-init.sh` 启动；资源紧张时可在
-`.env` 中设 `IBOOT_LOGGING_KAFKA_ENABLED=false` 与 `IBOOT_OBSERVABILITY_ENABLED=false`。
-集中日志细节见 [docs/11 §11.11.1](./docs/11-可观测性设计.md)。
+Full startup, manual startup, database initialization and troubleshooting are in [docs/05](docs/05-快速开始.md); certificates and trust are in [docs/27](<./docs/27-TLS 与零信任操作指南.md>).
 
-**手工启动**
+## Build, test and regression
 
 ```bash
-# 中间件：开发必需的一组
-docker compose -f docker/docker-compose.yml up -d mysql redis silo elasticsearch \
-  rocketmq-namesrv rocketmq-store-init rocketmq-broker rocketmq-proxy rocketmq-init
+# Build frontend and backend
+bash scripts/build.sh
 
-# 可选：集中日志链路
-docker compose -f docker/docker-compose.yml up -d kafka kafka-init logstash
-
-# 构建并启动系统服务（其余服务同理）
-mvn -DskipTests clean package
-java -jar iboot-system/target/iboot-system-1.0.0.jar
-
-# 前端
-cd iboot-portal
-cnpm install
-cnpm run dev --host
-```
-
-启动服务前先运行 `iboot-db-init` 建库建表，并由 `mysql-users-init` / `mysql-grants-init`
-创建每服务账号与表级授权；`scripts/dev-init.sh` 会自动完成这三步：
-
-```bash
-set -a; source .env; set +a
-mvn -pl iboot-db-init -am package
-MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USERNAME=iboot_migrator \
-  MYSQL_PASSWORD="$MYSQL_MIGRATOR_PASSWORD" MYSQL_TLS_ENABLED=true \
-  java -Djavax.net.ssl.trustStore=docker/certs/truststore.p12 \
-       -Djavax.net.ssl.trustStorePassword=changeit \
-       -jar iboot-db-init/target/iboot-db-init-1.0.0-exec.jar
-```
-
-**访问与验证**
-
-- 前端开发地址：<https://localhost:5173>，API 经 Vite 反代到网关 `8088`；浏览器需信任本地 CA
-- 网关健康检查：<https://localhost:8088/actuator/health>（内部地址，不是客户端入口；需客户端证书）
-- Sentinel Dashboard：<https://localhost:8858>（HTTPS + 登录，本地开发必选）
-- Nacos 控制台：<https://localhost:8849/next/>（本地开发默认关闭控制台登录）
-- 门户“微服务治理”：登录后访问 <https://localhost:5173/dashboard/nacos> 与 <https://localhost:5173/dashboard/sentinel>
-- 证书、信任与排障见 [docs/27](<./docs/27-TLS 与零信任操作指南.md>)
-- 默认管理员：`admin` / `admin123456`（baseline 种子数据，首次登录后请立即修改）
-
-## 目录结构
-
-```
-iboot/
-├── pom.xml                  # 父 POM，聚合 16 个 Maven 模块
-├── bin/iboot                # 开发者 CLI 启动脚本
-├── docker/                  # 中间件编排与初始化脚本
-│   ├── docker-compose.yml
-│   └── init.sql
-├── scripts/
-│   ├── dev-init.sh          # 一键拉起本地开发环境
-│   ├── build.sh             # 前后端一键构建
-│   ├── pull-docker-images.sh
-│   └── regress/             # 契约快照、路由覆盖、冒烟、权限矩阵
-├── iboot-kernel/            # 共享内核库：统一响应、鉴权、审计写入
-├── iboot-service-authz/     # 服务间授权库（不独立部署）
-├── iboot-db-init/           # 数据库初始化：建库与集中式迁移，运行后退出
-├── iboot-gateway/           # 网关 :8088
-├── iboot-system/            # 系统域 :8080
-├── iboot-ai/                # AI 工作台 :8081
-├── iboot-file/              # 文件服务 :8082
-├── iboot-auth/              # 认证服务 :8083
-├── iboot-notify/            # 消息与通知 :8084
-├── iboot-job/               # 调度与备份 :8085
-├── iboot-workflow/          # 审批工作流 :8086
-├── iboot-monitor/           # 监控与日志 :8087
-├── iboot-ops/               # 运维控制台 :8089
-├── iboot-sentinel/          # 治理指标桥接库（不独立部署）
-├── iboot-logging/           # 日志共享库（不独立部署）
-├── iboot-cli/               # 开发者命令行工具（不独立部署）
-├── iboot-portal/            # 前端（Vue 3 + Vite）
-├── docs/                     # 项目文档，入口 docs/README.md
-├── openspec/                # 能力契约与变更记录
-├── ROADMAP.md               # 未完成路线与仍然生效的约束
-└── README.md
-```
-
-业务服务内部遵循 DDD 四层：`interfaces` → `application` → `domain` → `infrastructure`；
-网关与运维控制台是没有业务领域的可部署模块，不强行套用四层结构。
-
-## 构建、测试与回归
-
-```bash
-# 一键构建（默认前后端都构建）
-bash scripts/build.sh            # 或 frontend / backend / help
-
-# 后端全量构建
+# Full backend build and a single-module test
 mvn clean package
-
-# 单个模块测试
 mvn -pl iboot-system test
-mvn -pl iboot-cli test
 
-# 全栈回归：契约快照 → 路由覆盖 → 冒烟 → 权限矩阵 → CLI
+# Full-stack regression: contract snapshots → path conservation → route coverage
+# → TLS/authorization → smoke → permission matrix
 bash scripts/regress/regress.sh
 bash scripts/regress/cli.sh
-# Docker 全量部署时追加：REG_OIDC_REDIRECT=http://localhost/callback
-
-# 链路追踪核验
-bash scripts/regress/trace-chain.sh <traceId> --expect iboot-gateway,iboot-system
 ```
 
-回归脚本要求九个业务服务、运维控制台与中间件已启动；`--refresh` 仅在确认接口差异合理时用于重建基线。
-CI 见 `.github/workflows/regress.yml`：PR 阶段跑路由覆盖、构建与网关测试，定时任务跑全栈回归。
+Regression requires the eight business services, gateway, ops console and middleware to be running. Use `--refresh` only when interface changes are confirmed to be intentional. CI lives in `.github/workflows/regress.yml`. See [docs/23 §1](<./docs/23-微服务底座操作指南.md>) and [`scripts/README.md`](scripts/README.md) for the regression layers and script inventory.
 
-## 镜像与部署现状
+## Deployment
 
-后端统一使用 `docker/Dockerfile.backend` 共享模板（`eclipse-temurin:25-jre`、非 root 用户、
-`script/run-java.sh` 启动），数据库初始化使用 `docker/Dockerfile.dbinit`，前端使用
-`iboot-portal/Dockerfile`。所有服务由 `docker/docker-compose.yml` 编排，不再有模块级 Dockerfile。
+- **Local full stack**: `scripts/docker-deploy.sh up` builds images and starts the Compose stack. Containers, ports, volumes and troubleshooting are in [`docker/README.md`](docker/README.md); environments and production guidance are in [docs/08](docs/08-部署指南.md).
+- **Cloud native (planned)**: Helmfile + ACK + HPA + Argo CD, with the same images and different values locally (Kind) and in the cloud (ACK). See [ROADMAP §5 Cloud Native](ROADMAP.md#cloud-native).
 
-```bash
-# 一键构建并启动全栈（默认核心 + 可观测性）
-scripts/docker-deploy.sh up
+## Documentation map
 
-# 只启动核心组件
-scripts/docker-deploy.sh up core
-```
-
-前端生产镜像由 nginx 在 443 提供静态资源、OIDC 与 `/api`，80 只做 HTTPS 重定向；
-`/iboot/api` 反向代理到 `iboot-gateway:8088`。证书由 `scripts/tls-init.sh` 生成并挂载，
-容器编排、端口、卷与排障见 [`docker/README.md`](docker/README.md)，证书与信任见
-[docs/27](<./docs/27-TLS 与零信任操作指南.md>)。Helm 组织与 ACK 部署见
-[ROADMAP 阶段 3](ROADMAP.md#阶段-3云原生ack--helm)。
-
-## 文档导航
-
-| 文档 | 内容 |
+| Document | Content |
 |---|---|
-| [docs/README.md](docs/README.md) | 全部项目文档的入口 |
-| [ROADMAP.md](ROADMAP.md) | 未完成路线、版本矩阵、风险与决策记录 |
-| [docs/23 微服务底座操作指南](<./docs/23-微服务底座操作指南.md>) | Nacos、网关、链路追踪、Seata AT/TCC 分布式事务与表级只读契约 |
-| [docs/22 AI 工作台操作指南](<./docs/22-AI 工作台操作指南.md>) | 模型配置、RAG、智能体与知识图谱 |
-| [docs/11 可观测性设计](<./docs/11-可观测性设计.md>) | 指标、日志、告警与追踪 |
-| [docs/24 SkyWalking 与 Tempo 对比实验](<./docs/24-SkyWalking 与 Tempo 对比实验.md>) | 辅助 APM 栈、双后端验收、开销度量与选型结论 |
-| [docs/25 开发者 CLI 操作指南](<./docs/25-开发者 CLI 操作指南.md>) | CLI 安装、登录、context、只读/写命令与安全边界 |
-| [docs/26 CI 与个人访问令牌](<./docs/26-CI 与个人访问令牌.md>) | PAT 签发、CI secret、轮换、撤销与权限快照 |
-| [docs/27 TLS 与零信任操作指南](<./docs/27-TLS 与零信任操作指南.md>) | 证书、SVID、CA 轮换、调度、服务间授权与排障 |
-| [docs/28 TLS 与零信任当前基线与例外](<./docs/28-TLS 与零信任当前基线与例外.md>) | 当前阶段范围、行动项已清零与例外登记 |
-| [openspec/specs](openspec/specs) | 能力契约与变更记录 |
-| [openspec/changes/archive](openspec/changes/archive) | 历次变更的 proposal / design / tasks |
+| [docs/README.md](docs/README.md) | Entry point and reading paths for all project docs |
+| [ROADMAP.md](ROADMAP.md) | Five Native roadmap, version matrix, risks and decision records |
+| [docs/03](docs/03-架构设计.md) | Module topology, DDD layers, data flow, permission model |
+| [docs/23](<./docs/23-微服务底座操作指南.md>) | Service inventory, Nacos, gateway, tracing, Sentinel, Seata, least privilege |
+| [docs/27](<./docs/27-TLS 与零信任操作指南.md>) | Local CA, mTLS, SPIFFE, OPA, rotation and troubleshooting |
+| [docs/11](docs/11-可观测性设计.md) | Metrics, logs, tracing, alerting and Grafana dashboards |
+| [docs/22](<./docs/22-AI 工作台操作指南.md>) | Model configuration, RAG, agents and knowledge graph |
+| [docs/25](<./docs/25-开发者 CLI 操作指南.md>) | CLI installation, login, contexts, commands and security boundary |
+| [openspec/specs](openspec/specs) | Capability contracts and change records |
 
-## 许可证
+> Most linked documents are currently written in Chinese; the Chinese README is at [README.zh-CN.md](README.zh-CN.md).
 
-Licensed under the Apache License, Version 2.0. 详见 [LICENSE](LICENSE)。
+## Project layout
+
+```text
+iboot/
+├── pom.xml                  # Parent POM aggregating 16 Maven modules
+├── bin/iboot                # Developer CLI launcher
+├── docker/                  # Compose orchestration, image templates and middleware init
+├── scripts/                 # Development, deployment and regression scripts
+├── docs/                    # Project documentation; entry point docs/README.md
+├── openspec/                # Capability contracts and change records
+├── iboot-kernel/            # Shared kernel library (not deployed)
+├── iboot-service-authz/     # Service-to-service authorization library (not deployed)
+├── iboot-logging/           # Shared logging library (not deployed)
+├── iboot-sentinel/          # Governance metrics bridge (not deployed)
+├── iboot-db-init/           # Database creation and centralized migration; exits after run
+├── iboot-gateway/           # Gateway :8088
+├── iboot-system/            # System domain :8080
+├── iboot-ai/                # AI workbench :8081
+├── iboot-file/              # File service :8082
+├── iboot-auth/              # Authorization server :8083
+├── iboot-notify/            # Messaging and notifications :8084
+├── iboot-job/               # Scheduling and backup :8085
+├── iboot-workflow/          # Approval workflow :8086
+├── iboot-monitor/           # Monitoring and logs :8087
+├── iboot-ops/               # Operations console :8089
+├── iboot-cli/               # Developer command-line tool (not deployed)
+└── iboot-portal/            # Frontend (Vue 3 + Vite)
+```
+
+Business services follow the four DDD layers: `interfaces` → `application` → `domain` → `infrastructure`. The gateway and operations console have no business domain and do not force-fit those layers.
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).

@@ -3,7 +3,7 @@
 ## 目录
 
 1. [概述](#概述)
-2. [为什么选择 MapStruct](#为什么选择 mapstruct)
+2. [为什么选择 MapStruct](#为什么选择-mapstruct)
 3. [项目集成](#项目集成)
 4. [Mapper 接口设计](#mapper-接口设计)
 5. [使用指南](#使用指南)
@@ -23,7 +23,6 @@ MapStruct 是一个高性能的 Java Bean 映射工具，通过在编译时生�
 | **类型安全** | 编译期检查映射配置 | 运行时才能发现错误 |
 | **代码可读** | 生成的代码清晰易懂 | 黑盒操作 |
 | **零依赖** | 运行时不需要 MapStruct 库 | 需要运行时依赖 |
-| **Lombok 集成** | 完美支持 Lombok | 可能需要额外配置 |
 
 ### 在 iBoot 项目中的应用
 
@@ -90,11 +89,10 @@ public UserResponse toResponse(User user) {
 ```xml
 <properties>
     <mapstruct.version>1.6.3</mapstruct.version>
-    <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
 </properties>
 
 <dependencies>
-    <!-- MapStruct -->
+    <!-- MapStruct API -->
     <dependency>
         <groupId>org.mapstruct</groupId>
         <artifactId>mapstruct</artifactId>
@@ -108,21 +106,6 @@ public UserResponse toResponse(User user) {
         <version>${mapstruct.version}</version>
         <scope>provided</scope>
     </dependency>
-
-    <!-- Lombok MapStruct Binding（解决与 Lombok 的兼容性） -->
-    <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok-mapstruct-binding</artifactId>
-        <version>${lombok-mapstruct-binding.version}</version>
-        <scope>provided</scope>
-    </dependency>
-
-    <!-- Lombok 注解处理器 -->
-    <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-        <scope>provided</scope>
-    </dependency>
 </dependencies>
 
 <build>
@@ -133,21 +116,12 @@ public UserResponse toResponse(User user) {
             <configuration>
                 <source>25</source>
                 <target>25</target>
+                <release>25</release>
                 <annotationProcessorPaths>
-                    <path>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok</artifactId>
-                        <version>${lombok.version}</version>
-                    </path>
                     <path>
                         <groupId>org.mapstruct</groupId>
                         <artifactId>mapstruct-processor</artifactId>
                         <version>${mapstruct.version}</version>
-                    </path>
-                    <path>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok-mapstruct-binding</artifactId>
-                        <version>${lombok-mapstruct-binding.version}</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -155,6 +129,9 @@ public UserResponse toResponse(User user) {
     </plugins>
 </build>
 ```
+
+> 项目当前未引入 Lombok，PO/DTO 使用显式字段与访问器；因此也不需要 `lombok-mapstruct-binding`。
+> 如果未来某个模块引入 Lombok，再把它加入 `annotationProcessorPaths`。
 
 ### 编译输出
 
@@ -171,23 +148,28 @@ target/generated-sources/annotations/
 ### 项目结构
 
 ```
-iboot-system/src/main/java/com/iboot/system/application/mapper/
-├── system/
-│   ├── UserMapper.java      # 用户映射
-│   ├── DeptMapper.java      # 部门映射（支持树形）
-│   ├── RoleMapper.java      # 角色映射
-│   ├── MenuMapper.java      # 菜单映射（支持树形）
-│   ├── PostMapper.java      # 岗位映射
-│   ├── DictMapper.java      # 字典映射
-│   ├── ConfigMapper.java    # 配置映射
-│   └── NoticeMapper.java    # 公告映射
-├── job/
-│   └── JobMapper.java       # 任务映射
-├── message/
-│   ├── MessageMapper.java   # 消息映射
-│   └── MessageTemplateMapper.java  # 消息模板映射
-└── FileMapper.java          # 文件映射
+iboot-system/src/main/java/com/iboot/system/application/mapper/system/
+├── UserMapper.java      # 用户映射
+├── DeptMapper.java      # 部门映射（支持树形）
+├── RoleMapper.java      # 角色映射
+├── MenuMapper.java      # 菜单映射（支持树形）
+├── PostMapper.java      # 岗位映射
+├── DictMapper.java      # 字典映射
+└── ConfigMapper.java    # 配置映射
+
+iboot-job/src/main/java/com/iboot/job/application/mapper/job/
+└── JobMapper.java
+
+iboot-notify/src/main/java/com/iboot/notify/application/mapper/message/
+├── MessageMapper.java
+└── MessageTemplateMapper.java
+
+iboot-file/src/main/java/com/iboot/file/application/mapper/system/
+└── FileMapper.java
 ```
+
+公告（`NoticeMapper`）是 `iboot-notify` 的 MyBatis 持久化 Mapper，不是 MapStruct 应用层映射器。
+各模块的生成路径与包名跟随自己的模块，不再集中在系统域。
 
 ### 基础 Mapper 示例
 
@@ -527,25 +509,10 @@ List<UserResponse> toResponseList(List<User> users);
 List<UserResponse> toResponseList(List<User> users);
 ```
 
-### 5. 与 Lombok 协作
+### 5. 与 Lombok 协作（不适用）
 
-确保依赖顺序正确：
-```xml
-<annotationProcessorPaths>
-    <path>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-    </path>
-    <path>
-        <groupId>org.mapstruct</groupId>
-        <artifactId>mapstruct-processor</artifactId>
-    </path>
-    <path>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok-mapstruct-binding</artifactId>
-    </path>
-</annotationProcessorPaths>
-```
+项目当前没有引入 Lombok，PO/DTO 使用显式字段与访问器，因此不需要 `lombok-mapstruct-binding`。
+如果未来某个模块引入 Lombok，再把它加入 `annotationProcessorPaths`，并确保 Lombok 在 MapStruct 之前。
 
 ## 常见问题
 
@@ -559,14 +526,10 @@ List<UserResponse> toResponseList(List<User> users);
 3. 执行 `mvn clean compile` 重新编译
 4. 检查 `target/generated-sources/annotations/` 目录是否生成实现类
 
-### Q2: 与 Lombok 冲突
+### Q2: 与 Lombok 冲突（项目当前不涉及）
 
-**问题**：MapStruct 无法识别 Lombok 生成的 Getter/Setter
-
-**解决方案**：
-1. 添加 `lombok-mapstruct-binding` 依赖
-2. 确保 annotationProcessorPaths 顺序正确
-3. 使用 `@Value` 或 `@Data` 等 Lombok 注解
+项目未使用 Lombok；如果未来引入，问题表现为 MapStruct 无法识别生成的 Getter/Setter，
+需要添加 `lombok-mapstruct-binding` 并调整 `annotationProcessorPaths` 顺序。
 
 ### Q3: 循环引用问题
 
@@ -618,4 +581,3 @@ iboot-system/target/generated-sources/annotations/
 
 - [MapStruct 官方文档](https://mapstruct.org/documentation/)
 - [MapStruct GitHub](https://github.com/mapstruct/mapstruct)
-- [Lombok MapStruct Binding](https://github.com/mapstruct/lombok-mapstruct-binding)

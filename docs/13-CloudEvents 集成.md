@@ -2,11 +2,11 @@
 
 ## 目录
 
-1. [CloudEvents 概述](#cloudevents 概述)
+1. [CloudEvents 概述](#cloudevents-概述)
 2. [集成架构设计](#集成架构设计)
 3. [后端实现](#后端实现)
 4. [前端适配](#前端适配)
-5. [接口覆盖清单](#接口覆盖清单)
+5. [接口覆盖](#接口覆盖)
 6. [响应格式示例](#响应格式示例)
 7. [配置与使用](#配置与使用)
 8. [最佳实践](#最佳实践)
@@ -55,8 +55,7 @@ iBoot 采用 **结构化模式（Structured Mode）** 集成 CloudEvents，将�
 │                   Spring MVC Controller                      │
 │  @RestController                                             │
 │  - UserController                                            │
-│  - RoleController                                            │
-│  - ... (20 Controllers)                                      │
+│  - ...（各服务 /api/** Controller）                          │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -145,28 +144,28 @@ Jackson 序列化为 JSON
 ### 项目结构
 
 ```
-iboot-system/src/main/java/com/iboot/system/
+每个业务服务各自维护一份（以 iboot-file 为例）：
+
+iboot-file/src/main/java/com/iboot/file/
 ├── common/
-│   ├── cloudevent/
-│   │   ├── CloudEventTypes.java          # 事件类型常量定义
-│   │   ├── CloudEventFactory.java        # 事件工厂工具类
-│   │   └── CloudEventBody.java           # 响应体包装类
-│   ├── annotation/
-│   │   └── CloudEventEnabled.java        # (可选) 标记注解
-│   └── result/
-│       └── Result.java                   # 原有统一响应格式
+│   └── cloudevent/
+│       ├── CloudEventTypes.java          # 响应类型与预留业务事件常量
+│       ├── CloudEventFactory.java        # 事件工厂
+│       └── CloudEventBody.java           # 响应体包装
 └── interfaces/
     ├── advisor/
     │   └── CloudEventResponseBodyAdvice.java  # 响应拦截器
     └── config/
         └── CloudEventConfig.java         # 消息转换器配置
+
+Result / PageResult / I18nUtil 在 iboot-kernel 的 com.iboot.kernel.web 下，各服务不复制。
 ```
 
 ### 核心组件
 
 #### 1. CloudEventTypes - 事件类型常量
 
-定义所有业务事件类型，采用 `com.iboot.{domain}.{action}` 命名规范：
+定义通用响应类型与预留的业务事件常量：
 
 ```java
 public final class CloudEventTypes {
@@ -266,15 +265,12 @@ public final class CloudEventTypes {
 ```
 
 **事件分类**：
-- **通用响应事件** (2 个)：RESPONSE_SUCCESS, RESPONSE_ERROR
-- **认证授权事件** (4 个)：登录、登出、注册
-- **用户管理事件** (5 个)：用户 CRUD、密码重置、状态变更
-- **角色/部门/岗位/菜单事件** (各 3-4 个)：各自 CRUD 操作
-- **字典/配置/公告/消息事件** (各 3-6 个)：各自业务操作
-- **任务/文件/日志事件** (各 2-8 个)：定时任务、文件管理、日志记录
-- **监控事件** (5 个)：服务器、Redis、Silo、统计、仪表板
+`CloudEventTypes` 中定义了通用响应事件与预留的业务事件常量；当前响应包装实际只发出：
 
-**完整事件类型列表** 共 **50+ 个事件**，详见 [事件类型详细清单](#事件类型详细清单)。
+- `RESPONSE_SUCCESS`（`com.iboot.response.success`）
+- `RESPONSE_ERROR`（`com.iboot.response.error`）
+
+业务事件常量保留给未来显式发布，不由通用响应包装自动产生。
 
 #### 2. CloudEventBody - 响应体包装类
 
@@ -392,7 +388,7 @@ public class CloudEventBody<T> implements Serializable {
 
 ```java
 @Slf4j
-@RestControllerAdvice(basePackages = "com.iboot.system.interfaces")
+@RestControllerAdvice(basePackages = "com.iboot.file.interfaces")
 public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
     @Override
@@ -458,7 +454,7 @@ public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> 
 ```
 
 **拦截规则**：
-- 包路径：`com.iboot.system.interfaces`（所有 Controller）
+- 包路径：各服务的 controller 包（例如 `com.iboot.file.interfaces`）
 - 返回类型：`Result<T>`（排除 `CloudEventBody`）
 - 请求路径：`/api/**`
 - 事件源：请求 URI（如 `/api/user/1`）
@@ -470,29 +466,16 @@ public class CloudEventResponseBodyAdvice implements ResponseBodyAdvice<Object> 
 
 ```java
 @Configuration
-public class CloudEventConfig implements WebMvcConfigurer {
+public class CloudEventConfig {
 
     @Bean
-    public MappingJackson2HttpMessageConverter cloudEventHttpMessageConverter(
-            ObjectMapper objectMapper) {
-        MappingJackson2HttpMessageConverter converter =
-            new MappingJackson2HttpMessageConverter(objectMapper);
+    public JacksonJsonHttpMessageConverter cloudEventHttpMessageConverter() {
+        JacksonJsonHttpMessageConverter converter = new JacksonJsonHttpMessageConverter();
         List<MediaType> supportedMediaTypes = new ArrayList<>();
-        // 设置 CloudEvents 特定的 Content-Type
+        // 只设置 CloudEvents 特定的 Content-Type，避免影响其他 JSON 响应（如 springdoc）
         supportedMediaTypes.add(MediaType.valueOf("application/cloudevents+json"));
-        // 同时也支持普通 JSON
-        supportedMediaTypes.add(MediaType.APPLICATION_JSON);
         converter.setSupportedMediaTypes(supportedMediaTypes);
         return converter;
-    }
-
-    @Override
-    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-        // 将 CloudEvents 转换器添加到最前面，确保优先匹配
-        ObjectMapper objectMapper = new ObjectMapper();
-        MappingJackson2HttpMessageConverter converter =
-            cloudEventHttpMessageConverter(objectMapper);
-        converters.add(0, converter);
     }
 }
 ```
@@ -504,21 +487,21 @@ public class CloudEventConfig implements WebMvcConfigurer {
 <dependency>
     <groupId>io.cloudevents</groupId>
     <artifactId>cloudevents-core</artifactId>
-    <version>3.0.0</version>
+    <version>4.0.1</version>
 </dependency>
 
 <!-- CloudEvents JSON 序列化 (Jackson) -->
 <dependency>
     <groupId>io.cloudevents</groupId>
     <artifactId>cloudevents-json-jackson</artifactId>
-    <version>3.0.0</version>
+    <version>4.0.1</version>
 </dependency>
 
 <!-- CloudEvents HTTP 绑定 -->
 <dependency>
     <groupId>io.cloudevents</groupId>
     <artifactId>cloudevents-http-basic</artifactId>
-    <version>3.0.0</version>
+    <version>4.0.1</version>
 </dependency>
 ```
 
@@ -664,155 +647,24 @@ console.log('[CloudEvent]', {
 })
 ```
 
-## 接口覆盖清单
+## 接口覆盖
 
-### 覆盖统计
+CloudEvents 响应包装覆盖各服务 `/api/**` 的 Controller，导出的 Excel/下载接口除外。
+当前 system / file / auth / notify / job / workflow / monitor 各自维护一份 `CloudEventTypes`、
+`CloudEventBody` 与 `CloudEventResponseBodyAdvice`，没有一张跨服务的手工接口清单；完整路径以各服务的
+OpenAPI 与 [docs/23 §8.1](<./23-微服务底座操作指南.md>) 为准。
 
-| 模块 | Controller | 路径 | 接口数 | 事件类型 |
-|------|-----------|------|--------|----------|
-| 认证模块 | AuthController | /api/auth | 3 | `com.iboot.auth.*` |
-| 用户管理 | UserController | /api/user | 13 | `com.iboot.user.*` |
-| 角色管理 | RoleController | /api/role | 9 | `com.iboot.role.*` |
-| 部门管理 | DeptController | /api/dept | 8 | `com.iboot.dept.*` |
-| 岗位管理 | PostController | /api/post | 7 | `com.iboot.post.*` |
-| 菜单管理 | MenuController | /api/menu | 9 | `com.iboot.menu.*` |
-| 数据字典 | DictController | /api/dict | 14 | `com.iboot.dict.*` |
-| 参数配置 | ConfigController | /api/config | 9 | `com.iboot.config.*` |
-| 系统公告 | NoticeController | /api/notice | 10 | `com.iboot.notice.*` |
-| 消息中心 | MessageController | /api/message | 13 | `com.iboot.message.*` |
-| 消息模板 | MessageTemplateController | /api/message/template | 6 | `com.iboot.message.template.*` |
-| 定时任务 | JobController | /api/job | 11 | `com.iboot.job.*` |
-| 文件管理 | FileController | /api/file | 9 | `com.iboot.file.*` |
-| 日志管理 | LogController | /api/log | 7 | `com.iboot.log.*` |
-| 在线用户 | OnlineUserController | /api/online | 4 | `com.iboot.online.user.*` |
-| 服务监控 | ServerMonitorController | /api/monitor/server | 1 | `com.iboot.monitor.server.*` |
-| Redis 监控 | RedisMonitorController | /api/monitor/redis | 5 | `com.iboot.monitor.redis.*` |
-| 统计分析 | StatisticsController | /api/statistics | 2 | `com.iboot.statistics.*` |
-| Silo 监控 | SiloMonitorController | /api/monitor/silo | 2 | `com.iboot.monitor.silo.*` |
-| 仪表板 | DashboardController | /api/dashboard | 1 | `com.iboot.dashboard.*` |
-| **总计** | **20 Controllers** | - | **143** | **50+ 事件类型** |
+### 事件类型
 
-**排除接口**: 14 个导出/下载接口（返回 Excel 文件，不适合 CloudEvents 格式）
+响应包装只会发出两种类型：
 
-### 事件类型详细清单
-
-#### 通用响应事件
 | 事件类型 | 描述 |
 |----------|------|
-| `com.iboot.response.success` | 通用成功响应 |
-| `com.iboot.response.error` | 通用错误响应 |
+| `com.iboot.response.success` | `Result.code` 为成功时 |
+| `com.iboot.response.error` | 业务异常或校验失败时 |
 
-#### 认证事件 (Auth)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.auth.login.success` | 登录成功 |
-| `com.iboot.auth.login.failed` | 登录失败 |
-| `com.iboot.auth.logout.success` | 登出成功 |
-| `com.iboot.auth.register.success` | 用户注册成功 |
-
-#### 用户事件 (User)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.user.created` | 用户创建 |
-| `com.iboot.user.updated` | 用户更新 |
-| `com.iboot.user.deleted` | 用户删除 |
-| `com.iboot.user.password.reset` | 密码重置 |
-| `com.iboot.user.status.changed` | 状态变更 |
-
-#### 角色事件 (Role)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.role.created` | 角色创建 |
-| `com.iboot.role.updated` | 角色更新 |
-| `com.iboot.role.deleted` | 角色删除 |
-| `com.iboot.role.permission.assigned` | 权限分配 |
-
-#### 部门事件 (Dept)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.dept.created` | 部门创建 |
-| `com.iboot.dept.updated` | 部门更新 |
-| `com.iboot.dept.deleted` | 部门删除 |
-
-#### 岗位事件 (Post)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.post.created` | 岗位创建 |
-| `com.iboot.post.updated` | 岗位更新 |
-| `com.iboot.post.deleted` | 岗位删除 |
-
-#### 菜单事件 (Menu)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.menu.created` | 菜单创建 |
-| `com.iboot.menu.updated` | 菜单更新 |
-| `com.iboot.menu.deleted` | 菜单删除 |
-
-#### 字典事件 (Dict)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.dict.type.created` | 字典类型创建 |
-| `com.iboot.dict.type.updated` | 字典类型更新 |
-| `com.iboot.dict.type.deleted` | 字典类型删除 |
-| `com.iboot.dict.data.created` | 字典数据创建 |
-| `com.iboot.dict.data.updated` | 字典数据更新 |
-| `com.iboot.dict.data.deleted` | 字典数据删除 |
-
-#### 配置事件 (Config)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.config.created` | 配置创建 |
-| `com.iboot.config.updated` | 配置更新 |
-| `com.iboot.config.deleted` | 配置删除 |
-
-#### 公告事件 (Notice)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.notice.created` | 公告创建 |
-| `com.iboot.notice.updated` | 公告更新 |
-| `com.iboot.notice.deleted` | 公告删除 |
-
-#### 消息事件 (Message)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.message.sent` | 消息发送 |
-| `com.iboot.message.marked.read` | 消息已读 |
-| `com.iboot.message.deleted` | 消息删除 |
-| `com.iboot.message.template.created` | 模板创建 |
-| `com.iboot.message.template.updated` | 模板更新 |
-| `com.iboot.message.template.deleted` | 模板删除 |
-
-#### 任务事件 (Job)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.job.created` | 任务创建 |
-| `com.iboot.job.updated` | 任务更新 |
-| `com.iboot.job.deleted` | 任务删除 |
-| `com.iboot.job.started` | 任务启动 |
-| `com.iboot.job.stopped` | 任务停止 |
-| `com.iboot.job.paused` | 任务暂停 |
-| `com.iboot.job.resumed` | 任务恢复 |
-
-#### 文件事件 (File)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.file.uploaded` | 文件上传 |
-| `com.iboot.file.deleted` | 文件删除 |
-
-#### 日志事件 (Log)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.log.operation.created` | 操作日志创建 |
-| `com.iboot.log.login.created` | 登录日志创建 |
-
-#### 监控事件 (Monitor)
-| 事件类型 | 描述 |
-|----------|------|
-| `com.iboot.monitor.server.info` | 服务器信息 |
-| `com.iboot.monitor.redis.info` | Redis 信息 |
-| `com.iboot.monitor.silo.info` | Silo 信息 |
-| `com.iboot.statistics.info` | 统计信息 |
-| `com.iboot.dashboard.info` | 仪表板信息 |
+`CloudEventTypes` 中保留的 `com.iboot.auth.*` / `com.iboot.user.*` 等常量是预留的业务事件名，
+当前通用响应包装不会按业务动作细分；需要领域事件时再显式发布。
 
 ## 响应格式示例
 
@@ -825,7 +677,7 @@ console.log('[CloudEvent]', {
 {
   "specversion": "1.0",
   "id": "ce-550e8400-e29b-41d4-a716-446655440000",
-  "type": "com.iboot.user.updated",
+  "type": "com.iboot.response.success",
   "source": "/api/user/1",
   "time": "2026-03-11T10:30:00+08:00",
   "datacontenttype": "application/json",
@@ -872,39 +724,24 @@ console.log('[CloudEvent]', {
 }
 ```
 
-### 登录成功响应示例
+### 登录响应
 
-**请求**: `POST /api/auth/login`
+登录已改为 OAuth2 授权码 + PKCE，由 `iboot-auth` 的 `/oauth2/token` 返回标准令牌响应，
+不再经过业务服务的 CloudEvents 包装：
 
-**响应**:
 ```json
 {
-  "specversion": "1.0",
-  "id": "ce-auth-success-uuid",
-  "type": "com.iboot.auth.login.success",
-  "source": "/api/auth/login",
-  "time": "2026-03-11T10:30:00+08:00",
-  "datacontenttype": "application/json",
-  "data": {
-    "code": 200,
-    "message": "登录成功",
-    "data": {
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      "expiresIn": 7200,
-      "user": {
-        "id": 1,
-        "username": "admin",
-        "nickname": "管理员"
-      }
-    },
-    "timestamp": 1710123000000
-  }
+  "access_token": "eyJhbGciOiJSUzI1NiIs...",
+  "token_type": "Bearer",
+  "expires_in": 1800,
+  "scope": "openid profile",
+  "id_token": "eyJhbGciOiJSUzI1NiIs..."
 }
 ```
 
 ### 列表查询响应示例
 
-**请求**: `GET /api/user/list?page=1&size=10`
+**请求**: `GET /api/user/list?pageNum=1&pageSize=10`
 
 **响应**:
 ```json
@@ -918,19 +755,16 @@ console.log('[CloudEvent]', {
   "data": {
     "code": 200,
     "message": "操作成功",
-    "data": {
-      "list": [
-        {
-          "id": 1,
-          "username": "admin",
-          "nickname": "管理员"
-        }
-      ],
-      "total": 100,
-      "pageNum": 1,
-      "pageSize": 10,
-      "pages": 10
-    },
+    "data": [
+      {
+        "id": 1,
+        "username": "admin",
+        "nickname": "管理员"
+      }
+    ],
+    "total": 100,
+    "pageNum": 1,
+    "pageSize": 10,
     "timestamp": 1710123000000
   }
 }
@@ -1197,8 +1031,8 @@ console.log('[CloudEvent]', {
 
 - 自动拦截包装，业务代码零侵入
 - 前端透明解包，保持向后兼容
-- 全量接口覆盖（143 个 API）
-- 50+ 业务事件类型定义
+- 覆盖各服务 `/api/**` 的响应包装（导出/下载接口除外）
+- 统一使用 `com.iboot.response.success` / `com.iboot.response.error` 两种事件类型
 - 全局异常处理集成
 
 ### 未来规划

@@ -14,7 +14,7 @@
 
 ## 2. 适用范围
 
-- 适用于 `iboot-system` 下新增或修改的 Java 代码。
+- 适用于全部后端 Java 模块中新增或修改的 Java 代码（`iboot-kernel`、`iboot-system`、`iboot-ai`、`iboot-file`、`iboot-auth`、`iboot-notify`、`iboot-job`、`iboot-workflow`、`iboot-monitor`、`iboot-gateway`、`iboot-ops` 等）。
 - 存量代码的批量重写按独立任务执行，不在日常改动中顺手进行。
 - 注释语言：说明文字使用中文；`@param`、`@return`、`@throws` 等标签名保持英文。
 - 中文与英文单词、数字之间保留一个空格，例如“根据用户 ID 查询”“返回 10 条记录”。
@@ -185,11 +185,11 @@ Javadoc 面向 IDE 和源码读者，`@Schema` 面向 OpenAPI 文档使用者；
 
 ## 6. 生成成员排除规则
 
-以下成员由 delombok 生成，**不写 Javadoc**：
+以下生成成员**不写 Javadoc**：
 
 - `getXxx` / `setXxx`
 - `equals` / `hashCode` / `toString` / `canEqual`
-- 由 `@RequiredArgsConstructor` / `@AllArgsConstructor` / `@NoArgsConstructor` 生成的构造器
+- 构造器（无论手写还是生成）
 - 由 `@Builder` 生成的 builder 方法
 
 识别特征：成员前有 `@SuppressWarnings("all")`。批量改写时不要修改这些成员，也不要在它们上方插入注释。

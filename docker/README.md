@@ -282,7 +282,7 @@ sentinel-dashboard ──> 旁路，规则经 Nacos 下发；停控制台不影�
 | Nacos | `iboot_<service>` | 十个服务各自注册/配置账号 |
 | Nacos | `iboot` | 管理脚本；管理员 `nacos` 仅初始化脚本使用 |
 | Neo4j | `neo4j` | AI 图能力；`NEO4J_PASSWORD` 必填，缺失时编排失败 |
-| Kafka | `iboot_log` | 九个服务日志生产，只能写 `iboot-logs` |
+| Kafka | `iboot_log` | 十个可部署服务的日志生产，只能写 `iboot-logs` |
 | Kafka | `iboot_logstash` | Logstash 消费，只能读该 topic 与消费组 |
 | Kafka | `iboot_tools` / `broker` | 初始化运维与节点间通信，超级用户 |
 | RocketMQ | `iboot_rocketmq` | 仅 Broker/Proxy 初始化、`mqadmin` 与排障 |
