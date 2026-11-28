@@ -3,7 +3,7 @@
 > 本文只保留**尚未完成**的路线与**仍然生效**的约束；已完成能力见五条 Native 线的「已完成」与 [§3 业务能力基线](#3-业务能力基线)，
 > 用户视角的功能清单与启动方式见 [README](README.md)，每次交付的完整过程见 `openspec/changes/archive/`。
 > 项目性质：技术栈练习项目，在可运行的管理系统之上把 **Agent / Cloud / Security / Micro Service / SRE Native** 五种能力做成系统默认属性。
-> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-25
+> 每个条目都带验收判据，判据不成立的条目不进路线图。最近更新：2026-11-28
 
 ## 目录
 
@@ -50,7 +50,7 @@
 
 | 线 | 定位 | 当前成熟度 |
 |---|---|---|
-| **Agent Native** | AI 是系统的一等执行单元 | 对话、RAG、编排、图谱已落地；技能库、MCP、图编排未开始 |
+| **Agent Native** | AI 是系统的一等执行单元 | 对话、RAG、编排、图谱已落地；技能库、MCP、图编排、知识编译未开始 |
 | **Cloud Native** | 运行环境由声明式配置定义，可复现、可审计 | 本地 Compose 已就位；K8s/Helm/CI/CD 未开始 |
 | **Security Native** | 每次调用都被验证 | B0–B6 已完成；Token Exchange、多客户端会话未开始 |
 | **Micro Service Native** | 边界由领域模型驱动且可验证 | 拆分与治理已完成；契约测试、边界复盘未开始 |
@@ -120,6 +120,7 @@
 ### 4.3 未完成路线
 
 A1/A2 来自 2026-10-30 的 SKILL/MCP 可行性分析：拆分与 OAuth2 已完成，前置已解除；技能库先于 MCP，不交叉。
+A6 来自 2026-11-28 对 LLM Wiki 的评估：定位为 RAG 之上的编译层，评测基线先行，不替换现有检索。
 
 | ID | 内容 | 技术 / 约束 | 时机 | 验收判据 |
 |---|---|---|---|---|
@@ -128,6 +129,7 @@ A1/A2 来自 2026-10-30 的 SKILL/MCP 可行性分析：拆分与 OAuth2 已完�
 | A3 | Agent Graph 编排 | 先 spike 选运行时：AgentScope Java 2.0.1 或轻量图执行器；不引入 Spring AI Alibaba；状态持久化；可重试 | 后续 | 多步流程可暂停/恢复；状态持久化；确定性回放仍成立；失败节点可重试 |
 | A4 | 跨服务 Agent 化 | 服务暴露受控 REST，`iboot-ai` 包成 `AgentTool`；不预留 MCP 端点；身份与权限校验留在各服务内部；工具白名单只在 `iboot-ai` 收口；工具端点只在集群内可达，不进网关外部路由 | 后续 | 审批/任务可声明式调用 Agent；身份与权限在拥有方服务内校验；网关外部路由不暴露工具端点 |
 | A5 | Agent Runtime 契约 | 仅在出现第二种运行时后抽取；不做单实现的过度抽象 | 触发条件 | 契约测试覆盖 execute/cancel/status；两种运行时行为一致 |
+| A6 | LLM Wiki 知识编译层 | 在现有 RAG 之上增加摄入期编译：LLM 将文档编译为带双向链接的实体/概念/主题页，每页保留 source 文档与 chunk 出处；正文复用 Silo/MySQL，索引复用 ES，不新建向量库；查询时 wiki 页作为额外召回源，BM25 + kNN + RRF 原路径不变；页面可见性取来源文档数据权限交集，scope 不可用仍 503 fail-closed；文档变更只增量重编译受影响页面，页面状态 DRAFT/PUBLISHED/STALE，支持人工审阅与回滚；编译与查询 token 并入 R6 配额与现有指标；图谱仍只做组织/RBAC 关系查询，wiki 链接不塞进 Neo4j | 后续（RAG 评测基线可量化、A1–A3 完成后） | 同一评测集上跨文档综合类问题的要点覆盖与引用正确率高于纯 RAG 基线；单事实问答不劣于基线（退化阈值立项时定死）；每条 wiki 主张可回溯到源文档或 chunk；越权用户检索不到含受限来源的页面；新增文档只重编译受影响页面，不全库重建；编译/查询 token 与 p95 延迟有与纯 RAG 的对照数据 |
 
 补充约束：
 
@@ -136,6 +138,9 @@ A1/A2 来自 2026-10-30 的 SKILL/MCP 可行性分析：拆分与 OAuth2 已完�
 - 评测：上线前用现有云端评测基线跑「带 / 不带用户技能」两份对照，避免工具选择准确率被用户技能扰动。
 - MCP 并发：开工前验证 `McpClientWrapper` 在虚拟线程 + 每请求新 Toolkit 下的并发安全性。
 - 授权刷新：授权后需重新登录，会话中的权限才会刷新（docs/22 §12.2）。
+- 评测先行：没有可量化的跨文档综合基线不立项；判据同时约束「综合类提升」与「单事实不退化」。
+- 编译异步：页面生成走后台批处理，不阻塞文档上传主流程；冲突或矛盾页面进入人工复核，不做无审阅的全自动改写。
+- 与 RAG 的关系：wiki 是编译层，不是第二套检索栈；检索入口、权限过滤与引用契约保持单一。
 
 ### 4.4 明确不做 / 触发条件
 
@@ -144,6 +149,9 @@ A1/A2 来自 2026-10-30 的 SKILL/MCP 可行性分析：拆分与 OAuth2 已完�
 - **MCP `stdioTransport`**：允许 Java 进程 spawn 任意子进程，服务端禁用。
 - **Agent Runtime 契约**：出现第二种运行时前不抽取（A5）。
 - **技能资源包 / zip**：v1 只收单文件 SKILL.md。
+- **LLM Wiki 替代 RAG / 第二套向量库**：wiki 只作为 RAG 之上的编译层，检索路径、权限过滤与引用契约保持单一。
+- **全库重建式编译**：文档变更只增量重编译受影响页面，避免 token 成本不可控。
+- **公开 wiki 站点 / 多模态 wiki**：沿用内部知识库与纯文本边界。
 
 ---
 
@@ -182,6 +190,8 @@ A1/A2 来自 2026-10-30 的 SKILL/MCP 可行性分析：拆分与 OAuth2 已完�
 | C8 | GraalVM Native | 先对 `iboot-gateway` 做可行性验证；真实动机是缓解 N×JVM 内存与冷启动；Boot 4 native 要求 GraalVM 25 工具链 | 后续 | 网关 native 镜像可启动；内存/冷启动与 JVM 对比有数据 |
 | C9 | Spring Cloud Kubernetes | 只读 ConfigMap/Secret；不替代 Nacos 注册发现 | 触发条件 | 一个服务从 K8s 读取配置；Nacos 发现保持不变 |
 
+本地集群工具链（C3/C4 共用）：Kind 跑本地集群；因 kindnet 不执行 NetworkPolicy，需 `disableDefaultCNI: true` 后安装 Calico 或 Cilium；再装 ingress-nginx、metrics-server、local-path-provisioner，LoadBalancer 可选 MetalLB；镜像用 `kind load docker-image` 装载，本地 registry 不是前置。MicroK8s / k3s 的取舍见 §12.14。
+
 ### 5.4 明确不做 / 触发条件
 
 - **Spring Cloud Config / Consul**：与 Nacos 配置中心、服务发现重叠。
@@ -189,6 +199,7 @@ A1/A2 来自 2026-10-30 的 SKILL/MCP 可行性分析：拆分与 OAuth2 已完�
 - **Spring Cloud Task / Data Flow**：与 Quartz / Spring Batch / Flink 职责重叠。
 - **Spring Cloud Function**：当前不走 Spring Cloud Stream binder，无 Serverless/FaaS 需求；出现需求再评估。
 - **Spring Cloud Kubernetes 替代 Nacos**：只读配置，不替代注册发现。
+- **MicroK8s / k3s 作为本地默认集群**：默认 Kind；仅在内存不足或需要长期 homelab 时切换，见 §12.14。
 - **Vault**：KMS/ACK Secret 足够；需要动态凭据时再评估（S7）。
 
 ---
@@ -414,8 +425,10 @@ S3/S4 来自 2026-11-13 的微信小程序可行性分析：只做员工轻量�
 
 新增项在开工前先验证版本，未验证前不写入上表：
 
+- Spring Cloud 2026.0（Paddington）：基于 Boot 4.2；SCA 尚无 Boot 4.1/4.2 支持，当前锁定 Boot 4.0.3 + Spring Cloud 2025.1.x，待 SCA 支持 Boot 4.2 后重评。
 - Spring Cloud Contract / Pact：Boot 4 兼容性待验证。
 - Argo CD：进入 C7 时定版本。
+- Kind：进入 C3 时按目标 K8s minor 选定；本地与 ACK 不要求同 minor，清单保持兼容。
 - Spring Cloud Kubernetes：跟随 Spring Cloud 2025.1.x，待验证。
 - Spring Security 7 Token Exchange：待 spike。
 - AgentScope Java 2.0.1 Graph：待 spike。
@@ -444,6 +457,7 @@ S3/S4 来自 2026-11-13 的微信小程序可行性分析：只做员工轻量�
 | R20 | 低流量下 SLI 噪声导致 SLO 误判 | SRE Native | 先选高流量服务；标注数据可信度；不把 SLO 当唯一告警源 |
 | R21 | Argo CD、契约测试增加维护成本 | Cloud Native / Micro Service Native | 先做单集群、两条边；判据不成立就回退到 Helmfile/CI |
 | R22 | 五条线并行分散时间与本机内存 | 全线 | 按线排优先级；同时最多推进两条线；沿用按需 profiles |
+| R23 | LLM Wiki 编译偏置、陈旧与 token 成本：摘要丢失细节、源文档更新后页面滞后、编译消耗大量 token | Agent Native | 强制 source 引用；文档变更触发增量重编译；评测门禁要求综合类提升且单事实不退化；编译走后台批处理并纳入 R6 配额 |
 
 ---
 
@@ -459,7 +473,7 @@ S3/S4 来自 2026-11-13 的微信小程序可行性分析：只做员工轻量�
 
 本地开发策略：
 
-- 中间件：`docker/docker-compose.yml`，`dev-init.sh` 默认启动 mysql / mysql-users-init / mysql-grants-init / redis / silo / es / nacos / tempo / sentinel-dashboard / seata-server / OPA、RocketMQ（NameServer / Broker / Proxy / TLS 入口）、集中日志链路（kafka / kafka-init / logstash）以及 observability profile（Prometheus / Grafana / Kibana / Alertmanager / Thanos 与 exporter）；资源紧张时用 `IBOOT_OBSERVABILITY_ENABLED=false`、`IBOOT_LOGGING_KAFKA_ENABLED=false` 裁剪；Cloud Native C3 起本地增加 Kind 集群。
+- 中间件：`docker/docker-compose.yml`，`dev-init.sh` 默认启动 mysql / mysql-users-init / mysql-grants-init / redis / silo / es / nacos / tempo / sentinel-dashboard / seata-server / OPA、RocketMQ（NameServer / Broker / Proxy / TLS 入口）、集中日志链路（kafka / kafka-init / logstash）以及 observability profile（Prometheus / Grafana / Kibana / Alertmanager / Thanos 与 exporter）；资源紧张时用 `IBOOT_OBSERVABILITY_ENABLED=false`、`IBOOT_LOGGING_KAFKA_ENABLED=false` 裁剪；Cloud Native C3 起本地增加 Kind 集群（工具链见 §5.3）。
 - 分布式事务：审批通过依赖 `seata-server`（8091），`dev-init.sh` 等待其健康后再拉起 workflow/system；内部令牌由 `.env` 的 `IBOOT_SYSTEM_INTERNAL_TOKEN` 注入，缺省使用本地开发值。
 - 应用：`scripts/dev-init.sh` 一键拉起八个业务服务、网关与运维控制台并按依赖顺序等待健康；也可单独 `mvn spring-boot:run` 调试。
 - 运维控制台：默认随开发环境启动，`IBOOT_OPS_ENABLED=false` 可跳过；生产环境不经公网网关暴露。
@@ -582,6 +596,20 @@ SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。
 | Spring LDAP | 触发条件 | 需真实企业目录环境 |
 | 小程序管理后台移动版 | 否决 | 表单密集、权限复杂、审核风险高；只做员工轻量入口 |
 
+### 12.14 本地 Kubernetes 为什么选 Kind
+
+C3/C4 要的是「可复现、可丢弃、与 ACK 清单一致」的本地集群，而不是一套常驻 homelab。Kind 用 Docker 容器跑上游 Kubernetes 节点：版本可精确 pin、多节点、CI 友好，镜像可用 `kind load docker-image` 直接装载；同一份 Helm/清单在本地 Kind 与云上 ACK 之间只换 values。这些正好覆盖 C3 的滚动升级、HPA、PDB、NetworkPolicy 判据。
+
+代价与约束：
+
+- Kind 默认 CNI（kindnet）不执行 NetworkPolicy；必须 `disableDefaultCNI: true` 后安装 Calico 或 Cilium，C3 的 NetworkPolicy 判据才算真正成立。
+- ingress-nginx、metrics-server、local-path-provisioner 需自行安装；LoadBalancer 可选 MetalLB。
+- 本地资源按 R4 控制：C3 阶段只把无状态应用放进 Kind，中间件留在 Compose；C4 再迁入。
+
+不选 MicroK8s 作为 C3/C4 主路径：它默认 Calico，NetworkPolicy 开箱可用，这是优点；但它直接装在宿主机上，与现有 Compose 争 80/443/6443 和网络规则；RBAC 默认关闭（`AlwaysAllow`），与 Security Native 的默认安全姿态相反；snap 自动刷新可能重启集群；ingress 默认 Traefik，与 ACK 的 ingress-nginx/ALB 习惯不一致。它是优秀的 Ubuntu homelab 方案，但不是 CI/ACK 对齐方案。
+
+不选 k3s 作为主路径：默认 Flannel 不执行 NetworkPolicy，addons 选型与 Kind 不同；若本地内存无法支撑 Kind + C4，允许切换到 k3d/k3s，清单与 Helm 保持不变。这是降级路径，不是默认路径。
+
 ---
 
 ## 13. 外部事实来源
@@ -606,3 +634,11 @@ SkyWalking 与既有 Tempo 都做链路追踪，按 §1 原则 2 本应剔除。
 - Spring Boot 版本与支持窗口：https://endoflife.date/spring-boot
 - DeepSeek 分享对话（2026-11-25，讨论输入而非版本事实）：https://chat.deepseek.com/share/rslplogwwjdwhky5r7
 - 桌面可行性分析（2026-10-30 SKILL/MCP；2026-11-13 微信小程序），内容已折叠进 §4 与 §6。
+- LLM Wiki 与 RAG 的预注册对比（A6 判据设计依据）：https://arxiv.org/abs/2605.18490v1
+- Spring Cloud 2026.0.0 发布（2026-11-20，基于 Boot 4.2）：https://spring.io/blog/2026/11/20/spring-cloud-2026-0-0-has-been-released
+- Spring Cloud Alibaba 2025.1.0.0（Boot 4.0.x / Cloud 2025.1.x）：https://github.com/alibaba/spring-cloud-alibaba/releases/tag/2025.1.0.0
+- kind #842（kindnet 不执行 NetworkPolicy）：https://github.com/kubernetes-sigs/kind/issues/842
+- MicroK8s Addons（Canonical）：https://canonical.com/microk8s/docs/addons
+- MicroK8s 默认 Calico（Tigera）：https://docs.tigera.io/archive/v3.22/getting-started/kubernetes/microk8s
+- MicroK8s RBAC 默认值分析：https://raesene.github.io/blog/2026/03/11/microk8s-rbac-default/
+- MicroK8s 1.36 发布说明：https://newreleases.io/project/github/canonical/microk8s/release/v1.36
